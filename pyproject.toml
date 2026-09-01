@@ -1,13 +1,11 @@
-# Template: replace project-template and project_package before the first real install.
-
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "project-template"
+name = "robust-steerability"
 version = "0.1.0"
-description = "Shared helpers for project compact units."
+description = "Research code for robust control of language-model representation dynamics under distribution shift."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -29,4 +27,4 @@ notebook = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["project_package*"]
+include = ["robust_steerability*"]

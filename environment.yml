@@ -1,4 +1,4 @@
-name: project-template
+name: robust-steerability
 channels:
   - conda-forge
 dependencies:

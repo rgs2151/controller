@@ -20,13 +20,12 @@
 - Do not modify, overwrite, regenerate, or clean result artifacts unless the user explicitly asks for that artifact action.
 - Plot outputs are tracked repo artifacts. When regenerating a figure, delete that unit's previous plot/table outputs before writing the new iteration.
 - Cache outputs are local compute artifacts and should stay ignored unless the user explicitly asks to track a cache file.
-- Keep `server/` focused on server/export workflows. Move analysis into `parking/`.
 - After major repo organization changes, commit and push when this repo uses git remotes.
 
 # Code Placement
 
-- `<package_name>/` is the installable project package for shared helpers used by `parking/`, `figs/`, and `debug/`.
-- Put only genuinely shared, analysis-neutral helpers in `<package_name>/`.
+- `robust_steerability/` is the installable project package for shared helpers used by `parking/`, `figs/`, and `debug/`.
+- Put only genuinely shared, analysis-neutral helpers in `robust_steerability/`.
 - Keep figure-specific and analysis-specific functions inside the compact unit that owns the figure or analysis.
 - Do not create or expand broad figure-function dumps outside the owning unit.
 - Active work must not contain `_legacy.py`, `_figure_functions.py`, or similar holding files.

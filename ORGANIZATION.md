@@ -3,12 +3,11 @@
 ## Root Folders
 
 - `data/`: organized analysis-ready data and its inventory.
-- `<package_name>/`: installable project package for shared helpers.
+- `robust_steerability/`: installable project package for shared helpers.
 - `parking/`: compact units that are still being explored or iterated.
 - `figs/`: graduated compact units that are final figure panels or final outputs.
 - `debug/`: investigations, diagnostics, and scratch analyses. One investigation per folder.
 - `ref/`: historical notebooks, old pipelines, copied external code, and reference material.
-- `server/`: server/export workflows when the project needs them.
 - `skills/`: repo-local workflow skills.
 - `tmp/`: disposable junk such as archives, zip files, temporary exports, and local leftovers.
 
@@ -33,14 +32,14 @@
 
 ## Python Package
 
-`<package_name>/` is the minimal installable package for reusable project helpers.
+`robust_steerability/` is the minimal installable package for reusable project helpers.
 
 - The package is intended for editable installs from this source checkout.
 - Do not package `data/`, caches, plots, notebooks, or historical references as package data.
 - Shared helpers should be useful across `parking/`, `figs/`, and `debug/`.
 - Keep figure-specific calculations, plotting functions, and panel logic inside the compact unit that owns them.
 - Do not move unit logic into a shared file just to shorten a unit script.
-- Import package helpers from `<package_name>`, not from sibling compact units.
+- Import package helpers from `robust_steerability`, not from sibling compact units.
 - Do not keep active compatibility shims, migration bridges, or broad holding files for extracted figure code.
 
 ## Compact Units
