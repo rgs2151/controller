@@ -1023,6 +1023,16 @@ def compute_analysis() -> tuple[pd.DataFrame, dict[str, object], dict[str, np.nd
         "residual_magnitude",
         "failure",
     )
+    condition_correlations = {}
+    for condition in ["id", "ood"]:
+        subset = frame[frame["condition"] == condition]
+        condition_correlations[condition] = {}
+        for measure in ["residual_magnitude", "directional_effect", "amplification"]:
+            correlation = spearmanr(subset[measure], subset["failure"])
+            condition_correlations[condition][measure] = {
+                "rho": float(correlation.statistic),
+                "p_value": float(correlation.pvalue),
+            }
     summary = {
         "config": CONFIG,
         "n_id": int((frame["condition"] == "id").sum()),
@@ -1043,10 +1053,14 @@ def compute_analysis() -> tuple[pd.DataFrame, dict[str, object], dict[str, np.nd
             "id": float(id_amplification.median()),
             "ood": float(ood_amplification.median()),
         },
+        "amplification_ood_to_id_median_ratio": float(
+            ood_amplification.median() / id_amplification.median()
+        ),
         "mann_whitney_ood_greater_than_id": {
             "u": float(amplification_test.statistic),
             "p_value": float(amplification_test.pvalue),
         },
+        "spearman_vs_failure_by_condition": condition_correlations,
         "empirical_gamma_95": {
             "id": float(id_amplification.quantile(0.95)),
             "ood": float(ood_amplification.quantile(0.95)),
@@ -1242,57 +1256,86 @@ def plot_analysis(frame: pd.DataFrame, summary: dict[str, object], profiles: dic
     medians = frame.groupby("condition")["amplification"].median()
     for position, condition in enumerate(["id", "ood"]):
         axis.plot([position - 0.22, position + 0.22], [medians[condition]] * 2, color="black")
-    axis.set_title("Residual amplification")
+    ratio = summary["amplification_ood_to_id_median_ratio"]
+    shift_p = summary["mann_whitney_ood_greater_than_id"]["p_value"]
+    axis.set_title("Distribution shift amplifies residuals")
     axis.set_xlabel("")
     axis.set_xticks([0, 1])
     axis.set_xticklabels(["RTP\n(ID)", "Jigsaw\n(OOD)"])
-    axis.set_ylabel(r"$|T_{\rm LQR}\xi|/\|\xi\|_2$")
+    axis.set_ylabel("Closed-loop residual amplification")
     axis.set_ylim(0, float(frame["amplification"].max()) * 1.05)
     axis.set_yticks([0, float(frame["amplification"].max())])
+    axis.text(
+        0.04,
+        0.97,
+        rf"OOD median = {ratio:.2f}$\times$ ID" + "\n" + rf"$p={shift_p:.1e}$",
+        transform=axis.transAxes,
+        ha="left",
+        va="top",
+        fontsize=8,
+    )
     save_single_plot(fig, axis, "residual_amplification")
 
+    ood = frame[frame["condition"] == "ood"]
+    ood_correlations = summary["spearman_vs_failure_by_condition"]["ood"]
+    failure_max = float(ood["failure"].max())
+
     fig, axis = plt.subplots(figsize=(3.2, 3.2))
-    for condition in ["id", "ood"]:
-        subset = frame[frame["condition"] == condition]
-        axis.scatter(
-            np.log10(subset["residual_magnitude"] + EPSILON),
-            subset["failure"],
-            color=CONDITION_COLORS[condition],
-            s=16,
-            alpha=0.7,
-            label=CONDITION_LABELS[condition],
-        )
-    magnitude_rho = summary["spearman_residual_magnitude_vs_failure"]["rho"]
-    axis.set_title(rf"Residual magnitude, $\rho={magnitude_rho:.2f}$")
+    axis.scatter(
+        np.log10(ood["residual_magnitude"] + EPSILON),
+        ood["failure"],
+        color=CONDITION_COLORS["ood"],
+        s=18,
+        alpha=0.75,
+    )
+    magnitude_rho = ood_correlations["residual_magnitude"]["rho"]
+    magnitude_p = ood_correlations["residual_magnitude"]["p_value"]
+    axis.set_title(rf"OOD: residual size, $\rho={magnitude_rho:.2f}$")
     axis.set_xlabel(r"$\log_{10}\|\xi\|_2$")
-    axis.set_ylabel("Final normalized tracking error")
-    axis.legend(loc="best", fontsize=7)
-    endpoint_ticks(axis, np.log10(frame["residual_magnitude"].to_numpy() + EPSILON), "x")
-    failure_max = float(frame["failure"].max())
+    axis.set_ylabel("Semantic tracking failure")
+    endpoint_ticks(axis, np.log10(ood["residual_magnitude"].to_numpy() + EPSILON), "x")
     axis.set_ylim(0, failure_max * 1.05)
     axis.set_yticks([0, failure_max])
+    axis.text(0.04, 0.96, rf"$p={magnitude_p:.2g}$", transform=axis.transAxes, ha="left", va="top", fontsize=8)
     save_single_plot(fig, axis, "residual_magnitude_vs_failure")
 
     fig, axis = plt.subplots(figsize=(3.2, 3.2))
-    for condition in ["id", "ood"]:
-        subset = frame[frame["condition"] == condition]
-        axis.scatter(
-            np.log10(subset["directional_effect"] + EPSILON),
-            subset["failure"],
-            color=CONDITION_COLORS[condition],
-            s=16,
-            alpha=0.7,
-            label=CONDITION_LABELS[condition],
-        )
-    directional_rho = summary["spearman_directional_effect_vs_failure"]["rho"]
-    axis.set_title(rf"Direction-aware effect, $\rho={directional_rho:.2f}$")
+    axis.scatter(
+        np.log10(ood["directional_effect"] + EPSILON),
+        ood["failure"],
+        color=CONDITION_COLORS["ood"],
+        s=18,
+        alpha=0.75,
+    )
+    directional_rho = ood_correlations["directional_effect"]["rho"]
+    directional_p = ood_correlations["directional_effect"]["p_value"]
+    axis.set_title(rf"OOD: direction-aware effect, $\rho={directional_rho:.2f}$")
     axis.set_xlabel(r"$\log_{10}|T_{\rm LQR}\xi|$")
-    axis.set_ylabel("Final normalized tracking error")
-    axis.legend(loc="best", fontsize=7)
-    endpoint_ticks(axis, np.log10(frame["directional_effect"].to_numpy() + EPSILON), "x")
+    axis.set_ylabel("Semantic tracking failure")
+    endpoint_ticks(axis, np.log10(ood["directional_effect"].to_numpy() + EPSILON), "x")
     axis.set_ylim(0, failure_max * 1.05)
     axis.set_yticks([0, failure_max])
+    axis.text(0.04, 0.96, rf"$p={directional_p:.1e}$", transform=axis.transAxes, ha="left", va="top", fontsize=8)
     save_single_plot(fig, axis, "directional_effect_vs_failure")
+
+    fig, axis = plt.subplots(figsize=(3.2, 3.2))
+    axis.scatter(
+        np.log10(ood["amplification"] + EPSILON),
+        ood["failure"],
+        color=CONDITION_COLORS["ood"],
+        s=18,
+        alpha=0.75,
+    )
+    amplification_rho = ood_correlations["amplification"]["rho"]
+    amplification_p = ood_correlations["amplification"]["p_value"]
+    axis.set_title(rf"OOD: amplification predicts failure, $\rho={amplification_rho:.2f}$")
+    axis.set_xlabel("$\log_{10}$ residual amplification")
+    axis.set_ylabel("Semantic tracking failure")
+    endpoint_ticks(axis, np.log10(ood["amplification"].to_numpy() + EPSILON), "x")
+    axis.set_ylim(0, failure_max * 1.05)
+    axis.set_yticks([0, failure_max])
+    axis.text(0.04, 0.96, rf"$p={amplification_p:.1e}$", transform=axis.transAxes, ha="left", va="top", fontsize=8)
+    save_single_plot(fig, axis, "amplification_vs_failure")
 
 
 def plot_toxicity(frame: pd.DataFrame, summary: dict[str, object]) -> None:
