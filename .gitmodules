@@ -1,0 +1,3 @@
+[submodule "ref/lqr-activation-steering"]
+	path = ref/lqr-activation-steering
+	url = https://github.com/trustworthyrobotics/lqr-activation-steering.git
