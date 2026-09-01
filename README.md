@@ -26,6 +26,12 @@ python -m pip install -e .
 
 Compact units live in `parking/` while they are being explored and in `figs/` after graduation.
 
+Run the cache-first A-LQR residual smoke test from the repo root:
+
+```bash
+python parking/residual_checks/residual_checks.py all
+```
+
 Run the first unit directly from the repo root once its documented input data are available:
 
 ```bash

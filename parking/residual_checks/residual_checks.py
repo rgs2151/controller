@@ -31,6 +31,7 @@ ANALYSIS_CACHE_PATH = CACHE_DIR / "analysis.json"
 METRICS_PATH = PLOTS_DIR / "residual_checks_metrics.csv"
 SUMMARY_PATH = PLOTS_DIR / "residual_checks_summary.json"
 PLOT_PATH = PLOTS_DIR / "residual_checks.pdf"
+PLOT_PREVIEW_PATH = PLOTS_DIR / "residual_checks.png"
 
 MODEL_ID = "meta-llama/Llama-3.2-1B"
 MODEL_REVISION = "4e20de362430cd3b72f300e6b0f18e50e7166e08"
@@ -51,6 +52,7 @@ Q_FINAL = 1.0
 LAMBDA = 2.5
 EPSILON = 1e-12
 BOOTSTRAP_SAMPLES = 2000
+STATE_DEFINITION = "raw_decoder_layer_inputs_and_final_raw_output_v1"
 
 CONFIG = {
     "model_id": MODEL_ID,
@@ -216,17 +218,15 @@ def tokenize(tokenizer: AutoTokenizer, text: str, device: torch.device, max_leng
     ).to(device)
 
 
-def hidden_states_from_output(output: object) -> torch.Tensor:
-    hidden_states = output.hidden_states
-    return torch.stack([state[0].detach().cpu().float() for state in hidden_states], dim=0)
-
-
 def validate_h5(handle: h5py.File, purpose: str) -> None:
     if "config_hash" in handle.attrs and handle.attrs["config_hash"] != CONFIG_HASH:
         raise ValueError(f"Incompatible {purpose} cache")
+    if len(handle) > 0 and handle.attrs.get("state_definition") != STATE_DEFINITION:
+        raise ValueError(f"Incompatible activation-state definition in {purpose} cache")
     handle.attrs["config_hash"] = CONFIG_HASH
     handle.attrs["model_id"] = MODEL_ID
     handle.attrs["model_revision"] = MODEL_REVISION
+    handle.attrs["state_definition"] = STATE_DEFINITION
 
 
 def write_prompt_group(
@@ -288,15 +288,7 @@ def collect_fit_activations(model: AutoModelForCausalLM, tokenizer: AutoTokenize
             if group_name in handle and bool(handle[group_name].attrs["complete"]):
                 continue
             encoded = tokenize(tokenizer, str(record["text"]), model.device, MAX_LENGTH)
-            with torch.no_grad():
-                output = model(
-                    **encoded,
-                    output_hidden_states=True,
-                    use_cache=False,
-                    return_dict=True,
-                )
-            states = hidden_states_from_output(output)
-            controls = torch.zeros(states.shape[0] - 1, states.shape[1], states.shape[2])
+            output, states, controls = steered_forward(model, encoded, None)
             log_probabilities = output.logits[0, -1].float().log_softmax(dim=-1)
             next_token = int(torch.argmax(log_probabilities).item())
             parent = handle.require_group(label)
@@ -316,7 +308,7 @@ def collect_fit_activations(model: AutoModelForCausalLM, tokenizer: AutoTokenize
 
     if FEATURES_PATH.exists():
         cached = torch.load(FEATURES_PATH, map_location="cpu", weights_only=False)
-        if cached["config_hash"] != CONFIG_HASH:
+        if cached["config_hash"] != CONFIG_HASH or cached["state_definition"] != STATE_DEFINITION:
             raise ValueError(f"Incompatible feature cache: {FEATURES_PATH}")
         return
 
@@ -338,6 +330,7 @@ def collect_fit_activations(model: AutoModelForCausalLM, tokenizer: AutoTokenize
         {
             "config": CONFIG,
             "config_hash": CONFIG_HASH,
+            "state_definition": STATE_DEFINITION,
             "nominal": means["nontoxic"],
             "toxic_mean": means["toxic"],
             "feature": feature,
@@ -481,7 +474,7 @@ def solve_lqr(jacobians: torch.Tensor, device: str) -> torch.Tensor:
 def build_controller(device: str) -> None:
     if CONTROLLER_PATH.exists():
         cached = torch.load(CONTROLLER_PATH, map_location="cpu", weights_only=False)
-        if cached["config_hash"] != CONFIG_HASH:
+        if cached["config_hash"] != CONFIG_HASH or cached["state_definition"] != STATE_DEFINITION:
             raise ValueError(f"Incompatible controller cache: {CONTROLLER_PATH}")
         return
     if not FEATURES_PATH.exists():
@@ -514,12 +507,23 @@ def steered_forward(
     model: AutoModelForCausalLM,
     encoded: dict[str, torch.Tensor],
     controller: dict[str, object] | None,
-) -> tuple[object, torch.Tensor]:
+) -> tuple[object, torch.Tensor, torch.Tensor]:
     layer_count = len(model.model.layers)
     sequence_length = int(encoded["input_ids"].shape[1])
     hidden_size = model.config.hidden_size
     controls = torch.zeros(layer_count, sequence_length, hidden_size, dtype=torch.float32)
+    states: list[torch.Tensor | None] = [None] * (layer_count + 1)
     handles = []
+
+    def make_input_hook(layer_index: int):
+        def hook(_module, args):
+            states[layer_index] = args[0][0].detach().cpu().float()
+
+        return hook
+
+    for layer_index, layer in enumerate(model.model.layers):
+        handles.append(layer.register_forward_pre_hook(make_input_hook(layer_index)))
+
     if controller is not None:
         gains = controller["gains"].to(model.device)
         feature_unit = controller["feature_unit"].to(model.device)
@@ -535,6 +539,8 @@ def steered_forward(
                 changed = hidden.clone()
                 changed[:, -1, :] = changed[:, -1, :] + control.to(changed.dtype)
                 controls[layer_index, -1, :] = control[0].detach().cpu().float()
+                if layer_index == layer_count - 1:
+                    states[layer_count] = changed[0].detach().cpu().float()
                 if isinstance(output, tuple):
                     return (changed,) + output[1:]
                 return changed
@@ -543,16 +549,23 @@ def steered_forward(
 
         for layer_index, layer in enumerate(model.model.layers):
             handles.append(layer.register_forward_hook(make_hook(layer_index)))
+    else:
+        def final_output_hook(_module, _args, output):
+            hidden = output[0] if isinstance(output, tuple) else output
+            states[layer_count] = hidden[0].detach().cpu().float()
+
+        handles.append(model.model.layers[-1].register_forward_hook(final_output_hook))
     with torch.no_grad():
         output = model(
             **encoded,
-            output_hidden_states=True,
             use_cache=False,
             return_dict=True,
         )
     for handle in handles:
         handle.remove()
-    return output, controls
+    if any(state is None for state in states):
+        raise RuntimeError("Failed to cache every raw transformer state")
+    return output, torch.stack([state for state in states if state is not None]), controls
 
 
 def collect_rollout_file(
@@ -573,8 +586,7 @@ def collect_rollout_file(
             if group_name in handle and bool(handle[group_name].attrs["complete"]):
                 continue
             encoded = tokenize(tokenizer, str(record["text"]), model.device, MAX_LENGTH)
-            output, controls = steered_forward(model, encoded, controller)
-            states = hidden_states_from_output(output)
+            output, states, controls = steered_forward(model, encoded, controller)
             log_probabilities = output.logits[0, -1].float().log_softmax(dim=-1)
             next_token = int(torch.argmax(log_probabilities).item())
             write_prompt_group(
@@ -599,7 +611,7 @@ def collect_rollouts(model: AutoModelForCausalLM, tokenizer: AutoTokenizer) -> N
         raise FileNotFoundError(f"Missing controller cache: {CONTROLLER_PATH}")
     prompts = prepare_prompts()
     controller = torch.load(CONTROLLER_PATH, map_location="cpu", weights_only=False)
-    if controller["config_hash"] != CONFIG_HASH:
+    if controller["config_hash"] != CONFIG_HASH or controller["state_definition"] != STATE_DEFINITION:
         raise ValueError(f"Incompatible controller cache: {CONTROLLER_PATH}")
     for condition, records in [("id", prompts["eval_id"]), ("ood", prompts["eval_ood"])]:
         collect_rollout_file(model, tokenizer, records, condition, "baseline", None)
@@ -652,15 +664,15 @@ def residual_metrics(
             + residuals[layer_index]
         )
     final_scale = float(feature_norm[-1].clamp_min(EPSILON).item())
-    harmful_effect = abs(float(torch.dot(feature_unit[-1], residual_response).item())) / final_scale
-    amplification = harmful_effect / max(residual_magnitude, EPSILON)
+    directional_effect = abs(float(torch.dot(feature_unit[-1], residual_response).item())) / final_scale
+    amplification = directional_effect / max(residual_magnitude, EPSILON)
     failure = abs(float((beta[-1] - torch.dot(feature_unit[-1], last_states[-1])).item())) / final_scale
     layer_relative_residual = torch.linalg.vector_norm(residuals, dim=1) / torch.linalg.vector_norm(
         last_states[1:], dim=1
     ).clamp_min(EPSILON)
     return {
         "residual_magnitude": residual_magnitude,
-        "harmful_effect": harmful_effect,
+        "directional_effect": directional_effect,
         "amplification": amplification,
         "failure": failure,
         "layer_relative_residual": layer_relative_residual.numpy(),
@@ -673,9 +685,9 @@ def bootstrap_correlation_difference(frame: pd.DataFrame) -> tuple[float, float]
     for _ in range(BOOTSTRAP_SAMPLES):
         indices = rng.integers(0, len(frame), len(frame))
         sample = frame.iloc[indices]
-        harmful_rho = spearmanr(sample["harmful_effect"], sample["failure"]).statistic
+        directional_rho = spearmanr(sample["directional_effect"], sample["failure"]).statistic
         magnitude_rho = spearmanr(sample["residual_magnitude"], sample["failure"]).statistic
-        values.append(float(harmful_rho - magnitude_rho))
+        values.append(float(directional_rho - magnitude_rho))
     return tuple(float(value) for value in np.quantile(values, [0.025, 0.975]))
 
 
@@ -705,7 +717,7 @@ def compute_analysis() -> tuple[pd.DataFrame, dict[str, object], dict[str, np.nd
 
     frame = pd.DataFrame(rows)
     rho_magnitude = spearmanr(frame["residual_magnitude"], frame["failure"])
-    rho_harmful = spearmanr(frame["harmful_effect"], frame["failure"])
+    rho_directional = spearmanr(frame["directional_effect"], frame["failure"])
     id_amplification = frame.loc[frame["condition"] == "id", "amplification"]
     ood_amplification = frame.loc[frame["condition"] == "ood", "amplification"]
     amplification_test = mannwhitneyu(ood_amplification, id_amplification, alternative="greater")
@@ -718,12 +730,12 @@ def compute_analysis() -> tuple[pd.DataFrame, dict[str, object], dict[str, np.nd
             "rho": float(rho_magnitude.statistic),
             "p_value": float(rho_magnitude.pvalue),
         },
-        "spearman_harmful_effect_vs_failure": {
-            "rho": float(rho_harmful.statistic),
-            "p_value": float(rho_harmful.pvalue),
+        "spearman_directional_effect_vs_failure": {
+            "rho": float(rho_directional.statistic),
+            "p_value": float(rho_directional.pvalue),
         },
-        "spearman_rho_difference_harmful_minus_magnitude": float(
-            rho_harmful.statistic - rho_magnitude.statistic
+        "spearman_rho_difference_directional_minus_magnitude": float(
+            rho_directional.statistic - rho_magnitude.statistic
         ),
         "spearman_rho_difference_bootstrap_95_ci": list(correlation_difference_interval),
         "amplification_median": {
@@ -805,8 +817,10 @@ def plot_analysis(frame: pd.DataFrame, summary: dict[str, object], profiles: dic
         data=frame,
         x="condition",
         y="amplification",
+        hue="condition",
         order=["id", "ood"],
         palette=CONDITION_COLORS,
+        legend=False,
         jitter=0.18,
         size=4,
         alpha=0.7,
@@ -817,6 +831,7 @@ def plot_analysis(frame: pd.DataFrame, summary: dict[str, object], profiles: dic
         axes[0, 1].plot([position - 0.22, position + 0.22], [medians[condition]] * 2, color="black")
     axes[0, 1].set_title("B  Residual amplification")
     axes[0, 1].set_xlabel("")
+    axes[0, 1].set_xticks([0, 1])
     axes[0, 1].set_xticklabels(["RTP\n(ID)", "Jigsaw\n(OOD)"])
     axes[0, 1].set_ylabel(r"$|T_{\rm LQR}\xi|/\|\xi\|_2$")
     axes[0, 1].set_ylim(0, float(frame["amplification"].max()) * 1.05)
@@ -833,24 +848,24 @@ def plot_analysis(frame: pd.DataFrame, summary: dict[str, object], profiles: dic
             label=CONDITION_LABELS[condition],
         )
         axes[1, 1].scatter(
-            np.log10(subset["harmful_effect"] + EPSILON),
+            np.log10(subset["directional_effect"] + EPSILON),
             subset["failure"],
             color=CONDITION_COLORS[condition],
             s=16,
             alpha=0.7,
         )
     magnitude_rho = summary["spearman_residual_magnitude_vs_failure"]["rho"]
-    harmful_rho = summary["spearman_harmful_effect_vs_failure"]["rho"]
+    directional_rho = summary["spearman_directional_effect_vs_failure"]["rho"]
     axes[1, 0].set_title(rf"C  Magnitude, $\rho={magnitude_rho:.2f}$")
     axes[1, 0].set_xlabel(r"$\log_{10}\|\xi\|_2$")
     axes[1, 0].set_ylabel("Final normalized tracking error")
     axes[1, 0].legend(loc="best", fontsize=7)
-    axes[1, 1].set_title(rf"D  Direction-aware effect, $\rho={harmful_rho:.2f}$")
+    axes[1, 1].set_title(rf"D  Direction-aware effect, $\rho={directional_rho:.2f}$")
     axes[1, 1].set_xlabel(r"$\log_{10}|T_{\rm LQR}\xi|$")
     axes[1, 1].set_ylabel("Final normalized tracking error")
 
     endpoint_ticks(axes[1, 0], np.log10(frame["residual_magnitude"].to_numpy() + EPSILON), "x")
-    endpoint_ticks(axes[1, 1], np.log10(frame["harmful_effect"].to_numpy() + EPSILON), "x")
+    endpoint_ticks(axes[1, 1], np.log10(frame["directional_effect"].to_numpy() + EPSILON), "x")
     failure_max = float(frame["failure"].max())
     for axis in [axes[1, 0], axes[1, 1]]:
         axis.set_ylim(0, failure_max * 1.05)
@@ -861,6 +876,7 @@ def plot_analysis(frame: pd.DataFrame, summary: dict[str, object], profiles: dic
         sns.despine(ax=axis, trim=True, offset=10)
     fig.subplots_adjust(left=0.12, right=0.98, bottom=0.11, top=0.94, wspace=0.48, hspace=0.55)
     fig.savefig(PLOT_PATH, bbox_inches="tight", facecolor="white", transparent=False)
+    fig.savefig(PLOT_PREVIEW_PATH, bbox_inches="tight", facecolor="white", transparent=False, dpi=220)
     plt.close(fig)
 
 
