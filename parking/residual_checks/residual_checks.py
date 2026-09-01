@@ -14,8 +14,13 @@ import pandas as pd
 import seaborn as sns
 import torch
 from datasets import load_dataset
-from scipy.stats import mannwhitneyu, spearmanr
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from scipy.stats import mannwhitneyu, spearmanr, wilcoxon
+from transformers import (
+    AutoModelForCausalLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -28,10 +33,11 @@ FEATURES_PATH = CACHE_DIR / "features.pt"
 JACOBIAN_DIR = CACHE_DIR / "jacobians"
 CONTROLLER_PATH = CACHE_DIR / "controller.pt"
 ANALYSIS_CACHE_PATH = CACHE_DIR / "analysis.json"
+TOXICITY_SCORES_PATH = CACHE_DIR / "toxicity_scores.json"
 METRICS_PATH = PLOTS_DIR / "residual_checks_metrics.csv"
 SUMMARY_PATH = PLOTS_DIR / "residual_checks_summary.json"
-PLOT_PATH = PLOTS_DIR / "residual_checks.pdf"
-PLOT_PREVIEW_PATH = PLOTS_DIR / "residual_checks.png"
+TOXICITY_METRICS_PATH = PLOTS_DIR / "generated_toxicity_metrics.csv"
+TOXICITY_SUMMARY_PATH = PLOTS_DIR / "generated_toxicity_summary.json"
 
 MODEL_ID = "meta-llama/Llama-3.2-1B"
 MODEL_REVISION = "4e20de362430cd3b72f300e6b0f18e50e7166e08"
@@ -39,6 +45,8 @@ RTP_ID = "allenai/real-toxicity-prompts"
 RTP_REVISION = "f21629712ffd6a3d13a54fd2807ccd521c55ef74"
 JIGSAW_ID = "tcapelle/jigsaw-toxic-comment-classification-challenge"
 JIGSAW_REVISION = "2bf801de1b879f287943ecfc81fdca8690d9fc61"
+TOXICITY_MODEL_ID = "s-nlp/roberta_toxicity_classifier"
+TOXICITY_MODEL_REVISION = "048c25bb1e199b98802784f96325f4840f22145d"
 SEED = 2151
 N_FEATURE_PROMPTS = 200
 N_JACOBIAN_PROMPTS = 50
@@ -53,6 +61,11 @@ LAMBDA = 2.5
 EPSILON = 1e-12
 BOOTSTRAP_SAMPLES = 2000
 STATE_DEFINITION = "raw_decoder_layer_inputs_and_final_raw_output_v1"
+GENERATION_STATE_DEFINITION = "teacher_forced_raw_states_with_generation_time_intervention_mask_v1"
+MAX_NEW_TOKENS = 100
+GENERATION_TOP_P = 0.3
+GENERATION_TEMPERATURE = 1.0
+GENERATION_REPETITION_PENALTY = 1.2
 
 CONFIG = {
     "model_id": MODEL_ID,
@@ -73,6 +86,22 @@ CONFIG = {
     "lambda": LAMBDA,
 }
 CONFIG_HASH = hashlib.sha256(json.dumps(CONFIG, sort_keys=True).encode()).hexdigest()
+
+GENERATION_CONFIG = {
+    "base_config_hash": CONFIG_HASH,
+    "toxicity_model_id": TOXICITY_MODEL_ID,
+    "toxicity_model_revision": TOXICITY_MODEL_REVISION,
+    "max_new_tokens": MAX_NEW_TOKENS,
+    "do_sample": True,
+    "top_p": GENERATION_TOP_P,
+    "temperature": GENERATION_TEMPERATURE,
+    "repetition_penalty": GENERATION_REPETITION_PENALTY,
+    "seed": SEED,
+    "state_definition": GENERATION_STATE_DEFINITION,
+}
+GENERATION_CONFIG_HASH = hashlib.sha256(
+    json.dumps(GENERATION_CONFIG, sort_keys=True).encode()
+).hexdigest()
 
 CONDITION_COLORS = {"id": "midnightblue", "ood": "darkred"}
 CONDITION_LABELS = {"id": "RTP (ID)", "ood": "Jigsaw (OOD)"}
@@ -206,6 +235,27 @@ def load_model(device: str) -> tuple[AutoModelForCausalLM, AutoTokenizer]:
         attn_implementation="eager",
     )
     model.eval()
+    return model, tokenizer
+
+
+def load_toxicity_model(
+    device: str,
+) -> tuple[AutoModelForSequenceClassification, AutoTokenizer]:
+    token = load_hf_token()
+    tokenizer = AutoTokenizer.from_pretrained(
+        TOXICITY_MODEL_ID,
+        revision=TOXICITY_MODEL_REVISION,
+        token=token,
+    )
+    model = AutoModelForSequenceClassification.from_pretrained(
+        TOXICITY_MODEL_ID,
+        revision=TOXICITY_MODEL_REVISION,
+        token=token,
+        dtype=torch.float32,
+    ).to(device)
+    model.eval()
+    if model.config.id2label != {0: "neutral", 1: "toxic"}:
+        raise ValueError(f"Unexpected toxicity labels: {model.config.id2label}")
     return model, tokenizer
 
 
@@ -507,6 +557,7 @@ def steered_forward(
     model: AutoModelForCausalLM,
     encoded: dict[str, torch.Tensor],
     controller: dict[str, object] | None,
+    steer_start_index: int | None = None,
 ) -> tuple[object, torch.Tensor, torch.Tensor]:
     layer_count = len(model.model.layers)
     sequence_length = int(encoded["input_ids"].shape[1])
@@ -532,13 +583,23 @@ def steered_forward(
         def make_hook(layer_index: int):
             def hook(_module, _args, output):
                 hidden = output[0] if isinstance(output, tuple) else output
-                activation = _args[0][:, -1, :]
-                alpha = beta[layer_index] - activation @ feature_unit[layer_index]
-                error = alpha.unsqueeze(1) * feature_unit[layer_index].unsqueeze(0)
-                control = error @ gains[layer_index].T
                 changed = hidden.clone()
-                changed[:, -1, :] = changed[:, -1, :] + control.to(changed.dtype)
-                controls[layer_index, -1, :] = control[0].detach().cpu().float()
+                if steer_start_index is None:
+                    activation = _args[0][:, -1, :]
+                    alpha = beta[layer_index] - activation @ feature_unit[layer_index]
+                    error = alpha.unsqueeze(1) * feature_unit[layer_index].unsqueeze(0)
+                    control = error @ gains[layer_index].T
+                    changed[:, -1, :] = changed[:, -1, :] + control.to(changed.dtype)
+                    controls[layer_index, -1, :] = control[0].detach().cpu().float()
+                else:
+                    activation = _args[0][:, steer_start_index:, :]
+                    alpha = beta[layer_index] - activation @ feature_unit[layer_index]
+                    error = alpha.unsqueeze(2) * feature_unit[layer_index].view(1, 1, -1)
+                    control = error @ gains[layer_index].T
+                    changed[:, steer_start_index:, :] = (
+                        changed[:, steer_start_index:, :] + control.to(changed.dtype)
+                    )
+                    controls[layer_index, steer_start_index:, :] = control[0].detach().cpu().float()
                 if layer_index == layer_count - 1:
                     states[layer_count] = changed[0].detach().cpu().float()
                 if isinstance(output, tuple):
@@ -618,6 +679,236 @@ def collect_rollouts(model: AutoModelForCausalLM, tokenizer: AutoTokenizer) -> N
         collect_rollout_file(model, tokenizer, records, condition, "alqr", controller)
 
 
+def register_generation_steering_hooks(
+    model: AutoModelForCausalLM,
+    controller: dict[str, object],
+) -> list[torch.utils.hooks.RemovableHandle]:
+    gains = controller["gains"].to(model.device)
+    feature_unit = controller["feature_unit"].to(model.device)
+    beta = controller["beta"].to(model.device)
+    handles = []
+
+    def make_hook(layer_index: int):
+        def hook(_module, args, output):
+            hidden = output[0] if isinstance(output, tuple) else output
+            activation = args[0][:, -1, :]
+            alpha = beta[layer_index] - activation @ feature_unit[layer_index]
+            error = alpha.unsqueeze(1) * feature_unit[layer_index].unsqueeze(0)
+            control = error @ gains[layer_index].T
+            changed = hidden.clone()
+            changed[:, -1, :] = changed[:, -1, :] + control.to(changed.dtype)
+            if isinstance(output, tuple):
+                return (changed,) + output[1:]
+            return changed
+
+        return hook
+
+    for layer_index, layer in enumerate(model.model.layers):
+        handles.append(layer.register_forward_hook(make_hook(layer_index)))
+    return handles
+
+
+def validate_generation_h5(handle: h5py.File, condition: str, controller_name: str) -> None:
+    if "generation_config_hash" in handle.attrs:
+        if handle.attrs["generation_config_hash"] != GENERATION_CONFIG_HASH:
+            raise ValueError(f"Incompatible generation cache for {condition} {controller_name}")
+    if len(handle) > 0 and handle.attrs.get("state_definition") != GENERATION_STATE_DEFINITION:
+        raise ValueError(f"Incompatible generation-state definition for {condition} {controller_name}")
+    handle.attrs["generation_config_hash"] = GENERATION_CONFIG_HASH
+    handle.attrs["condition"] = condition
+    handle.attrs["controller"] = controller_name
+    handle.attrs["model_id"] = MODEL_ID
+    handle.attrs["model_revision"] = MODEL_REVISION
+    handle.attrs["state_definition"] = GENERATION_STATE_DEFINITION
+
+
+def write_generation_group(
+    handle: h5py.File,
+    group_name: str,
+    record: dict[str, object],
+    seed: int,
+    prompt_length: int,
+    sequences: torch.Tensor,
+    generated_ids: torch.Tensor,
+    states: torch.Tensor,
+    controls: torch.Tensor,
+    completion: str,
+) -> None:
+    temporary_name = f"tmp_{group_name}"
+    if temporary_name in handle:
+        del handle[temporary_name]
+    group = handle.create_group(temporary_name)
+    group.attrs["complete"] = False
+    group.attrs["prompt_id"] = str(record["prompt_id"])
+    group.attrs["source"] = str(record["source"])
+    group.attrs["prompt_toxicity"] = float(record["toxicity"])
+    group.attrs["prompt_text"] = str(record["text"])
+    group.attrs["completion"] = completion
+    group.attrs["seed"] = seed
+    group.attrs["prompt_length"] = prompt_length
+    state_array = states.numpy().astype(np.float16)
+    control_array = controls.numpy().astype(np.float16)
+    group.create_dataset(
+        "states",
+        data=state_array,
+        chunks=(1, min(state_array.shape[1], 16), state_array.shape[2]),
+        compression="lzf",
+        shuffle=True,
+    )
+    group.create_dataset(
+        "controls",
+        data=control_array,
+        chunks=(1, min(control_array.shape[1], 16), control_array.shape[2]),
+        compression="lzf",
+        shuffle=True,
+    )
+    group.create_dataset("input_ids", data=sequences.detach().cpu().numpy().astype(np.int32))
+    group.create_dataset("generated_ids", data=generated_ids.detach().cpu().numpy().astype(np.int32))
+    group.attrs["complete"] = True
+    handle.move(temporary_name, group_name)
+    handle.file.flush()
+
+
+def collect_generation_file(
+    model: AutoModelForCausalLM,
+    tokenizer: AutoTokenizer,
+    records: list[dict[str, object]],
+    condition: str,
+    controller_name: str,
+    controller: dict[str, object] | None,
+) -> None:
+    path = CACHE_DIR / f"generations_{condition}_{controller_name}.h5"
+    with h5py.File(path, "a") as handle:
+        validate_generation_h5(handle, condition, controller_name)
+        for index, record in enumerate(records):
+            group_name = f"{index:04d}"
+            if group_name in handle and bool(handle[group_name].attrs["complete"]):
+                continue
+            encoded = tokenize(tokenizer, str(record["text"]), model.device, MAX_LENGTH)
+            prompt_length = int(encoded["input_ids"].shape[1])
+            sample_seed = SEED + index + (100_000 if condition == "ood" else 0)
+            torch.manual_seed(sample_seed)
+            torch.cuda.manual_seed_all(sample_seed)
+            handles = register_generation_steering_hooks(model, controller) if controller is not None else []
+            with torch.no_grad():
+                generated = model.generate(
+                    **encoded,
+                    max_new_tokens=MAX_NEW_TOKENS,
+                    return_dict_in_generate=True,
+                    do_sample=True,
+                    top_p=GENERATION_TOP_P,
+                    repetition_penalty=GENERATION_REPETITION_PENALTY,
+                    temperature=GENERATION_TEMPERATURE,
+                    use_cache=True,
+                    pad_token_id=tokenizer.eos_token_id,
+                )
+            for hook_handle in handles:
+                hook_handle.remove()
+            sequences = generated.sequences
+            generated_ids = sequences[:, prompt_length:]
+            completion = tokenizer.decode(generated_ids[0], skip_special_tokens=True).strip()
+            full_encoded = {
+                "input_ids": sequences.to(model.device),
+                "attention_mask": torch.ones_like(sequences, device=model.device),
+            }
+            _, states, controls = steered_forward(
+                model,
+                full_encoded,
+                controller,
+                steer_start_index=prompt_length - 1,
+            )
+            write_generation_group(
+                handle,
+                group_name,
+                record,
+                sample_seed,
+                prompt_length,
+                sequences,
+                generated_ids,
+                states,
+                controls,
+                completion,
+            )
+            print(
+                f"{condition} {controller_name} generation {index + 1}/{len(records)}",
+                flush=True,
+            )
+
+
+def collect_generations(model: AutoModelForCausalLM, tokenizer: AutoTokenizer) -> None:
+    if not CONTROLLER_PATH.exists():
+        raise FileNotFoundError(f"Missing controller cache: {CONTROLLER_PATH}")
+    prompts = prepare_prompts()
+    controller = torch.load(CONTROLLER_PATH, map_location="cpu", weights_only=False)
+    if controller["config_hash"] != CONFIG_HASH or controller["state_definition"] != STATE_DEFINITION:
+        raise ValueError(f"Incompatible controller cache: {CONTROLLER_PATH}")
+    for condition, records in [("id", prompts["eval_id"]), ("ood", prompts["eval_ood"])]:
+        collect_generation_file(model, tokenizer, records, condition, "baseline", None)
+        collect_generation_file(model, tokenizer, records, condition, "alqr", controller)
+
+
+def read_generation_texts() -> list[dict[str, object]]:
+    rows = []
+    for condition in ["id", "ood"]:
+        for controller_name in ["baseline", "alqr"]:
+            path = CACHE_DIR / f"generations_{condition}_{controller_name}.h5"
+            with h5py.File(path, "r") as handle:
+                if handle.attrs["generation_config_hash"] != GENERATION_CONFIG_HASH:
+                    raise ValueError(f"Incompatible generation cache: {path}")
+                complete_names = [name for name in sorted(handle) if not name.startswith("tmp_")]
+                if len(complete_names) != N_EVAL_PROMPTS:
+                    raise ValueError(
+                        f"Expected {N_EVAL_PROMPTS} complete records in {path}, found {len(complete_names)}"
+                    )
+                for name in complete_names:
+                    group = handle[name]
+                    rows.append(
+                        {
+                            "prompt_id": str(group.attrs["prompt_id"]),
+                            "condition": condition,
+                            "controller": controller_name,
+                            "completion": str(group.attrs["completion"]),
+                            "generated_tokens": int(group["generated_ids"].shape[1]),
+                        }
+                    )
+    return rows
+
+
+def score_generations(device: str) -> list[dict[str, object]]:
+    if TOXICITY_SCORES_PATH.exists():
+        payload = json.loads(TOXICITY_SCORES_PATH.read_text())
+        if payload["generation_config_hash"] != GENERATION_CONFIG_HASH:
+            raise ValueError(f"Incompatible toxicity-score cache: {TOXICITY_SCORES_PATH}")
+        return payload["rows"]
+    rows = read_generation_texts()
+    model, tokenizer = load_toxicity_model(device)
+    toxic_index = next(
+        index for index, label in model.config.id2label.items() if label.lower() == "toxic"
+    )
+    batch_size = 16
+    for start in range(0, len(rows), batch_size):
+        batch = rows[start : start + batch_size]
+        encoded = tokenizer(
+            [str(row["completion"]) for row in batch],
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=512,
+        ).to(device)
+        with torch.no_grad():
+            logits = model(**encoded).logits.float()
+        probabilities = torch.softmax(logits, dim=-1)[:, toxic_index].detach().cpu().numpy()
+        for row, probability in zip(batch, probabilities, strict=True):
+            row["toxicity_probability"] = float(probability)
+    payload = {
+        "generation_config": GENERATION_CONFIG,
+        "generation_config_hash": GENERATION_CONFIG_HASH,
+        "rows": rows,
+    }
+    TOXICITY_SCORES_PATH.write_text(json.dumps(payload, indent=2))
+    return rows
+
+
 def read_rollout(path: Path) -> list[dict[str, object]]:
     records = []
     with h5py.File(path, "r") as handle:
@@ -679,15 +970,20 @@ def residual_metrics(
     }
 
 
-def bootstrap_correlation_difference(frame: pd.DataFrame) -> tuple[float, float]:
+def bootstrap_correlation_difference(
+    frame: pd.DataFrame,
+    first_measure: str,
+    second_measure: str,
+    outcome: str,
+) -> tuple[float, float]:
     rng = np.random.default_rng(SEED)
     values = []
     for _ in range(BOOTSTRAP_SAMPLES):
         indices = rng.integers(0, len(frame), len(frame))
         sample = frame.iloc[indices]
-        directional_rho = spearmanr(sample["directional_effect"], sample["failure"]).statistic
-        magnitude_rho = spearmanr(sample["residual_magnitude"], sample["failure"]).statistic
-        values.append(float(directional_rho - magnitude_rho))
+        first_rho = spearmanr(sample[first_measure], sample[outcome]).statistic
+        second_rho = spearmanr(sample[second_measure], sample[outcome]).statistic
+        values.append(float(first_rho - second_rho))
     return tuple(float(value) for value in np.quantile(values, [0.025, 0.975]))
 
 
@@ -721,7 +1017,12 @@ def compute_analysis() -> tuple[pd.DataFrame, dict[str, object], dict[str, np.nd
     id_amplification = frame.loc[frame["condition"] == "id", "amplification"]
     ood_amplification = frame.loc[frame["condition"] == "ood", "amplification"]
     amplification_test = mannwhitneyu(ood_amplification, id_amplification, alternative="greater")
-    correlation_difference_interval = bootstrap_correlation_difference(frame)
+    correlation_difference_interval = bootstrap_correlation_difference(
+        frame,
+        "directional_effect",
+        "residual_magnitude",
+        "failure",
+    )
     summary = {
         "config": CONFIG,
         "n_id": int((frame["condition"] == "id").sum()),
@@ -754,6 +1055,97 @@ def compute_analysis() -> tuple[pd.DataFrame, dict[str, object], dict[str, np.nd
     return frame, summary, layer_profiles
 
 
+def compute_toxicity_analysis(
+    residual_frame: pd.DataFrame,
+    classifier_device: str,
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    score_frame = pd.DataFrame(score_generations(classifier_device))
+    toxicity = score_frame.pivot(
+        index=["prompt_id", "condition"],
+        columns="controller",
+        values="toxicity_probability",
+    ).reset_index()
+    toxicity.columns.name = None
+    toxicity = toxicity.rename(
+        columns={"baseline": "baseline_toxicity", "alqr": "alqr_toxicity"}
+    )
+    token_counts = score_frame.pivot(
+        index=["prompt_id", "condition"],
+        columns="controller",
+        values="generated_tokens",
+    ).reset_index()
+    token_counts.columns.name = None
+    token_counts = token_counts.rename(
+        columns={
+            "baseline": "baseline_generated_tokens",
+            "alqr": "alqr_generated_tokens",
+        }
+    )
+    frame = toxicity.merge(token_counts, on=["prompt_id", "condition"], validate="one_to_one")
+    frame = frame.merge(residual_frame, on=["prompt_id", "condition"], validate="one_to_one")
+    frame["toxicity_shortfall"] = frame["alqr_toxicity"] - frame["baseline_toxicity"]
+    frame["toxicity_reduction"] = -frame["toxicity_shortfall"]
+
+    magnitude_rho = spearmanr(frame["residual_magnitude"], frame["toxicity_shortfall"])
+    directional_rho = spearmanr(frame["directional_effect"], frame["toxicity_shortfall"])
+    amplification_rho = spearmanr(frame["amplification"], frame["toxicity_shortfall"])
+    correlation_difference_interval = bootstrap_correlation_difference(
+        frame,
+        "directional_effect",
+        "residual_magnitude",
+        "toxicity_shortfall",
+    )
+    condition_summaries = {}
+    for condition in ["id", "ood"]:
+        subset = frame[frame["condition"] == condition]
+        paired_test = wilcoxon(
+            subset["baseline_toxicity"],
+            subset["alqr_toxicity"],
+            alternative="greater",
+        )
+        condition_summaries[condition] = {
+            "baseline_mean": float(subset["baseline_toxicity"].mean()),
+            "alqr_mean": float(subset["alqr_toxicity"].mean()),
+            "median_toxicity_reduction": float(subset["toxicity_reduction"].median()),
+            "baseline_toxic_fraction_at_0.5": float((subset["baseline_toxicity"] >= 0.5).mean()),
+            "alqr_toxic_fraction_at_0.5": float((subset["alqr_toxicity"] >= 0.5).mean()),
+            "wilcoxon_baseline_greater_than_alqr": {
+                "statistic": float(paired_test.statistic),
+                "p_value": float(paired_test.pvalue),
+            },
+        }
+    id_shortfall = frame.loc[frame["condition"] == "id", "toxicity_shortfall"]
+    ood_shortfall = frame.loc[frame["condition"] == "ood", "toxicity_shortfall"]
+    shift_test = mannwhitneyu(ood_shortfall, id_shortfall, alternative="greater")
+    summary = {
+        "generation_config": GENERATION_CONFIG,
+        "n_id": int((frame["condition"] == "id").sum()),
+        "n_ood": int((frame["condition"] == "ood").sum()),
+        "condition_summary": condition_summaries,
+        "spearman_residual_magnitude_vs_toxicity_shortfall": {
+            "rho": float(magnitude_rho.statistic),
+            "p_value": float(magnitude_rho.pvalue),
+        },
+        "spearman_directional_effect_vs_toxicity_shortfall": {
+            "rho": float(directional_rho.statistic),
+            "p_value": float(directional_rho.pvalue),
+        },
+        "spearman_amplification_vs_toxicity_shortfall": {
+            "rho": float(amplification_rho.statistic),
+            "p_value": float(amplification_rho.pvalue),
+        },
+        "spearman_rho_difference_directional_minus_magnitude": float(
+            directional_rho.statistic - magnitude_rho.statistic
+        ),
+        "spearman_rho_difference_bootstrap_95_ci": list(correlation_difference_interval),
+        "mann_whitney_ood_shortfall_greater_than_id": {
+            "u": float(shift_test.statistic),
+            "p_value": float(shift_test.pvalue),
+        },
+    }
+    return frame, summary
+
+
 def setup_style() -> None:
     sns.set_theme(context="talk", style="ticks", palette="dark")
     plt.rcParams["font.family"] = "serif"
@@ -784,35 +1176,56 @@ def endpoint_ticks(axis, values: np.ndarray, dimension: str) -> None:
         axis.set_yticks([lower, upper])
 
 
+def save_single_plot(fig: plt.Figure, axis: plt.Axes, stem: str) -> None:
+    axis.title.set_fontsize(14)
+    axis.xaxis.label.set_size(11)
+    axis.yaxis.label.set_size(11)
+    axis.tick_params(axis="both", labelsize=9)
+    axis.set_box_aspect(1)
+    sns.despine(ax=axis, trim=True, offset=10)
+    fig.savefig(PLOTS_DIR / f"{stem}.pdf", bbox_inches="tight", facecolor="white", transparent=False)
+    fig.savefig(
+        PLOTS_DIR / f"{stem}.png",
+        bbox_inches="tight",
+        facecolor="white",
+        transparent=False,
+        dpi=220,
+    )
+    plt.close(fig)
+
+
 def plot_analysis(frame: pd.DataFrame, summary: dict[str, object], profiles: dict[str, np.ndarray]) -> None:
     setup_style()
-    fig, axes = plt.subplots(2, 2, figsize=(7.5, 7.0))
+
+    fig, axis = plt.subplots(figsize=(3.5, 3.2))
     depth = np.linspace(0, 1, len(profiles["id_alqr"]))
     for condition in ["id", "ood"]:
-        axes[0, 0].plot(
+        axis.plot(
             depth,
             profiles[f"{condition}_baseline"],
             color=CONDITION_COLORS[condition],
             linestyle=":",
             label=f"{CONDITION_LABELS[condition]}, baseline",
         )
-        axes[0, 0].plot(
+        axis.plot(
             depth,
             profiles[f"{condition}_alqr"],
             color=CONDITION_COLORS[condition],
             linestyle="-",
             label=f"{CONDITION_LABELS[condition]}, A-LQR",
         )
-    axes[0, 0].set_title("A  Layer residuals")
-    axes[0, 0].set_xlabel("Normalized depth")
-    axes[0, 0].set_ylabel(r"Mean $\|\xi_k\|_2/\|x_{k+1}\|_2$")
-    axes[0, 0].set_xlim(0, 1)
-    axes[0, 0].set_xticks([0, 1])
+    axis.set_title("Layer residuals")
+    axis.set_xlabel("Normalized depth")
+    axis.set_ylabel(r"Mean $\|\xi_k\|_2/\|x_{k+1}\|_2$")
+    axis.set_xlim(0, 1)
+    axis.set_xticks([0, 1])
     profile_values = np.concatenate(list(profiles.values()))
-    axes[0, 0].set_ylim(0, float(profile_values.max()) * 1.05)
-    axes[0, 0].set_yticks([0, float(profile_values.max())])
-    axes[0, 0].legend(loc="best", fontsize=7)
+    axis.set_ylim(0, float(profile_values.max()) * 1.05)
+    axis.set_yticks([0, float(profile_values.max())])
+    axis.legend(loc="best", fontsize=7)
+    save_single_plot(fig, axis, "layer_residuals")
 
+    fig, axis = plt.subplots(figsize=(3.2, 3.2))
     sns.stripplot(
         data=frame,
         x="condition",
@@ -824,22 +1237,24 @@ def plot_analysis(frame: pd.DataFrame, summary: dict[str, object], profiles: dic
         jitter=0.18,
         size=4,
         alpha=0.7,
-        ax=axes[0, 1],
+        ax=axis,
     )
     medians = frame.groupby("condition")["amplification"].median()
     for position, condition in enumerate(["id", "ood"]):
-        axes[0, 1].plot([position - 0.22, position + 0.22], [medians[condition]] * 2, color="black")
-    axes[0, 1].set_title("B  Residual amplification")
-    axes[0, 1].set_xlabel("")
-    axes[0, 1].set_xticks([0, 1])
-    axes[0, 1].set_xticklabels(["RTP\n(ID)", "Jigsaw\n(OOD)"])
-    axes[0, 1].set_ylabel(r"$|T_{\rm LQR}\xi|/\|\xi\|_2$")
-    axes[0, 1].set_ylim(0, float(frame["amplification"].max()) * 1.05)
-    axes[0, 1].set_yticks([0, float(frame["amplification"].max())])
+        axis.plot([position - 0.22, position + 0.22], [medians[condition]] * 2, color="black")
+    axis.set_title("Residual amplification")
+    axis.set_xlabel("")
+    axis.set_xticks([0, 1])
+    axis.set_xticklabels(["RTP\n(ID)", "Jigsaw\n(OOD)"])
+    axis.set_ylabel(r"$|T_{\rm LQR}\xi|/\|\xi\|_2$")
+    axis.set_ylim(0, float(frame["amplification"].max()) * 1.05)
+    axis.set_yticks([0, float(frame["amplification"].max())])
+    save_single_plot(fig, axis, "residual_amplification")
 
+    fig, axis = plt.subplots(figsize=(3.2, 3.2))
     for condition in ["id", "ood"]:
         subset = frame[frame["condition"] == condition]
-        axes[1, 0].scatter(
+        axis.scatter(
             np.log10(subset["residual_magnitude"] + EPSILON),
             subset["failure"],
             color=CONDITION_COLORS[condition],
@@ -847,37 +1262,103 @@ def plot_analysis(frame: pd.DataFrame, summary: dict[str, object], profiles: dic
             alpha=0.7,
             label=CONDITION_LABELS[condition],
         )
-        axes[1, 1].scatter(
+    magnitude_rho = summary["spearman_residual_magnitude_vs_failure"]["rho"]
+    axis.set_title(rf"Residual magnitude, $\rho={magnitude_rho:.2f}$")
+    axis.set_xlabel(r"$\log_{10}\|\xi\|_2$")
+    axis.set_ylabel("Final normalized tracking error")
+    axis.legend(loc="best", fontsize=7)
+    endpoint_ticks(axis, np.log10(frame["residual_magnitude"].to_numpy() + EPSILON), "x")
+    failure_max = float(frame["failure"].max())
+    axis.set_ylim(0, failure_max * 1.05)
+    axis.set_yticks([0, failure_max])
+    save_single_plot(fig, axis, "residual_magnitude_vs_failure")
+
+    fig, axis = plt.subplots(figsize=(3.2, 3.2))
+    for condition in ["id", "ood"]:
+        subset = frame[frame["condition"] == condition]
+        axis.scatter(
             np.log10(subset["directional_effect"] + EPSILON),
             subset["failure"],
             color=CONDITION_COLORS[condition],
             s=16,
             alpha=0.7,
+            label=CONDITION_LABELS[condition],
         )
-    magnitude_rho = summary["spearman_residual_magnitude_vs_failure"]["rho"]
     directional_rho = summary["spearman_directional_effect_vs_failure"]["rho"]
-    axes[1, 0].set_title(rf"C  Magnitude, $\rho={magnitude_rho:.2f}$")
-    axes[1, 0].set_xlabel(r"$\log_{10}\|\xi\|_2$")
-    axes[1, 0].set_ylabel("Final normalized tracking error")
-    axes[1, 0].legend(loc="best", fontsize=7)
-    axes[1, 1].set_title(rf"D  Direction-aware effect, $\rho={directional_rho:.2f}$")
-    axes[1, 1].set_xlabel(r"$\log_{10}|T_{\rm LQR}\xi|$")
-    axes[1, 1].set_ylabel("Final normalized tracking error")
+    axis.set_title(rf"Direction-aware effect, $\rho={directional_rho:.2f}$")
+    axis.set_xlabel(r"$\log_{10}|T_{\rm LQR}\xi|$")
+    axis.set_ylabel("Final normalized tracking error")
+    axis.legend(loc="best", fontsize=7)
+    endpoint_ticks(axis, np.log10(frame["directional_effect"].to_numpy() + EPSILON), "x")
+    axis.set_ylim(0, failure_max * 1.05)
+    axis.set_yticks([0, failure_max])
+    save_single_plot(fig, axis, "directional_effect_vs_failure")
 
-    endpoint_ticks(axes[1, 0], np.log10(frame["residual_magnitude"].to_numpy() + EPSILON), "x")
-    endpoint_ticks(axes[1, 1], np.log10(frame["directional_effect"].to_numpy() + EPSILON), "x")
-    failure_max = float(frame["failure"].max())
-    for axis in [axes[1, 0], axes[1, 1]]:
-        axis.set_ylim(0, failure_max * 1.05)
-        axis.set_yticks([0, failure_max])
 
-    for axis in axes.flat:
-        axis.set_box_aspect(1)
-        sns.despine(ax=axis, trim=True, offset=10)
-    fig.subplots_adjust(left=0.12, right=0.98, bottom=0.11, top=0.94, wspace=0.48, hspace=0.55)
-    fig.savefig(PLOT_PATH, bbox_inches="tight", facecolor="white", transparent=False)
-    fig.savefig(PLOT_PREVIEW_PATH, bbox_inches="tight", facecolor="white", transparent=False, dpi=220)
-    plt.close(fig)
+def plot_toxicity(frame: pd.DataFrame, summary: dict[str, object]) -> None:
+    setup_style()
+
+    fig, axis = plt.subplots(figsize=(4.8, 3.2))
+    positions = {("id", "baseline"): 0.0, ("id", "alqr"): 1.0, ("ood", "baseline"): 3.0, ("ood", "alqr"): 4.0}
+    for _, row in frame.iterrows():
+        condition = str(row["condition"])
+        color = CONDITION_COLORS[condition]
+        x_values = [positions[(condition, "baseline")], positions[(condition, "alqr")]]
+        y_values = [row["baseline_toxicity"], row["alqr_toxicity"]]
+        axis.plot(x_values, y_values, color=color, alpha=0.16, linewidth=0.6)
+        axis.scatter(x_values[0], y_values[0], facecolors="white", edgecolors=color, s=14, linewidths=0.7)
+        axis.scatter(x_values[1], y_values[1], color=color, s=14, alpha=0.75)
+    for condition in ["id", "ood"]:
+        subset = frame[frame["condition"] == condition]
+        for controller_name, column in [("baseline", "baseline_toxicity"), ("alqr", "alqr_toxicity")]:
+            position = positions[(condition, controller_name)]
+            median = float(subset[column].median())
+            axis.plot([position - 0.22, position + 0.22], [median, median], color="black")
+    axis.set_title("Generated-text toxicity")
+    axis.set_xlabel("")
+    axis.set_ylabel("Toxic probability")
+    axis.set_xticks([0, 1, 3, 4])
+    axis.set_xticklabels(["RTP\nbaseline", "RTP\nA-LQR", "Jigsaw\nbaseline", "Jigsaw\nA-LQR"])
+    axis.set_ylim(0, 1)
+    axis.set_yticks([0, 1])
+    save_single_plot(fig, axis, "generated_toxicity")
+
+    shortfall_limits = frame["toxicity_shortfall"].to_numpy()
+    for measure, label, stem, summary_key in [
+        (
+            "residual_magnitude",
+            r"$\log_{10}\|\xi\|_2$",
+            "residual_magnitude_vs_toxicity_shortfall",
+            "spearman_residual_magnitude_vs_toxicity_shortfall",
+        ),
+        (
+            "directional_effect",
+            r"$\log_{10}|T_{\rm LQR}\xi|$",
+            "directional_effect_vs_toxicity_shortfall",
+            "spearman_directional_effect_vs_toxicity_shortfall",
+        ),
+    ]:
+        fig, axis = plt.subplots(figsize=(3.2, 3.2))
+        for condition in ["id", "ood"]:
+            subset = frame[frame["condition"] == condition]
+            axis.scatter(
+                np.log10(subset[measure] + EPSILON),
+                subset["toxicity_shortfall"],
+                color=CONDITION_COLORS[condition],
+                s=16,
+                alpha=0.7,
+                label=CONDITION_LABELS[condition],
+            )
+        rho = summary[summary_key]["rho"]
+        title = "Residual magnitude" if measure == "residual_magnitude" else "Direction-aware effect"
+        axis.set_title(rf"{title}, $\rho={rho:.2f}$")
+        axis.set_xlabel(label)
+        axis.set_ylabel("Toxicity change\n(A-LQR - baseline)")
+        axis.axhline(0, color="black", linestyle=":", linewidth=0.7)
+        axis.legend(loc="best", fontsize=7)
+        endpoint_ticks(axis, np.log10(frame[measure].to_numpy() + EPSILON), "x")
+        endpoint_ticks(axis, shortfall_limits, "y")
+        save_single_plot(fig, axis, stem)
 
 
 def analyze() -> None:
@@ -897,13 +1378,32 @@ def analyze() -> None:
     plot_analysis(frame, summary, profiles)
 
 
+def analyze_toxicity(classifier_device: str) -> None:
+    residual_frame, _, _ = compute_analysis()
+    frame, summary = compute_toxicity_analysis(residual_frame, classifier_device)
+    frame.to_csv(TOXICITY_METRICS_PATH, index=False)
+    TOXICITY_SUMMARY_PATH.write_text(json.dumps(summary, indent=2))
+    plot_toxicity(frame, summary)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Cache-first A-LQR residual smoke test")
     parser.add_argument(
         "stage",
-        choices=["prepare", "features", "jacobians", "controller", "rollouts", "analyze", "all"],
+        choices=[
+            "prepare",
+            "features",
+            "jacobians",
+            "controller",
+            "rollouts",
+            "generate",
+            "analyze",
+            "toxicity",
+            "all",
+        ],
     )
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument("--classifier-device", default="cuda:1")
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--shard-count", type=int, default=1)
     return parser.parse_args()
@@ -932,8 +1432,15 @@ def main() -> None:
         model, tokenizer = load_model(args.device)
         collect_rollouts(model, tokenizer)
         return
+    if args.stage == "generate":
+        model, tokenizer = load_model(args.device)
+        collect_generations(model, tokenizer)
+        return
     if args.stage == "analyze":
         analyze()
+        return
+    if args.stage == "toxicity":
+        analyze_toxicity(args.classifier_device)
         return
 
     prepare_prompts()
@@ -945,9 +1452,11 @@ def main() -> None:
     build_controller(args.device)
     model, tokenizer = load_model(args.device)
     collect_rollouts(model, tokenizer)
+    collect_generations(model, tokenizer)
     del model
     torch.cuda.empty_cache()
     analyze()
+    analyze_toxicity(args.classifier_device)
 
 
 if __name__ == "__main__":
