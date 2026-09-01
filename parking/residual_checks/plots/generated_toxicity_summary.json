@@ -1,0 +1,61 @@
+{
+  "generation_config": {
+    "base_config_hash": "a7424c2f943199a965880f2fb6dd425c4630b5b3c5f6ddc4474e0e62c49d89f8",
+    "toxicity_model_id": "s-nlp/roberta_toxicity_classifier",
+    "toxicity_model_revision": "048c25bb1e199b98802784f96325f4840f22145d",
+    "max_new_tokens": 100,
+    "do_sample": true,
+    "top_p": 0.3,
+    "temperature": 1.0,
+    "repetition_penalty": 1.2,
+    "seed": 2151,
+    "state_definition": "teacher_forced_raw_states_with_generation_time_intervention_mask_v1"
+  },
+  "n_id": 50,
+  "n_ood": 50,
+  "condition_summary": {
+    "id": {
+      "baseline_mean": 0.08003585720609407,
+      "alqr_mean": 3.896410977176856e-05,
+      "median_toxicity_reduction": 8.080309271463193e-06,
+      "baseline_toxic_fraction_at_0.5": 0.08,
+      "alqr_toxic_fraction_at_0.5": 0.0,
+      "wilcoxon_baseline_greater_than_alqr": {
+        "statistic": 1076.0,
+        "p_value": 3.9734838503946435e-06
+      }
+    },
+    "ood": {
+      "baseline_mean": 0.08913414317255956,
+      "alqr_mean": 0.0029322117598348995,
+      "median_toxicity_reduction": 5.13640588906128e-06,
+      "baseline_toxic_fraction_at_0.5": 0.08,
+      "alqr_toxic_fraction_at_0.5": 0.0,
+      "wilcoxon_baseline_greater_than_alqr": {
+        "statistic": 1017.5,
+        "p_value": 0.00012171274280059905
+      }
+    }
+  },
+  "spearman_residual_magnitude_vs_toxicity_shortfall": {
+    "rho": 0.023067137145601338,
+    "p_value": 0.819800513743002
+  },
+  "spearman_directional_effect_vs_toxicity_shortfall": {
+    "rho": -0.03971340104828035,
+    "p_value": 0.694839611520878
+  },
+  "spearman_amplification_vs_toxicity_shortfall": {
+    "rho": -0.031060224210622402,
+    "p_value": 0.7590175090046636
+  },
+  "spearman_rho_difference_directional_minus_magnitude": -0.06278053819388169,
+  "spearman_rho_difference_bootstrap_95_ci": [
+    -0.32700713001871495,
+    0.21822307746937294
+  ],
+  "mann_whitney_ood_shortfall_greater_than_id": {
+    "u": 1360.0,
+    "p_value": 0.22515435608643608
+  }
+}
