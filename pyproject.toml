@@ -9,15 +9,23 @@ description = "Research code for robust control of language-model representation
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+  "accelerate",
+  "bitsandbytes",
+  "datasets==4.4.2",
   "h5py",
+  "huggingface-hub",
   "joblib",
   "matplotlib>=3.8",
   "numpy",
   "pandas",
+  "protobuf",
   "scikit-learn",
   "scipy",
   "seaborn",
+  "sentencepiece",
+  "torch==2.9.1",
   "tqdm",
+  "transformers==4.57.1",
 ]
 
 [project.optional-dependencies]

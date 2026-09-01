@@ -17,3 +17,11 @@ dependencies:
   - tqdm
   - pip:
       - -e .
+      - accelerate
+      - bitsandbytes
+      - datasets==4.4.2
+      - huggingface-hub
+      - protobuf
+      - sentencepiece
+      - torch==2.9.1
+      - transformers==4.57.1
