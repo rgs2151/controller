@@ -82,12 +82,12 @@
 - Color/value: midnight blue is RTP ID; dark red is Jigsaw OOD.
 - Grouping: dataset.
 - Ordering/sorting: ID then OOD.
-- Lines/markers/labels: points are prompts; black horizontal lines are medians.
+- Lines/markers/labels: points are prompts; black horizontal lines are medians; the annotation reports the OOD/ID median ratio and one-sided Mann-Whitney p-value.
 - Panels: one standalone plot.
 
 ## Interpretation
 
-- Median amplification is 0.00695 ID and 0.01578 OOD, a 2.27-fold OOD increase (`U=1816`, one-sided `p=4.84e-5`).
+- Distribution shift raises median closed-loop residual amplification from 0.00695 ID to 0.01578 OOD, a 2.27-fold increase (`U=1816`, one-sided `p=4.84e-5`).
 
 ## Notes
 
@@ -98,18 +98,69 @@
 - `plots/residual_checks_summary.json`
 - `ref/lqr-activation-steering/`
 
+# amplification_vs_failure
+
+## Method
+
+- Restrict the held-out A-LQR evaluation to the 50 Jigsaw OOD prompts.
+- Compute each prompt's closed-loop residual amplification as the direction-aware final residual effect divided by the stacked residual norm.
+- Compare amplification with final normalized semantic tracking failure and write a standalone scatter plot.
+
+## Variables
+
+- Data/input: 50 held-out Jigsaw OOD A-LQR prompt rollouts.
+- Sessions/groups: one OOD condition.
+- Labels/targets: final normalized non-toxicity tracking failure.
+- Signals/features/measures: `log10` closed-loop residual amplification and semantic tracking failure.
+- Parameters/thresholds: epsilon `1e-12` before the logarithm; no missing records.
+- Outputs: `plots/amplification_vs_failure.pdf` and `plots/amplification_vs_failure.png`.
+
+## Statistics
+
+- Tests/models: OOD-only Spearman rank correlation.
+- Null hypothesis: residual amplification has no monotone association with semantic tracking failure under OOD shift.
+- Alternative hypothesis: greater residual amplification accompanies greater semantic tracking failure under OOD shift.
+- Thresholds/decision rule: report rho and the two-sided p-value; a large positive rho supports the proposed failure mechanism.
+- What the statistic means: rho measures whether OOD prompts with larger amplification tend to have larger semantic tracking failure.
+- Why this statistic is appropriate here: the claim concerns prompt ordering under a shifted distribution and does not require a linear relationship.
+
+## Legends
+
+- X axis: `log10` closed-loop residual amplification.
+- Y axis: final normalized semantic tracking failure.
+- Color/value: dark red denotes Jigsaw OOD prompts.
+- Grouping: one OOD prompt set.
+- Ordering/sorting: none.
+- Lines/markers/labels: each point is one prompt; the title and annotation report rho and p.
+- Panels: one standalone plot.
+
+## Interpretation
+
+- Under OOD shift, A-LQR residual amplification strongly tracks semantic tracking failure (`rho=0.918`, `p=7.50e-21`).
+- Together with the 2.27-fold OOD amplification increase, this directly supports the smoke-test claim that shifted residual directions are amplified into semantic failure.
+
+## Notes
+
+- This establishes the failure mechanism targeted by H-infinity control; it does not yet compare an implemented H-infinity controller against A-LQR.
+
+## References
+
+- `plots/residual_checks_metrics.csv`
+- `plots/residual_checks_summary.json`
+- `ref/lqr-activation-steering/`
+
 # residual_magnitude_vs_failure
 
 ## Method
 
-- Stack all layer residuals from each held-out A-LQR prompt and compute their Euclidean norm.
+- Restrict the evaluation to the 50 held-out Jigsaw OOD A-LQR prompts, stack each prompt's layer residuals, and compute their Euclidean norm.
 - Measure final internal tracking failure as the absolute final non-toxicity setpoint error divided by the final feature norm.
 - Compare prompt-level residual magnitude with internal tracking failure and write a standalone scatter plot.
 
 ## Variables
 
-- Data/input: 100 held-out A-LQR prompt rollouts.
-- Sessions/groups: RTP ID and Jigsaw OOD.
+- Data/input: 50 held-out Jigsaw OOD A-LQR prompt rollouts.
+- Sessions/groups: one OOD condition.
 - Labels/targets: normalized final non-toxicity tracking error.
 - Signals/features/measures: `log10 ||xi||` and normalized internal tracking failure.
 - Parameters/thresholds: epsilon `1e-12` before the logarithm.
@@ -117,7 +168,7 @@
 
 ## Statistics
 
-- Tests/models: pooled Spearman rank correlation.
+- Tests/models: OOD-only Spearman rank correlation.
 - Null hypothesis: residual magnitude has no monotone association with internal tracking failure.
 - Alternative hypothesis: residual magnitude has a monotone association with failure.
 - Thresholds/decision rule: report rho and the two-sided p-value; no binary success threshold.
@@ -128,19 +179,19 @@
 
 - X axis: `log10 ||xi||`.
 - Y axis: final normalized internal tracking error.
-- Color/value: midnight blue is RTP ID; dark red is Jigsaw OOD.
-- Grouping: dataset.
+- Color/value: dark red denotes Jigsaw OOD prompts.
+- Grouping: one OOD prompt set.
 - Ordering/sorting: none.
 - Lines/markers/labels: each point is one prompt.
 - Panels: one standalone plot.
 
 ## Interpretation
 
-- Residual magnitude does not track internal A-LQR failure (`rho=-0.069`, `p=0.495`).
+- Residual magnitude is negatively associated with OOD semantic failure (`rho=-0.356`, two-sided `p=0.011`), opposite to the magnitude-only explanation that larger residuals should cause larger failure.
 
 ## Notes
 
-- This outcome is an activation-space diagnostic, not generated-text toxicity.
+- This is the magnitude-only negative control for the OOD amplification result.
 
 ## References
 
@@ -157,39 +208,39 @@
 
 ## Variables
 
-- Data/input: the same 100 held-out A-LQR prompt rollouts used for residual magnitude.
-- Sessions/groups: RTP ID and Jigsaw OOD.
+- Data/input: the same 50 held-out Jigsaw OOD A-LQR prompt rollouts used for the magnitude-only control.
+- Sessions/groups: one OOD condition.
 - Labels/targets: normalized final non-toxicity tracking error.
 - Signals/features/measures: `log10 |T_LQR xi|` and normalized internal tracking failure.
-- Parameters/thresholds: 2,000 deterministic prompt bootstrap samples for the correlation-difference interval.
+- Parameters/thresholds: epsilon `1e-12` before the logarithm; no missing records.
 - Outputs: `plots/directional_effect_vs_failure.pdf` and `plots/directional_effect_vs_failure.png`.
 
 ## Statistics
 
-- Tests/models: pooled Spearman rank correlation and a bootstrap interval for directional-effect rho minus residual-magnitude rho.
-- Null hypothesis: direction-aware effect is no more associated with internal failure than residual magnitude.
-- Alternative hypothesis: direction-aware effect is more associated with internal failure.
-- Thresholds/decision rule: the 95% bootstrap interval excluding zero supports a larger association.
-- What the statistic means: rho measures prompt ordering; the interval measures uncertainty in the difference between the two correlations.
-- Why this statistic is appropriate here: it directly compares direction-aware propagation with the magnitude-only alternative on the same prompts.
+- Tests/models: OOD-only Spearman rank correlation.
+- Null hypothesis: direction-aware residual effect has no monotone association with semantic tracking failure under OOD shift.
+- Alternative hypothesis: greater direction-aware residual effect accompanies greater semantic tracking failure under OOD shift.
+- Thresholds/decision rule: report rho and the two-sided p-value; a large positive rho supports the proposed direction-dependent failure mechanism.
+- What the statistic means: rho measures whether OOD prompts with larger residual effect in the semantic direction tend to have larger failure.
+- Why this statistic is appropriate here: it tests the direction-dependent mechanism directly within the shifted prompt distribution.
 
 ## Legends
 
 - X axis: `log10 |T_LQR xi|`.
 - Y axis: final normalized internal tracking error.
-- Color/value: midnight blue is RTP ID; dark red is Jigsaw OOD.
-- Grouping: dataset.
+- Color/value: dark red denotes Jigsaw OOD prompts.
+- Grouping: one OOD prompt set.
 - Ordering/sorting: none.
 - Lines/markers/labels: each point is one prompt.
 - Panels: one standalone plot.
 
 ## Interpretation
 
-- Direction-aware effect tracks internal failure (`rho=0.671`, `p=2.18e-14`), and its correlation exceeds the magnitude correlation by 0.740 with bootstrap 95% CI `[0.531, 0.953]`.
+- Under OOD shift, direction-aware residual effect strongly tracks semantic failure (`rho=0.922`, `p=2.23e-21`).
 
 ## Notes
 
-- This strong internal association does not carry over to generated-text toxicity in the behavioral plots below.
+- The generated-toxicity result remains a separate floor-limited downstream check; it does not alter this internal smoke-test result.
 
 ## References
 

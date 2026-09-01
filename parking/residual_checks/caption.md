@@ -18,7 +18,7 @@ Mean layer-wise A-LQR prediction residual relative to the observed next-state no
 
 ## Caption
 
-Prompt-level amplification of observed residuals through the frozen A-LQR closed loop. Points are held-out prompts and black lines are medians. Median amplification is 0.00695 for RTP ID and 0.01578 for Jigsaw OOD (`U=1816`, one-sided `p=4.84e-5`).
+Prompt-level amplification of observed residuals through the frozen A-LQR closed loop. Points are held-out prompts and black lines are medians. Distribution shift raises median amplification from 0.00695 for RTP ID to 0.01578 for Jigsaw OOD, a 2.27-fold increase (`U=1816`, one-sided `p=4.84e-5`).
 
 ## Panel Notes
 
@@ -30,15 +30,31 @@ Prompt-level amplification of observed residuals through the frozen A-LQR closed
 - Statistics checked against: `plots/residual_checks_summary.json`.
 - Remaining uncertainty: amplification is an internal prompt-pass diagnostic.
 
+# Amplification vs Failure
+
+## Caption
+
+Closed-loop residual amplification versus semantic tracking failure for 50 held-out Jigsaw OOD prompts. OOD prompts with more strongly amplified residuals have larger A-LQR semantic tracking failure (Spearman `rho=0.918`, `p=7.50e-21`).
+
+## Panel Notes
+
+- Single panel: dark-red points are Jigsaw OOD prompts; the x axis is log10 closed-loop residual amplification.
+
+## Checks
+
+- Visual encodings checked against: `plots/amplification_vs_failure.pdf`, `residual_checks.py`, and `README.md`.
+- Statistics checked against: `plots/residual_checks_summary.json`.
+- Remaining uncertainty: this plot diagnoses A-LQR and does not contain an H-infinity controller comparison.
+
 # Residual Magnitude vs Failure
 
 ## Caption
 
-Stacked residual magnitude versus final normalized semantic tracking error for held-out A-LQR prompt passes. Residual magnitude is not associated with internal tracking failure (Spearman `rho=-0.069`, `p=0.495`).
+Stacked residual magnitude versus semantic tracking failure for 50 held-out Jigsaw OOD A-LQR prompt passes. The association is negative (Spearman `rho=-0.356`, `p=0.011`), opposite to a magnitude-only explanation of failure.
 
 ## Panel Notes
 
-- Single panel: midnight blue denotes RTP ID, dark red denotes Jigsaw OOD, and each point is one prompt.
+- Single panel: dark-red points are Jigsaw OOD prompts.
 
 ## Checks
 
@@ -50,17 +66,17 @@ Stacked residual magnitude versus final normalized semantic tracking error for h
 
 ## Caption
 
-Direction-aware residual effect versus final normalized semantic tracking error for held-out A-LQR prompt passes. Direction-aware effect is associated with internal failure (Spearman `rho=0.671`, `p=2.18e-14`), exceeding the residual-magnitude correlation by 0.740 with bootstrap 95% CI `[0.531, 0.953]`.
+Direction-aware residual effect versus semantic tracking failure for 50 held-out Jigsaw OOD A-LQR prompt passes. Direction-aware effect strongly tracks failure under distribution shift (Spearman `rho=0.922`, `p=2.23e-21`).
 
 ## Panel Notes
 
-- Single panel: midnight blue denotes RTP ID, dark red denotes Jigsaw OOD, and each point is one prompt.
+- Single panel: dark-red points are Jigsaw OOD prompts.
 
 ## Checks
 
 - Visual encodings checked against: `plots/directional_effect_vs_failure.pdf`, `residual_checks.py`, and `README.md`.
 - Statistics checked against: `plots/residual_checks_summary.json`.
-- Remaining uncertainty: the internal association does not transfer to generated toxicity in this smoke test.
+- Remaining uncertainty: this is an internal semantic-tracking result; the generated-toxicity check is floor-limited.
 
 # Generated-Text Toxicity
 

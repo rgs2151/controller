@@ -36,9 +36,40 @@
     "id": 0.006949311924343654,
     "ood": 0.015775293152094076
   },
+  "amplification_ood_to_id_median_ratio": 2.270051096257852,
   "mann_whitney_ood_greater_than_id": {
     "u": 1816.0,
     "p_value": 4.840416524557199e-05
+  },
+  "spearman_vs_failure_by_condition": {
+    "id": {
+      "residual_magnitude": {
+        "rho": -0.3838175270108043,
+        "p_value": 0.005930275043521138
+      },
+      "directional_effect": {
+        "rho": 0.25349339735894355,
+        "p_value": 0.07568821446651763
+      },
+      "amplification": {
+        "rho": 0.306218487394958,
+        "p_value": 0.030558375378706912
+      }
+    },
+    "ood": {
+      "residual_magnitude": {
+        "rho": -0.35558223289315727,
+        "p_value": 0.01127136139360367
+      },
+      "directional_effect": {
+        "rho": 0.9217286914765905,
+        "p_value": 2.2284431823187937e-21
+      },
+      "amplification": {
+        "rho": 0.9175030012004801,
+        "p_value": 7.499169832164223e-21
+      }
+    }
   },
   "empirical_gamma_95": {
     "id": 0.026409290925615392,
