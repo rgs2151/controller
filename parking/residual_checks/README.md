@@ -17,11 +17,11 @@
 - Labels/targets: non-toxic minus toxic linear feature direction at every layer; feature target `beta[k] = 2.5 ||e[k]||`.
 - Signals/features/measures: all-token hidden activations, last-token layer interventions, one-step linear-model residuals, stacked residual norm, residual-induced final semantic error, residual amplification, and final feature-setpoint error.
 - Parameters/thresholds: model revision `4e20de362430cd3b72f300e6b0f18e50e7166e08`; `Q = 0.1 I`, `R = I`, `Q_T = I`; deterministic seed `2151`; 200 toxic and 200 non-toxic feature-fit prompts; 50 non-toxic Jacobian-fit prompts; maximum tokenized prompt length 512.
-- Outputs: ignored HDF5/PyTorch/JSON caches under `cache/` and tracked PDF/CSV summaries under `plots/`.
+- Outputs: `cache/prompts.json`; `cache/fit_activations.h5`; `cache/features.pt`; 50 prompt-level files under `cache/jacobians/`; `cache/controller.pt`; `cache/rollouts_{id,ood}_{baseline,alqr}.h5`; `cache/analysis.json`; and tracked `plots/residual_checks.pdf`, `plots/residual_checks.png`, `plots/residual_checks_metrics.csv`, and `plots/residual_checks_summary.json`.
 
 ## Statistics
 
-- Tests/models: Spearman rank correlation between final semantic tracking failure and either residual magnitude or direction-aware residual effect; two-sided Mann-Whitney U comparison of ID and OOD residual amplification; deterministic bootstrap confidence interval for the difference between the two Spearman correlations.
+- Tests/models: Spearman rank correlation between final semantic tracking failure and either residual magnitude or direction-aware residual effect; one-sided Mann-Whitney U comparison of whether OOD residual amplification exceeds ID; deterministic bootstrap confidence interval for the difference between the two Spearman correlations.
 - Null hypothesis: direction-aware residual effect is no more associated with held-out A-LQR tracking failure than residual magnitude, and residual amplification has the same distribution for ID and OOD prompts.
 - Alternative hypothesis: direction-aware residual effect is more associated with tracking failure than residual magnitude, and OOD prompts produce greater residual amplification.
 - Thresholds/decision rule: report effect sizes and 95% bootstrap confidence intervals; this smoke test does not use a binary significance threshold to declare success.
@@ -30,7 +30,7 @@
 
 ## Legends
 
-- X axis: panel-specific residual magnitude, direction-aware harmful residual effect, or transformer depth.
+- X axis: panel-specific residual magnitude, direction-aware residual effect, or transformer depth.
 - Y axis: final semantic tracking error, residual amplification, or mean residual norm as named on each panel.
 - Color/value: midnight blue denotes held-out RealToxicityPrompts (ID); dark red denotes held-out Jigsaw prompts (OOD); black denotes pooled fitted summaries or reference annotations.
 - Grouping: prompt-level points and distributions are grouped by ID versus OOD source.
@@ -40,13 +40,18 @@
 
 ## Interpretation
 
-- The key comparison is whether the direction-aware residual effect follows final A-LQR semantic tracking failure more closely than raw residual magnitude.
-- Greater OOD amplification would identify the specific shortfall that a later H-infinity controller is intended to reduce.
+- Across the 100 held-out A-LQR rollouts, residual magnitude does not track final semantic error (`Spearman rho = -0.069`, two-sided `p = 0.495`), while direction-aware residual effect does (`rho = 0.671`, `p = 2.18e-14`).
+- The direction-aware-minus-magnitude correlation difference is `0.740`, with a prompt-bootstrap 95% interval of `[0.531, 0.953]`.
+- Median residual amplification is `0.00695` for ID prompts and `0.01578` for OOD prompts, a 2.27-fold increase; the one-sided Mann-Whitney comparison gives `U = 1816` and `p = 4.84e-5`.
+- The empirical 95th-percentile amplification is `0.02641` for ID and `0.03794` for OOD prompts.
+- These results support the specific preliminary claim that the direction in which A-LQR model error enters the frozen closed loop is more informative about semantic tracking failure than residual size alone.
 
 ## Notes
 
-- The experiment is cache-first: existing compatible assets and completed prompt groups are loaded rather than recomputed.
-- The tracked figure and numerical interpretation remain pending until the experiment completes.
+- The experiment is cache-first: existing compatible assets and completed prompt groups are loaded rather than recomputed. The current local cache occupies approximately 8.4 GB.
+- Hidden states are raw decoder-layer inputs plus the raw final decoder-block output, matching the A-LQR reference implementation rather than the model's post-normalization hidden state.
+- Evaluation prompts are tokenized individually. All tokens used by the model are cached; inputs longer than 512 tokens are truncated to the documented cap.
+- The smoke test measures one deterministic forward pass and internal semantic tracking. It does not yet claim that the same relationship predicts generated-text toxicity.
 
 ## References
 

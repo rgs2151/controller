@@ -1,0 +1,47 @@
+{
+  "config": {
+    "model_id": "meta-llama/Llama-3.2-1B",
+    "model_revision": "4e20de362430cd3b72f300e6b0f18e50e7166e08",
+    "rtp_id": "allenai/real-toxicity-prompts",
+    "rtp_revision": "f21629712ffd6a3d13a54fd2807ccd521c55ef74",
+    "jigsaw_id": "tcapelle/jigsaw-toxic-comment-classification-challenge",
+    "jigsaw_revision": "2bf801de1b879f287943ecfc81fdca8690d9fc61",
+    "seed": 2151,
+    "n_feature_prompts": 200,
+    "n_jacobian_prompts": 50,
+    "n_eval_prompts": 50,
+    "max_length": 512,
+    "jacobian_max_length": 24,
+    "q": 0.1,
+    "r": 1.0,
+    "q_final": 1.0,
+    "lambda": 2.5
+  },
+  "n_id": 50,
+  "n_ood": 50,
+  "spearman_residual_magnitude_vs_failure": {
+    "rho": -0.06899489948994898,
+    "p_value": 0.495183254701707
+  },
+  "spearman_directional_effect_vs_failure": {
+    "rho": 0.6710471047104709,
+    "p_value": 2.1842987655920242e-14
+  },
+  "spearman_rho_difference_directional_minus_magnitude": 0.7400420042004199,
+  "spearman_rho_difference_bootstrap_95_ci": [
+    0.5309650720574598,
+    0.9530014118506868
+  ],
+  "amplification_median": {
+    "id": 0.006949311924343654,
+    "ood": 0.015775293152094076
+  },
+  "mann_whitney_ood_greater_than_id": {
+    "u": 1816.0,
+    "p_value": 4.840416524557199e-05
+  },
+  "empirical_gamma_95": {
+    "id": 0.026409290925615392,
+    "ood": 0.037942680987068
+  }
+}
