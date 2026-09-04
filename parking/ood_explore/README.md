@@ -1,115 +1,141 @@
-# ood_explore
-
-Status: research-scoping scaffold only. No dataset, analysis, statistic, or plot
-has been selected or implemented.
-
+# lqr_ood_failure_boxplot
 ## Method
 
-- Define OOD relative to the prompts used to fit the semantic target and nominal
-  dynamics and the separate prompts used to calibrate residual disturbances.
-- Treat unseen prompts from the same sampling process as held-out ID, not OOD.
-  The number of evaluation prompts does not determine distribution membership.
-- Consider controlled shift families that preserve the steering objective while
-  changing one input axis at a time, alongside deliberately compounded shifts.
-- Compare candidate shifts by whether they change residual magnitude, residual
-  direction, closed-loop amplification, and final steering failure.
-- No candidate has been chosen for execution; the exact experiment will be
-  specified later by the user.
+- Use the frozen A-LQR controller fitted by `parking/residual_checks` for the
+  pinned `meta-llama/Llama-3.2-1B` revision. No target, nominal dynamics,
+  Jacobian, gain, or setpoint is refitted on the OOD prompts.
+- Evaluate 50 prompts in each of nine source conditions. The ID and dataset
+  conditions are unchanged held-out RealToxicityPrompts and Jigsaw prompts.
+  Seven other conditions transform the same 50 held-out ID anchors, preserving
+  an `anchor_id` for paired comparisons.
+- Generate Spanish translations and formal domain/topic rewrites with the
+  pinned `meta-llama/Llama-3.2-3B-Instruct` revision. Construct code-switching,
+  pragmatic reversal, surface corruption, long-context switching, and concept
+  collision deterministically from each unchanged ID source prompt.
+- Run one unsteered and one frozen-LQR forward pass for every source prompt.
+  Extract the last-token state at every decoder layer and the final raw decoder
+  output; apply steering to the last token at all 16 decoder layers.
+- Measure final target error as the absolute distance between the final state’s
+  projection onto the frozen non-toxicity feature and the frozen final setpoint,
+  divided by the frozen final feature norm.
+- For each prompt, compute the LQR final target error divided by the unsteered
+  final target error and multiply by 100. A value of 0% means complete
+  correction, 100% means no LQR benefit, and values above 100% mean LQR
+  increased the target error.
+- Construct the tenth, adversarial OOD condition after screening by choosing,
+  separately for each of the 50 ID anchors, whichever of the seven matched OOD
+  transformations has the largest plotted remaining-error percentage.
+- Summarize each condition with its median, interquartile range, maximum, and
+  fraction above 100%, then write the prompt-level table, JSON summary, and box
+  plot as PDF and PNG.
 
 ## Variables
 
-- Data/input: not selected. The current reference comparison is held-out
-  RealToxicityPrompts as ID versus held-out Jigsaw prompts as source-shift OOD.
-- Sessions/groups: a future ID group plus one or more explicitly defined OOD
-  groups; equal group size alone will not define or validate OOD status.
-- Labels/targets: preferably keep the controlled semantic objective fixed so
-  observed failure measures robustness to input shift rather than an undefined
-  new task.
-- Signals/features/measures: candidate measures are residual norm, residual
-  alignment with closed-loop sensitive directions, directional residual effect,
-  residual amplification, nominal-dynamics drift, disturbance-subspace coverage,
-  control effort, and final semantic tracking failure.
-- Parameters/thresholds: not selected.
-- Outputs: none yet.
+- Data/input: 50 held-out RTP prompts and 50 held-out Jigsaw prompts from the
+  existing prompt split; transformed prompt sets under `data/ood_explore/`.
+- Sessions/groups: ID, dataset shift, Spanish translation, English-Spanish
+  code-switching, pragmatic reversal, surface corruption, domain/topic shift,
+  long-context switch, concept collision, and derived adversarial OOD.
+- Labels/targets: frozen layer-wise non-toxicity feature and setpoint from the
+  original RTP fit split.
+- Signals/features/measures: raw last-token decoder-layer states, LQR
+  interventions, normalized final target error, and remaining target error as a
+  percentage of the same prompt’s unsteered error.
+- Parameters/thresholds: 50 prompts per condition; seed 2151; maximum tokenized
+  length 512; 16 decoder layers; no threshold for declaring a condition OOD.
+- Outputs: `plots/lqr_ood_failure_boxplot.pdf`,
+  `plots/lqr_ood_failure_boxplot.png`,
+  `plots/lqr_ood_failure_metrics.csv`, and
+  `plots/lqr_ood_failure_summary.json`.
 
-Candidate OOD axes:
+The source conditions are defined as follows:
 
-| Shift family | Example | What it isolates | Research value |
-| --- | --- | --- | --- |
-| Dataset/source | Fit and calibrate on RTP; test on Jigsaw | Collection, genre, and annotation-source shift | Direct extension of the current smoke test, but multiple factors remain confounded |
-| Paired language | English prompt and meaning-preserving translations into Spanish, Arabic, Hindi, or another language | Language while approximately holding meaning fixed | Strong and interpretable test of whether equivalent semantics induce different residual dynamics |
-| Code-switching | English mixed with another language within one prompt | Abrupt representational and tokenization shift | Potentially stronger than translation while retaining recognizable semantic content |
-| Domain or genre | Social-media toxicity versus dialogue, forum, news-comment, or formal prose toxicity | Writing domain while preserving the non-toxicity objective | Tests whether the controller survives a new realization of the same concept |
-| Topic | Fit on general insults; test on political, identity-related, medical, technical, or fictional topics | Content shift within a fixed steering objective | Can reveal topic-dependent dynamics without changing what success means |
-| Toxicity subtype | Profanity versus identity attack, threat, sexual harassment, or implicit abuse | Concept subtype and severity | Tests whether a broad toxicity direction covers structurally different manifestations |
-| Pragmatics | Direct abuse versus quotation, negation, counterspeech, sarcasm, or discussion of abusive language | Meaning changes despite lexical overlap | Especially useful for separating surface similarity from representation-dynamics shift |
-| Surface corruption | Typos, slang, leetspeak, transliteration, homoglyphs, or spacing changes | Lexical and tokenization shift | Likely to stress local linearization without changing intended meaning |
-| Prompt format | Statement versus question, instruction, role-play, few-shot, or multi-turn dialogue | Interaction-format shift | Tests whether controller behavior depends on the format used during fitting |
-| Context length and position | Short prompts versus long contexts with the relevant content early or late | Length and positional shift | Tests depth- and position-dependent dynamics and accumulated model mismatch |
-| Compositional | Toxic content combined with translation, summarization, coding, sentiment, or another instruction | Interaction between multiple concepts or tasks | A demanding robustness test that may expose residual directions absent from calibration |
-| Intensity or prevalence | Mild-to-severe toxicity or a different class balance | Conditional or label shift | Useful as a graded severity ladder rather than a single binary OOD label |
-| Adversarially selected | Search for prompts with high predicted residual amplification while excluding evaluation outcomes | Worst-case input shift | Most directly aligned with motivating robust control, but selection must remain independent of held-out outcomes |
-| Model or decoding environment | Apply the same controller across model checkpoints, model sizes, or decoding regimes | Plant or environment shift rather than prompt OOD | Scientifically useful, but should be reported separately from input-distribution shift |
-| Different controlled concept | Fit a toxicity controller and evaluate a sentiment, truthfulness, or unrelated target | Target/task shift | Useful as a boundary or negative-control test; not a fair primary OOD test unless the controller is defined for the new target |
+| Condition | Construction |
+| --- | --- |
+| ID | Unchanged held-out RTP prompt |
+| Dataset | Unchanged held-out Jigsaw prompt |
+| Spanish | Meaning- and tone-preserving Spanish rewrite generated from the matched ID prompt |
+| Code-switch | Fixed bilingual English-Spanish instruction wrapped around the unchanged ID prompt |
+| Pragmatic | The ID prompt is quoted inside an instruction to criticize its language |
+| Corrupted | Deterministic leetspeak substitutions applied to the ID prompt |
+| Domain | Formal professional, legal, technical, or academic rewrite generated from the ID prompt |
+| Long ctx | The ID statement is followed by repeated neutral context and a final response instruction |
+| Collision | A mathematics-and-code task is combined with the ID statement and a constructive-response instruction |
+| Adversarial | Per-anchor maximum remaining error selected from the seven matched OOD transformations |
 
 ## Statistics
 
-- Tests/models: none selected; this unit currently contains research questions
-  and candidate experimental factors only.
-- Null hypothesis: not specified.
-- Alternative hypothesis: not specified.
-- Thresholds/decision rule: none.
-- What the statistic means: not applicable until an experiment is chosen.
-- Why this statistic is appropriate here: not applicable at the scoping stage.
-
-For a later experiment, a matched transformation design would be preferable
-where possible: compare each source prompt with its translated, corrupted,
-reformatted, or pragmatically altered counterpart. This would help attribute a
-residual change to the intended OOD axis rather than unrelated prompt content.
+- Tests/models: descriptive box plots and prompt-level paired differences only;
+  no inferential hypothesis test is used in this exploratory screen.
+- Null hypothesis: none; the unit ranks candidate shift families rather than
+  testing a preregistered population claim.
+- Alternative hypothesis: none.
+- Thresholds/decision rule: 100% is the mechanistic reference for no LQR
+  benefit. The adversarial condition selects the largest remaining-error
+  percentage among seven transformations of the same source prompt.
+- What the statistic means: the median reports the typical fraction of the
+  unsteered semantic target error that remains after LQR. Paired differences
+  report the percentage-point increase relative to the matching ID prompt.
+- Why this statistic is appropriate here: dividing by the same prompt’s
+  unsteered error reduces confounding from different starting distances to the
+  frozen target. Paired transformations isolate prompt shift more directly than
+  unrelated dataset samples.
 
 ## Legends
 
-- X axis: none yet.
-- Y axis: none yet.
-- Color/value: none yet.
-- Grouping: candidate groups are ID and explicitly named OOD shift families.
-- Ordering/sorting: a future severity ladder could order shifts from a matched
-  source prompt through isolated and compounded transformations.
-- Lines/markers/labels: none yet.
-- Panels: none yet.
+- X axis: ten prompt-distribution conditions, ordered from ID through fixed OOD
+  shifts to adversarial selection.
+- Y axis: remaining final semantic target error after LQR, expressed as a
+  percentage of the same prompt’s unsteered final target error; lower is better.
+- Color/value: midnight blue is ID, dark red is each fixed OOD condition, and
+  black is the derived adversarial condition.
+- Grouping: 50 prompt-level observations per condition.
+- Ordering/sorting: the conceptual condition order is fixed; conditions are not
+  sorted by their observed medians.
+- Lines/markers/labels: box center is the median, box limits are the first and
+  third quartiles, whiskers extend to 1.5 interquartile ranges, and translucent
+  black points are individual prompts. The annotation states that 100% would
+  indicate no LQR benefit.
+- Panels: one standalone box plot.
 
 ## Interpretation
 
-- OOD is relational: it means shifted relative to the distributions used for
-  fitting and calibration, not merely absent from a finite sample.
-- The most informative primary tests preserve the steering target and alter the
-  language, domain, pragmatics, surface form, format, or composition of inputs.
-- A completely different controlled concept is a target/task shift. It can map
-  the boundary of the method, but failure there would not by itself demonstrate
-  that an H-infinity controller is needed for OOD robustness.
-- The central mechanistic question is not only which shift makes residuals
-  larger, but which shift rotates residuals toward directions that the
-  closed-loop system amplifies into steering failure.
-- A particularly strong future motivation would show a graded shift that leaves
-  residual norm similar while increasing directional effect or amplification,
-  followed by a robust controller reducing the resulting failure.
+- LQR leaves a median 32.47% of the unsteered final target error on held-out ID
+  prompts. The ordinary Jigsaw dataset shift is only modestly worse at 34.36%.
+- The strongest fixed shift is long context, with 41.06% median remaining error,
+  followed by Spanish translation at 40.58% and domain/topic shift at 38.93%.
+- Relative to each matched ID anchor, long context increases remaining error by
+  a median 8.69 percentage points and is worse for 92% of prompts. Spanish
+  translation increases it by 6.89 points and is worse for 90% of prompts.
+- Adversarial selection reaches 42.89% median remaining error, a paired median
+  increase of 9.60 percentage points, and is worse than ID for all 50 anchors.
+  It selects long context for 22 prompts, translation for 14, domain/topic shift
+  for 12, concept collision for one, and code-switching for one.
+- Surface corruption does not produce the intended failure: its median is
+  31.90%, slightly below ID. This shows that visible prompt distortion alone is
+  not sufficient to create worse LQR tracking.
+- No prompt exceeds 100%. The observed OOD effect is reduced LQR efficacy, not
+  complete loss of benefit or controller-induced worsening.
 
 ## Notes
 
-- Recommended first candidates, without selecting the final experiment:
-  meaning-preserving translation, code-switching, pragmatic reversal, and
-  domain shift within the same controlled concept.
-- Translation is the cleanest isolated language test; code-switching and
-  compounded shifts may create a larger robustness gap.
-- Pragmatic pairs are attractive because lexical content can remain similar
-  while meaning changes, providing a hard test of representation dynamics.
-- The current RTP-to-Jigsaw comparison remains useful as a source-shift
-  baseline, but it does not identify which aspect of the dataset change caused
-  the residual gap.
-- No analysis or result claim has been made in this unit.
+- This is an exploratory failure search, not a confirmatory OOD benchmark.
+- The adversarial box is selection-biased by construction because it is chosen
+  using the same outcome displayed on the y axis. It must not be reported as an
+  unbiased test result. A later comparison should define the selected shift
+  recipe on this screen and apply it to fresh held-out prompts.
+- Spanish and domain/topic prompts are synthetic rewrites. Their semantic and
+  tonal fidelity has not been independently annotated.
+- The box plot measures internal semantic tracking, not generated toxicity or
+  another external behavioral outcome.
+- Every source rollout caches baseline and LQR last-token states across all
+  layers plus the applied LQR controls, allowing later residual-direction and
+  amplification analysis without rerunning the model.
+- Work was split across `cuda:0` and `cuda:1`; CPU was used only for data
+  assembly, summary calculations, and plotting.
 
 ## References
 
 - `parking/residual_checks/`
 - `robust_steerability/control/README.md`
-- No external literature has been reviewed for this scaffold yet.
+- `data/README.md`

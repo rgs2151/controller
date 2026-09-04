@@ -1,0 +1,128 @@
+{
+  "metric": "remaining LQR target error as percent of unsteered target error",
+  "reference": "100% means LQR provided no reduction in final target error",
+  "conditions": {
+    "id": {
+      "n": 50,
+      "median": 32.470155092464914,
+      "q1": 29.82450313654466,
+      "q3": 36.80775123239963,
+      "maximum": 42.68227372283634,
+      "fraction_above_100_pct": 0.0
+    },
+    "dataset_shift": {
+      "n": 50,
+      "median": 34.3562798412159,
+      "q1": 31.808315261666728,
+      "q3": 37.1359554315434,
+      "maximum": 44.69576044929183,
+      "fraction_above_100_pct": 0.0
+    },
+    "translation": {
+      "n": 50,
+      "median": 40.578262063170506,
+      "q1": 37.65794222715439,
+      "q3": 42.52846801715747,
+      "maximum": 44.57509382706301,
+      "fraction_above_100_pct": 0.0
+    },
+    "code_switching": {
+      "n": 50,
+      "median": 36.74832366474786,
+      "q1": 36.41187966503309,
+      "q3": 37.1950647507864,
+      "maximum": 39.85734242326951,
+      "fraction_above_100_pct": 0.0
+    },
+    "pragmatic_reversal": {
+      "n": 50,
+      "median": 36.657798411209725,
+      "q1": 34.97939997619977,
+      "q3": 38.15977579619323,
+      "maximum": 41.19532025538889,
+      "fraction_above_100_pct": 0.0
+    },
+    "surface_corruption": {
+      "n": 50,
+      "median": 31.89661892477759,
+      "q1": 29.346864917911724,
+      "q3": 34.89157774083848,
+      "maximum": 36.71583915807091,
+      "fraction_above_100_pct": 0.0
+    },
+    "domain_topic_shift": {
+      "n": 50,
+      "median": 38.92845413138053,
+      "q1": 37.49288666061613,
+      "q3": 41.448813756863274,
+      "maximum": 49.42120594868571,
+      "fraction_above_100_pct": 0.0
+    },
+    "long_context_switch": {
+      "n": 50,
+      "median": 41.063373315891184,
+      "q1": 39.76182310764677,
+      "q3": 42.829920601341115,
+      "maximum": 45.05296342822912,
+      "fraction_above_100_pct": 0.0
+    },
+    "concept_collision": {
+      "n": 50,
+      "median": 33.436685153375436,
+      "q1": 31.015417563763258,
+      "q3": 37.426939839276386,
+      "maximum": 44.53713023794317,
+      "fraction_above_100_pct": 0.0
+    },
+    "adversarial_ood": {
+      "n": 50,
+      "median": 42.88864169762668,
+      "q1": 41.43546578069771,
+      "q3": 44.28680101803764,
+      "maximum": 49.42120594868571,
+      "fraction_above_100_pct": 0.0
+    }
+  },
+  "paired_vs_id": {
+    "translation": {
+      "median_difference_percentage_points": 6.889728828358608,
+      "fraction_higher_than_matched_id": 0.9
+    },
+    "code_switching": {
+      "median_difference_percentage_points": 4.558352606058545,
+      "fraction_higher_than_matched_id": 0.76
+    },
+    "pragmatic_reversal": {
+      "median_difference_percentage_points": 2.4887780520159986,
+      "fraction_higher_than_matched_id": 0.8
+    },
+    "surface_corruption": {
+      "median_difference_percentage_points": -1.8563486923620633,
+      "fraction_higher_than_matched_id": 0.36
+    },
+    "domain_topic_shift": {
+      "median_difference_percentage_points": 6.2355331356591055,
+      "fraction_higher_than_matched_id": 0.9
+    },
+    "long_context_switch": {
+      "median_difference_percentage_points": 8.68899176946064,
+      "fraction_higher_than_matched_id": 0.92
+    },
+    "concept_collision": {
+      "median_difference_percentage_points": 0.9652738373944736,
+      "fraction_higher_than_matched_id": 0.84
+    },
+    "adversarial_ood": {
+      "median_difference_percentage_points": 9.602384683799947,
+      "fraction_higher_than_matched_id": 1.0
+    }
+  },
+  "adversarial_source_counts": {
+    "long_context_switch": 22,
+    "translation": 14,
+    "domain_topic_shift": 12,
+    "concept_collision": 1,
+    "code_switching": 1
+  },
+  "adversarial_selection": "maximum plotted failure among seven matched OOD transformations; exploratory and selection-biased by construction"
+}

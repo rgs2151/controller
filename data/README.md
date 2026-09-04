@@ -6,6 +6,9 @@
 
 ```text
 data/
+  ood_explore/
+    manifest.json
+    <condition>.jsonl
   representation_dynamics/
     residual_trajectories.npz
   prompts/
@@ -17,6 +20,9 @@ data/
 ```
 
 - `prompts/`: disjoint prompt records used to fit semantic directions and nominal dynamics, calibrate disturbance geometry, and evaluate held-out steering.
+- `ood_explore/`: local, analysis-ready 50-prompt sets for the frozen-LQR OOD
+  screening unit. The JSONL files are ignored data artifacts; their schema and
+  provenance are recorded here and in the local manifest.
 - `representation_dynamics/`: aligned hidden-state deviations, one-step dynamics residuals, prompt splits, and shift-condition labels.
 - `evaluations/`: generated-text outcomes and behavior-specific target, collateral, and intervention-energy measurements.
 
@@ -38,6 +44,24 @@ data/
 - Each activation record is keyed by `prompt_id`, exact `model_id`, `behavior`, token position, generation step, and layer index.
 - Each evaluation record is keyed by the same identifiers plus controller and intervention setting.
 
+## OOD Explore Prompt Schema
+
+Each `ood_explore/<condition>.jsonl` record contains:
+
+- `prompt_id`: unique condition-local prompt identifier;
+- `anchor_id`: original RTP identifier used to align matched transformations;
+- `condition`: exact OOD condition name;
+- `text`: analysis-ready prompt text;
+- `source_prompt_id`, `source_dataset`, and `source_toxicity`: source provenance;
+- `construction`: transformation or source-selection description;
+- `data_config_hash`: hash binding the source split, generator revision,
+  generation instructions, transformation version, and seed.
+
+`ood_explore/manifest.json` binds the nine source condition files. The
+adversarial condition is derived after the exploratory LQR screen and therefore
+lives in the owning unit's cached selection record rather than masquerading as
+an independently sampled source dataset.
+
 ## Alignment Rules
 
 - Preserve prompt order through tokenization, activation extraction, controller rollout, and evaluation; join records by `prompt_id`, never by row position alone.
@@ -56,6 +80,8 @@ data/
 
 | name | records | notes |
 | --- | ---: | --- |
+| `ood_explore/*.jsonl` | 450 | Nine source conditions with 50 prompts each; local and ignored by git. |
+| `ood_explore/manifest.json` | 9 conditions | Pinned source, generator, transformation, and inventory metadata. |
 | `prompts/fit.jsonl` | 0 | Fit split; not assembled yet. |
 | `prompts/calibration.jsonl` | 0 | Disturbance-calibration split; not assembled yet. |
 | `prompts/test.jsonl` | 0 | Held-out evaluation split; not assembled yet. |
