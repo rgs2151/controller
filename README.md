@@ -40,6 +40,18 @@ python parking/residual_geometry/residual_geometry.py
 
 Each unit owns its own `cache/` and `plots/` folders. Existing caches are reused by default. To recompute a unit, delete that unit's relevant cache or run the unit with `--recompute` when supported.
 
+## Package Architecture
+
+`robust_steerability/` separates controller mathematics from language-model integration:
+
+- `control/`: model-agnostic controller problems, solutions, LQR, PID, activation addition, and the H-infinity extension point.
+- `modeling/`: Hugging Face loading, activation capture, Jacobians, and transformer intervention hooks.
+- `calibration/`: semantic targets, nominal dynamics, residual measurements, disturbance geometry, and calibration-only normalization.
+- `runtime/`: policies that translate controller outputs into activation interventions.
+- `benchmarks/`: reusable behavior records and evaluators.
+
+Controller implementations consume only finite-horizon tensors and return controller gains. They do not import Transformers or interact with model hooks. See `robust_steerability/control/README.md` for the collaborator contract.
+
 ## Data
 
 Place organized analysis-ready data under:

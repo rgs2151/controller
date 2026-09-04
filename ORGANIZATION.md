@@ -9,6 +9,7 @@
 - `debug/`: investigations, diagnostics, and scratch analyses. One investigation per folder.
 - `ref/`: historical notebooks, old pipelines, copied external code, and reference material.
 - `skills/`: repo-local workflow skills.
+- `tests/`: small CPU-only package contract and numerical parity tests.
 - `tmp/`: disposable junk such as archives, zip files, temporary exports, and local leftovers.
 
 ## Root Files
@@ -35,6 +36,13 @@
 `robust_steerability/` is the minimal installable package for reusable project helpers.
 
 - The package is intended for editable installs from this source checkout.
+- `control/` owns model-agnostic controller inputs, outputs, synthesis, and numerical validation.
+- `modeling/` owns Hugging Face model loading, transformer state capture, Jacobians, and intervention hooks.
+- `calibration/` owns reusable semantic-target, nominal-dynamics, residual, disturbance, and normalization calculations.
+- `runtime/` owns policies that connect synthesized controllers to model-independent activation deltas.
+- `benchmarks/` owns behavior records and reusable dataset/evaluator integrations.
+- Controller modules must not import Hugging Face Transformers or benchmark code.
+- Model adapters must consume the shared runtime-policy interface rather than branching on controller names.
 - Do not package `data/`, caches, plots, notebooks, or historical references as package data.
 - Shared helpers should be useful across `parking/`, `figs/`, and `debug/`.
 - Keep figure-specific calculations, plotting functions, and panel logic inside the compact unit that owns them.
