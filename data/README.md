@@ -56,7 +56,6 @@ data/
 
 | name | records | notes |
 | --- | ---: | --- |
-| `representation_dynamics/residual_trajectories.npz` | 0 | Required by `parking/residual_geometry`; not generated yet. |
 | `prompts/fit.jsonl` | 0 | Fit split; not assembled yet. |
 | `prompts/calibration.jsonl` | 0 | Disturbance-calibration split; not assembled yet. |
 | `prompts/test.jsonl` | 0 | Held-out evaluation split; not assembled yet. |
