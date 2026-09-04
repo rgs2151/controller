@@ -1,9 +1,10 @@
-"""Finite-horizon discrete-time LQR synthesis."""
+"""Offline synthesis and online execution for finite-horizon LQR."""
 
 from __future__ import annotations
 
 import torch
 
+from robust_steerability.control.base import SynthesizedController
 from robust_steerability.control.types import (
     ControllerSolution,
     FiniteHorizonControlProblem,
@@ -14,11 +15,11 @@ from robust_steerability.control.validation import (
 )
 
 
-def synthesize_lqr(
+def _solve_lqr(
     problem: FiniteHorizonControlProblem,
     device: str | torch.device | None = None,
 ) -> ControllerSolution:
-    """Solve finite-horizon LQR and return gains for ``u[k] = K[k] x[k]``."""
+    """Solve finite-horizon LQR for direct gains ``u[k] = K[k] x[k]``."""
 
     validate_control_problem(problem)
     target_device = device if device is not None else problem.dynamics.device
@@ -61,6 +62,117 @@ def synthesize_lqr(
     return solution
 
 
+class LQRController(SynthesizedController):
+    """Finite-horizon LQR controller with offline and online behavior.
+
+    Online inputs are state deviations ``x[k] = state[k] - reference[k]``.
+    ``control`` returns ``u[k] = K[k] x[k]`` and the inherited
+    ``intervention`` method returns ``B[k] u[k]``.
+    """
+
+    def __init__(
+        self,
+        gains: torch.Tensor,
+        control_channels: torch.Tensor | None = None,
+        *,
+        feasible: bool = True,
+        diagnostics: dict[str, object] | None = None,
+    ):
+        super().__init__(control_channels)
+        if gains.ndim != 3:
+            raise ValueError("gains must have shape (horizon, control, state)")
+        if control_channels is not None and (
+            control_channels.ndim != 3
+            or control_channels.shape[0] != gains.shape[0]
+            or control_channels.shape[1] != gains.shape[2]
+            or control_channels.shape[2] != gains.shape[1]
+        ):
+            raise ValueError(
+                "control_channels must have shape (horizon, state, control)"
+            )
+        if not torch.isfinite(gains).all():
+            raise ValueError("gains contain non-finite values")
+        self.register_buffer("gains", gains)
+        self.feasible = feasible
+        self.diagnostics = diagnostics or {}
+
+    # Offline synthesis and construction.
+
+    @classmethod
+    def synthesize(
+        cls,
+        problem: FiniteHorizonControlProblem,
+        *,
+        device: str | torch.device | None = None,
+    ) -> LQRController:
+        """Run the offline Riccati recursion and return a ready controller."""
+
+        solution = _solve_lqr(problem, device=device)
+        controller = cls(
+            gains=solution.gains,
+            control_channels=problem.control_channels.detach().cpu(),
+            feasible=solution.feasible,
+            diagnostics=solution.diagnostics,
+        )
+        target_device = device if device is not None else problem.dynamics.device
+        return controller.to(target_device)
+
+    @classmethod
+    def from_solution(
+        cls,
+        problem: FiniteHorizonControlProblem,
+        solution: ControllerSolution,
+    ) -> LQRController:
+        """Construct online LQR behavior from an already synthesized solution."""
+
+        validate_control_problem(problem)
+        validate_controller_solution(problem, solution)
+        return cls(
+            gains=solution.gains,
+            control_channels=problem.control_channels.to(solution.gains.device),
+            feasible=solution.feasible,
+            diagnostics=solution.diagnostics,
+        )
+
+    @classmethod
+    def from_tracking_gains(
+        cls,
+        tracking_gains: torch.Tensor,
+        control_channels: torch.Tensor | None = None,
+    ) -> LQRController:
+        """Load positive gains stored in existing Activation-LQR artifacts.
+
+        Historical artifacts multiply their gains by ``reference - state``.
+        The controller interface instead receives ``state - reference``, so
+        those stored gains are negated once at construction.
+        """
+
+        return cls(-tracking_gains, control_channels)
+
+    # Online control.
+
+    def control(
+        self,
+        layer_index: int,
+        feedback_input: torch.Tensor,
+    ) -> torch.Tensor:
+        """Return the layer control coordinates for a state deviation."""
+
+        return feedback_input @ self.gains[layer_index].T
+
+    # Serialization.
+
+    def solution(self) -> ControllerSolution:
+        """Return a serializable copy of the synthesized LQR result."""
+
+        return ControllerSolution(
+            controller="lqr",
+            gains=self.gains.detach().cpu(),
+            feasible=self.feasible,
+            diagnostics=dict(self.diagnostics),
+        )
+
+
 def solve_identity_input_lqr(
     dynamics: torch.Tensor,
     device: str | torch.device,
@@ -72,7 +184,7 @@ def solve_identity_input_lqr(
 
     Activation-LQR applies these gains to ``reference_error = reference -
     state``. They are therefore the negative of the direct state-feedback
-    gains returned by :func:`synthesize_lqr`.
+    gains used by :class:`LQRController`.
     """
 
     layer_count, state_dimension, _ = dynamics.shape
@@ -84,4 +196,4 @@ def solve_identity_input_lqr(
         control_costs=(control_cost * identity).unsqueeze(0).repeat(layer_count, 1, 1),
         terminal_cost=terminal_cost * identity,
     )
-    return -synthesize_lqr(problem, device=device).gains
+    return -_solve_lqr(problem, device=device).gains

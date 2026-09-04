@@ -4,7 +4,8 @@ This package is the reusable boundary between language-model experiments and con
 
 ## Responsibilities
 
-- `control/` receives finite-horizon tensor problems and returns controller solutions.
+- `control/` owns the shared controller interface plus each controller's offline
+  synthesis and online behavior.
 - `modeling/` contains all Hugging Face and transformer-hook details.
 - `calibration/` converts fitted/calibration trajectories into targets, nominal dynamics, residuals, disturbance channels, and normalized coordinates.
 - `runtime/` converts a controller solution or online controller into activation deltas.
@@ -32,7 +33,7 @@ robust_steerability.benchmarks   robust_steerability.modeling
 
 1. Fit semantic targets and nominal dynamics on the fit split.
 2. Estimate residual geometry and normalization on the calibration split.
-3. Construct a `FiniteHorizonControlProblem` and synthesize a controller.
+3. Construct a `FiniteHorizonControlProblem` and synthesize a controller object.
 4. Freeze every fitted artifact and controller parameter.
 5. Evaluate the frozen policy on held-out test conditions.
 

@@ -29,7 +29,7 @@ from robust_steerability.calibration.residuals import (
     residual_metrics as package_residual_metrics,
 )
 from robust_steerability.calibration.targets import build_contrastive_target
-from robust_steerability.control.lqr import solve_identity_input_lqr
+from robust_steerability.control.lqr import LQRController, solve_identity_input_lqr
 from robust_steerability.modeling.huggingface import (
     load_access_token,
     load_quantized_causal_model,
@@ -45,7 +45,7 @@ from robust_steerability.modeling.jacobians import (
     layer_last_token_jacobian as package_layer_last_token_jacobian,
 )
 from robust_steerability.runtime.generation import write_generation_group
-from robust_steerability.runtime.policy import SetpointLQRPolicy
+from robust_steerability.runtime.policy import SemanticSetpointPolicy
 from robust_steerability.runtime.rollout import (
     read_rollout as package_read_rollout,
     write_prompt_rollout_group,
@@ -407,7 +407,15 @@ def steered_forward(
     controller: dict[str, object] | None,
     steer_start_index: int | None = None,
 ) -> tuple[object, torch.Tensor, torch.Tensor]:
-    policy = SetpointLQRPolicy.from_artifact(controller) if controller is not None else None
+    policy = (
+        SemanticSetpointPolicy(
+            controller=LQRController.from_tracking_gains(controller["gains"]),
+            feature_unit=controller["feature_unit"],
+            setpoints=controller["beta"],
+        )
+        if controller is not None
+        else None
+    )
     return forward_with_policy(model, encoded, policy, steer_start_index)
 
 
@@ -465,7 +473,11 @@ def register_generation_steering_hooks(
     model: AutoModelForCausalLM,
     controller: dict[str, object],
 ) -> list[torch.utils.hooks.RemovableHandle]:
-    policy = SetpointLQRPolicy.from_artifact(controller)
+    policy = SemanticSetpointPolicy(
+        controller=LQRController.from_tracking_gains(controller["gains"]),
+        feature_unit=controller["feature_unit"],
+        setpoints=controller["beta"],
+    )
     return register_generation_policy_hooks(model, policy)
 
 

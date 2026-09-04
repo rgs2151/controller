@@ -8,6 +8,27 @@ from transformers import AutoModelForCausalLM
 from robust_steerability.runtime.policy import ActivationPolicy
 
 
+def _model_device_and_dtype(
+    model: AutoModelForCausalLM,
+) -> tuple[torch.device, torch.dtype]:
+    """Locate the device and floating dtype used by the first decoder layer."""
+
+    first_layer = model.model.layers[0]
+    tensors = list(first_layer.parameters()) + list(first_layer.buffers())
+    if not tensors:
+        raise ValueError("the first decoder layer has no parameters or buffers")
+    device = tensors[0].device
+    model_dtype = getattr(model, "dtype", None)
+    if isinstance(model_dtype, torch.dtype) and model_dtype.is_floating_point:
+        dtype = model_dtype
+    else:
+        dtype = next(
+            (tensor.dtype for tensor in tensors if tensor.is_floating_point()),
+            torch.float32,
+        )
+    return device, dtype
+
+
 def forward_with_policy(
     model: AutoModelForCausalLM,
     encoded: dict[str, torch.Tensor],
@@ -33,6 +54,8 @@ def forward_with_policy(
         handles.append(layer.register_forward_pre_hook(make_input_hook(layer_index)))
 
     if policy is not None:
+        device, dtype = _model_device_and_dtype(model)
+        policy.prepare(device, dtype)
         policy.reset()
 
         def make_policy_hook(layer_index: int):
@@ -86,6 +109,8 @@ def register_generation_policy_hooks(
 ) -> list[torch.utils.hooks.RemovableHandle]:
     """Apply one policy to the last token processed at every decoder layer."""
 
+    device, dtype = _model_device_and_dtype(model)
+    policy.prepare(device, dtype)
     policy.reset()
     handles = []
 
