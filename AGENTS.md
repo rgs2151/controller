@@ -10,8 +10,13 @@
 - Put unit-specific file paths, record subsets, exclusions, thresholds, statistical tests, statistical-test justification, cache names, and panel mappings in the compact unit README, not in `DECISIONS.md`.
 - In compact-unit README legends, define color/value signals explicitly; never write vague labels like activity, value, score, or output without saying exactly what measurement or derived quantity is shown.
 - Keep code simple and direct. Do not add broad abstractions or edge-case handling unless asked.
-- Do not add compatibility shims, old/new layout branches, migration bridges, or fallback APIs unless the user explicitly asks for them.
-- Fix current code to the current project contract. Do not preserve broken old interfaces.
+- Treat interface and layout changes as breaking changes: update every caller
+  and delete the old path in the same change.
+- Do not add compatibility conditionals, aliases, shims, old/new layout
+  branches, migration bridges, or fallback APIs unless the user explicitly
+  asks for them.
+- Fix current code to the current project contract. Do not preserve superseded
+  or broken interfaces.
 - Do not add try/except blocks unless asked. For expected analysis conditions, use direct checks before the operation.
 - Keep notebook cells clean: no extra print statements, no process notes, and code comments only when useful.
 - Do not run analyses, notebooks, figure generation, or tests unless the user explicitly asks.
