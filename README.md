@@ -44,13 +44,18 @@ Each unit owns its own `cache/` and `plots/` folders. Existing caches are reused
 
 `robust_steerability/` separates controller mathematics from language-model integration:
 
-- `control/`: model-agnostic controller problems, solutions, LQR, PID, activation addition, and the H-infinity extension point.
+- `control/`: the common controller interface, finite-horizon problems, and each
+  controller's offline and online logic for LQR, PID, activation addition, and
+  H-infinity.
 - `modeling/`: Hugging Face loading, activation capture, Jacobians, and transformer intervention hooks.
 - `calibration/`: semantic targets, nominal dynamics, residual measurements, disturbance geometry, and calibration-only normalization.
 - `runtime/`: policies that translate controller outputs into activation interventions.
 - `benchmarks/`: reusable behavior records and evaluators.
 
-Controller implementations consume only finite-horizon tensors and return controller gains. They do not import Transformers or interact with model hooks. See `robust_steerability/control/README.md` for the collaborator contract.
+Controller implementations consume only finite-horizon tensors and expose a
+common `control`/`intervention` interface. They do not import Transformers or
+interact with model hooks. See `robust_steerability/control/README.md` for the
+collaborator guide and the H-infinity extension point.
 
 ## Data
 

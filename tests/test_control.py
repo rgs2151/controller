@@ -4,10 +4,14 @@ import unittest
 
 import torch
 
-from robust_steerability.control.h_infinity import synthesize_h_infinity
+from robust_steerability.control.activation_addition import (
+    ActivationAdditionController,
+)
+from robust_steerability.control.base import Controller
+from robust_steerability.control.h_infinity import HInfinityController
 from robust_steerability.control.lqr import (
+    LQRController,
     solve_identity_input_lqr,
-    synthesize_lqr,
 )
 from robust_steerability.control.metrics import closed_loop_disturbance_gain
 from robust_steerability.control.pid import PIDController, PIDGains
@@ -15,7 +19,7 @@ from robust_steerability.control.types import (
     ControllerSolution,
     FiniteHorizonControlProblem,
 )
-from robust_steerability.runtime.policy import SetpointLQRPolicy
+from robust_steerability.runtime.policy import SemanticSetpointPolicy
 
 
 def legacy_identity_lqr(
@@ -43,6 +47,32 @@ def legacy_identity_lqr(
     return gains
 
 
+def scalar_problem(*, disturbance: bool = False) -> FiniteHorizonControlProblem:
+    return FiniteHorizonControlProblem(
+        dynamics=torch.tensor([[[1.0]]]),
+        control_channels=torch.tensor([[[2.0]]]),
+        disturbance_channels=torch.tensor([[[1.0]]]) if disturbance else None,
+        state_costs=torch.tensor([[[1.0]]]),
+        control_costs=torch.tensor([[[1.0]]]),
+        terminal_cost=torch.tensor([[1.0]]),
+    )
+
+
+class ControllerInterfaceTests(unittest.TestCase):
+    def test_base_controller_requires_control_implementation(self) -> None:
+        with self.assertRaises(TypeError):
+            Controller()
+
+    def test_activation_addition_uses_common_intervention_surface(self) -> None:
+        controller = ActivationAdditionController(
+            directions=torch.tensor([[1.0, -2.0]]),
+            strength=0.5,
+        )
+        activation = torch.zeros(3, 2)
+        expected = torch.tensor([[0.5, -1.0]]).repeat(3, 1)
+        torch.testing.assert_close(controller.intervention(0, activation), expected)
+
+
 class LQRTests(unittest.TestCase):
     def test_identity_input_solver_matches_residual_unit_recursion(self) -> None:
         dynamics = torch.tensor(
@@ -57,30 +87,64 @@ class LQRTests(unittest.TestCase):
         actual = solve_identity_input_lqr(dynamics, "cpu", 0.1, 1.0, 1.0)
         torch.testing.assert_close(actual, expected)
 
-    def test_general_solver_uses_direct_feedback_sign(self) -> None:
-        dynamics = torch.tensor([[[1.0]]])
-        channels = torch.tensor([[[1.0]]])
-        problem = FiniteHorizonControlProblem(
-            dynamics=dynamics,
-            control_channels=channels,
-            state_costs=torch.tensor([[[1.0]]]),
-            control_costs=torch.tensor([[[1.0]]]),
-            terminal_cost=torch.tensor([[1.0]]),
+    def test_synthesized_controller_uses_direct_feedback_and_channel(self) -> None:
+        controller = LQRController.synthesize(scalar_problem())
+        state_deviation = torch.tensor([[3.0]])
+        control = controller.control(0, state_deviation)
+        self.assertLess(float(control[0, 0]), 0.0)
+        torch.testing.assert_close(
+            controller.intervention(0, state_deviation),
+            2.0 * control,
         )
-        solution = synthesize_lqr(problem)
-        self.assertLess(float(solution.gains[0, 0, 0]), 0.0)
 
-    def test_h_infinity_extension_point_requires_implementation(self) -> None:
-        problem = FiniteHorizonControlProblem(
-            dynamics=torch.tensor([[[1.0]]]),
-            control_channels=torch.tensor([[[1.0]]]),
-            disturbance_channels=torch.tensor([[[1.0]]]),
-            state_costs=torch.tensor([[[1.0]]]),
-            control_costs=torch.tensor([[[1.0]]]),
-            terminal_cost=torch.tensor([[1.0]]),
+    def test_tracking_artifact_policy_preserves_activation_lqr_formula(self) -> None:
+        gains = torch.tensor([[[2.0, 0.0], [0.0, 3.0]]])
+        feature = torch.tensor([[1.0, 0.0]])
+        setpoints = torch.tensor([4.0])
+        activation = torch.tensor([[1.5, 7.0]])
+        policy = SemanticSetpointPolicy(
+            controller=LQRController.from_tracking_gains(gains),
+            feature_unit=feature,
+            setpoints=setpoints,
         )
+        policy.prepare(torch.device("cpu"), torch.float32)
+        self.assertEqual(policy.controller.gains.device.type, "cpu")
+        self.assertEqual(policy.controller.gains.dtype, torch.float32)
+        expected_error = torch.tensor([[2.5, 0.0]])
+        expected = expected_error @ gains[0].T
+        torch.testing.assert_close(policy.activation_delta(0, activation), expected)
+
+
+class HInfinityTests(unittest.TestCase):
+    def test_offline_extension_point_requires_implementation(self) -> None:
         with self.assertRaises(NotImplementedError):
-            synthesize_h_infinity(problem)
+            HInfinityController.synthesize(scalar_problem(disturbance=True))
+
+    def test_synthesized_solution_has_complete_online_behavior(self) -> None:
+        problem = scalar_problem(disturbance=True)
+        solution = ControllerSolution(
+            controller="h_infinity",
+            gains=torch.tensor([[[-2.0]]]),
+            feasible=True,
+            gamma_star=1.25,
+            diagnostics={"iterations": 7},
+        )
+        controller = HInfinityController.from_solution(problem, solution)
+        state_deviation = torch.tensor([[4.0]])
+        torch.testing.assert_close(
+            controller.control(0, state_deviation),
+            torch.tensor([[-8.0]]),
+        )
+        torch.testing.assert_close(
+            controller.intervention(0, state_deviation),
+            torch.tensor([[-16.0]]),
+        )
+        serialized = controller.solution()
+        self.assertEqual(serialized.controller, solution.controller)
+        torch.testing.assert_close(serialized.gains, solution.gains)
+        self.assertEqual(serialized.feasible, solution.feasible)
+        self.assertEqual(serialized.gamma_star, solution.gamma_star)
+        self.assertEqual(serialized.diagnostics, solution.diagnostics)
 
     def test_independent_disturbance_gain(self) -> None:
         problem = FiniteHorizonControlProblem(
@@ -95,24 +159,14 @@ class LQRTests(unittest.TestCase):
         self.assertAlmostEqual(closed_loop_disturbance_gain(problem, solution), 2.0)
 
 
-class PolicyTests(unittest.TestCase):
-    def test_setpoint_policy_matches_activation_lqr_formula(self) -> None:
-        gains = torch.tensor([[[2.0, 0.0], [0.0, 3.0]]])
-        feature = torch.tensor([[1.0, 0.0]])
-        setpoints = torch.tensor([4.0])
-        activation = torch.tensor([[1.5, 7.0]])
-        policy = SetpointLQRPolicy(gains, feature, setpoints)
-        expected_error = torch.tensor([[2.5, 0.0]])
-        expected = expected_error @ gains[0].T
-        torch.testing.assert_close(policy.activation_delta(0, activation), expected)
-
-    def test_pid_reset_removes_history(self) -> None:
+class PIDTests(unittest.TestCase):
+    def test_reset_removes_history(self) -> None:
         controller = PIDController(PIDGains(1.0, 0.5, 0.25))
-        error = torch.tensor([2.0])
-        first = controller.control(error)
-        controller.control(torch.tensor([1.0]))
+        state_deviation = torch.tensor([-2.0])
+        first = controller.control(0, state_deviation)
+        controller.control(1, torch.tensor([-1.0]))
         controller.reset()
-        torch.testing.assert_close(controller.control(error), first)
+        torch.testing.assert_close(controller.control(0, state_deviation), first)
 
 
 if __name__ == "__main__":

@@ -5,8 +5,9 @@ from types import SimpleNamespace
 
 import torch
 
+from robust_steerability.control.lqr import LQRController
 from robust_steerability.modeling.interventions import forward_with_policy
-from robust_steerability.runtime.policy import SetpointLQRPolicy
+from robust_steerability.runtime.policy import SemanticSetpointPolicy
 
 
 class ToyLayer(torch.nn.Module):
@@ -56,8 +57,10 @@ class InterventionTests(unittest.TestCase):
             "input_ids": torch.tensor([[1, 2]]),
             "attention_mask": torch.ones(1, 2, dtype=torch.long),
         }
-        policy = SetpointLQRPolicy(
-            tracking_gains=torch.eye(2).repeat(2, 1, 1),
+        policy = SemanticSetpointPolicy(
+            controller=LQRController.from_tracking_gains(
+                torch.eye(2).repeat(2, 1, 1)
+            ),
             feature_unit=torch.tensor([[1.0, 0.0], [1.0, 0.0]]),
             setpoints=torch.tensor([3.0, 3.0]),
         )

@@ -36,7 +36,8 @@
 `robust_steerability/` is the minimal installable package for reusable project helpers.
 
 - The package is intended for editable installs from this source checkout.
-- `control/` owns model-agnostic controller inputs, outputs, synthesis, and numerical validation.
+- `control/` owns the model-agnostic controller abstraction, controller inputs,
+  offline synthesis, online behavior, outputs, and numerical validation.
 - `modeling/` owns Hugging Face model loading, transformer state capture, Jacobians, and intervention hooks.
 - `calibration/` owns reusable semantic-target, nominal-dynamics, residual, disturbance, and normalization calculations.
 - `runtime/` owns policies that connect synthesized controllers to model-independent activation deltas.
