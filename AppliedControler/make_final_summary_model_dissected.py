@@ -35,12 +35,14 @@ METHOD_COLORS = {
 MODEL_ORDER = [
     "DistilGPT-2-ours",
     "Qwen-2.5-1.5B-ours",
+    "Qwen-2.5-1.5B-paper-proto",
     "Qwen-2.5-7B-ours",
     "Qwen-2.5-14B-ours",
 ]
 MODEL_LABELS = {
     "DistilGPT-2-ours": "DistilGPT-2",
     "Qwen-2.5-1.5B-ours": "Qwen-2.5-1.5B",
+    "Qwen-2.5-1.5B-paper-proto": "Qwen-2.5-1.5B\n(paper protocol)",
     "Qwen-2.5-7B-ours": "Qwen-2.5-7B",
     "Qwen-2.5-14B-ours": "Qwen-2.5-14B",
 }
