@@ -25,25 +25,21 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPORTS = os.path.join(HERE, "results_reports")
 
-METHODS = ["Original", "A-LQR", "S-PID", "H-infinity"]
-METHOD_COLORS = {
-    "Original": "#8c8c8c",
-    "A-LQR": "#4c72b0",
-    "S-PID": "#dd8452",
-    "H-infinity": "#55a868",
-}
-MODEL_ORDER = [
-    "DistilGPT-2",
-    "Qwen-2.5-1.5B",
-    "Qwen-2.5-7B",
-    "Qwen-2.5-14B",
-]
-MODEL_LABELS = {
-    "DistilGPT-2": "DistilGPT-2",
-    "Qwen-2.5-1.5B": "Qwen-2.5-1.5B",
-    "Qwen-2.5-7B": "Qwen-2.5-7B",
-    "Qwen-2.5-14B": "Qwen-2.5-14B",
-}
+try:
+    from AppliedControler.figure_config import (
+        METHODS,
+        METHOD_COLORS,
+        TOX_MODEL_ORDER as MODEL_ORDER,
+        TOX_MODEL_LABELS as MODEL_LABELS,
+    )
+except ImportError:
+    from figure_config import (
+        METHODS,
+        METHOD_COLORS,
+        TOX_MODEL_ORDER as MODEL_ORDER,
+        TOX_MODEL_LABELS as MODEL_LABELS,
+    )
+
 # (key, label, log_scale)
 METRICS = [
     ("tox_rate", r"RTP toxicity (%)  $\downarrow$  (log)", True),

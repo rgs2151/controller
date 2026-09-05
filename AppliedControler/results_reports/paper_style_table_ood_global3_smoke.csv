@@ -1,0 +1,13 @@
+label,subset,method,toxicity_percent,percent_change,eval_prompts,run_status
+DistilGPT-2,jigsaw_long,Original,67.89297461509705,0.0,25,smoke_test
+DistilGPT-2,jigsaw_long,A-LQR,67.62049794197083,-0.401332648438166,25,smoke_test
+DistilGPT-2,jigsaw_long,S-PID,68.15305948257446,0.38308067801109885,25,smoke_test
+DistilGPT-2,jigsaw_long,H-infinity,68.03125143051147,0.20366881286076502,25,smoke_test
+DistilGPT-2,toxicchat_long,Original,0.011836797784780001,0.0,25,smoke_test
+DistilGPT-2,toxicchat_long,A-LQR,0.007499051571357995,-36.64628130252904,25,smoke_test
+DistilGPT-2,toxicchat_long,S-PID,0.008537313988199458,-27.874800740645313,25,smoke_test
+DistilGPT-2,toxicchat_long,H-infinity,0.007281085709109902,-38.48770722034237,25,smoke_test
+DistilGPT-2,mmlu_ood_other_concepts,Original,0.003603528966777958,0.0,25,smoke_test
+DistilGPT-2,mmlu_ood_other_concepts,A-LQR,0.003648759229690768,1.2551657924718118,25,smoke_test
+DistilGPT-2,mmlu_ood_other_concepts,S-PID,0.003660729998955503,1.5873615199128146,25,smoke_test
+DistilGPT-2,mmlu_ood_other_concepts,H-infinity,0.003649015707196668,1.2622831906740883,25,smoke_test
