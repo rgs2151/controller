@@ -8,12 +8,26 @@ from transformers import AutoModelForCausalLM
 from robust_steerability.runtime.policy import ActivationPolicy
 
 
+def _decoder_layers(model: AutoModelForCausalLM) -> list[torch.nn.Module]:
+    if hasattr(model, "model") and hasattr(model.model, "layers"):
+        return list(model.model.layers)
+    if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
+        return list(model.transformer.h)
+    if hasattr(model, "gpt_neox") and hasattr(model.gpt_neox, "layers"):
+        return list(model.gpt_neox.layers)
+    raise ValueError(
+        "Unsupported CausalLM architecture: could not locate decoder layers "
+        "(expected model.layers, transformer.h, or gpt_neox.layers)."
+    )
+
+
 def _model_device_and_dtype(
     model: AutoModelForCausalLM,
 ) -> tuple[torch.device, torch.dtype]:
     """Locate the device and floating dtype used by the first decoder layer."""
 
-    first_layer = model.model.layers[0]
+    layers = _decoder_layers(model)
+    first_layer = layers[0]
     tensors = list(first_layer.parameters()) + list(first_layer.buffers())
     if not tensors:
         raise ValueError("the first decoder layer has no parameters or buffers")
@@ -37,7 +51,8 @@ def forward_with_policy(
 ) -> tuple[object, torch.Tensor, torch.Tensor]:
     """Run a forward pass while recording raw states and applied deltas."""
 
-    layer_count = len(model.model.layers)
+    layers = _decoder_layers(model)
+    layer_count = len(layers)
     sequence_length = int(encoded["input_ids"].shape[1])
     hidden_size = model.config.hidden_size
     controls = torch.zeros(layer_count, sequence_length, hidden_size, dtype=torch.float32)
@@ -50,7 +65,7 @@ def forward_with_policy(
 
         return hook
 
-    for layer_index, layer in enumerate(model.model.layers):
+    for layer_index, layer in enumerate(layers):
         handles.append(layer.register_forward_pre_hook(make_input_hook(layer_index)))
 
     if policy is not None:
@@ -84,7 +99,7 @@ def forward_with_policy(
 
             return hook
 
-        for layer_index, layer in enumerate(model.model.layers):
+        for layer_index, layer in enumerate(layers):
             handles.append(layer.register_forward_hook(make_policy_hook(layer_index)))
     else:
 
@@ -92,7 +107,7 @@ def forward_with_policy(
             hidden = output[0] if isinstance(output, tuple) else output
             states[layer_count] = hidden[0].detach().cpu().float()
 
-        handles.append(model.model.layers[-1].register_forward_hook(final_output_hook))
+        handles.append(layers[-1].register_forward_hook(final_output_hook))
 
     with torch.no_grad():
         output = model(**encoded, use_cache=False, return_dict=True)
@@ -109,6 +124,7 @@ def register_generation_policy_hooks(
 ) -> list[torch.utils.hooks.RemovableHandle]:
     """Apply one policy to the last token processed at every decoder layer."""
 
+    layers = _decoder_layers(model)
     device, dtype = _model_device_and_dtype(model)
     policy.prepare(device, dtype)
     policy.reset()
@@ -127,6 +143,6 @@ def register_generation_policy_hooks(
 
         return hook
 
-    for layer_index, layer in enumerate(model.model.layers):
+    for layer_index, layer in enumerate(layers):
         handles.append(layer.register_forward_hook(make_hook(layer_index)))
     return handles

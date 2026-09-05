@@ -1,0 +1,31 @@
+\\documentclass[10pt]{article}
+\\usepackage[margin=0.7in]{geometry}
+\\usepackage{booktabs}
+\\usepackage[table]{xcolor}
+\\usepackage{multirow}
+\\usepackage{graphicx}
+\\usepackage{newtxtext,newtxmath}
+\\begin{document}
+\\begin{table}[t]
+\\centering
+\\caption{\\textit{Table 2. Summary of toxicity evaluations.}}
+\\renewcommand{\\arraystretch}{1.24}
+\\setlength{\\tabcolsep}{8pt}
+\\begin{tabular}{llcc}
+\\toprule
+Model & Method & \\cellcolor{blue!12} Tox (\\%) (\\downarrow) & Status \\
+\\midrule
+\\multirow{10}{*}{\\rotatebox[origin=c]{90}{DistilGPT-2-rtp\\_random}} & Original & \cellcolor{blue!12} 4.45 ± 0.00 & ok \\
+ & ITI & \cellcolor{blue!12} -- ± -- & missing \\
+ & ActAdd & \cellcolor{blue!12} -- ± -- & missing \\
+ & Mean-AcT & \cellcolor{blue!12} -- ± -- & missing \\
+ & Linear-AcT & \cellcolor{blue!12} -- ± -- & missing \\
+ & PID-AcT & \cellcolor{blue!12} -- ± -- & missing \\
+ & ODESteer & \cellcolor{blue!12} -- ± -- & missing \\
+ & S-PID & \cellcolor{blue!12} 0.04 ± 0.00 & ok \\
+ & A-LQR & \cellcolor{blue!12} 0.13 ± 0.00 & ok \\
+ & H-infinity & \cellcolor{blue!12} \\textbf{0.02 ± 0.00} & ok \\
+\\bottomrule
+\\end{tabular}
+\\end{table}
+\\end{document}

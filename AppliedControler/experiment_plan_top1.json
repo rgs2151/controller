@@ -1,0 +1,508 @@
+{
+  "methods": [
+    {
+      "name": "alqr",
+      "params": {}
+    },
+    {
+      "name": "spid",
+      "params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      }
+    },
+    {
+      "name": "new_method",
+      "params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      }
+    }
+  ],
+  "count": 30,
+  "experiments": [
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.6876787543296814,
+      "early": 0.6930122375488281,
+      "mid": 0.5178775191307068,
+      "late": 0.8521465063095093,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_jigsaw_long_alqr.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.6876787543296814,
+      "early": 0.6930122375488281,
+      "mid": 0.5178775191307068,
+      "late": 0.8521465063095093,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_jigsaw_long_spid.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.6876787543296814,
+      "early": 0.6930122375488281,
+      "mid": 0.5178775191307068,
+      "late": 0.8521465063095093,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_jigsaw_long_new_method.pt"
+    },
+    {
+      "label": "GPT-2 Small",
+      "model_name": "gpt2",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.4533107876777649,
+      "early": 0.4630766808986664,
+      "mid": 0.3539888262748718,
+      "late": 0.5428667068481445,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/gpt2_jigsaw_long_alqr.pt"
+    },
+    {
+      "label": "GPT-2 Small",
+      "model_name": "gpt2",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.4533107876777649,
+      "early": 0.4630766808986664,
+      "mid": 0.3539888262748718,
+      "late": 0.5428667068481445,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/gpt2_jigsaw_long_spid.pt"
+    },
+    {
+      "label": "GPT-2 Small",
+      "model_name": "gpt2",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.4533107876777649,
+      "early": 0.4630766808986664,
+      "mid": 0.3539888262748718,
+      "late": 0.5428667068481445,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/gpt2_jigsaw_long_new_method.pt"
+    },
+    {
+      "label": "GPT-2 Medium",
+      "model_name": "gpt2-medium",
+      "subset": "jigsaw_full",
+      "rank": 1,
+      "overall": 0.3590381741523742,
+      "early": 0.2587334513664245,
+      "mid": 0.1703726798295974,
+      "late": 0.6480082869529724,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/gpt2-medium_jigsaw_full_alqr.pt"
+    },
+    {
+      "label": "GPT-2 Medium",
+      "model_name": "gpt2-medium",
+      "subset": "jigsaw_full",
+      "rank": 1,
+      "overall": 0.3590381741523742,
+      "early": 0.2587334513664245,
+      "mid": 0.1703726798295974,
+      "late": 0.6480082869529724,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/gpt2-medium_jigsaw_full_spid.pt"
+    },
+    {
+      "label": "GPT-2 Medium",
+      "model_name": "gpt2-medium",
+      "subset": "jigsaw_full",
+      "rank": 1,
+      "overall": 0.3590381741523742,
+      "early": 0.2587334513664245,
+      "mid": 0.1703726798295974,
+      "late": 0.6480082869529724,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/gpt2-medium_jigsaw_full_new_method.pt"
+    },
+    {
+      "label": "GPT-2 Large",
+      "model_name": "gpt2-large",
+      "subset": "jigsaw_full",
+      "rank": 1,
+      "overall": 0.6899564266204834,
+      "early": 0.2884969413280487,
+      "mid": 0.1837880313396453,
+      "late": 1.597584247589111,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/gpt2-large_jigsaw_full_alqr.pt"
+    },
+    {
+      "label": "GPT-2 Large",
+      "model_name": "gpt2-large",
+      "subset": "jigsaw_full",
+      "rank": 1,
+      "overall": 0.6899564266204834,
+      "early": 0.2884969413280487,
+      "mid": 0.1837880313396453,
+      "late": 1.597584247589111,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/gpt2-large_jigsaw_full_spid.pt"
+    },
+    {
+      "label": "GPT-2 Large",
+      "model_name": "gpt2-large",
+      "subset": "jigsaw_full",
+      "rank": 1,
+      "overall": 0.6899564266204834,
+      "early": 0.2884969413280487,
+      "mid": 0.1837880313396453,
+      "late": 1.597584247589111,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/gpt2-large_jigsaw_full_new_method.pt"
+    },
+    {
+      "label": "Qwen 0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.5378103256225586,
+      "early": 0.6524415612220764,
+      "mid": 0.5055153369903564,
+      "late": 0.455474317073822,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B-Instruct_mmlu_ood_other_concepts_alqr.pt"
+    },
+    {
+      "label": "Qwen 0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.5378103256225586,
+      "early": 0.6524415612220764,
+      "mid": 0.5055153369903564,
+      "late": 0.455474317073822,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B-Instruct_mmlu_ood_other_concepts_spid.pt"
+    },
+    {
+      "label": "Qwen 0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.5378103256225586,
+      "early": 0.6524415612220764,
+      "mid": 0.5055153369903564,
+      "late": 0.455474317073822,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B-Instruct_mmlu_ood_other_concepts_new_method.pt"
+    },
+    {
+      "label": "Qwen 1.5B",
+      "model_name": "Qwen/Qwen2.5-1.5B-Instruct",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.5000616312026978,
+      "early": 0.5823605060577393,
+      "mid": 0.3913402259349823,
+      "late": 0.5238419771194458,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-1.5B-Instruct_mmlu_ood_other_concepts_alqr.pt"
+    },
+    {
+      "label": "Qwen 1.5B",
+      "model_name": "Qwen/Qwen2.5-1.5B-Instruct",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.5000616312026978,
+      "early": 0.5823605060577393,
+      "mid": 0.3913402259349823,
+      "late": 0.5238419771194458,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-1.5B-Instruct_mmlu_ood_other_concepts_spid.pt"
+    },
+    {
+      "label": "Qwen 1.5B",
+      "model_name": "Qwen/Qwen2.5-1.5B-Instruct",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.5000616312026978,
+      "early": 0.5823605060577393,
+      "mid": 0.3913402259349823,
+      "late": 0.5238419771194458,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-1.5B-Instruct_mmlu_ood_other_concepts_new_method.pt"
+    },
+    {
+      "label": "Qwen 3B",
+      "model_name": "Qwen/Qwen2.5-3B-Instruct",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.4811948537826538,
+      "early": 0.4767423272132873,
+      "mid": 0.4082227349281311,
+      "late": 0.558619499206543,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-3B-Instruct_mmlu_ood_other_concepts_alqr.pt"
+    },
+    {
+      "label": "Qwen 3B",
+      "model_name": "Qwen/Qwen2.5-3B-Instruct",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.4811948537826538,
+      "early": 0.4767423272132873,
+      "mid": 0.4082227349281311,
+      "late": 0.558619499206543,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-3B-Instruct_mmlu_ood_other_concepts_spid.pt"
+    },
+    {
+      "label": "Qwen 3B",
+      "model_name": "Qwen/Qwen2.5-3B-Instruct",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.4811948537826538,
+      "early": 0.4767423272132873,
+      "mid": 0.4082227349281311,
+      "late": 0.558619499206543,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-3B-Instruct_mmlu_ood_other_concepts_new_method.pt"
+    },
+    {
+      "label": "Qwen 7B",
+      "model_name": "Qwen/Qwen2.5-7B-Instruct",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.5008379220962524,
+      "early": 0.563825249671936,
+      "mid": 0.4061087369918823,
+      "late": 0.5294056534767151,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-7B-Instruct_jigsaw_long_alqr.pt"
+    },
+    {
+      "label": "Qwen 7B",
+      "model_name": "Qwen/Qwen2.5-7B-Instruct",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.5008379220962524,
+      "early": 0.563825249671936,
+      "mid": 0.4061087369918823,
+      "late": 0.5294056534767151,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-7B-Instruct_jigsaw_long_spid.pt"
+    },
+    {
+      "label": "Qwen 7B",
+      "model_name": "Qwen/Qwen2.5-7B-Instruct",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.5008379220962524,
+      "early": 0.563825249671936,
+      "mid": 0.4061087369918823,
+      "late": 0.5294056534767151,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-7B-Instruct_jigsaw_long_new_method.pt"
+    },
+    {
+      "label": "Qwen 14B",
+      "model_name": "Qwen/Qwen2.5-14B-Instruct",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.4485826194286346,
+      "early": 0.4059776365756988,
+      "mid": 0.3530076146125793,
+      "late": 0.5867626667022705,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-14B-Instruct_jigsaw_long_alqr.pt"
+    },
+    {
+      "label": "Qwen 14B",
+      "model_name": "Qwen/Qwen2.5-14B-Instruct",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.4485826194286346,
+      "early": 0.4059776365756988,
+      "mid": 0.3530076146125793,
+      "late": 0.5867626667022705,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-14B-Instruct_jigsaw_long_spid.pt"
+    },
+    {
+      "label": "Qwen 14B",
+      "model_name": "Qwen/Qwen2.5-14B-Instruct",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.4485826194286346,
+      "early": 0.4059776365756988,
+      "mid": 0.3530076146125793,
+      "late": 0.5867626667022705,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-14B-Instruct_jigsaw_long_new_method.pt"
+    },
+    {
+      "label": "Qwen 72B",
+      "model_name": "Qwen/Qwen2.5-72B-Instruct",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.3476631641387939,
+      "early": 0.3353964686393738,
+      "mid": 0.2520698308944702,
+      "late": 0.455068975687027,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-72B-Instruct_jigsaw_long_alqr.pt"
+    },
+    {
+      "label": "Qwen 72B",
+      "model_name": "Qwen/Qwen2.5-72B-Instruct",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.3476631641387939,
+      "early": 0.3353964686393738,
+      "mid": 0.2520698308944702,
+      "late": 0.455068975687027,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-72B-Instruct_jigsaw_long_spid.pt"
+    },
+    {
+      "label": "Qwen 72B",
+      "model_name": "Qwen/Qwen2.5-72B-Instruct",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.3476631641387939,
+      "early": 0.3353964686393738,
+      "mid": 0.2520698308944702,
+      "late": 0.455068975687027,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-72B-Instruct_jigsaw_long_new_method.pt"
+    }
+  ]
+}

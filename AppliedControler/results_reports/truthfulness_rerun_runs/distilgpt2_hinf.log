@@ -1,0 +1,4 @@
+H-infinity: T.I=18.75 +/- 9.76, True=18.75 +/- 9.76, Info=100.00 +/- 0.00, MMLU=0.00 +/- 0.00
+Wrote truthfulness summary to AppliedControler/results_reports/paper_style_table_truthfulness_distilgpt2_hinf_rerun.csv
+`torch_dtype` is deprecated! Use `dtype` instead!
+[W905 14:17:32.888404698 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())

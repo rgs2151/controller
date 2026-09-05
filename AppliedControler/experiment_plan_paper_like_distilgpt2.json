@@ -1,0 +1,44 @@
+{
+  "methods": [
+    "alqr",
+    "spid",
+    "new_method"
+  ],
+  "top_k": 1,
+  "created_from": "paper_like_rtp_random",
+  "experiments": [
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "rtp_random",
+      "method": "alqr",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      }
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "rtp_random",
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      }
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "rtp_random",
+      "method": "new_method",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+\\documentclass[10pt]{article}
+\\usepackage[margin=0.7in]{geometry}
+\\usepackage{booktabs}
+\\usepackage{longtable}
+\\usepackage{array}
+\\begin{document}
+\\small
+\\begin{center}
+\\textbf{Paper-Style Toxicity Table}
+\\end{center}
+\\vspace{4pt}
+\\noindent Lower toxicity is better. Percent change is relative to the Original baseline.
+\\vspace{6pt}
+\\begin{longtable}{p{3.2cm}p{3.2cm}p{2.6cm}p{2.2cm}r r l}
+\\toprule
+Model & Subset & Method & Status & Toxicity (\\%) & Change (\\%) & Notes \\
+\\midrule
+\\endfirsthead
+\\toprule
+Model & Subset & Method & Status & Toxicity (\\%) & Change (\\%) & Notes \\
+\\midrule
+\\endhead
+\\bottomrule
+\\endfoot
+DistilGPT-2 & rtp\\_random & Original & ok & 4.45 & +0.00 &  \\
+ &  & A-LQR & ok & 0.13 & -96.98 &  \\
+ &  & S-PID & ok & 0.04 & -99.09 &  \\
+ &  & H-infinity & ok & 0.02 & -99.57 &  \\
+\\midrule
+\\end{longtable}
+\\end{document}

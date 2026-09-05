@@ -1,0 +1,4 @@
+S-PID: T.I=31.25 +/- 11.59, True=31.25 +/- 11.59, Info=100.00 +/- 0.00, MMLU=4.17 +/- 4.08
+Wrote truthfulness summary to AppliedControler/results_reports/paper_style_table_truthfulness_distilgpt2_spid_rerun.csv
+`torch_dtype` is deprecated! Use `dtype` instead!
+[W905 14:17:11.412883517 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())

@@ -1,0 +1,15 @@
+Original: T.I=12.50 +/- 11.69, True=12.50 +/- 11.69, Info=100.00 +/- 0.00, MMLU=0.00 +/- 0.00
+Wrote truthfulness summary to AppliedControler/results_reports/paper_style_table_truthfulness_qwen14b_original_rerun.csv
+`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading checkpoint shards:   0%|          | 0/8 [00:00<?, ?it/s]
+Loading checkpoint shards:  12%|█▎        | 1/8 [00:02<00:14,  2.10s/it]
+Loading checkpoint shards:  25%|██▌       | 2/8 [00:05<00:15,  2.63s/it]
+Loading checkpoint shards:  38%|███▊      | 3/8 [00:08<00:13,  2.80s/it]
+Loading checkpoint shards:  50%|█████     | 4/8 [00:11<00:11,  2.87s/it]
+Loading checkpoint shards:  62%|██████▎   | 5/8 [00:14<00:08,  2.91s/it]
+Loading checkpoint shards:  75%|███████▌  | 6/8 [00:17<00:05,  2.95s/it]
+Loading checkpoint shards:  88%|████████▊ | 7/8 [00:20<00:02,  2.98s/it]
+Loading checkpoint shards: 100%|██████████| 8/8 [00:20<00:00,  2.14s/it]
+Loading checkpoint shards: 100%|██████████| 8/8 [00:20<00:00,  2.56s/it]
+[W905 14:18:11.735413576 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())

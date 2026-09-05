@@ -1,0 +1,13 @@
+[
+  {
+    "model_name": "Qwen/Qwen2.5-14B-Instruct",
+    "prompt_pool": "rtp_random",
+    "eval_prompts": 4,
+    "max_new_tokens": 20,
+    "prompt_toxicity_min": 0.32,
+    "prompt_toxicity_max": 0.42,
+    "baseline_toxicity_mean": 0.24750067293643951,
+    "baseline_toxicity_percent": 24.75006729364395,
+    "baseline_toxicity_std": 0.4260285794734955
+  }
+]

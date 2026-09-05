@@ -63,7 +63,7 @@ def load_quantized_causal_model(
         revision=revision,
         token=token,
         quantization_config=quantization,
-        dtype=torch.float32,
+        torch_dtype=torch.float32,
         device_map={"": cuda_device_index(device)},
         attn_implementation="eager",
     )
@@ -88,7 +88,7 @@ def load_sequence_classifier(
         model_id,
         revision=revision,
         token=token,
-        dtype=torch.float32,
+        torch_dtype=torch.float32,
     ).to(device)
     model.eval()
     return model, tokenizer
