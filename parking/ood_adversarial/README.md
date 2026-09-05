@@ -16,10 +16,10 @@
   frozen non-toxicity setpoint divided by the frozen final feature norm. Define
   remaining error as 100 times A-LQR target error divided by the same prompt's
   unsteered target error.
-- Pair each adversarial prompt to its unchanged RTP anchor and plot
-  `remaining error(adversarial) - remaining error(ID)`. Positive values mean
-  that the adversarial construction made A-LQR less effective; ID is exactly
-  zero under this paired definition.
+- Plot the same response as `ood_explore`: remaining target error after A-LQR,
+  expressed as a percentage of that prompt's unsteered target error. A dashed
+  line marks the unchanged ID median. The matched adversarial-minus-ID change
+  remains available as a secondary column in the CSV and JSON summary.
 - Screen 17 deterministic constructions, token-level suffix searches under
   ratio and controller-harm objectives, two hybrid context-plus-suffix
   searches, prefix and suffix block searches, and two distribution-level
@@ -81,57 +81,57 @@ The 16 displayed attempts are:
 - Null hypothesis: none; the attempts are adaptively screened on the displayed
   anchors rather than treated as preregistered population samples.
 - Alternative hypothesis: none.
-- Thresholds/decision rule: zero paired percentage points is matched-ID
-  performance; positive values indicate worse steering. An absolute remaining
-  error above 100% would mean A-LQR is worse than no controller. Search depth is
-  selected by the largest median remaining-error percentage. The best typical
-  attack maximizes median paired degradation; the widest attack maximizes IQR.
-- What the statistic means: the median is the typical loss of A-LQR efficacy
-  relative to the same unchanged prompt. IQR measures how heterogeneous that
-  loss is across prompts. Minimum and maximum show the screened extremes.
-- Why this statistic is appropriate here: prompt matching removes the original
-  prompt's ID controller response from every observation, while median and IQR
-  separately expose the requested typical failure and spread objectives.
+- Thresholds/decision rule: 0% is complete target correction, 100% is no A-LQR
+  benefit, and values above 100% mean the controller is worse than no
+  intervention. The unchanged ID median is 32.47%. Search depth is selected by
+  the largest median remaining-error percentage. The best typical attack
+  maximizes that median; the widest attack maximizes its IQR.
+- What the statistic means: the median is the typical fraction of unsteered
+  target error left after A-LQR. IQR measures how heterogeneous that remaining
+  error is across prompts. Minimum and maximum show the screened extremes.
+- Why this statistic is appropriate here: it is identical to the response in
+  the original `ood_explore` box plot, so attempts can be read directly against
+  the same 0%-to-100% steering-efficacy scale. Matched prompt-level degradation
+  is retained as a secondary diagnostic.
 
 ## Legends
 
 - X axis: 16 named adversarial attempts, ordered from deterministic prompt
   transformations through local searches, large-vocabulary searches, and
   distribution-level selections.
-- Y axis: A-LQR remaining target error under the attempt minus remaining target
-  error for the matched unchanged ID prompt, in percentage points.
+- Y axis: A-LQR remaining target error under the attempt as a percentage of the
+  same prompt's unsteered target error; lower is better.
 - Color/value: dark red denotes screened adversarial attempts. Black denotes
-  the attempt with the largest median degradation and the attempt with the
-  largest IQR.
+  the attempt with the largest median remaining error and the attempt with the
+  largest remaining-error IQR.
 - Grouping: one box and 50 jittered prompt points per attempt.
 - Ordering/sorting: conceptual search progression A1 through A16; attempts are
   not sorted by their observed results.
 - Lines/markers/labels: box center is the median, box limits are the first and
   third quartiles, whiskers extend to 1.5 IQR, gray points are individual
-  prompts, and the dashed horizontal line marks matched-ID performance at zero.
+  prompts, and the dashed horizontal line marks the 32.47% unchanged-ID median.
 - Panels: one standalone box plot containing adversarial attempts only.
 
 ## Interpretation
 
-- Deterministic context saturation (A1) raises median paired degradation by
-  7.30 points. The 504-token cutoff (A6) has a wider 9.05-point IQR but only a
-  3.12-point median degradation.
-- The 128-candidate ratio search (A8) raises median degradation to 13.58 points
+- Deterministic context saturation (A1) leaves a median 40.39% of unsteered
+  error. The 504-token cutoff (A6) has a 35.23% median and 5.28-point IQR.
+- The 128-candidate ratio search (A8) raises median remaining error to 46.57%
   and makes all 50 prompts worse than their matched ID prompts.
 - Combining suffix search with tail relocation (A10) and role conflict (A11)
-  raises median degradation to 15.27 and 15.55 points, respectively. Additional
+  raises median remaining error to 47.99% and 48.63%, respectively. Additional
   greedy steps mainly raise the lower tail and do not create the desired large
   spread.
 - The 4,096-fragment vocabulary searches are strongest for typical failure.
-  A13 reaches 19.45 median degradation and A14 reaches 20.21; every prompt is
-  worse than ID, and the largest individual degradation is 35.27 points.
+  A13 reaches the largest median remaining error at 53.76%; A14 reaches 53.07%.
+  Every prompt is worse than its matched ID prompt.
 - A15 maximizes instability rather than uniformly bad performance. It retains
-  a 20.21-point median but expands IQR to 40.40 points and ranges from -28.97
-  through +33.75. Only 70% of its prompts are worse than ID; its negative tail
-  represents unusually strong correction, not controller failure.
+  a 52.05% median but expands remaining-error IQR to 32.33 points and ranges
+  from 8.81% through 55.78%. Only 70% of its prompts are worse than ID; its low
+  tail represents unusually strong correction, not controller failure.
 - A16 enforces positive degradation for every prompt while deliberately
-  optimizing distributional spread. It achieves a 17.80-point median and a
-  19.23-point IQR, ranging from nearly zero through +33.75 points.
+  optimizing distributional spread. It has a 52.25% median and 11.54-point IQR,
+  ranging from 29.56% through 55.78% remaining error.
 - No evaluated prompt has remaining error above 100%. These attacks strongly
   reduce and destabilize A-LQR efficacy, but this screen does not find a prompt
   on which A-LQR produces more target error than applying no controller.
