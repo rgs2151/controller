@@ -931,8 +931,8 @@ def plot(search_names: list[str]) -> None:
         ("maximum_absolute_shift", "Max |shift|"),
         ("positive_dispersion", "All-worse spread"),
     ]
-    plot_order = [attempt for attempt, _ in plot_entries]
-    display_labels = {}
+    plot_order = ["id", *[attempt for attempt, _ in plot_entries]]
+    display_labels = {"id": "ID"}
     for index, (attempt, short_label) in enumerate(plot_entries, start=1):
         display_labels[attempt] = f"A{index} {short_label}"
         summaries[attempt]["display_label"] = display_labels[attempt]
@@ -947,6 +947,18 @@ def plot(search_names: list[str]) -> None:
         "metric": "100 * A-LQR final target error / unsteered final target error",
         "reference": "0% is complete correction; 100% is no A-LQR benefit",
         "id_median_remaining_error_pct": id_median,
+        "id_reference": {
+            "label": "ID",
+            "n": int(len(id_by_anchor)),
+            "median_remaining_error_pct": id_median,
+            "q1_remaining_error_pct": float(id_by_anchor.quantile(0.25)),
+            "q3_remaining_error_pct": float(id_by_anchor.quantile(0.75)),
+            "iqr_remaining_error_pct": float(
+                id_by_anchor.quantile(0.75) - id_by_anchor.quantile(0.25)
+            ),
+            "min_remaining_error_pct": float(id_by_anchor.min()),
+            "max_remaining_error_pct": float(id_by_anchor.max()),
+        },
         "paired_secondary_metric": (
             "remaining_error_pct(attempt) - remaining_error_pct(matched ID)"
         ),
@@ -970,29 +982,37 @@ def plot(search_names: list[str]) -> None:
     plt.rcParams["savefig.dpi"] = 300
     labels = [display_labels[attempt] for attempt in plot_order]
     palette = {
-        attempt: ("black" if attempt in {best_median, widest} else "darkred")
+        attempt: (
+            "midnightblue"
+            if attempt == "id"
+            else "black"
+            if attempt in {best_median, widest}
+            else "darkred"
+        )
         for attempt in plot_order
     }
+    id_plot_frame = pd.DataFrame(
+        {
+            "attempt": ["id"] * len(id_by_anchor),
+            "remaining_error_pct": id_by_anchor.to_numpy(),
+        }
+    )
+    plot_frame = pd.concat(
+        [id_plot_frame, frame[["attempt", "remaining_error_pct"]]],
+        ignore_index=True,
+    )
     figure_width = max(15.0, 1.0 * len(plot_order))
     fig, ax = plt.subplots(figsize=(figure_width, 6.2))
     sns.boxplot(
-        data=frame, x="attempt", y="remaining_error_pct", hue="attempt",
+        data=plot_frame, x="attempt", y="remaining_error_pct", hue="attempt",
         order=plot_order, hue_order=plot_order, palette=palette, width=0.62,
         showfliers=False, legend=False, ax=ax,
     )
     sns.stripplot(
-        data=frame, x="attempt", y="remaining_error_pct", order=plot_order,
+        data=plot_frame, x="attempt", y="remaining_error_pct", order=plot_order,
         color="black", alpha=0.26, size=2.3, jitter=0.20, ax=ax,
     )
     ax.axhline(id_median, color="0.35", linewidth=1.0, linestyle="--")
-    ax.text(
-        0.01,
-        id_median + 1.0,
-        f"ID median = {id_median:.1f}%",
-        color="0.30",
-        fontsize=9,
-        transform=ax.get_yaxis_transform(),
-    )
     ax.set_xlabel("")
     ax.set_ylabel("Remaining target error (% of unsteered)")
     ax.set_title("Adversarial attempts against frozen A-LQR")
@@ -1002,13 +1022,14 @@ def plot(search_names: list[str]) -> None:
         tick_label.set_rotation(65)
         tick_label.set_horizontalalignment("right")
         tick_label.set_rotation_mode("anchor")
-    upper = max(70.0, float(frame["remaining_error_pct"].max()) + 5.0)
+    upper = max(70.0, float(plot_frame["remaining_error_pct"].max()) + 5.0)
     ax.set_ylim(0.0, upper)
     ax.set_yticks([0, round(upper)])
     ax.text(
         0.99,
         0.98,
-        "Lower is better; 100% = no LQR benefit",
+        f"Lower is better; 100% = no LQR benefit\n"
+        f"Dashed line = ID median ({id_median:.1f}%)",
         ha="right",
         va="top",
         fontsize=9,

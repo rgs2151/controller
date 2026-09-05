@@ -2,6 +2,16 @@
   "metric": "100 * A-LQR final target error / unsteered final target error",
   "reference": "0% is complete correction; 100% is no A-LQR benefit",
   "id_median_remaining_error_pct": 32.470155092464914,
+  "id_reference": {
+    "label": "ID",
+    "n": 50,
+    "median_remaining_error_pct": 32.470155092464914,
+    "q1_remaining_error_pct": 29.82450313654466,
+    "q3_remaining_error_pct": 36.80775123239963,
+    "iqr_remaining_error_pct": 6.983248095854972,
+    "min_remaining_error_pct": 17.856067794699992,
+    "max_remaining_error_pct": 42.68227372283634
+  },
   "paired_secondary_metric": "remaining_error_pct(attempt) - remaining_error_pct(matched ID)",
   "attempts": {
     "tail_relocation": {

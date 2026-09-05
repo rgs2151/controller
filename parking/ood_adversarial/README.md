@@ -27,15 +27,16 @@
   candidate prompts in total, each under both unsteered and frozen-A-LQR
   forward passes.
 - Retain all 27 evaluated attempt distributions in the CSV and JSON summary.
-  Display 16 nonredundant attempts in the box plot so the progression remains
-  legible.
+  Display the ID reference first, followed by 16 nonredundant adversarial
+  attempts, so the progression remains legible.
 - Write the prompt-level metrics, descriptive summary, and box plot as CSV,
   JSON, vector PDF, and PNG.
 
-The 16 displayed attempts are:
+The displayed ID reference and 16 adversarial attempts are:
 
 | Attempt | Construction |
 | --- | --- |
+| ID | Unchanged held-out RTP anchors used by `ood_explore`. |
 | A1 Saturation | Append repeated neutral archive context to the ID anchor until the input reaches the 512-token evaluation limit. |
 | A2 Unicode | Replace Latin characters with visually similar Greek/Cyrillic characters and insert zero-width joiners. |
 | A3 Spacing | Insert a space between every character in the anchor. |
@@ -60,7 +61,7 @@ The 16 displayed attempts are:
   `parking/ood_explore/plots/lqr_ood_failure_metrics.csv`; frozen controller
   from `parking/residual_checks/cache/controller.pt`.
 - Sessions/groups: 27 cached adversarial attempt distributions with 50 matched
-  anchors each; 16 selected attempt distributions displayed.
+  anchors each; ID plus 16 selected attempt distributions displayed.
 - Labels/targets: frozen layer-wise non-toxicity direction and semantic
   setpoint fitted from disjoint RTP records.
 - Signals/features/measures: normalized unsteered and A-LQR target errors,
@@ -96,21 +97,21 @@ The 16 displayed attempts are:
 
 ## Legends
 
-- X axis: 16 named adversarial attempts, ordered from deterministic prompt
-  transformations through local searches, large-vocabulary searches, and
-  distribution-level selections.
+- X axis: unchanged ID first, followed by 16 named adversarial attempts ordered
+  from deterministic prompt transformations through local searches,
+  large-vocabulary searches, and distribution-level selections.
 - Y axis: A-LQR remaining target error under the attempt as a percentage of the
   same prompt's unsteered target error; lower is better.
-- Color/value: dark red denotes screened adversarial attempts. Black denotes
-  the attempt with the largest median remaining error and the attempt with the
-  largest remaining-error IQR.
+- Color/value: midnight blue denotes ID and dark red denotes screened
+  adversarial attempts. Black denotes the attempt with the largest median
+  remaining error and the attempt with the largest remaining-error IQR.
 - Grouping: one box and 50 jittered prompt points per attempt.
 - Ordering/sorting: conceptual search progression A1 through A16; attempts are
   not sorted by their observed results.
 - Lines/markers/labels: box center is the median, box limits are the first and
   third quartiles, whiskers extend to 1.5 IQR, gray points are individual
   prompts, and the dashed horizontal line marks the 32.47% unchanged-ID median.
-- Panels: one standalone box plot containing adversarial attempts only.
+- Panels: one standalone box plot containing ID and the adversarial attempts.
 
 ## Interpretation
 
