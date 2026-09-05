@@ -31,6 +31,7 @@
 - Previous two-model table (superseded): [paper_style_table_truthfulness_ours_plus_qwen14b_methods.csv](paper_style_table_truthfulness_ours_plus_qwen14b_methods.csv)
 
 Run-status notes (see `run_status` column in the canonical CSV):
-- DistilGPT-2 (all 4 methods) and Qwen-2.5-7B (Original/A-LQR/S-PID): `completed`, generated with bfloat16-safe loading.
-- Qwen-2.5-7B and 14B H-infinity: `infeasible_ram` — the finite-horizon gain recursion exceeds host RAM/time budgets (>84 GB at 14B; 7B timed out at 30 min under a 60 GB cap). Hardware limit, not a code failure: the same core succeeds on DistilGPT-2.
+- DistilGPT-2 (all 4 methods), Qwen-2.5-1.5B (all 4 methods), and Qwen-2.5-7B (Original/A-LQR/S-PID): `completed`, generated with bfloat16-safe loading.
+- Qwen-2.5-1.5B is the first model beyond DistilGPT-2 with a complete 4-method column: H-infinity synthesis is feasible at 1536-dim (modest RAM), though steering is heavy-handed at this gain (T*I 0.0, Info 6.25). S-PID again improves over baseline (31.25 vs 25.0 T*I).
+- Qwen-2.5-7B and 14B H-infinity: `infeasible_ram` — the finite-horizon gain recursion exceeds host RAM/time budgets (>84 GB at 14B; 7B timed out at 30 min under a 60 GB cap). Hardware limit, not a code failure: the same core succeeds on DistilGPT-2 and Qwen-1.5B.
 - Qwen-2.5-14B (Original/A-LQR/S-PID): `completed_fp16_caveat` — these rows were produced before a float16-overflow bug in the quantized loader was found (Qwen2.5 in fp16 emits degenerate text). The loader now uses bfloat16; these rows should be regenerated before publication.

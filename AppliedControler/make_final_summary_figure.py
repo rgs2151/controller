@@ -4,8 +4,7 @@ Panel A: TruthfulQA T*I (%) per method, grouped by model (with std error bars).
 Panel B: RealToxicityPrompts toxicity (%) per method for DistilGPT-2 (log scale).
 
 Inputs (results_reports/):
-  paper_style_table_truthfulness_ours_plus_qwen14b_methods.csv  (DistilGPT-2 + Qwen-14B rows)
-  paper_style_table_truthfulness_qwen7b_*_rerun.csv             (optional Qwen-7B rows)
+  paper_style_table_truthfulness_all_models_methods.csv          (canonical, all models)
   paper_style_table_paper_like_calibrated.csv                   (toxicity rows)
 
 Outputs (results_reports/):
@@ -34,27 +33,25 @@ METHOD_COLORS = {
     "S-PID": "#dd8452",
     "H-infinity": "#55a868",
 }
-MODEL_ORDER = ["DistilGPT-2-ours", "Qwen-2.5-7B-ours", "Qwen-2.5-14B-ours"]
+MODEL_ORDER = [
+    "DistilGPT-2-ours",
+    "Qwen-2.5-1.5B-ours",
+    "Qwen-2.5-7B-ours",
+    "Qwen-2.5-14B-ours",
+]
 MODEL_LABELS = {
     "DistilGPT-2-ours": "DistilGPT-2",
+    "Qwen-2.5-1.5B-ours": "Qwen-2.5-1.5B",
     "Qwen-2.5-7B-ours": "Qwen-2.5-7B",
     "Qwen-2.5-14B-ours": "Qwen-2.5-14B",
 }
 
 
 def load_truthfulness() -> pd.DataFrame:
-    frames = []
     canonical = os.path.join(
-        REPORTS, "paper_style_table_truthfulness_ours_plus_qwen14b_methods.csv"
+        REPORTS, "paper_style_table_truthfulness_all_models_methods.csv"
     )
-    frames.append(pd.read_csv(canonical))
-    for stage in ("original", "alqr", "spid", "hinf"):
-        path = os.path.join(
-            REPORTS, f"paper_style_table_truthfulness_qwen7b_{stage}_rerun.csv"
-        )
-        if os.path.exists(path):
-            frames.append(pd.read_csv(path))
-    df = pd.concat(frames, ignore_index=True)
+    df = pd.read_csv(canonical)
     df = df.drop_duplicates(subset=["model", "method"], keep="last")
     return df
 

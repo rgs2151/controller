@@ -1,0 +1,4 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+H-infinity: T.I=0.00 +/- 0.00, True=0.00 +/- 0.00, Info=6.25 +/- 6.05, MMLU=20.83 +/- 8.29
+Wrote truthfulness summary to AppliedControler/results_reports/paper_style_table_truthfulness_qwen1p5b_hinf_rerun.csv

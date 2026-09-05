@@ -8,7 +8,7 @@
 \begin{document}
 \begin{table}[t]
 \centering
-\caption{\textit{Table 2. Summary of truthfulness evaluations (DistilGPT-2, Qwen-2.5-7B, Qwen-2.5-14B)}}
+\caption{\textit{Table 2. Summary of truthfulness evaluations (DistilGPT-2, Qwen-2.5-1.5B/7B/14B)}}
 \renewcommand{\arraystretch}{1.22}
 \setlength{\tabcolsep}{6.5pt}
 \begin{tabular}{llccc|c}
@@ -20,6 +20,12 @@ Model & Method & \cellcolor{blue!16} T\!\cdot\!I (\%) (\uparrow) & True (\%) (\u
  & A-LQR & \cellcolor{blue!16} 18.75 \pm 9.76 & 18.75 \pm 9.76 & 100.00 \pm 0.00 & 0.00 \pm 0.00 \\
  & S-PID & \cellcolor{blue!16} \textbf{31.25 \pm 11.59} & 31.25 \pm 11.59 & 100.00 \pm 0.00 & 4.17 \pm 4.08 \\
  & H-infinity & \cellcolor{blue!16} 18.75 \pm 9.76 & 18.75 \pm 9.76 & 100.00 \pm 0.00 & 0.00 \pm 0.00 \\
+\midrule
+\multirow{4}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-1.5B-ours}} & Original & \cellcolor{blue!16} 25.00 \pm 10.83 & 25.00 \pm 10.83 & 100.00 \pm 0.00 & 8.33 \pm 5.64 \\
+\midrule
+ & A-LQR & \cellcolor{blue!16} 0.00 \pm 0.00 & 0.00 \pm 0.00 & 0.00 \pm 0.00 & 20.83 \pm 8.29 \\
+ & S-PID & \cellcolor{blue!16} \textbf{31.25 \pm 11.59} & 31.25 \pm 11.59 & 100.00 \pm 0.00 & 8.33 \pm 5.64 \\
+ & H-infinity & \cellcolor{blue!16} 0.00 \pm 0.00 & 0.00 \pm 0.00 & 6.25 \pm 6.05 & 20.83 \pm 8.29 \\
 \midrule
 \multirow{4}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-7B-ours}} & Original & \cellcolor{blue!16} 33.33 \pm 19.25 & 33.33 \pm 19.25 & 100.00 \pm 0.00 & 37.50 \pm 17.12 \\
 \midrule
