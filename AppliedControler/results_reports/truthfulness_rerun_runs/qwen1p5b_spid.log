@@ -1,0 +1,4 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+S-PID: T.I=31.25 +/- 11.59, True=31.25 +/- 11.59, Info=100.00 +/- 0.00, MMLU=8.33 +/- 5.64
+Wrote truthfulness summary to AppliedControler/results_reports/paper_style_table_truthfulness_qwen1p5b_spid_rerun.csv

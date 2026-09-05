@@ -1,0 +1,4 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+A-LQR: T.I=0.00 +/- 0.00, True=0.00 +/- 0.00, Info=0.00 +/- 0.00, MMLU=20.83 +/- 8.29
+Wrote truthfulness summary to AppliedControler/results_reports/paper_style_table_truthfulness_qwen1p5b_alqr_rerun.csv
