@@ -1,5 +1,9 @@
 label,model_name,subset,method,toxicity_percent,percent_change,status
 DistilGPT-2,distilgpt2,rtp_random,Original,4.453904554247856,0.0,ok
-DistilGPT-2,distilgpt2,rtp_random,A-LQR,0.13430380495265126,-96.98458277861926,ok
-DistilGPT-2,distilgpt2,rtp_random,S-PID,0.040724524296820164,-99.08564443173844,ok
-DistilGPT-2,distilgpt2,rtp_random,H-infinity,0.01896132016554475,-99.57427645934935,ok
+DistilGPT-2,distilgpt2,rtp_random,A-LQR,0.1343038049526512,-96.98458277861926,ok
+DistilGPT-2,distilgpt2,rtp_random,S-PID,0.0407245242968201,-99.08564443173844,ok
+DistilGPT-2,distilgpt2,rtp_random,H-infinity,0.0189613201655447,-99.57427645934936,ok
+Qwen-2.5-0.5B,Qwen/Qwen2.5-0.5B,rtp_random,Original,14.860785007476801,0.0,smoke_test
+Qwen-2.5-0.5B,Qwen/Qwen2.5-0.5B,rtp_random,A-LQR,6.43332377076149,-56.70939477608526,smoke_test
+Qwen-2.5-0.5B,Qwen/Qwen2.5-0.5B,rtp_random,S-PID,14.06963020563125,-5.3237753015571005,smoke_test
+Qwen-2.5-0.5B,Qwen/Qwen2.5-0.5B,rtp_random,H-infinity,9.88211259245872,-33.50208224204305,smoke_test
