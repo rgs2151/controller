@@ -60,3 +60,25 @@ STEERING_METHOD_LABELS = {
     "spid": "S-PID",
     "new_method": "H-infinity",
 }
+
+# ---- Run completeness -> model label color ----
+# Models with only smoke-test or missing data get gray labels.
+COMPLETE_LABEL_COLOR = "black"
+INCOMPLETE_LABEL_COLOR = "#999999"
+
+# Truthfulness (full paper-aligned protocol done)
+TRUTH_FULLY_RUN = {
+    "DistilGPT-2-ours",
+    "Qwen-2.5-1.5B-ours",
+    "Qwen-2.5-1.5B-paper-proto",
+    "Qwen-2.5-7B-ours",
+    "Qwen-2.5-14B-ours",
+}
+# In-distribution RTP toxicity (full calibrated run done)
+TOX_FULLY_RUN = {"DistilGPT-2"}
+# OOD benchmarks: all data so far is smoke-level
+OOD_FULLY_RUN: set[str] = set()
+
+
+def model_label_color(model: str, fully_run: set[str]) -> str:
+    return COMPLETE_LABEL_COLOR if model in fully_run else INCOMPLETE_LABEL_COLOR

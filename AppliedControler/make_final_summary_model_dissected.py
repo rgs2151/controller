@@ -31,6 +31,8 @@ try:
         METHOD_COLORS,
         TRUTH_MODEL_ORDER as MODEL_ORDER,
         TRUTH_MODEL_LABELS as MODEL_LABELS,
+        TRUTH_FULLY_RUN as FULLY_RUN,
+        model_label_color,
     )
 except ImportError:
     from figure_config import (
@@ -38,6 +40,8 @@ except ImportError:
         METHOD_COLORS,
         TRUTH_MODEL_ORDER as MODEL_ORDER,
         TRUTH_MODEL_LABELS as MODEL_LABELS,
+        TRUTH_FULLY_RUN as FULLY_RUN,
+        model_label_color,
     )
 
 METRICS = [
@@ -101,7 +105,12 @@ def main() -> None:
             if i == 0:
                 ax.set_title(metric_label, fontsize=10)
             if k == 0:
-                ax.set_ylabel(MODEL_LABELS[model], fontsize=10, fontweight="bold")
+                ax.set_ylabel(
+                    MODEL_LABELS[model],
+                    fontsize=10,
+                    fontweight="bold",
+                    color=model_label_color(model, FULLY_RUN),
+                )
             if i == n_rows - 1:
                 ax.tick_params(axis="x", rotation=30)
 
