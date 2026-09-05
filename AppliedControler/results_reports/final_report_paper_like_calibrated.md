@@ -24,13 +24,13 @@
 
 ## Truthfulness Artifact Status
 
-- Canonical truthfulness CSV: [paper_style_table_truthfulness_ours_plus_qwen14b_methods.csv](paper_style_table_truthfulness_ours_plus_qwen14b_methods.csv)
-- Canonical truthfulness LaTeX: [table2_style_truthfulness_ours_plus_qwen14b_methods.tex](table2_style_truthfulness_ours_plus_qwen14b_methods.tex)
-- Canonical truthfulness PDF: [table2_style_truthfulness_ours_plus_qwen14b_methods.pdf](table2_style_truthfulness_ours_plus_qwen14b_methods.pdf)
+- Canonical truthfulness CSV (all models): [paper_style_table_truthfulness_all_models_methods.csv](paper_style_table_truthfulness_all_models_methods.csv)
+- Canonical truthfulness LaTeX: [table2_style_truthfulness_all_models_methods.tex](table2_style_truthfulness_all_models_methods.tex)
+- Canonical truthfulness PDF: [table2_style_truthfulness_all_models_methods.pdf](table2_style_truthfulness_all_models_methods.pdf)
+- Final summary figure: [final_summary_figure.png](final_summary_figure.png) / [final_summary_figure.pdf](final_summary_figure.pdf) (Panel A: T*I across model scales; Panel B: RTP toxicity per method, log scale)
+- Previous two-model table (superseded): [paper_style_table_truthfulness_ours_plus_qwen14b_methods.csv](paper_style_table_truthfulness_ours_plus_qwen14b_methods.csv)
 
-All artifacts were regenerated from scratch (2026-09-05) via the checkpointed pipeline [AppliedControler/rerun_truthfulness_pipeline.py](../rerun_truthfulness_pipeline.py) after replacing the H-infinity core in [robust_steerability/control/h_infinity.py](../../robust_steerability/control/h_infinity.py). Per-stage logs and status JSON are in [truthfulness_rerun_runs/](truthfulness_rerun_runs/).
-
-Stage outcomes (7/8 completed):
-- DistilGPT-2: Original, A-LQR, S-PID, H-infinity — all completed (the new H-infinity core synthesizes and steers successfully at this scale).
-- Qwen-2.5-14B (4-bit NF4): Original, A-LQR, S-PID — completed with CPU controller synthesis and reduced budgets.
-- Qwen-2.5-14B H-infinity — reported as "--" in the canonical table. The finite-horizon gain recursion over the 5120-dim hidden state exceeds available host RAM (>84 GB observed) even at horizon 24 with CPU synthesis; runs were bounded by a 60 GB memory cap and 900 s timeout and could not complete. This is a hardware limit, not a code failure (the same core succeeds on DistilGPT-2).
+Run-status notes (see `run_status` column in the canonical CSV):
+- DistilGPT-2 (all 4 methods) and Qwen-2.5-7B (Original/A-LQR/S-PID): `completed`, generated with bfloat16-safe loading.
+- Qwen-2.5-7B and 14B H-infinity: `infeasible_ram` — the finite-horizon gain recursion exceeds host RAM/time budgets (>84 GB at 14B; 7B timed out at 30 min under a 60 GB cap). Hardware limit, not a code failure: the same core succeeds on DistilGPT-2.
+- Qwen-2.5-14B (Original/A-LQR/S-PID): `completed_fp16_caveat` — these rows were produced before a float16-overflow bug in the quantized loader was found (Qwen2.5 in fp16 emits degenerate text). The loader now uses bfloat16; these rows should be regenerated before publication.
