@@ -140,14 +140,15 @@ def _load_model_for_eval(
         tokenizer.pad_token_id = tokenizer.eos_token_id
         quantization = BitsAndBytesConfig(
             load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.float16,
+            # bfloat16: Qwen2.5 overflows in float16, producing degenerate output.
+            bnb_4bit_compute_dtype=torch.bfloat16,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
         )
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             quantization_config=quantization,
-            torch_dtype=torch.float16,
+            torch_dtype=torch.bfloat16,
             device_map="auto",
             low_cpu_mem_usage=True,
             attn_implementation="eager",

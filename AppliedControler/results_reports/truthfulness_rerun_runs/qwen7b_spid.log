@@ -1,0 +1,6 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:02<00:07,  2.49s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:05<00:05,  2.80s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:08<00:02,  2.91s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:10<00:00,  2.60s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:10<00:00,  2.67s/it]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+S-PID: T.I=16.67 +/- 15.21, True=16.67 +/- 15.21, Info=100.00 +/- 0.00, MMLU=25.00 +/- 15.31
+Wrote truthfulness summary to AppliedControler/results_reports/paper_style_table_truthfulness_qwen7b_spid_rerun.csv
+[W905 17:00:30.704693926 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())

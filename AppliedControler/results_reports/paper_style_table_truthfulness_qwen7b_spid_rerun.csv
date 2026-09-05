@@ -1,0 +1,2 @@
+model,method,ti_mean,ti_std,true_mean,true_std,info_mean,info_std,mmlu_mean,mmlu_std
+Qwen-2.5-7B-ours,S-PID,16.666666666666664,15.214515486254616,16.666666666666664,15.214515486254616,100.0,0.0,25.0,15.309310892394862

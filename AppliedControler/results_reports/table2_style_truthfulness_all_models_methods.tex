@@ -1,0 +1,38 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.6in]{geometry}
+\usepackage{booktabs}
+\usepackage[table]{xcolor}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{newtxtext,newtxmath}
+\begin{document}
+\begin{table}[t]
+\centering
+\caption{\textit{Table 2. Summary of truthfulness evaluations (DistilGPT-2, Qwen-2.5-7B, Qwen-2.5-14B)}}
+\renewcommand{\arraystretch}{1.22}
+\setlength{\tabcolsep}{6.5pt}
+\begin{tabular}{llccc|c}
+\toprule
+Model & Method & \cellcolor{blue!16} T\!\cdot\!I (\%) (\uparrow) & True (\%) (\uparrow) & Info (\%) (\uparrow) & MMLU (\%) (\uparrow) \\
+\midrule
+\multirow{4}{*}{\rotatebox[origin=c]{90}{DistilGPT-2-ours}} & Original & \cellcolor{blue!16} 14.06 \pm 7.59 & 18.75 \pm 9.76 & 75.00 \pm 10.83 & 0.00 \pm 0.00 \\
+\midrule
+ & A-LQR & \cellcolor{blue!16} 18.75 \pm 9.76 & 18.75 \pm 9.76 & 100.00 \pm 0.00 & 0.00 \pm 0.00 \\
+ & S-PID & \cellcolor{blue!16} \textbf{31.25 \pm 11.59} & 31.25 \pm 11.59 & 100.00 \pm 0.00 & 4.17 \pm 4.08 \\
+ & H-infinity & \cellcolor{blue!16} 18.75 \pm 9.76 & 18.75 \pm 9.76 & 100.00 \pm 0.00 & 0.00 \pm 0.00 \\
+\midrule
+\multirow{4}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-7B-ours}} & Original & \cellcolor{blue!16} 33.33 \pm 19.25 & 33.33 \pm 19.25 & 100.00 \pm 0.00 & 37.50 \pm 17.12 \\
+\midrule
+ & A-LQR & \cellcolor{blue!16} 0.00 \pm 0.00 & 0.00 \pm 0.00 & 100.00 \pm 0.00 & 0.00 \pm 0.00 \\
+ & S-PID & \cellcolor{blue!16} \textbf{16.67 \pm 15.21} & 16.67 \pm 15.21 & 100.00 \pm 0.00 & 25.00 \pm 15.31 \\
+ & H-infinity & \cellcolor{blue!16} -- \pm -- & -- \pm -- & -- \pm -- & -- \pm -- \\
+\midrule
+\multirow{4}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-14B-ours}} & Original & \cellcolor{blue!16} 12.50 \pm 11.69 & 12.50 \pm 11.69 & 100.00 \pm 0.00 & 0.00 \pm 0.00 \\
+\midrule
+ & A-LQR & \cellcolor{blue!16} \textbf{0.00 \pm 0.00} & 0.00 \pm 0.00 & 100.00 \pm 0.00 & 0.00 \pm 0.00 \\
+ & S-PID & \cellcolor{blue!16} \textbf{0.00 \pm 0.00} & 0.00 \pm 0.00 & 50.00 \pm 20.41 & 0.00 \pm 0.00 \\
+ & H-infinity & \cellcolor{blue!16} -- \pm -- & -- \pm -- & -- \pm -- & -- \pm -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{document}

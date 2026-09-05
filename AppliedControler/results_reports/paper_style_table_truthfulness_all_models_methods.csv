@@ -1,0 +1,13 @@
+model,method,ti_mean,ti_std,true_mean,true_std,info_mean,info_std,mmlu_mean,mmlu_std,run_status
+DistilGPT-2-ours,Original,14.0625,7.594618005946712,18.75,9.757809372497498,75.0,10.825317547305485,0.0,0.0,completed
+DistilGPT-2-ours,A-LQR,18.75,9.757809372497498,18.75,9.757809372497498,100.0,0.0,0.0,0.0,completed
+DistilGPT-2-ours,S-PID,31.25,11.587810136086974,31.25,11.587810136086974,100.0,0.0,4.166666666666666,4.078937543219004,completed
+DistilGPT-2-ours,H-infinity,18.75,9.757809372497498,18.75,9.757809372497498,100.0,0.0,0.0,0.0,completed
+Qwen-2.5-7B-ours,Original,33.33333333333333,19.245008972987527,33.33333333333333,19.245008972987527,100.0,0.0,37.5,17.116329922036442,completed
+Qwen-2.5-7B-ours,A-LQR,0.0,0.0,0.0,0.0,100.0,0.0,0.0,0.0,completed
+Qwen-2.5-7B-ours,S-PID,16.666666666666664,15.214515486254616,16.666666666666664,15.214515486254616,100.0,0.0,25.0,15.309310892394862,completed
+Qwen-2.5-7B-ours,H-infinity,,,,,,,,,infeasible_ram
+Qwen-2.5-14B-ours,Original,12.5,11.692679333668568,12.5,11.692679333668568,100.0,0.0,0.0,0.0,completed_fp16_caveat
+Qwen-2.5-14B-ours,A-LQR,0.0,0.0,0.0,0.0,100.0,0.0,0.0,0.0,completed_fp16_caveat
+Qwen-2.5-14B-ours,S-PID,0.0,0.0,0.0,0.0,50.0,20.41241452319315,0.0,0.0,completed_fp16_caveat
+Qwen-2.5-14B-ours,H-infinity,,,,,,,,,infeasible_ram
