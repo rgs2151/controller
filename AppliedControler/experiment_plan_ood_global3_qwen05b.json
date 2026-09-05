@@ -1,0 +1,220 @@
+{
+  "methods": [
+    {
+      "name": "alqr",
+      "params": {}
+    },
+    {
+      "name": "spid",
+      "params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      }
+    },
+    {
+      "name": "new_method",
+      "params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      }
+    }
+  ],
+  "count": 12,
+  "experiments": [
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.493637204170227,
+      "early": 0.6006792187690735,
+      "mid": 0.4305295050144195,
+      "late": 0.4497027993202209,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_jigsaw_long_alqr.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.493637204170227,
+      "early": 0.6006792187690735,
+      "mid": 0.4305295050144195,
+      "late": 0.4497027993202209,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_jigsaw_long_spid.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.493637204170227,
+      "early": 0.6006792187690735,
+      "mid": 0.4305295050144195,
+      "late": 0.4497027993202209,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_jigsaw_long_new_method.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "toxicchat_long",
+      "rank": 1,
+      "overall": 0.4487078785896301,
+      "early": 0.5470677614212036,
+      "mid": 0.3737322986125946,
+      "late": 0.425323486328125,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_toxicchat_long_alqr.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "toxicchat_long",
+      "rank": 1,
+      "overall": 0.4487078785896301,
+      "early": 0.5470677614212036,
+      "mid": 0.3737322986125946,
+      "late": 0.425323486328125,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_toxicchat_long_spid.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "toxicchat_long",
+      "rank": 1,
+      "overall": 0.4487078785896301,
+      "early": 0.5470677614212036,
+      "mid": 0.3737322986125946,
+      "late": 0.425323486328125,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_toxicchat_long_new_method.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.5378103256225586,
+      "early": 0.6524415612220764,
+      "mid": 0.5055153369903564,
+      "late": 0.455474317073822,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_mmlu_ood_other_concepts_alqr.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.5378103256225586,
+      "early": 0.6524415612220764,
+      "mid": 0.5055153369903564,
+      "late": 0.455474317073822,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_mmlu_ood_other_concepts_spid.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 1,
+      "overall": 0.5378103256225586,
+      "early": 0.6524415612220764,
+      "mid": 0.5055153369903564,
+      "late": 0.455474317073822,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_mmlu_ood_other_concepts_new_method.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "rtp_random",
+      "rank": 1,
+      "overall": 0.0,
+      "early": 0.0,
+      "mid": 0.0,
+      "late": 0.0,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_rtp_random_alqr.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "rtp_random",
+      "rank": 1,
+      "overall": 0.0,
+      "early": 0.0,
+      "mid": 0.0,
+      "late": 0.0,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_rtp_random_spid.pt"
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_name": "Qwen/Qwen2.5-0.5B",
+      "subset": "rtp_random",
+      "rank": 1,
+      "overall": 0.0,
+      "early": 0.0,
+      "mid": 0.0,
+      "late": 0.0,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/Qwen__Qwen2.5-0.5B_rtp_random_new_method.pt"
+    }
+  ]
+}

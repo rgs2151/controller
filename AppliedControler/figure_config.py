@@ -19,6 +19,7 @@ NA_COLOR = "#b30000"
 # ---- Truthfulness figures (keys match paper_style_table_truthfulness_*.csv) ----
 TRUTH_MODEL_ORDER = [
     "DistilGPT-2-ours",
+    "Qwen-2.5-0.5B-smoke",
     "Qwen-2.5-1.5B-ours",
     "Qwen-2.5-1.5B-paper-proto",
     "Qwen-2.5-7B-ours",
@@ -26,6 +27,7 @@ TRUTH_MODEL_ORDER = [
 ]
 TRUTH_MODEL_LABELS = {
     "DistilGPT-2-ours": "DistilGPT-2",
+    "Qwen-2.5-0.5B-smoke": "Qwen-2.5-0.5B\n(smoke)",
     "Qwen-2.5-1.5B-ours": "Qwen-2.5-1.5B",
     "Qwen-2.5-1.5B-paper-proto": "Qwen-2.5-1.5B\n(paper protocol)",
     "Qwen-2.5-7B-ours": "Qwen-2.5-7B",
@@ -35,11 +37,14 @@ TRUTH_MODEL_LABELS = {
 # ---- Toxicity / OOD figures (keys match label column of steering CSVs) ----
 TOX_MODEL_ORDER = [
     "DistilGPT-2",
+    "Qwen-2.5-0.5B",
     "Qwen-2.5-1.5B",
     "Qwen-2.5-7B",
     "Qwen-2.5-14B",
 ]
 TOX_MODEL_LABELS = {name: name for name in TOX_MODEL_ORDER}
+# Qwen-0.5B data is smoke-level for now; annotate its label.
+TOX_MODEL_LABELS["Qwen-2.5-0.5B"] = "Qwen-2.5-0.5B\n(smoke)"
 
 # ---- Global top-3 OOD benchmarks (from residual analysis, fixed across models) ----
 OOD_SUBSETS = ["jigsaw_long", "toxicchat_long", "mmlu_ood_other_concepts"]
