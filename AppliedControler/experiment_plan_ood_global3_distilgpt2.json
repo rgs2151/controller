@@ -1,0 +1,172 @@
+{
+  "methods": [
+    {
+      "name": "alqr",
+      "params": {}
+    },
+    {
+      "name": "spid",
+      "params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      }
+    },
+    {
+      "name": "new_method",
+      "params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      }
+    }
+  ],
+  "count": 9,
+  "experiments": [
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.6876787543296814,
+      "early": 0.6930122375488281,
+      "mid": 0.5178775191307068,
+      "late": 0.8521465063095093,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_jigsaw_long_alqr.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.6876787543296814,
+      "early": 0.6930122375488281,
+      "mid": 0.5178775191307068,
+      "late": 0.8521465063095093,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_jigsaw_long_spid.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "jigsaw_long",
+      "rank": 1,
+      "overall": 0.6876787543296814,
+      "early": 0.6930122375488281,
+      "mid": 0.5178775191307068,
+      "late": 0.8521465063095093,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_jigsaw_long_new_method.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "toxicchat_long",
+      "rank": 2,
+      "overall": 0.6578632593154907,
+      "early": 0.6719022393226624,
+      "mid": 0.4076340496540069,
+      "late": 0.8940532803535461,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_toxicchat_long_alqr.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "toxicchat_long",
+      "rank": 2,
+      "overall": 0.6578632593154907,
+      "early": 0.6719022393226624,
+      "mid": 0.4076340496540069,
+      "late": 0.8940532803535461,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_toxicchat_long_spid.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "toxicchat_long",
+      "rank": 2,
+      "overall": 0.6578632593154907,
+      "early": 0.6719022393226624,
+      "mid": 0.4076340496540069,
+      "late": 0.8940532803535461,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_toxicchat_long_new_method.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 3,
+      "overall": 0.6256013512611389,
+      "early": 0.6829329133033752,
+      "mid": 0.3996603488922119,
+      "late": 0.79421067237854,
+      "method": "alqr",
+      "method_params": {},
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_mmlu_ood_other_concepts_alqr.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 3,
+      "overall": 0.6256013512611389,
+      "early": 0.6829329133033752,
+      "mid": 0.3996603488922119,
+      "late": 0.79421067237854,
+      "method": "spid",
+      "method_params": {
+        "kp": 1.0,
+        "ki": 0.0,
+        "kd": 0.0
+      },
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_mmlu_ood_other_concepts_spid.pt"
+    },
+    {
+      "label": "DistilGPT-2",
+      "model_name": "distilgpt2",
+      "subset": "mmlu_ood_other_concepts",
+      "rank": 3,
+      "overall": 0.6256013512611389,
+      "early": 0.6829329133033752,
+      "mid": 0.3996603488922119,
+      "late": 0.79421067237854,
+      "method": "new_method",
+      "method_params": {
+        "gamma_lower": 0.01,
+        "gamma_upper": 10.0,
+        "gamma_tolerance": 0.0001,
+        "gamma_max_iterations": 60.0
+      },
+      "artifact_path": "parking/residual_checks/cache/distilgpt2_mmlu_ood_other_concepts_new_method.pt"
+    }
+  ]
+}
