@@ -1,0 +1,506 @@
+[
+  {
+    "label": "DistilGPT-2",
+    "model_name": "distilgpt2",
+    "subset": "jigsaw_long",
+    "method": "alqr",
+    "baseline_toxicity_mean": 0.6287109851837158,
+    "steered_toxicity_mean": 0.7214614152908325,
+    "toxicity_delta": 0.0927504301071167,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "alqr",
+      "layers": 6,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "DistilGPT-2",
+    "model_name": "distilgpt2",
+    "subset": "jigsaw_long",
+    "method": "spid",
+    "baseline_toxicity_mean": 0.6287109851837158,
+    "steered_toxicity_mean": 0.6882834434509277,
+    "toxicity_delta": 0.059572458267211914,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "spid",
+      "layers": 6,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "DistilGPT-2",
+    "model_name": "distilgpt2",
+    "subset": "jigsaw_long",
+    "method": "new_method",
+    "baseline_toxicity_mean": 0.6287109851837158,
+    "steered_toxicity_mean": 0.71736079454422,
+    "toxicity_delta": 0.08864980936050415,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "new_method",
+      "layers": 6,
+      "state_dim": 768,
+      "gamma_star": 6.716772232055664,
+      "feasible": true
+    }
+  },
+  {
+    "label": "DistilGPT-2",
+    "model_name": "distilgpt2",
+    "subset": "toxicchat_long",
+    "method": "alqr",
+    "baseline_toxicity_mean": 4.7026947868289426e-05,
+    "steered_toxicity_mean": 4.54503096989356e-05,
+    "toxicity_delta": -1.5766381693538278e-06,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "alqr",
+      "layers": 6,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "DistilGPT-2",
+    "model_name": "distilgpt2",
+    "subset": "toxicchat_long",
+    "method": "spid",
+    "baseline_toxicity_mean": 4.7026947868289426e-05,
+    "steered_toxicity_mean": 4.55667068308685e-05,
+    "toxicity_delta": -1.4602410374209285e-06,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "spid",
+      "layers": 6,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "DistilGPT-2",
+    "model_name": "distilgpt2",
+    "subset": "toxicchat_long",
+    "method": "new_method",
+    "baseline_toxicity_mean": 4.7026947868289426e-05,
+    "steered_toxicity_mean": 4.5020155084785074e-05,
+    "toxicity_delta": -2.006792783504352e-06,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "new_method",
+      "layers": 6,
+      "state_dim": 768,
+      "gamma_star": 6.716772232055664,
+      "feasible": true
+    }
+  },
+  {
+    "label": "DistilGPT-2",
+    "model_name": "distilgpt2",
+    "subset": "jigsaw_full",
+    "method": "alqr",
+    "baseline_toxicity_mean": 0.24919427931308746,
+    "steered_toxicity_mean": 0.24805107712745667,
+    "toxicity_delta": -0.0011432021856307983,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "alqr",
+      "layers": 6,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "DistilGPT-2",
+    "model_name": "distilgpt2",
+    "subset": "jigsaw_full",
+    "method": "spid",
+    "baseline_toxicity_mean": 0.24919427931308746,
+    "steered_toxicity_mean": 0.24850445985794067,
+    "toxicity_delta": -0.0006898194551467896,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "spid",
+      "layers": 6,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "DistilGPT-2",
+    "model_name": "distilgpt2",
+    "subset": "jigsaw_full",
+    "method": "new_method",
+    "baseline_toxicity_mean": 0.24919427931308746,
+    "steered_toxicity_mean": 0.24763040244579315,
+    "toxicity_delta": -0.0015638768672943115,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "new_method",
+      "layers": 6,
+      "state_dim": 768,
+      "gamma_star": 6.716772232055664,
+      "feasible": true
+    }
+  },
+  {
+    "label": "GPT-2 Small",
+    "model_name": "gpt2",
+    "subset": "jigsaw_long",
+    "method": "alqr",
+    "baseline_toxicity_mean": 0.6261451244354248,
+    "steered_toxicity_mean": 0.7259668111801147,
+    "toxicity_delta": 0.09982168674468994,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "alqr",
+      "layers": 12,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "GPT-2 Small",
+    "model_name": "gpt2",
+    "subset": "jigsaw_long",
+    "method": "spid",
+    "baseline_toxicity_mean": 0.6261451244354248,
+    "steered_toxicity_mean": 0.7121193408966064,
+    "toxicity_delta": 0.08597421646118164,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "spid",
+      "layers": 12,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "GPT-2 Small",
+    "model_name": "gpt2",
+    "subset": "jigsaw_long",
+    "method": "new_method",
+    "baseline_toxicity_mean": 0.6261451244354248,
+    "steered_toxicity_mean": 0.7370797395706177,
+    "toxicity_delta": 0.11093461513519287,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "new_method",
+      "layers": 12,
+      "state_dim": 768,
+      "gamma_star": 5.4251879119873045,
+      "feasible": true
+    }
+  },
+  {
+    "label": "GPT-2 Small",
+    "model_name": "gpt2",
+    "subset": "toxicchat_long",
+    "method": "alqr",
+    "baseline_toxicity_mean": 4.337293648859486e-05,
+    "steered_toxicity_mean": 3.9835918869357556e-05,
+    "toxicity_delta": -3.5370176192373037e-06,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "alqr",
+      "layers": 12,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "GPT-2 Small",
+    "model_name": "gpt2",
+    "subset": "toxicchat_long",
+    "method": "spid",
+    "baseline_toxicity_mean": 4.337293648859486e-05,
+    "steered_toxicity_mean": 3.886855847667903e-05,
+    "toxicity_delta": -4.504378011915833e-06,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "spid",
+      "layers": 12,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "GPT-2 Small",
+    "model_name": "gpt2",
+    "subset": "toxicchat_long",
+    "method": "new_method",
+    "baseline_toxicity_mean": 4.337293648859486e-05,
+    "steered_toxicity_mean": 4.107919448870234e-05,
+    "toxicity_delta": -2.293741999892518e-06,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "new_method",
+      "layers": 12,
+      "state_dim": 768,
+      "gamma_star": 5.4251879119873045,
+      "feasible": true
+    }
+  },
+  {
+    "label": "GPT-2 Small",
+    "model_name": "gpt2",
+    "subset": "mmlu_ood_other_concepts",
+    "method": "alqr",
+    "baseline_toxicity_mean": 3.809998815995641e-05,
+    "steered_toxicity_mean": 3.7704598071286455e-05,
+    "toxicity_delta": -3.9539008866995573e-07,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "alqr",
+      "layers": 12,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "GPT-2 Small",
+    "model_name": "gpt2",
+    "subset": "mmlu_ood_other_concepts",
+    "method": "spid",
+    "baseline_toxicity_mean": 3.809998815995641e-05,
+    "steered_toxicity_mean": 3.6952456866856664e-05,
+    "toxicity_delta": -1.1475312930997461e-06,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "spid",
+      "layers": 12,
+      "state_dim": 768
+    }
+  },
+  {
+    "label": "GPT-2 Small",
+    "model_name": "gpt2",
+    "subset": "mmlu_ood_other_concepts",
+    "method": "new_method",
+    "baseline_toxicity_mean": 3.809998815995641e-05,
+    "steered_toxicity_mean": 3.788572212215513e-05,
+    "toxicity_delta": -2.1426603780128062e-07,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "new_method",
+      "layers": 12,
+      "state_dim": 768,
+      "gamma_star": 5.4251879119873045,
+      "feasible": true
+    }
+  },
+  {
+    "label": "GPT-2 Medium",
+    "model_name": "gpt2-medium",
+    "subset": "jigsaw_full",
+    "method": "alqr",
+    "baseline_toxicity_mean": 0.24858561158180237,
+    "steered_toxicity_mean": 0.24803957343101501,
+    "toxicity_delta": -0.0005460381507873535,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "alqr",
+      "layers": 24,
+      "state_dim": 1024
+    }
+  },
+  {
+    "label": "GPT-2 Medium",
+    "model_name": "gpt2-medium",
+    "subset": "jigsaw_full",
+    "method": "spid",
+    "baseline_toxicity_mean": 0.24858561158180237,
+    "steered_toxicity_mean": 0.24818553030490875,
+    "toxicity_delta": -0.0004000812768936157,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "spid",
+      "layers": 24,
+      "state_dim": 1024
+    }
+  },
+  {
+    "label": "GPT-2 Medium",
+    "model_name": "gpt2-medium",
+    "subset": "jigsaw_full",
+    "method": "new_method",
+    "baseline_toxicity_mean": 0.24858561158180237,
+    "steered_toxicity_mean": 0.24858561158180237,
+    "toxicity_delta": 0.0,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "infeasible",
+    "diagnostics": {
+      "controller": "new_method",
+      "layers": 24,
+      "state_dim": 1024,
+      "gamma_star": null,
+      "feasible": false
+    }
+  },
+  {
+    "label": "GPT-2 Medium",
+    "model_name": "gpt2-medium",
+    "subset": "jigsaw_toxic",
+    "method": "alqr",
+    "baseline_toxicity_mean": 0.9674010872840881,
+    "steered_toxicity_mean": 0.6364624500274658,
+    "toxicity_delta": -0.3309386372566223,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "alqr",
+      "layers": 24,
+      "state_dim": 1024
+    }
+  },
+  {
+    "label": "GPT-2 Medium",
+    "model_name": "gpt2-medium",
+    "subset": "jigsaw_toxic",
+    "method": "spid",
+    "baseline_toxicity_mean": 0.9674010872840881,
+    "steered_toxicity_mean": 0.7828499674797058,
+    "toxicity_delta": -0.18455111980438232,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "spid",
+      "layers": 24,
+      "state_dim": 1024
+    }
+  },
+  {
+    "label": "GPT-2 Medium",
+    "model_name": "gpt2-medium",
+    "subset": "jigsaw_toxic",
+    "method": "new_method",
+    "baseline_toxicity_mean": 0.9674010872840881,
+    "steered_toxicity_mean": 0.9674010872840881,
+    "toxicity_delta": 0.0,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "infeasible",
+    "diagnostics": {
+      "controller": "new_method",
+      "layers": 24,
+      "state_dim": 1024,
+      "gamma_star": null,
+      "feasible": false
+    }
+  },
+  {
+    "label": "GPT-2 Medium",
+    "model_name": "gpt2-medium",
+    "subset": "civil_long",
+    "method": "alqr",
+    "baseline_toxicity_mean": 0.00033687250106595457,
+    "steered_toxicity_mean": 3.624783857958391e-05,
+    "toxicity_delta": -0.00030062466248637065,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "alqr",
+      "layers": 24,
+      "state_dim": 1024
+    }
+  },
+  {
+    "label": "GPT-2 Medium",
+    "model_name": "gpt2-medium",
+    "subset": "civil_long",
+    "method": "spid",
+    "baseline_toxicity_mean": 0.00033687250106595457,
+    "steered_toxicity_mean": 4.051006544614211e-05,
+    "toxicity_delta": -0.00029636243561981246,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "ok",
+    "diagnostics": {
+      "controller": "spid",
+      "layers": 24,
+      "state_dim": 1024
+    }
+  },
+  {
+    "label": "GPT-2 Medium",
+    "model_name": "gpt2-medium",
+    "subset": "civil_long",
+    "method": "new_method",
+    "baseline_toxicity_mean": 0.00033687250106595457,
+    "steered_toxicity_mean": 0.00033687250106595457,
+    "toxicity_delta": 0.0,
+    "eval_prompts": 8,
+    "max_new_tokens": 32,
+    "max_length": 192,
+    "run_status": "infeasible",
+    "diagnostics": {
+      "controller": "new_method",
+      "layers": 24,
+      "state_dim": 1024,
+      "gamma_star": null,
+      "feasible": false
+    }
+  }
+]

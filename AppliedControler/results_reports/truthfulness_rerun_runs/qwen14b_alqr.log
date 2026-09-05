@@ -1,0 +1,16 @@
+A-LQR: T.I=0.00 +/- 0.00, True=0.00 +/- 0.00, Info=100.00 +/- 0.00, MMLU=0.00 +/- 0.00
+Wrote truthfulness summary to AppliedControler/results_reports/paper_style_table_truthfulness_qwen14b_alqr_rerun.csv
+`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading checkpoint shards:   0%|          | 0/8 [00:00<?, ?it/s]
+Loading checkpoint shards:  12%|█▎        | 1/8 [00:02<00:14,  2.03s/it]
+Loading checkpoint shards:  25%|██▌       | 2/8 [00:05<00:15,  2.60s/it]
+Loading checkpoint shards:  38%|███▊      | 3/8 [00:07<00:13,  2.77s/it]
+Loading checkpoint shards:  50%|█████     | 4/8 [00:10<00:11,  2.85s/it]
+Loading checkpoint shards:  62%|██████▎   | 5/8 [00:13<00:08,  2.91s/it]
+Loading checkpoint shards:  75%|███████▌  | 6/8 [00:16<00:05,  2.94s/it]
+Loading checkpoint shards:  88%|████████▊ | 7/8 [00:20<00:02,  2.97s/it]
+Loading checkpoint shards: 100%|██████████| 8/8 [00:20<00:00,  2.14s/it]
+Loading checkpoint shards: 100%|██████████| 8/8 [00:20<00:00,  2.55s/it]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+[W905 14:23:25.607078149 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())

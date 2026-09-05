@@ -6,13 +6,27 @@ import torch
 from transformers import AutoModelForCausalLM
 
 
+def _decoder_layers(model: AutoModelForCausalLM) -> list[torch.nn.Module]:
+    if hasattr(model, "model") and hasattr(model.model, "layers"):
+        return list(model.model.layers)
+    if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
+        return list(model.transformer.h)
+    if hasattr(model, "gpt_neox") and hasattr(model.gpt_neox, "layers"):
+        return list(model.gpt_neox.layers)
+    raise ValueError(
+        "Unsupported CausalLM architecture: could not locate decoder layers "
+        "(expected model.layers, transformer.h, or gpt_neox.layers)."
+    )
+
+
 def capture_layer_inputs(
     model: AutoModelForCausalLM,
     encoded: dict[str, torch.Tensor],
 ) -> list[tuple[torch.Tensor, dict[str, object]]]:
+    layers = _decoder_layers(model)
     captured: list[tuple[torch.Tensor, dict[str, object]] | None] = [
         None
-    ] * len(model.model.layers)
+    ] * len(layers)
     handles = []
 
     def make_hook(layer_index: int):
@@ -36,7 +50,7 @@ def capture_layer_inputs(
 
         return hook
 
-    for layer_index, layer in enumerate(model.model.layers):
+    for layer_index, layer in enumerate(layers):
         handles.append(
             layer.register_forward_pre_hook(make_hook(layer_index), with_kwargs=True)
         )

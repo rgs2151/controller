@@ -1,0 +1,20 @@
+[
+  {
+    "model_name": "distilgpt2",
+    "prompt_pool": "rtp_nontoxic",
+    "eval_prompts": 16,
+    "max_new_tokens": 40,
+    "baseline_toxicity_mean": 4.663734580390155e-05,
+    "baseline_toxicity_percent": 0.004663734580390155,
+    "baseline_toxicity_std": 1.0847758858290035e-05
+  },
+  {
+    "model_name": "gpt2",
+    "prompt_pool": "rtp_nontoxic",
+    "eval_prompts": 16,
+    "max_new_tokens": 40,
+    "baseline_toxicity_mean": 0.0010489961132407188,
+    "baseline_toxicity_percent": 0.10489961132407188,
+    "baseline_toxicity_std": 0.003793868003413081
+  }
+]

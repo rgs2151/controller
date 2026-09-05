@@ -1,0 +1,4 @@
+label,model_name,subset,method,baseline_toxicity_mean,steered_toxicity_mean,toxicity_delta,eval_prompts,max_new_tokens,max_length
+DistilGPT-2,distilgpt2,jigsaw_long,alqr,0.49919643998146057,0.4959968030452728,-0.003199636936187744,2,16,128
+DistilGPT-2,distilgpt2,jigsaw_long,spid,0.49919643998146057,0.39242875576019287,-0.1067676842212677,2,16,128
+DistilGPT-2,distilgpt2,jigsaw_long,new_method,0.49919643998146057,0.4794030785560608,-0.01979336142539978,2,16,128

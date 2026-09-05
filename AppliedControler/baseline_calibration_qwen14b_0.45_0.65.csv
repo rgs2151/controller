@@ -1,0 +1,2 @@
+model_name,prompt_pool,eval_prompts,max_new_tokens,prompt_toxicity_min,prompt_toxicity_max,baseline_toxicity_mean,baseline_toxicity_percent,baseline_toxicity_std
+Qwen/Qwen2.5-14B-Instruct,rtp_random,4,20,0.45,0.65,0.24635043740272522,24.635043740272522,0.4065520167350769

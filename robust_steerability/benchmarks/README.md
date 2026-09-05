@@ -4,7 +4,8 @@ Benchmark modules own reusable prompt records, dataset loading, generation scori
 
 ## Current Coverage
 
-- `toxicity.py`: RealToxicityPrompts and Jigsaw prompt pools plus generated-continuation toxicity probabilities.
+- `toxicity.py`: RealToxicityPrompts, Jigsaw, Civil Comments, and ToxicChat prompt pools plus generated-continuation toxicity probabilities.
+- `mmlu.py`: Subject-level MMLU loaders and concept-shift ID/OOD prompt-set construction.
 
 ## A-LQR Parity Roadmap
 

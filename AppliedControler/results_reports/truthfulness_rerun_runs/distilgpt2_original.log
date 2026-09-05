@@ -1,0 +1,4 @@
+Original: T.I=14.06 +/- 7.59, True=18.75 +/- 9.76, Info=75.00 +/- 10.83, MMLU=0.00 +/- 0.00
+Wrote truthfulness summary to AppliedControler/results_reports/paper_style_table_truthfulness_distilgpt2_original_rerun.csv
+`torch_dtype` is deprecated! Use `dtype` instead!
+[W905 14:16:42.262149644 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())

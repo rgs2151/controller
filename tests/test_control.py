@@ -8,7 +8,7 @@ from robust_steerability.control.activation_addition import (
     ActivationAdditionController,
 )
 from robust_steerability.control.base import Controller
-from robust_steerability.control.h_infinity import HInfinityController
+from robust_steerability.control.h_infinity import HInfinityController, HInfinityOptions
 from robust_steerability.control.lqr import (
     LQRController,
     solve_identity_input_lqr,
@@ -116,9 +116,26 @@ class LQRTests(unittest.TestCase):
 
 
 class HInfinityTests(unittest.TestCase):
-    def test_offline_extension_point_requires_implementation(self) -> None:
-        with self.assertRaises(NotImplementedError):
-            HInfinityController.synthesize(scalar_problem(disturbance=True))
+    def test_synthesize_returns_feasible_controller(self) -> None:
+        controller = HInfinityController.synthesize(
+            scalar_problem(disturbance=True),
+            options=HInfinityOptions(gamma_lower=0.01, gamma_upper=10.0, tolerance=1e-4),
+        )
+        self.assertTrue(controller.feasible)
+        self.assertIsNotNone(controller.gamma_star)
+        state_deviation = torch.tensor([[2.0]])
+        control = controller.control(0, state_deviation)
+        self.assertEqual(tuple(control.shape), (1, 1))
+
+    def test_infeasible_controller_raises_on_control(self) -> None:
+        controller = HInfinityController.synthesize(
+            scalar_problem(disturbance=True),
+            options=HInfinityOptions(gamma_lower=0.01, gamma_upper=0.5, tolerance=1e-4),
+        )
+        self.assertFalse(controller.feasible)
+        self.assertIsNone(controller.gamma_star)
+        with self.assertRaises(RuntimeError):
+            controller.control(0, torch.tensor([[1.0]]))
 
     def test_synthesized_solution_has_complete_online_behavior(self) -> None:
         problem = scalar_problem(disturbance=True)

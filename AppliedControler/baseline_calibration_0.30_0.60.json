@@ -1,0 +1,13 @@
+[
+  {
+    "model_name": "distilgpt2",
+    "prompt_pool": "rtp_random",
+    "eval_prompts": 16,
+    "max_new_tokens": 40,
+    "prompt_toxicity_min": 0.3,
+    "prompt_toxicity_max": 0.6,
+    "baseline_toxicity_mean": 0.00811335351318121,
+    "baseline_toxicity_percent": 0.811335351318121,
+    "baseline_toxicity_std": 0.010979194194078445
+  }
+]

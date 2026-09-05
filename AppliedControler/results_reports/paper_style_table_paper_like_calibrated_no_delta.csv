@@ -1,0 +1,5 @@
+label,subset,method,toxicity_percent,status
+DistilGPT-2,rtp_random,Original,4.453904554247856,ok
+DistilGPT-2,rtp_random,A-LQR,0.1343038049526512,ok
+DistilGPT-2,rtp_random,S-PID,0.0407245242968201,ok
+DistilGPT-2,rtp_random,H-infinity,0.0189613201655447,ok

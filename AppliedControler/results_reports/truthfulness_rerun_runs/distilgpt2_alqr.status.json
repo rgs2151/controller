@@ -1,0 +1,43 @@
+{
+  "job": {
+    "name": "distilgpt2_alqr",
+    "model": "DistilGPT-2-ours",
+    "method": "A-LQR",
+    "output_csv": "paper_style_table_truthfulness_distilgpt2_alqr_rerun.csv",
+    "args": [
+      "/teamspace/studios/this_studio/.venv/bin/python",
+      "-u",
+      "-m",
+      "AppliedControler.eval_truthfulness_methods",
+      "--model-label",
+      "DistilGPT-2-ours",
+      "--model-name",
+      "distilgpt2",
+      "--device",
+      "cuda:0",
+      "--methods",
+      "alqr",
+      "--greedy-decoding",
+      "--truthful-samples",
+      "16",
+      "--mmlu-samples",
+      "24",
+      "--calibration-prompts",
+      "4",
+      "--jacobian-prompts",
+      "1",
+      "--jacobian-vjp-chunk",
+      "64",
+      "--max-length",
+      "192",
+      "--max-new-tokens",
+      "24",
+      "--output-csv",
+      "AppliedControler/results_reports/paper_style_table_truthfulness_distilgpt2_alqr_rerun.csv"
+    ],
+    "timeout_seconds": 1200
+  },
+  "status": "skipped_existing",
+  "output_csv": "AppliedControler/results_reports/paper_style_table_truthfulness_distilgpt2_alqr_rerun.csv",
+  "timestamp": 1788619237.7636387
+}

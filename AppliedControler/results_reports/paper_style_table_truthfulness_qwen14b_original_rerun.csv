@@ -1,0 +1,2 @@
+model,method,ti_mean,ti_std,true_mean,true_std,info_mean,info_std,mmlu_mean,mmlu_std
+Qwen-2.5-14B-ours,Original,12.5,11.692679333668567,12.5,11.692679333668567,100.0,0.0,0.0,0.0

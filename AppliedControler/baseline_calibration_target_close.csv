@@ -1,0 +1,2 @@
+model_name,prompt_pool,eval_prompts,max_new_tokens,prompt_toxicity_min,prompt_toxicity_max,baseline_toxicity_mean,baseline_toxicity_percent,baseline_toxicity_std
+distilgpt2,rtp_random,24,40,0.22,0.48,0.04931618645787239,4.931618645787239,0.20016860961914062
