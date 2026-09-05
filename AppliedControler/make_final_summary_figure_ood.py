@@ -34,6 +34,8 @@ try:
         OOD_SUBSET_LABELS,
         TOX_MODEL_ORDER as MODEL_ORDER,
         TOX_MODEL_LABELS as MODEL_LABELS,
+        OOD_FULLY_RUN as FULLY_RUN,
+        model_label_color,
     )
 except ImportError:
     from figure_config import (
@@ -44,6 +46,8 @@ except ImportError:
         OOD_SUBSET_LABELS,
         TOX_MODEL_ORDER as MODEL_ORDER,
         TOX_MODEL_LABELS as MODEL_LABELS,
+        OOD_FULLY_RUN as FULLY_RUN,
+        model_label_color,
     )
 
 
@@ -115,6 +119,8 @@ def main() -> None:
         ax.set_ylim(1e-3, 100)
         ax.set_xticks(x)
         ax.set_xticklabels([MODEL_LABELS[m] for m in MODEL_ORDER], fontsize=8)
+        for tick, model in zip(ax.get_xticklabels(), MODEL_ORDER):
+            tick.set_color(model_label_color(model, FULLY_RUN))
         ax.set_title(f"{chr(65 + p)}. {OOD_SUBSET_LABELS[subset]}")
         ax.spines[["top", "right"]].set_visible(False)
         if p == 0:

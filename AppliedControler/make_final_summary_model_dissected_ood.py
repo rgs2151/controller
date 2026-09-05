@@ -33,6 +33,8 @@ try:
         OOD_SUBSET_LABELS,
         TOX_MODEL_ORDER as MODEL_ORDER,
         TOX_MODEL_LABELS as MODEL_LABELS,
+        OOD_FULLY_RUN as FULLY_RUN,
+        model_label_color,
     )
 except ImportError:
     from figure_config import (
@@ -43,6 +45,8 @@ except ImportError:
         OOD_SUBSET_LABELS,
         TOX_MODEL_ORDER as MODEL_ORDER,
         TOX_MODEL_LABELS as MODEL_LABELS,
+        OOD_FULLY_RUN as FULLY_RUN,
+        model_label_color,
     )
 
 
@@ -140,7 +144,12 @@ def render(
                     f"{OOD_SUBSET_LABELS[subset]}\n{col_header_note}", fontsize=10
                 )
             if k == 0:
-                ax.set_ylabel(MODEL_LABELS[model], fontsize=10, fontweight="bold")
+                ax.set_ylabel(
+                    MODEL_LABELS[model],
+                    fontsize=10,
+                    fontweight="bold",
+                    color=model_label_color(model, FULLY_RUN),
+                )
             if i == n_rows - 1:
                 ax.tick_params(axis="x", rotation=30)
 

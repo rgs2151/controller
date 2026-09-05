@@ -32,6 +32,8 @@ try:
         METHOD_COLORS,
         TRUTH_MODEL_ORDER as MODEL_ORDER,
         TRUTH_MODEL_LABELS as MODEL_LABELS,
+        TRUTH_FULLY_RUN as FULLY_RUN,
+        model_label_color,
     )
 except ImportError:
     from figure_config import (
@@ -39,6 +41,8 @@ except ImportError:
         METHOD_COLORS,
         TRUTH_MODEL_ORDER as MODEL_ORDER,
         TRUTH_MODEL_LABELS as MODEL_LABELS,
+        TRUTH_FULLY_RUN as FULLY_RUN,
+        model_label_color,
     )
 
 
@@ -102,6 +106,8 @@ def main() -> None:
                 )
     ax_a.set_xticks(x)
     ax_a.set_xticklabels([MODEL_LABELS[m] for m in models])
+    for tick, model in zip(ax_a.get_xticklabels(), models):
+        tick.set_color(model_label_color(model, FULLY_RUN))
     ax_a.set_ylabel(r"TruthfulQA  T$\cdot$I (%)  $\uparrow$")
     ax_a.set_title("A. Truthfulness across model scales")
     ax_a.legend(frameon=False, fontsize=9)
