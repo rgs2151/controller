@@ -899,6 +899,13 @@ def plot(search_names: list[str]) -> None:
             "min_degradation_vs_id_pp": float(values.min()),
             "max_degradation_vs_id_pp": float(values.max()),
             "median_remaining_error_pct": float(remaining.median()),
+            "q1_remaining_error_pct": float(remaining.quantile(0.25)),
+            "q3_remaining_error_pct": float(remaining.quantile(0.75)),
+            "iqr_remaining_error_pct": float(
+                remaining.quantile(0.75) - remaining.quantile(0.25)
+            ),
+            "min_remaining_error_pct": float(remaining.min()),
+            "max_remaining_error_pct": float(remaining.max()),
             "fraction_worse_than_id": float((values > 0).mean()),
             "fraction_controller_harm": float((remaining > 100).mean()),
         }
@@ -929,11 +936,20 @@ def plot(search_names: list[str]) -> None:
     for index, (attempt, short_label) in enumerate(plot_entries, start=1):
         display_labels[attempt] = f"A{index} {short_label}"
         summaries[attempt]["display_label"] = display_labels[attempt]
-    best_median = max(order, key=lambda attempt: summaries[attempt]["median_degradation_vs_id_pp"])
-    widest = max(order, key=lambda attempt: summaries[attempt]["iqr_degradation_vs_id_pp"])
+    best_median = max(
+        order, key=lambda attempt: summaries[attempt]["median_remaining_error_pct"]
+    )
+    widest = max(
+        order, key=lambda attempt: summaries[attempt]["iqr_remaining_error_pct"]
+    )
+    id_median = float(id_by_anchor.median())
     summary = {
-        "metric": "remaining_error_pct(attempt) - remaining_error_pct(matched ID)",
-        "reference": "0 percentage points means no change from matched ID",
+        "metric": "100 * A-LQR final target error / unsteered final target error",
+        "reference": "0% is complete correction; 100% is no A-LQR benefit",
+        "id_median_remaining_error_pct": id_median,
+        "paired_secondary_metric": (
+            "remaining_error_pct(attempt) - remaining_error_pct(matched ID)"
+        ),
         "attempts": summaries,
         "best_median_attempt": best_median,
         "widest_iqr_attempt": widest,
@@ -960,17 +976,25 @@ def plot(search_names: list[str]) -> None:
     figure_width = max(15.0, 1.0 * len(plot_order))
     fig, ax = plt.subplots(figsize=(figure_width, 6.2))
     sns.boxplot(
-        data=frame, x="attempt", y="degradation_vs_id_pp", hue="attempt",
+        data=frame, x="attempt", y="remaining_error_pct", hue="attempt",
         order=plot_order, hue_order=plot_order, palette=palette, width=0.62,
         showfliers=False, legend=False, ax=ax,
     )
     sns.stripplot(
-        data=frame, x="attempt", y="degradation_vs_id_pp", order=plot_order,
+        data=frame, x="attempt", y="remaining_error_pct", order=plot_order,
         color="black", alpha=0.26, size=2.3, jitter=0.20, ax=ax,
     )
-    ax.axhline(0.0, color="0.35", linewidth=1.0, linestyle="--")
+    ax.axhline(id_median, color="0.35", linewidth=1.0, linestyle="--")
+    ax.text(
+        0.01,
+        id_median + 1.0,
+        f"ID median = {id_median:.1f}%",
+        color="0.30",
+        fontsize=9,
+        transform=ax.get_yaxis_transform(),
+    )
     ax.set_xlabel("")
-    ax.set_ylabel("Steering degradation vs matched ID (percentage points)")
+    ax.set_ylabel("Remaining target error (% of unsteered)")
     ax.set_title("Adversarial attempts against frozen A-LQR")
     ax.set_xticks(range(len(plot_order)))
     ax.set_xticklabels(labels, fontsize=8)
@@ -978,10 +1002,19 @@ def plot(search_names: list[str]) -> None:
         tick_label.set_rotation(65)
         tick_label.set_horizontalalignment("right")
         tick_label.set_rotation_mode("anchor")
-    lower = min(-5.0, float(frame["degradation_vs_id_pp"].min()) - 2.0)
-    upper = max(5.0, float(frame["degradation_vs_id_pp"].max()) + 2.0)
-    ax.set_ylim(lower, upper)
-    ax.set_yticks([round(lower), 0, round(upper)])
+    upper = max(70.0, float(frame["remaining_error_pct"].max()) + 5.0)
+    ax.set_ylim(0.0, upper)
+    ax.set_yticks([0, round(upper)])
+    ax.text(
+        0.99,
+        0.98,
+        "Lower is better; 100% = no LQR benefit",
+        ha="right",
+        va="top",
+        fontsize=9,
+        color="0.30",
+        transform=ax.transAxes,
+    )
     sns.despine(ax=ax, trim=True, offset=10)
     ax.tick_params(axis="x", labelrotation=65)
     plt.setp(ax.get_xticklabels(), ha="right", rotation_mode="anchor")
