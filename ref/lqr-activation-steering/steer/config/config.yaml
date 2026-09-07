@@ -1,0 +1,6 @@
+environment:
+  pickle_jar: "../../../../pickles/"
+  ref_data_path: "./ref_data/"
+  tqa_data_path: "./tqa_data/"
+  tox_data_path: "./tox_data/"
+  con_data_path: "./con_data/"
