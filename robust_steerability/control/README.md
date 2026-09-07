@@ -40,8 +40,8 @@ a selected GPU. The runtime never branches on controller names.
 - `types.py`: finite-horizon inputs and serializable synthesis results.
 - `validation.py`: controller-boundary validation.
 - `lqr.py`: LQR offline Riccati synthesis and online state feedback.
-- `h_infinity.py`: H-infinity offline synthesis extension point and online
-  state feedback.
+- `h_infinity.py`: optimized H-infinity offline synthesis and online state
+  feedback, numerically checked against the preserved reference implementation.
 - `pid.py`: stateful online PID behavior.
 - `activation_addition.py`: fixed activation-addition baseline.
 - `metrics.py`: controller-independent numerical evaluation.
@@ -91,18 +91,20 @@ and independent evaluation. It contains:
 - `gamma_star` when applicable;
 - numerical diagnostics useful for verification.
 
-## H-Infinity Extension Point
+## H-Infinity Implementation
 
-Complete `HInfinityController.synthesize` in `h_infinity.py`. Its input is
-already in deviation coordinates and contains `A`, `B`, `D`, stage costs, the
-terminal cost, and gamma-search options. Implement the verified finite-horizon
-recursion, saddle-point feasibility checks, and search for the smallest
-feasible gamma, then construct the controller through `from_solution`.
+`HInfinityController.synthesize` accepts a problem already in deviation
+coordinates with `A`, `B`, `D`, stage costs, terminal cost, and gamma-search
+options. It runs the finite-horizon minimax recursion, checks both saddle-point
+Hessians, searches for the smallest feasible gamma, and returns a ready online
+controller. Problem tensors are prepared once on the selected device, and
+intermediate search trials compute only feasibility; the selected gamma gets
+the complete gains and diagnostic surface.
 
-The online path is already provisioned in the same class: `control` evaluates
-the synthesized gain and `intervention` maps that control through `B`. If the
-chosen H-infinity formulation requires additional online state, keep it in the
-class and clear it in `reset`.
+`control` evaluates the synthesized gain and the inherited `intervention`
+method maps that control through `B`. Numerical equivalence with Hannah's
+preserved implementation and CPU/GPU performance are recorded in
+`parking/h_infinity_optimization/`.
 
 Do not add model loading, activation hooks, prompt handling, or experiment
 logic to `h_infinity.py`. Do not silently substitute LQR when H-infinity

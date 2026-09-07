@@ -130,7 +130,12 @@ class HInfinityTests(unittest.TestCase):
     def test_infeasible_controller_raises_on_control(self) -> None:
         controller = HInfinityController.synthesize(
             scalar_problem(disturbance=True),
-            options=HInfinityOptions(gamma_lower=0.01, gamma_upper=0.5, tolerance=1e-4),
+            options=HInfinityOptions(
+                gamma_lower=0.01,
+                gamma_upper=0.5,
+                tolerance=1e-4,
+                max_gamma=0.5,
+            ),
         )
         self.assertFalse(controller.feasible)
         self.assertIsNone(controller.gamma_star)
