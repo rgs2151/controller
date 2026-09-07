@@ -6,11 +6,13 @@
 - Origin Mode: plan
 - Origin Date: 2026-09-07
 - Verification Status: UNVERIFIED
-- Version Label: code_plan_v3
+- Version Label: code_plan_v4
 
 ## Fixed rule
 
 No figure or experiment has two owners. The collaborator never writes or debugs Hugging Face, tokenizer, model-hook, prompt-loading, or generation code.
+
+The existing H∞ implementation is the fixed controller under test. Ordinary validation and benchmark runs do not require editing `robust_steerability/control/h_infinity.py`.
 
 The figure specification in `figs/sketch/` is frozen at commit `415c45b`. Real result units may follow it but must not modify it.
 
@@ -42,33 +44,33 @@ The pack must provide:
 - automatic metrics and plot generation;
 - no source-code edits for ordinary runs.
 
+Connecting the existing H∞ controller to this pack is an LLM-pipeline infrastructure task and must be finished before the handoff. It is not assigned to the collaborator.
+
 The user shows her the smoke command once. After that, running the matrix is operational work, not Hugging Face development.
 
 ## Collaborator ownership
 
-### 1. H∞ implementation and correctness
+### 1. H∞ validation — no routine controller edits
 
 She owns:
 
-- `robust_steerability/control/h_infinity.py`;
-- controller-side numerical helpers in `robust_steerability/control/`;
 - H∞ tests in `tests/test_control.py`;
-- the mathematical validity of gamma-star, feasibility, gains, and certificates.
+- independent numerical validation code and Figure S1;
+- checking the mathematical validity of gamma-star, feasibility, gains, and certificates produced by the existing controller.
 
 Tasks:
 
-1. Audit the finite-horizon minimax recursion, feedback sign, terminal cost, and feasibility conditions.
+1. Treat `robust_steerability/control/h_infinity.py` as fixed while auditing the finite-horizon minimax recursion, feedback sign, terminal cost, and feasibility conditions.
 2. Validate scalar, MIMO, rectangular-channel, and time-varying systems.
 3. Compare gamma-star with the independent induced-gain calculation on small systems.
 4. Add near-singular, infeasible, serialization, dtype, and CPU/GPU tests.
-5. Optimize memory and runtime while preserving numerical results.
-6. Produce runtime and peak-memory benchmarks.
+5. If validation exposes a defect, first record a minimal failing case; edit the controller only to repair that confirmed defect.
 
-### 2. H∞ package connection
+### 2. H∞ optimization — separate implementation task
 
-She connects her controller to the existing model-independent controller interface and verifies that it accepts a `FiniteHorizonControlProblem`, returns a `ControllerSolution`, and produces the next intervention through the existing runtime policy.
+After the fixed implementation is validated, she may optimize `robust_steerability/control/h_infinity.py` for memory and runtime while preserving its numerical outputs and public interface.
 
-She does not connect model hooks or write generation code. The turnkey runner supplies controller-ready tensors and calls the package interface.
+This is the only planned task that inherently requires her to edit the H∞ implementation. She also produces before/after runtime and peak-memory benchmarks.
 
 ### 3. Figure S1 — fully hers, no LLM required
 
@@ -142,18 +144,19 @@ The user also owns all underlying LLM infrastructure:
 ## What the collaborator actually does with LLM experiments
 
 1. Pull the repository.
-2. Run the demonstrated smoke command.
-3. Run the four prepared suite commands on GPU 1.
-4. Monitor status files and resume interrupted jobs.
-5. Run the plotting command.
-6. Investigate controller/numerical failures herself.
-7. Send model/tokenizer/hook failures back to the LLM owner with the job log.
+2. Run the independent H∞ validation and create Figure S1 without changing the controller during a passing run.
+3. Run the demonstrated smoke command.
+4. Run the four prepared suite commands on GPU 1.
+5. Monitor status files and resume interrupted jobs.
+6. Run the plotting command.
+7. Investigate controller/numerical failures herself.
+8. Send model/tokenizer/hook failures back to the LLM owner with the job log.
 
 That is enough for a software engineer who does not know LLM internals: she operates a tested experiment product instead of becoming responsible for the product's Hugging Face implementation.
 
 ## Definition of done
 
-- The collaborator has completed H∞ verification and optimization.
+- The collaborator has completed H∞ verification; controller edits were made only for a confirmed defect or the separate optimization task.
 - Figures 3, 5, 6, S1, and S3 contain real values and regenerate from her commands.
 - Every baseline required by those figures was launched automatically by her suites.
 - The user did not manually prepare intermediate results or finish any of her panels.
