@@ -6,136 +6,154 @@
 - Origin Mode: plan
 - Origin Date: 2026-09-07
 - Verification Status: UNVERIFIED
-- Version Label: code_plan_v1
+- Version Label: code_plan_v2
 
-## Frozen reference
+## Rule
 
-The visual specification in `figs/sketch/` is frozen at commit `415c45b`. It is read-only. Real analyses and final plots should be built in new result units; they should not overwrite the sketch or its placeholder values.
+There are no jointly owned experiments or figures. Each owner runs every model, baseline, metric, and analysis needed for their own figures.
 
-## Division principle
+The visual specification in `figs/sketch/` is frozen at commit `415c45b`. It is read-only. Real results must be written to new result units.
 
-The control collaborator owns everything that can be completed from numerical state-space arrays. The LLM/benchmark owner owns everything that requires model loading, tokenization, prompt design, activation hooks, text generation, or behavioral scoring.
+## Collaborator owns the complete robust-control track
 
-The boundary is already represented by:
+She owns implementation, LLM execution, analysis, and final plotting for Figures 3, 5, 6, S1, S2, and S3. She must also run Original, A-LQR, and S-PID herself wherever those baselines are required in her figures.
 
-- `FiniteHorizonControlProblem`: A, B, D, Q, R, and terminal-cost tensors in.
-- `ControllerSolution`: gains, feasibility, gamma-star, and diagnostics out.
-- `Controller.intervention(...)`: the online numerical intervention supplied to the model runtime.
+### A. Complete and verify H∞
 
-The collaborator should not need to inspect prompts or understand Hugging Face internals.
+Primary files:
 
-## Control collaborator: primary ownership
+- `robust_steerability/control/h_infinity.py`
+- `robust_steerability/control/metrics.py`
+- `robust_steerability/control/types.py`
+- `tests/test_control.py`
 
-### 1. Verify the H∞ implementation mathematically
+Work:
 
-- Audit the finite-horizon minimax recursion, feedback sign, terminal cost, and feasibility condition in `robust_steerability/control/h_infinity.py`.
-- Verify scalar, MIMO, rectangular-control, rectangular-disturbance, and time-varying systems.
-- Check that feasibility is monotone in candidate gamma and that reported gamma-star is the smallest feasible value within the stated tolerance.
-- Compare synthesized results against the explicit induced-gain calculation in `robust_steerability/control/metrics.py` for small systems.
-- Add tests for nearly singular saddle-point matrices, infeasible search intervals, dtype conversion, serialization, and CPU/GPU agreement.
+1. Audit the finite-horizon minimax recursion, sign convention, terminal cost, and feasibility conditions.
+2. Validate scalar, MIMO, rectangular-control, rectangular-disturbance, and time-varying systems.
+3. Compare gamma-star against the independent induced-gain calculation on small systems.
+4. Add near-singular, infeasible, serialization, dtype, and CPU/GPU tests.
+5. Optimize synthesis memory and runtime without changing the numerical result.
+6. Report runtime and peak memory across horizon, state dimension, and disturbance rank.
 
-Acceptance: every feasible small-system solution satisfies the independently computed disturbance-gain bound within numerical tolerance, and failure cases return explicit diagnostics.
+### B. Connect H∞ to the experiment pipeline
 
-### 2. Optimize H∞ synthesis
+Primary entry points:
 
-- Benchmark runtime and peak memory across horizon, state dimension, control rank, disturbance rank, CPU, and one GPU.
-- Remove repeated device transfers and allocations across gamma-search iterations.
-- Reuse factorization or workspace where mathematically valid.
-- Evaluate stable factorization choices near the feasibility boundary.
-- Preserve float64 synthesis accuracy while documenting when float32 online gains are safe.
-- Add performance regression benchmarks and a concise runtime/memory report.
+- `AppliedControler/run_steering.py`
+- `AppliedControler/method_registry.py`
+- `robust_steerability/runtime/policy.py`
+- `robust_steerability/calibration/disturbances.py`
 
-Acceptance: numerical answers remain within tolerance while runtime and peak-memory changes are measured, not guessed.
+She owns this integration completely. She should use the existing model-loading, activation-hook, calibration, generation, and evaluation code rather than build a new Hugging Face pipeline from scratch.
 
-### 3. Complete controller-side artifacts and diagnostics
+Required correction: `AppliedControler/run_steering.py` currently passes the identity control channel as the H∞ disturbance channel. Replace that placeholder with disturbance geometry estimated from calibration residuals.
 
-- Make controller problems and solutions reproducibly serializable with configuration metadata.
-- Export gamma-star, S_rob = 1/gamma-star, feasibility bracket, margins, condition numbers, and failure layer/reason.
-- Add controller-only trajectory simulation and stage-wise target cost, intervention energy, collateral cost, and total performance energy.
-- Keep all of this independent of Transformers and datasets.
+The finished pipeline must:
 
-Acceptance: a saved numerical problem can be synthesized, restored, simulated, and summarized without loading an LLM.
+1. Load the selected Hugging Face model and tokenizer.
+2. Collect calibration activations and Jacobians using existing helpers.
+3. Fit A, B, and calibration-residual disturbance geometry D.
+4. Construct the finite-horizon control problem.
+5. Synthesize H∞ and save gains, feasibility, gamma-star, S_rob, and diagnostics.
+6. Apply the returned interventions during generation.
+7. Cache calibration and controller artifacts so sweeps do not repeat model extraction.
+8. Record controller parameters, model revision, prompt split, seed, dtype, device, and configuration hash.
 
-### 4. Own Figure S1: H∞ validation
+### C. Own Figure S1 — H∞ validation
 
-Create a real result unit for the four frozen panels:
+This is her easiest first complete figure and requires no language model:
 
-- A: feasibility margin versus candidate gamma, with gamma-star marked.
-- B: synthesized gamma-star versus an independent exact finite-horizon result.
-- C: performance-output energy versus disturbance energy and the certified bound.
-- D: observed tracking error versus certified tracking-error bound.
+- A: feasibility margin versus candidate gamma.
+- B: synthesized gamma-star versus an independent exact result.
+- C: performance-output energy versus disturbance energy and its bound.
+- D: observed tracking error versus its certified bound.
 
-This figure is entirely controller-side and can be completed without any LLM work.
+Deliver a new real-result unit under `figs/`; do not edit `figs/sketch/`.
 
-### 5. Own the controller machinery for Figure S3
+### D. Own Figure S3 — tuning and ablations
 
-- Panels A–B: implement the tuning sweep and return target-cost, collateral-cost, intervention-energy, feasibility, and margin tables.
-- Do not scale an H∞ gain after synthesis if that invalidates its certificate. Decide the mathematically valid sweep—such as resynthesizing across Q/R/S weights or another documented controller parameter.
-- Panel C: consume problem bundles created at different calibration sizes and report gamma-star stability, feasibility rate, and downstream prediction-ready summaries.
-- Panel D: construct energy-matched disturbance geometries: isotropic, learned residual, target-aligned, and worst-case/adversarial directions. Return controller and certificate summaries for each.
+She runs and plots all four panels:
 
-The LLM owner later supplies the empirical steering-success and utility columns. The collaborator then renders the final S3 plots from the merged table.
+- A: H∞ and A-LQR tuning sweep versus target steering success.
+- B: oversteering, utility retention, and normalized intervention energy.
+- C: calibration-size ablation for gamma-star stability and OOD prediction.
+- D: energy-matched disturbance geometries: isotropic, learned residual, target-aligned, and worst-case.
 
-### 6. Own controller-side quantities used in the main figures
+For H∞, do not multiply a synthesized gain afterward if that breaks the certificate. Resynthesize across a mathematically valid tuning parameter such as fixed Q/R/S choices.
 
-- Figure 3: compute gamma-star, S_rob, feasibility diagnostics, and controller-derived competing predictors for every supplied model–behavior problem.
-- Figure 4D: compute normalized intervention energy and controller cost from recorded control sequences.
-- Figure 5C–D: compute dynamics-mismatch summaries, fragility, and the H∞-versus-A-LQR comparison fields after empirical reliability is supplied.
-- Figure S2: compute certificate validity and theoretical/empirical bound comparisons from supplied trajectories.
+### E. Own Figure 3 — the robust-steerability money experiment
 
-The collaborator may own plotting and statistical code after receiving tidy result tables, but she does not generate the LLM observations in those tables.
+She performs the experiment end-to-end:
 
-## LLM/benchmark owner: primary ownership
+1. Select the model–behavior pairs specified by the paper configuration.
+2. Build gamma-star and S_rob using calibration prompts only.
+3. Run held-out OOD steering for every pair.
+4. Compute competing predictors: model scale, probe quality, residual error, and nominal LQR cost.
+5. Fit the cross-validated prediction analysis.
+6. Run leave-one-model-family-out evaluation.
+7. Produce every panel of Figure 3.
 
-- Choose models, behaviors, prompt datasets, ID/OOD/adversarial conditions, and train/calibration/test splits.
-- Load models and tokenizers, register activation hooks, collect hidden states and Jacobians, and fit semantic targets.
-- Produce residual tensors and numerical A/B/D/Q/R/terminal-cost problem bundles for the collaborator.
-- Integrate returned controller solutions into the Hugging Face runtime.
-- Run GPU generations for Original, A-LQR, S-PID, and H∞ under identical decoding settings.
-- Measure truthfulness, toxicity, informativeness, utility retention, and other behavioral outcomes.
-- Own Figures 1, 2, 4A–C, 5A–B, and 6.
+Held-out OOD outcomes must never enter controller construction, parameter tuning, or S_rob computation.
 
-One current integration issue belongs on this side: `AppliedControler/run_steering.py` presently sets the H∞ disturbance channel equal to the identity control channel. The final pipeline must instead pass the calibration-derived disturbance geometry supplied through the agreed numerical boundary.
+### F. Own Figure 5 — the complete OOD benchmark
 
-## Shared handoff artifacts
+She runs Original, A-LQR, S-PID, and H∞ herself under the same OOD conditions and decoding configuration.
 
-### LLM owner to collaborator
+- A: ID-to-OOD degradation for all methods, including Original.
+- B: complete H∞ model-by-condition matrix.
+- C: A-LQR versus H∞ as measured dynamics mismatch increases.
+- D: H∞ advantage versus predicted fragility.
 
-For each model–behavior pair and calibration replicate:
+No values are imported from the user's benchmark runs. Her result unit is independently reproducible.
 
-- unique problem ID and split/configuration hash;
-- A, B, D, Q, R, and terminal-cost tensors;
-- calibration size and disturbance-geometry label;
-- optional held-out residual sequences for certificate evaluation;
-- no prompt text is required.
+### G. Own Figure 6 — long-context stress test
 
-### Collaborator to LLM owner
+She extends her own OOD runner to the frozen context lengths and produces:
 
-- serialized `ControllerSolution` for each requested configuration;
-- gamma-star and S_rob;
-- feasibility and numerical diagnostics;
-- controller tuning/sweep table;
-- predicted control, energy, collateral, and certificate summaries;
-- exact code/configuration hash used to produce them.
+- remaining target error;
+- collateral utility retained;
+- A-LQR error minus H∞ error.
 
-### LLM owner back to collaborator
+She owns prompt construction, model execution, caching, evaluation, and the final figure for this experiment.
 
-- tidy evaluation table containing problem ID, method, condition, seed, empirical steering reliability, intervention energy, and collateral/utility metrics.
+### H. Own Figure S2 — nonlinearity and certificate validity
 
-The collaborator can then populate Figure 3, Figure 4D, Figure 5C–D, Figure S2, and Figure S3 without opening the model pipeline.
+She uses the same models and calibration pipeline from her robust-control track to produce:
 
-## Parallel execution order
+- linearization residual versus distance from the nominal trajectory;
+- predicted versus observed displacement;
+- residual versus intervention strength and transformer depth;
+- certificate validity versus distance from the nominal trajectory.
 
-1. Collaborator immediately completes H∞ verification, optimization, controller metrics, and Figure S1 using synthetic numerical systems.
-2. In parallel, the LLM owner exports real numerical problem bundles and finishes the benchmark runner.
-3. Collaborator consumes those bundles, produces controller solutions, gamma-star values, and S3 sweep/ablation tables.
-4. LLM owner runs the returned solutions on the GPUs and produces the empirical outcome table.
-5. Collaborator fills the controller-heavy plots from that table; the LLM owner fills the remaining benchmark panels.
+## User owns the baseline and residual track
 
-## Leakage and comparison rules
+The user owns only Figures 1, 2, and 4:
 
-- Gamma-star and S_rob use calibration data only.
-- Controller tuning cannot use the held-out OOD/adversarial test outcomes later used for the headline claims.
-- A-LQR and H∞ must be compared at matched intervention energy or matched collateral degradation.
-- Disturbance geometries must be energy-normalized before comparison.
-- Prompt-level replicates cannot be treated as independent model–behavior pairs in the prospective-prediction analysis.
+- Figure 1: conceptual framing.
+- Figure 2: representation dynamics, residual checks, OOD/adversarial A-LQR failure exploration, and scale analysis.
+- Figure 4: complete in-distribution Original/A-LQR/S-PID/H∞ benchmark, including the intervention-energy tradeoff.
+
+The user also owns general dataset curation and any additional benchmark exploration not required by the collaborator's assigned figures.
+
+## Independent compute and files
+
+- Collaborator uses GPU 1 by default; user uses GPU 0.
+- Collaborator uses her own cache and result directories so simultaneous runs cannot overwrite the user's work.
+- Every collaborator experiment has its own configuration file, status file, and resumable output.
+- She may use the same public datasets and existing repository helpers, but she does not wait for artifacts from the user.
+
+## Recommended order for the collaborator
+
+1. Figure S1 and H∞ correctness tests.
+2. H∞ runtime and memory optimization.
+3. One-model end-to-end smoke test using DistilGPT-2 or Qwen-2.5-0.5B.
+4. Figure S3 gain and disturbance ablations on the small model.
+5. Figure S2 nonlinearity and certificate validation.
+6. Figure 3 robust-steerability prediction across models.
+7. Figure 5 full OOD benchmark.
+8. Figure 6 long-context stress test.
+
+## Definition of done
+
+Her track is complete when Figures 3, 5, 6, S1, S2, and S3 contain real values; their source units regenerate from cached or downloaded public inputs; H∞ passes numerical validation; and every baseline needed for those figures was run by her pipeline rather than supplied by the user.
