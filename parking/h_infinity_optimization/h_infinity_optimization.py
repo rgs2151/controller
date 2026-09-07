@@ -33,6 +33,7 @@ CACHE_DIR = UNIT_DIR / "cache"
 PLOTS_DIR = UNIT_DIR / "plots"
 REFERENCE_PATH = REPO_ROOT / "ref" / "h_infinity.py"
 REFERENCE_SHA256 = "293c7f45a54c6ffb6caf2a13cec9b0e09396fd4921973bccc019ba09e19f96f0"
+BENCHMARK_PROTOCOL_VERSION = 1
 SEED = 2151
 GAMMA_ATOL = 1e-5
 GAIN_RTOL = 5e-5
@@ -690,7 +691,11 @@ def plot_diagnostics(
         hspace=0.62,
         wspace=0.45,
     )
-    fig.savefig(PLOTS_DIR / "h_infinity_optimization.pdf", bbox_inches="tight")
+    fig.savefig(
+        PLOTS_DIR / "h_infinity_optimization.pdf",
+        bbox_inches="tight",
+        metadata={"CreationDate": None, "ModDate": None},
+    )
     fig.savefig(PLOTS_DIR / "h_infinity_optimization.png", bbox_inches="tight")
     plt.close(fig)
 
@@ -788,7 +793,7 @@ def main() -> None:
         "device": args.device,
         "dimensions": dimensions,
         "repeats": args.repeats,
-        "analysis_sha256": file_sha256(Path(__file__)),
+        "benchmark_protocol_version": BENCHMARK_PROTOCOL_VERSION,
         "reference_sha256": REFERENCE_SHA256,
         "optimized_sha256": file_sha256(
             REPO_ROOT / "robust_steerability" / "control" / "h_infinity.py"

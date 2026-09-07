@@ -44,7 +44,7 @@
 
 - All 10 CPU/GPU parity cases pass. Gamma-star is identical; maximum relative gain error is `2.91e-6`, maximum relative intervention error is `1.11e-5`, and maximum relative diagnostic error is `3.02e-5`.
 - The analytic scalar gamma boundary differs by `3.08e-6`, within the `1e-5` search tolerance. The largest independently computed induced-gain ratio is `0.999129`, below the deployed gamma bound.
-- At the current 768-state, six-layer scale, median GPU synthesis decreases from `3.631 s` to `0.949 s`, a `3.83x` speedup. Peak CUDA allocation decreases from `154.88 MiB` to `118.38 MiB`.
+- At the current 768-state, six-layer scale, median GPU synthesis decreases from about `3.63 s` to `0.95 s`, a `3.8x` speedup. Peak CUDA allocation decreases from `154.88 MiB` to `118.38 MiB`.
 
 ## Notes
 

@@ -21,7 +21,7 @@
   "max_induced_gain_over_gamma_used": 0.999128796525293,
   "max_scalar_analytic_gamma_error": 3.0780614542202933e-06,
   "largest_benchmark_state_dimension": 768,
-  "largest_dimension_gpu_speedup": 3.82755380543857,
-  "largest_dimension_optimized_seconds": 0.9486212602350861,
+  "largest_dimension_gpu_speedup": 3.8556991015851327,
+  "largest_dimension_optimized_seconds": 0.9413851366844028,
   "largest_dimension_optimized_peak_memory_mib": 118.38232421875
 }
