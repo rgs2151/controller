@@ -73,6 +73,50 @@ class SemanticSetpointPolicy:
 
 
 @dataclass
+class ReducedStateSetpointPolicy:
+    """Apply a controller in calibrated reduced coordinates.
+
+    Layer inputs are centered and projected with ``encoders``. The controller
+    returns an intervention in the next layer's standardized coordinates, and
+    ``decoders`` map it back to the model hidden space.
+    """
+
+    controller: Controller
+    means: torch.Tensor
+    encoders: torch.Tensor
+    decoders: torch.Tensor
+    feature_unit: torch.Tensor
+    setpoints: torch.Tensor
+
+    def prepare(self, device: torch.device, dtype: torch.dtype) -> None:
+        self.controller.to(device=device, dtype=torch.float32)
+        self.means = self.means.to(device=device, dtype=torch.float32)
+        self.encoders = self.encoders.to(device=device, dtype=torch.float32)
+        self.decoders = self.decoders.to(device=device, dtype=torch.float32)
+        self.feature_unit = self.feature_unit.to(device=device, dtype=torch.float32)
+        self.setpoints = self.setpoints.to(device=device, dtype=torch.float32)
+
+    def reset(self) -> None:
+        self.controller.reset()
+
+    def activation_delta(
+        self,
+        layer_index: int,
+        activation: torch.Tensor,
+    ) -> torch.Tensor:
+        activation_float = activation.float()
+        reduced = (
+            activation_float - self.means[layer_index]
+        ) @ self.encoders[layer_index]
+        feature = self.feature_unit[layer_index]
+        scalar_deviation = reduced @ feature - self.setpoints[layer_index]
+        state_deviation = scalar_deviation.unsqueeze(-1) * feature
+        reduced_delta = self.controller.intervention(layer_index, state_deviation)
+        hidden_delta = reduced_delta @ self.decoders[layer_index].T
+        return hidden_delta.to(dtype=activation.dtype)
+
+
+@dataclass
 class ReferenceStatePolicy:
     """Build controller feedback from full layer-wise reference states."""
 

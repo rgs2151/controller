@@ -10,6 +10,9 @@ This package is the reusable boundary between language-model experiments and con
 - `calibration/` converts fitted/calibration trajectories into targets, nominal dynamics, residuals, disturbance channels, and normalized coordinates.
 - `runtime/` converts a controller solution or online controller into activation deltas.
 - `benchmarks/` contains reusable behavior records and evaluators.
+- `experiments/` contains the manifest runner, reduced-state calibration,
+  canonical method dispatch, matched-seed generation, cache handling, and GPU
+  job scheduling used by the Erfan benchmark units.
 
 Experiment-specific prompt subsets, thresholds, statistics, plots, captions, and output paths remain in their owning compact units under `parking/` or `figs/`.
 

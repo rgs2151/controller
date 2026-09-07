@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 import torch
@@ -12,6 +13,17 @@ from transformers import (
     AutoTokenizer,
     BitsAndBytesConfig,
 )
+
+
+@dataclass(frozen=True)
+class CausalModelLoadSpec:
+    """Explicit loading choices for one causal-language-model experiment."""
+
+    model_id: str
+    revision: str = "main"
+    quantized: bool = False
+    dtype: str = "bfloat16"
+    attention_implementation: str = "eager"
 
 
 def load_access_token(repo_root: Path) -> str:
@@ -34,6 +46,57 @@ def cuda_device_index(device: str) -> int:
     if not device.startswith("cuda:"):
         raise ValueError("The quantized model requires a CUDA device such as cuda:0")
     return int(device.split(":", 1)[1])
+
+
+def load_causal_model(
+    spec: CausalModelLoadSpec,
+    device: str,
+    token: str,
+) -> tuple[AutoModelForCausalLM, AutoTokenizer]:
+    """Load a causal model on one explicit device using a reproducible spec."""
+
+    dtype_by_name = {
+        "float32": torch.float32,
+        "float16": torch.float16,
+        "bfloat16": torch.bfloat16,
+    }
+    if spec.dtype not in dtype_by_name:
+        raise ValueError(f"Unsupported model dtype: {spec.dtype}")
+    dtype = dtype_by_name[spec.dtype]
+    tokenizer = AutoTokenizer.from_pretrained(
+        spec.model_id,
+        revision=spec.revision,
+        token=token or None,
+        padding_side="left",
+    )
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+
+    model_kwargs: dict[str, object] = {
+        "revision": spec.revision,
+        "token": token or None,
+        "dtype": dtype,
+        "attn_implementation": spec.attention_implementation,
+        "low_cpu_mem_usage": True,
+    }
+    if spec.quantized:
+        if not device.startswith("cuda:"):
+            raise ValueError("4-bit model loading requires an explicit CUDA device")
+        model_kwargs["quantization_config"] = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=dtype,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+        )
+        model_kwargs["device_map"] = {"": cuda_device_index(device)}
+        model = AutoModelForCausalLM.from_pretrained(spec.model_id, **model_kwargs)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(spec.model_id, **model_kwargs).to(
+            device
+        )
+    model.eval()
+    return model, tokenizer
 
 
 def load_quantized_causal_model(
@@ -63,7 +126,7 @@ def load_quantized_causal_model(
         revision=revision,
         token=token,
         quantization_config=quantization,
-        torch_dtype=torch.float32,
+        dtype=torch.float32,
         device_map={"": cuda_device_index(device)},
         attn_implementation="eager",
     )
@@ -88,7 +151,7 @@ def load_sequence_classifier(
         model_id,
         revision=revision,
         token=token,
-        torch_dtype=torch.float32,
+        dtype=torch.float32,
     ).to(device)
     model.eval()
     return model, tokenizer
