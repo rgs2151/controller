@@ -20,19 +20,19 @@ The figure specification in `figs/sketch/` is frozen at commit `415c45b`. Real r
 
 The LLM-side pipeline must first be wrapped in one config-driven command. The wrapper—not the collaborator—contains all model, prompt, method, condition, calibration-size, gain, seed, caching, GPU, and plotting loops.
 
-The intended interface is:
+The implemented manifest interface is:
 
 ```bash
-python -m AppliedControler.robust_track preflight --device cuda:1
-python -m AppliedControler.robust_track smoke --device cuda:1
-python -m AppliedControler.robust_track run --suite fig3 --device cuda:1 --resume
-python -m AppliedControler.robust_track run --suite fig5 --device cuda:1 --resume
-python -m AppliedControler.robust_track run --suite fig6 --device cuda:1 --resume
-python -m AppliedControler.robust_track run --suite figs3 --device cuda:1 --resume
-python -m AppliedControler.robust_track plot --suite all
+python -m robust_steerability.experiments run --manifest parking/erfan_toxicity_calibration/manifest.json --devices cuda:0,cuda:1
+python -m robust_steerability.experiments run --manifest parking/erfan_truthfulness_benchmark/manifest.json --devices cuda:0,cuda:1
+python -m robust_steerability.experiments run --manifest parking/erfan_id_toxicity_benchmark/manifest.json --devices cuda:0,cuda:1
+python -m robust_steerability.experiments run --manifest parking/erfan_ood_steering_benchmark/manifest.json --devices cuda:0,cuda:1
 ```
 
-`AppliedControler.robust_track` does not exist yet. It is the missing infrastructure that should be built before asking her to run LLM experiments.
+Erfan's original implementation and outputs are archived unchanged under
+`ref/erfan_applied_controller/`. The maintained runner now lives in
+`robust_steerability.experiments`; new figure suites should be added as manifests
+instead of reviving the archived package.
 
 The pack must provide:
 

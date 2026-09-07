@@ -32,6 +32,17 @@ Run the cache-first A-LQR residual and generated-toxicity smoke test from the re
 python parking/residual_checks/residual_checks.py all
 ```
 
+Run a complete manifest-defined model matrix on both GPUs:
+
+```bash
+python -m robust_steerability.experiments run \
+  --manifest parking/erfan_ood_steering_benchmark/manifest.json \
+  --devices cuda:0,cuda:1
+```
+
+Each model job checkpoints its completions and final records inside the owning
+unit's ignored `cache/` directory. Repeating the command skips completed jobs.
+
 Each unit owns its own `cache/` and `plots/` folders. Existing caches are reused by default. To recompute a unit, delete that unit's relevant cache or run the unit with `--recompute` when supported.
 
 ## Package Architecture
@@ -45,6 +56,8 @@ Each unit owns its own `cache/` and `plots/` folders. Existing caches are reused
 - `calibration/`: semantic targets, nominal dynamics, residual measurements, disturbance geometry, and calibration-only normalization.
 - `runtime/`: policies that translate controller outputs into activation interventions.
 - `benchmarks/`: reusable behavior records and evaluators.
+- `experiments/`: validated manifests, shared controller calibration, canonical
+  method dispatch, two-GPU scheduling, checkpointing, and result collection.
 
 Controller implementations consume only finite-horizon tensors and expose a
 common `control`/`intervention` interface. They do not import Transformers or

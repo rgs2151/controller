@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "calibration",
+  "seed": 2151,
+  "sample_count": 50,
+  "revisions": {
+    "real_toxicity_prompts": "f21629712ffd6a3d13a54fd2807ccd521c55ef74"
+  },
+  "models": [
+    {"label": "DistilGPT-2", "model_id": "distilgpt2", "revision": "2290a62682d06624634c1f46a6ad5be0f47f38aa", "dtype": "float32", "quantized": false},
+    {"label": "Qwen-2.5-0.5B", "model_id": "Qwen/Qwen2.5-0.5B", "revision": "060db6499f32faf8b98477b0a26969ef7d8b9987", "dtype": "bfloat16", "quantized": false},
+    {"label": "Qwen-2.5-1.5B", "model_id": "Qwen/Qwen2.5-1.5B", "revision": "8faed761d45a263340a0528343f099c05c9a4323", "dtype": "bfloat16", "quantized": false},
+    {"label": "Qwen-2.5-7B", "model_id": "Qwen/Qwen2.5-7B", "revision": "d149729398750b98c0af14eb82c78cfe92750796", "dtype": "bfloat16", "quantized": true},
+    {"label": "Qwen-2.5-14B", "model_id": "Qwen/Qwen2.5-14B", "revision": "97e1e76335b7017d8f67c08a19d103c0504298c9", "dtype": "bfloat16", "quantized": true}
+  ],
+  "controller_cache": "cache/controllers",
+  "controller": {
+    "seed": 2151,
+    "fit_prompts_per_class": 50,
+    "disturbance_prompts": 50,
+    "calibration_max_length": 192,
+    "activation_batch_size": 8,
+    "state_rank": 8,
+    "whitening_floor": 0.0001,
+    "ridge": 0.001,
+    "disturbance_variance": 0.95,
+    "setpoint_multiplier": 2.0,
+    "q": 0.1,
+    "r": 1.0,
+    "q_final": 1.0,
+    "kp": 0.05,
+    "ki": 0.0,
+    "kd": 0.0,
+    "gamma_lower": 0.0,
+    "gamma_upper": 10.0,
+    "gamma_tolerance": 0.00001,
+    "gamma_max_iterations": 100,
+    "gamma_deployment_margin": 0.02
+  }
+}
