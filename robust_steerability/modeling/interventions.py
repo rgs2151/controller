@@ -129,11 +129,13 @@ def register_generation_policy_hooks(
     policy.prepare(device, dtype)
     policy.reset()
     handles = []
+    if policy.site not in {"block_input", "block_output", "attention_heads"}:
+        raise ValueError(f"Unsupported policy hook site: {policy.site}")
 
     def make_hook(layer_index: int):
         def hook(_module, args, output):
             hidden = output[0] if isinstance(output, tuple) else output
-            activation = args[0][:, -1, :]
+            activation = (args[0] if policy.site == "block_input" else hidden)[:, -1, :]
             delta = policy.activation_delta(layer_index, activation)
             changed = hidden.clone()
             changed[:, -1, :] = changed[:, -1, :] + delta.to(changed.dtype)
@@ -143,6 +145,17 @@ def register_generation_policy_hooks(
 
         return hook
 
+    def make_head_hook(layer_index):
+        def hook(_module, args):
+            changed = args[0].clone()
+            changed[:, -1, :] += policy.activation_delta(layer_index, args[0][:, -1, :]).to(changed.dtype)
+            return (changed,) + args[1:]
+        return hook
+
     for layer_index, layer in enumerate(layers):
-        handles.append(layer.register_forward_hook(make_hook(layer_index)))
+        if policy.site == "attention_heads":
+            projection = layer.attn.c_proj if model.config.model_type == "gpt2" else layer.self_attn.o_proj
+            handles.append(projection.register_forward_pre_hook(make_head_hook(layer_index)))
+        else:
+            handles.append(layer.register_forward_hook(make_hook(layer_index)))
     return handles

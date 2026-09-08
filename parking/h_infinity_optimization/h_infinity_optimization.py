@@ -33,7 +33,7 @@ CACHE_DIR = UNIT_DIR / "cache"
 PLOTS_DIR = UNIT_DIR / "plots"
 REFERENCE_PATH = REPO_ROOT / "ref" / "h_infinity.py"
 REFERENCE_SHA256 = "293c7f45a54c6ffb6caf2a13cec9b0e09396fd4921973bccc019ba09e19f96f0"
-BENCHMARK_PROTOCOL_VERSION = 1
+BENCHMARK_PROTOCOL_VERSION = 2
 SEED = 2151
 GAMMA_ATOL = 1e-5
 GAIN_RTOL = 5e-5
@@ -287,6 +287,14 @@ def run_parity(reference: ModuleType, devices: list[str]) -> pd.DataFrame:
             )
             reference_solution = reference_controller.solution()
             optimized_solution = optimized_controller.solution()
+            case_cache = CACHE_DIR / "parity_solutions" / device.replace(":", "_") / str(case_index)
+            case_cache.mkdir(parents=True, exist_ok=True)
+            torch.save(
+                {"case": case_name, "synthetic": True, "problem": asdict(problem),
+                 "options": asdict(options), "reference_solution": asdict(reference_solution),
+                 "optimized_solution": asdict(optimized_solution)},
+                case_cache / "synthesis.pt",
+            )
             feasibility_match = (
                 reference_controller.feasible == optimized_controller.feasible
             )
@@ -352,6 +360,9 @@ def run_parity(reference: ModuleType, devices: list[str]) -> pd.DataFrame:
                     "feasibility_match": feasibility_match,
                     "gamma_reference": reference_controller.gamma_star,
                     "gamma_optimized": optimized_controller.gamma_star,
+                    "s_rob_reference": 1.0 / reference_controller.gamma_star if reference_controller.feasible and reference_controller.gamma_star else None,
+                    "s_rob_optimized": 1.0 / optimized_controller.gamma_star if optimized_controller.feasible and optimized_controller.gamma_star else None,
+                    "synthetic": True,
                     "gamma_absolute_error": gamma_error,
                     "gain_relative_error": gain_error,
                     "intervention_relative_error": intervention_error,
@@ -761,10 +772,15 @@ def write_summary(
         ),
     }
     (PLOTS_DIR / "summary.json").write_text(json.dumps(payload, indent=2) + "\n")
+    (CACHE_DIR / "summary.json").write_text(json.dumps(payload, indent=2) + "\n")
     return payload
 
 
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] in {"score", "evaluate", "prepare-panels", "inspect", "pack"}:
+        from diagnostic_analysis import main as diagnostic_main
+        diagnostic_main(sys.argv[1:])
+        return
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--repeats", type=int, default=3)
@@ -825,6 +841,7 @@ def main() -> None:
         parity = pd.read_csv(parity_cache_path)
         timings = pd.read_csv(timings_cache_path)
     benchmark = summarize_benchmark(timings)
+    benchmark.to_csv(CACHE_DIR / "benchmark_summary.csv", index=False)
     for path in [
         PLOTS_DIR / "equivalence.csv",
         PLOTS_DIR / "benchmark_summary.csv",
