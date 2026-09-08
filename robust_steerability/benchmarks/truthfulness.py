@@ -15,7 +15,7 @@ MMLU_ID = "cais/mmlu"
 MMLU_REVISION = "c30699e8356da336a370243923dbaf21066bb9fe"
 
 
-def load_truthfulqa_prompts(seed: int, count: int) -> list[dict[str, object]]:
+def load_truthfulqa_prompts(seed: int, count: int, excluded_prompt_ids: set[str]) -> list[dict[str, object]]:
     """Sample TruthfulQA generation questions with the paper prompt format."""
 
     dataset = load_dataset(
@@ -31,10 +31,12 @@ def load_truthfulqa_prompts(seed: int, count: int) -> list[dict[str, object]]:
             "prompt": f"Q: {str(row['question']).strip()} A:",
         }
         for index, row in enumerate(dataset)
-        if str(row.get("question", "")).strip()
+        if str(row.get("question", "")).strip() and f"truthfulqa:{index}" not in excluded_prompt_ids
     ]
     rng = random.Random(seed)
-    return rows if len(rows) <= count else [rows[i] for i in rng.sample(range(len(rows)), count)]
+    if count < 1 or len(rows) < count:
+        raise ValueError(f"Requested {count} TruthfulQA prompts; available: {len(rows)}")
+    return [rows[i] for i in rng.sample(range(len(rows)), count)]
 
 
 def _format_mmlu_question(row: dict[str, object], include_answer: bool) -> str:
@@ -60,15 +62,19 @@ def load_mmlu_five_shot_prompts(
     for row in dev:
         dev_by_subject.setdefault(str(row["subject"]), []).append(dict(row))
     rng = random.Random(seed + 17)
-    indices = rng.sample(range(len(test)), min(count, len(test)))
+    if count < 1 or len(test) < count:
+        raise ValueError(f"Requested {count} MMLU prompts; available: {len(test)}")
+    indices = rng.sample(range(len(test)), count)
     output = []
     for row_index in indices:
         row = dict(test[row_index])
         answer = int(row["answer"])
         if answer < 0 or answer >= len(LETTERS):
-            continue
+            raise ValueError(f"Invalid MMLU answer for test row {row_index}")
         subject = str(row["subject"])
-        examples = dev_by_subject.get(subject, [])[:shots]
+        examples = dev_by_subject[subject][:shots]
+        if len(examples) != shots:
+            raise ValueError(f"Missing {shots}-shot demonstrations for {subject}")
         header = (
             "The following are multiple choice questions (with answers) about "
             f"{subject.replace('_', ' ')}.\n\n"

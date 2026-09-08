@@ -35,9 +35,7 @@ python parking/residual_checks/residual_checks.py all
 Run a complete manifest-defined model matrix on both GPUs:
 
 ```bash
-python -m robust_steerability.experiments run \
-  --manifest parking/erfan_ood_steering_benchmark/manifest.json \
-  --devices cuda:0,cuda:1
+python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1
 ```
 
 Each model job checkpoints its completions and final records inside the owning

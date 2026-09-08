@@ -4,11 +4,14 @@ import argparse
 import gc
 import hashlib
 import importlib.util
+import inspect
 import json
 import math
+import re
 import sys
 import time
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 from types import ModuleType
 
@@ -18,6 +21,8 @@ import pandas as pd
 import seaborn as sns
 import torch
 from matplotlib.lines import Line2D
+from scipy.stats import spearmanr
+from robust_steerability.control.validation import validate_control_problem
 
 from robust_steerability.control.h_infinity import (
     HInfinityController,
@@ -776,10 +781,430 @@ def write_summary(
     return payload
 
 
+# Calibration score caching and prospective prediction exports.
+
+UNIT = Path(__file__).resolve().parent
+CACHE = UNIT / "cache" / "robust_steerability"
+PREDICTORS = (
+    "log_parameter_count", "probe_accuracy", "semantic_snr", "linearization_error",
+    "jacobian_subspace_similarity", "gramian_metric", "nominal_lqr_objective",
+    "minimum_nominal_control_energy", "s_rob", "negative_log_gamma_star",
+)
+PROBLEM_KEYS = (
+    "dynamics", "control_channels", "disturbance_channels", "state_costs",
+    "control_costs", "terminal_cost",
+)
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def json_safe(value):
+    if isinstance(value, torch.Tensor):
+        return json_safe(value.detach().cpu().tolist())
+    if isinstance(value, np.generic):
+        return json_safe(value.item())
+    if isinstance(value, dict):
+        return {str(k): json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_safe(v) for v in value]
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
+def write_json(path: Path, value) -> None:
+    path.write_text(json.dumps(json_safe(value), indent=2, allow_nan=False) + "\n")
+
+
+def read_json(path: Path):
+    return json.loads(path.read_text())
+
+
+def verify_run(directory: Path) -> None:
+    for name, expected in read_json(directory / "manifest.json")["files"].items():
+        if sha256(directory / name) != expected:
+            raise ValueError(f"Frozen score artifact changed: {directory / name}")
+
+
+def safe_id(value: str) -> str:
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", value):
+        raise ValueError("IDs must start with a letter/digit and contain only letters, digits, _, ., -")
+    return value
+
+
+def prompt_ids(values: list[str]) -> set[str]:
+    if not values or any(not isinstance(v, str) or not v for v in values):
+        raise ValueError("Prompt IDs must be nonempty dataset-qualified strings")
+    if len(set(values)) != len(values):
+        raise ValueError("Duplicate prompt IDs")
+    return set(values)
+
+
+def score(bundle_path: Path, device: str) -> Path:
+    """Freeze one model-behavior score without reading evaluation outcomes."""
+    bundle = torch.load(bundle_path, map_location="cpu", weights_only=True)
+    required = {"problem", "record", "splits", "normalization", "calibration", "predictors"}
+    if set(bundle) - (required | {"options"}) or not required <= set(bundle):
+        raise ValueError(f"Bundle must contain {sorted(required)} and optionally options")
+    record = bundle["record"]
+    for key in ("run_id", "model_id", "model_revision", "model_family", "behavior",
+                "intervention_channel", "protocol_id", "parameter_count", "synthetic"):
+        if key not in record:
+            raise ValueError(f"Missing record field: {key}")
+    run_id = safe_id(record["run_id"])
+    if type(record["synthetic"]) is not bool or not math.isfinite(float(record["parameter_count"])) or record["parameter_count"] <= 0:
+        raise ValueError("synthetic must be boolean; parameter_count must be positive")
+    splits = bundle["splits"]
+    if set(splits) != {"fit", "calibration"}:
+        raise ValueError("Score input splits must contain fit and calibration only")
+    fit_ids, cal_ids = prompt_ids(splits["fit"]), prompt_ids(splits["calibration"])
+    if fit_ids & cal_ids:
+        raise ValueError("Fit and calibration prompts overlap")
+    normalization = bundle["normalization"]
+    for key in ("protocol_id", "coordinates", "state_whitening", "control_std",
+                "semantic_output_std", "depth_increment", "stage_costs_depth_weighted"):
+        if key not in normalization:
+            raise ValueError(f"Missing normalization field: {key}")
+    if normalization["coordinates"] not in {"normalized", "raw"}:
+        raise ValueError("coordinates must be normalized or raw")
+    problem = FiniteHorizonControlProblem(**bundle["problem"])
+    validate_control_problem(problem)
+    if problem.disturbance_channels is None or min(
+        problem.horizon, problem.state_dimension, problem.control_dimension,
+        problem.disturbance_dimension,
+    ) < 1:
+        raise ValueError("All problem dimensions must be positive and D is required")
+    if normalization["coordinates"] == "normalized":
+        whitening = normalization["state_whitening"]
+        if whitening.shape != (problem.horizon + 1, problem.state_dimension, problem.state_dimension):
+            raise ValueError("state_whitening must have shape (T+1,n,n)")
+        if not torch.isfinite(whitening).all() or torch.linalg.svdvals(whitening.double()).min() <= 0:
+            raise ValueError("State whitening must be finite and nonsingular")
+        for key in ("control_std", "semantic_output_std", "depth_increment"):
+            values = normalization[key]
+            if not isinstance(values, torch.Tensor) or not torch.isfinite(values).all() or (values <= 0).any():
+                raise ValueError(f"{key} must be a positive finite tensor")
+        if normalization["control_std"].shape != (problem.horizon, problem.control_dimension):
+            raise ValueError("control_std must have shape (T,m)")
+        depth = normalization["depth_increment"]
+        if depth.shape != (problem.horizon,) or not torch.isclose(depth.sum(), torch.tensor(1.0, dtype=depth.dtype)):
+            raise ValueError("depth_increment must have length T and sum to one")
+        if normalization["stage_costs_depth_weighted"] is not True:
+            raise ValueError("Normalized cross-model scores require depth-weighted stage costs")
+    for key in ("state_costs", "terminal_cost", "control_costs"):
+        cost = getattr(problem, key).double()
+        if not torch.allclose(cost, cost.transpose(-1, -2), atol=1e-7, rtol=1e-6):
+            raise ValueError(f"{key} must be symmetric")
+        minimum = torch.linalg.eigvalsh(cost).min().item()
+        if minimum < -1e-8 or (key == "control_costs" and minimum <= 0):
+            raise ValueError(f"{key} must be PSD (strictly PD for control costs)")
+    calibration = bundle["calibration"]
+    for key in ("residuals", "state_basis", "target_readouts", "protected_readouts",
+                "reference_states", "reference_controls", "disturbance_construction"):
+        if key not in calibration:
+            raise ValueError(f"Missing calibration field: {key}")
+    target = calibration["target_readouts"]
+    if not isinstance(target, torch.Tensor) or target.ndim != 3 or target.shape[0] != problem.horizon + 1 or target.shape[2] != problem.state_dimension:
+        raise ValueError("target_readouts must have shape (T+1,p,n)")
+    if not torch.isfinite(target).all():
+        raise ValueError("target_readouts must be finite")
+    if normalization["coordinates"] == "normalized" and normalization["semantic_output_std"].shape != target.shape[:2]:
+        raise ValueError("semantic_output_std must have shape (T+1,p)")
+    residuals = calibration["residuals"]
+    expected = (len(cal_ids), problem.horizon, problem.state_dimension)
+    if residuals.shape != expected or not torch.isfinite(residuals).all() or len(cal_ids) < 2:
+        raise ValueError(f"Calibration residuals must be finite and have shape {expected}, N>=2")
+    # Baselines are provided by their owning fit/calibration analyses with definitions.
+    predictors = {name: None for name in PREDICTORS}
+    predictors["log_parameter_count"] = math.log(float(record["parameter_count"]))
+    for name, entry in bundle["predictors"].items():
+        if name not in PREDICTORS[1:-2]:
+            raise ValueError(f"Unknown or computed predictor: {name}")
+        if entry["split"] not in {"fit", "calibration"} or not entry["definition"]:
+            raise ValueError(f"Predictor {name} needs a fit/calibration source and definition")
+        if entry["value"] is not None and not math.isfinite(float(entry["value"])):
+            raise ValueError(f"Nonfinite predictor: {name}")
+        predictors[name] = entry["value"]
+    options = HInfinityOptions(**bundle.get("options", {}))
+    option_values = asdict(options)
+    if not all(math.isfinite(float(v)) for v in option_values.values()):
+        raise ValueError("Synthesis options must be finite")
+    destination = CACHE / "runs" / run_id
+    fingerprint = {"input_sha256": sha256(bundle_path),
+                   "controller_sha256": sha256(Path(inspect.getfile(HInfinityController))),
+                   "exporter_sha256": sha256(Path(__file__)), "device": device}
+    if destination.exists():
+        manifest = destination / "manifest.json"
+        if not manifest.exists() or read_json(manifest)["fingerprint"] != fingerprint:
+            raise ValueError("Run ID already exists with different or incomplete content; use a new run_id")
+        verify_run(destination)
+        return destination
+    with torch.no_grad():
+        controller = HInfinityController.synthesize(problem, device=device, options=options)
+    solution = controller.solution()
+    converged = bool(solution.diagnostics.get("bisection_converged", False))
+    gamma = solution.gamma_star
+    zero_disturbance = bool(torch.count_nonzero(problem.disturbance_channels) == 0)
+    valid_score = solution.feasible and converged and gamma is not None and math.isfinite(gamma) and gamma > 0 and not zero_disturbance
+    if valid_score:
+        predictors["s_rob"] = 1.0 / gamma
+        predictors["negative_log_gamma_star"] = -math.log(gamma)
+    centered = residuals.double() - residuals.double().mean(dim=0, keepdim=True)
+    covariance = torch.einsum("nti,ntj->tij", centered, centered) / (len(cal_ids) - 1)
+    d = problem.disturbance_channels.double()
+    covariance_error = torch.linalg.matrix_norm(covariance - d @ d.transpose(-1, -2), dim=(-2, -1))
+    covariance_norm = torch.linalg.matrix_norm(covariance, dim=(-2, -1))
+    covariance_relative_error = torch.where(covariance_norm > 0, covariance_error / covariance_norm, torch.full_like(covariance_norm, float("nan")))
+    metadata = {**record, "gamma_star": gamma, "gamma_used": solution.diagnostics.get("gamma_used"),
+                "s_rob": predictors["s_rob"], "negative_log_gamma_star": predictors["negative_log_gamma_star"],
+                "feasible": solution.feasible, "bisection_converged": converged,
+                "score_available": valid_score, "predictors": predictors,
+                "zero_disturbance_channel": zero_disturbance,
+                "score_status": "available" if valid_score else "zero disturbance gives an infinite ideal score" if zero_disturbance else "infeasible or unconverged",
+                "normalization_protocol_id": normalization["protocol_id"],
+                "coordinates": normalization["coordinates"],
+                "stage_costs_depth_weighted": normalization["stage_costs_depth_weighted"],
+                "score_definition": "1 / numerical feasible upper boundary gamma_star",
+                "diagnostics": solution.diagnostics,
+                "fit_count": len(fit_ids), "calibration_count": len(cal_ids),
+                "covariance_relative_error_by_layer": covariance_relative_error}
+    destination.mkdir(parents=True)
+    # Keep the exact input bytes, including bases, normalizers, residuals and provenance.
+    (destination / "calibration_input.pt").write_bytes(bundle_path.read_bytes())
+    (destination / "controller_source.py").write_bytes(Path(inspect.getfile(HInfinityController)).read_bytes())
+    (destination / "exporter_source.py").write_bytes(Path(__file__).read_bytes())
+    torch.save({"controller": solution.controller, "gains": solution.gains,
+                "feasible": solution.feasible, "gamma_star": gamma,
+                "diagnostics": solution.diagnostics,
+                "control_channels": problem.control_channels.cpu(),
+                "residual_covariance": covariance,
+                "covariance_relative_error_by_layer": covariance_relative_error}, destination / "controller.pt")
+    write_json(destination / "score.json", metadata)
+    write_json(destination / "manifest.json", {"schema_version": 1, "fingerprint": fingerprint,
+               "created_at_utc": datetime.now(timezone.utc).isoformat(),
+               "torch_version": str(torch.__version__), "options": option_values,
+               "files": {p.name: sha256(p) for p in destination.iterdir() if p.is_file()}})
+    return destination
+
+
+def evaluate(path: Path) -> Path:
+    """Attach prompt-level held-out records to an already frozen score."""
+    payload = read_json(path)
+    run_id, evaluation_id = safe_id(payload["run_id"]), safe_id(payload["evaluation_id"])
+    run = CACHE / "runs" / run_id
+    verify_run(run)
+    manifest = read_json(run / "manifest.json")
+    if payload["score_manifest_sha256"] != sha256(run / "manifest.json"):
+        raise ValueError("Evaluation must reference the frozen score manifest hash")
+    if datetime.fromisoformat(payload["evaluation_started_at_utc"]) <= datetime.fromisoformat(manifest["created_at_utc"]):
+        raise ValueError("Evaluation must start after the score was frozen")
+    bundle = torch.load(run / "calibration_input.pt", map_location="cpu", weights_only=True)
+    excluded = set(bundle["splits"]["fit"]) | set(bundle["splits"]["calibration"])
+    score_record = read_json(run / "score.json")
+    for field in ("controller", "shift", "protocol_id", "success_definition",
+                  "matching_rule", "generation_config", "evaluator"):
+        if field not in payload or payload[field] in (None, "", {}):
+            raise ValueError(f"Missing evaluation field: {field}")
+    if payload["protocol_id"] != score_record["protocol_id"]:
+        raise ValueError("Evaluation protocol differs from score protocol")
+    observations = payload["observations"]
+    if not observations:
+        raise ValueError("No held-out observations")
+    keys = set()
+    for row in observations:
+        for field in ("prompt_id", "seed", "success", "raw_score", "control_energy", "collateral_metrics"):
+            if field not in row:
+                raise ValueError(f"Missing observation field: {field}")
+        if not isinstance(row["prompt_id"], str) or not row["prompt_id"]:
+            raise ValueError("Prompt IDs must be nonempty dataset-qualified strings")
+        key = (row["prompt_id"], row["seed"])
+        if key in keys or row["prompt_id"] in excluded:
+            raise ValueError("Duplicate prompt/seed or held-out prompt overlaps fit/calibration")
+        if type(row["success"]) is not bool:
+            raise ValueError("success must be Boolean using a predefined behavioral threshold")
+        if not all(math.isfinite(float(row[v])) for v in ("raw_score", "control_energy")) or row["control_energy"] < 0:
+            raise ValueError("Scores and nonnegative control energies must be finite")
+        keys.add(key)
+    target = run / "evaluations" / evaluation_id
+    if target.exists():
+        if (target / "observations.json").read_bytes() != path.read_bytes():
+            raise ValueError("Evaluation ID exists with different content; use a new evaluation_id")
+        return target
+    target.mkdir(parents=True)
+    (target / "observations.json").write_bytes(path.read_bytes())
+    by_prompt = {}
+    for row in observations:
+        by_prompt.setdefault(row["prompt_id"], []).append(float(row["success"]))
+    reliability = float(np.mean([np.mean(v) for v in by_prompt.values()]))
+    write_json(target / "summary.json", {"run_id": run_id, "evaluation_id": evaluation_id,
+               "controller": payload["controller"], "shift": payload["shift"],
+               "protocol_id": payload["protocol_id"], "n_prompts": len(by_prompt),
+               "n_generations": len(observations), "reliability": reliability,
+               "reliability_percent": 100 * reliability, "source_sha256": sha256(path),
+               "success_definition": payload["success_definition"], "matching_rule": payload["matching_rule"]})
+    return target
+
+
+def rho(x, y):
+    if len(x) < 3 or np.ptp(x) == 0 or np.ptp(y) == 0:
+        return None
+    return float(spearmanr(x, y).statistic)
+
+
+def r_squared(y, prediction):
+    denominator = float(np.sum((y - np.mean(y)) ** 2))
+    return None if denominator == 0 else 1 - float(np.sum((y - prediction) ** 2)) / denominator
+
+
+def prepare_panels(analysis_id: str, controller: str, shift: str, protocol: str,
+                   normalization: str, include_synthetic: bool) -> Path:
+    """Save panel-ready rows and held-out regression predictions, without rerunning synthesis."""
+    destination = CACHE / "analyses" / safe_id(analysis_id)
+    if destination.exists():
+        raise ValueError("Analysis ID exists; use a new analysis_id to preserve prior results")
+    rows, exclusions, sources = [], [], {}
+    for path in sorted((CACHE / "runs").glob("*/score.json")):
+        verify_run(path.parent)
+        record = read_json(path)
+        if record["protocol_id"] != protocol or record["normalization_protocol_id"] != normalization:
+            continue
+        sources[str(path.relative_to(CACHE))] = sha256(path)
+        reason = None
+        if not record["score_available"]:
+            reason = "infeasible or unconverged synthesis"
+        elif record["synthetic"] != include_synthetic:
+            reason = "synthetic/empirical cohort mismatch"
+        elif record["coordinates"] != "normalized" or record["stage_costs_depth_weighted"] is not True:
+            reason = "cross-model normalized coordinates required"
+        evaluations = []
+        for candidate in sorted((path.parent / "evaluations").glob("*/summary.json")):
+            result = read_json(candidate)
+            if result["controller"] == controller and result["shift"] == shift:
+                evaluations.append(result)
+                sources[str(candidate.relative_to(CACHE))] = sha256(candidate)
+        if len(evaluations) != 1:
+            reason = "exactly one matching evaluation per run is required"
+        if reason:
+            exclusions.append({"run_id": record["run_id"], "reason": reason})
+            continue
+        evaluation = evaluations[0]
+        rows.append({**{k: record[k] for k in ("run_id", "model_id", "model_family", "behavior", "parameter_count")},
+                     **record["predictors"], **evaluation})
+    pairs = [(row["model_id"], row["behavior"]) for row in rows]
+    if len(pairs) != len(set(pairs)):
+        raise ValueError("Multiple runs for a model-behavior pair; select a unique predefined protocol")
+    matching_rules = {json.dumps(row["matching_rule"], sort_keys=True) for row in rows}
+    if len(matching_rules) > 1:
+        raise ValueError("Controller comparison budgets/matching rules differ across pairs")
+    predictions, metrics, correlations, descriptive_lines = [], [], [], []
+    skipped = []
+    y = np.array([row["reliability"] for row in rows])
+    rng = np.random.default_rng(2151)
+    for predictor in PREDICTORS:
+        if len(rows) < 3 or any(row[predictor] is None for row in rows):
+            skipped.append({"predictor": predictor, "reason": "fewer than 3 pairs or missing predictor values"})
+            continue
+        x = np.array([row[predictor] for row in rows], dtype=float)
+        models = np.array([row["model_id"] for row in rows])
+        bootstrap_values = []
+        unique_models = np.unique(models)
+        for _ in range(500):
+            drawn = rng.choice(unique_models, size=len(unique_models), replace=True)
+            indices = np.concatenate([np.flatnonzero(models == m) for m in drawn])
+            value = rho(x[indices], y[indices])
+            if value is not None:
+                bootstrap_values.append(value)
+        interval = np.quantile(bootstrap_values, [0.025, 0.975]).tolist() if len(bootstrap_values) >= 100 else [None, None]
+        correlations.append({"predictor": predictor, "spearman_rho": rho(x, y),
+                             "cluster_bootstrap_ci95": interval, "valid_bootstrap_samples": len(bootstrap_values)})
+        coefficients = np.linalg.lstsq(np.column_stack([np.ones(len(x)), x]), y, rcond=None)[0]
+        descriptive_lines.append({"predictor": predictor, "intercept": coefficients[0], "slope": coefficients[1],
+                                  "x_min": x.min(), "x_max": x.max(), "purpose": "descriptive in-sample line only"})
+        for scheme, group_key in (("leave_model_out", "model_id"), ("leave_family_out", "model_family"),
+                                  ("leave_behavior_out", "behavior"), ("leave_scale_out", "parameter_count")):
+            groups = np.array([str(row[group_key]) for row in rows])
+            if len(np.unique(groups)) < 2:
+                skipped.append({"predictor": predictor, "scheme": scheme, "reason": "fewer than 2 groups"})
+                continue
+            predicted = np.full(len(y), np.nan)
+            for held_out in np.unique(groups):
+                train, test = groups != held_out, groups == held_out
+                if train.sum() < 3:
+                    continue
+                mean, std = float(x[train].mean()), float(x[train].std())
+                # Constant training predictors reduce to a training-mean model.
+                scale = std if std > 0 else 1.0
+                train_x = np.column_stack([np.ones(train.sum()), (x[train] - mean) / scale])
+                beta = np.linalg.lstsq(train_x, y[train], rcond=None)[0]
+                predicted[test] = beta[0] + beta[1] * (x[test] - mean) / scale
+                for index in np.flatnonzero(test):
+                    predictions.append({"run_id": rows[index]["run_id"], "model_family": rows[index]["model_family"],
+                                        "behavior": rows[index]["behavior"], "predictor": predictor,
+                                        "scheme": scheme, "held_out": held_out, "observed": y[index],
+                                        "predicted": predicted[index], "training_run_ids": [rows[i]["run_id"] for i in np.flatnonzero(train)],
+                                        "training_x_mean": mean, "training_x_scale": scale,
+                                        "intercept_standardized": beta[0], "slope_standardized": beta[1]})
+            complete = bool(np.isfinite(predicted).all())
+            metrics.append({"predictor": predictor, "scheme": scheme, "n_pairs": len(y),
+                            "n_predicted": int(np.isfinite(predicted).sum()), "complete": complete,
+                            "r_squared": r_squared(y, predicted) if complete else None,
+                            "spearman_rho": rho(predicted, y) if complete else None})
+    destination.mkdir(parents=True)
+    for name, contents in (("pair_table", rows), ("excluded_runs", exclusions),
+                           ("cv_predictions", predictions), ("cv_metrics", metrics),
+                           ("correlations", correlations), ("descriptive_lines", descriptive_lines),
+                           ("unavailable_analyses", skipped)):
+        write_json(destination / f"{name}.json", contents)
+    write_json(destination / "panel_manifest.json", {
+        "analysis_id": analysis_id, "controller": controller, "shift": shift,
+        "protocol_id": protocol, "normalization_protocol_id": normalization,
+        "synthetic": include_synthetic, "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "input_hashes": sources, "exporter_sha256": sha256(Path(__file__)),
+        "seed": 2151, "bootstrap_repetitions": 500,
+        "panel_A": "runs/*/calibration_input.pt, manifest.json, score.json",
+        "panel_B": "pair_table.json, correlations.json, descriptive_lines.json",
+        "panel_C": "cv_metrics.json; leave_model_out, shared cohort, univariate OLS",
+        "panel_D": "cv_predictions.json; leave_family_out, s_rob or negative_log_gamma_star",
+        "response": "prompt-averaged binary success fraction; multiply by 100 for percent",
+        "limitations": ["No held-out outcome is used by score()", "S_rob is not restricted to [0,1]",
+                        "Point estimates use the current solver's numerical feasibility boundary",
+                        "This is linear binary-success prediction, not the draft's mixed-effects model",
+                        "No inference can verify the declared provenance of upstream tensors"]})
+    return destination
+
+
+def score_main(argv=None) -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    score_parser = commands.add_parser("score")
+    score_parser.add_argument("--bundle", type=Path, required=True)
+    score_parser.add_argument("--device", default="cpu")
+    evaluation_parser = commands.add_parser("evaluate")
+    evaluation_parser.add_argument("--input", type=Path, required=True)
+    panel_parser = commands.add_parser("prepare-panels")
+    panel_parser.add_argument("--analysis-id", required=True)
+    panel_parser.add_argument("--controller", required=True)
+    panel_parser.add_argument("--shift", required=True)
+    panel_parser.add_argument("--protocol-id", required=True)
+    panel_parser.add_argument("--normalization-id", required=True)
+    panel_parser.add_argument("--synthetic", action="store_true")
+    args = parser.parse_args(argv)
+    if args.command == "score":
+        result = score(args.bundle, args.device)
+    elif args.command == "evaluate":
+        result = evaluate(args.input)
+    else:
+        result = prepare_panels(args.analysis_id, args.controller, args.shift, args.protocol_id,
+                                args.normalization_id, args.synthetic)
+    print(result)
+
+
+
 def main() -> None:
-    if len(sys.argv) > 1 and sys.argv[1] in {"score", "evaluate", "prepare-panels", "inspect", "pack"}:
-        from diagnostic_analysis import main as diagnostic_main
-        diagnostic_main(sys.argv[1:])
+    if len(sys.argv) > 1 and sys.argv[1] in {"score", "evaluate", "prepare-panels"}:
+        score_main(sys.argv[1:])
         return
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", default="cuda:0")

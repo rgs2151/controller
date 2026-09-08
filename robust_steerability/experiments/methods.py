@@ -13,6 +13,7 @@ from robust_steerability.control import (
     PIDGains,
 )
 from robust_steerability.runtime.policy import ReducedStateSetpointPolicy
+from robust_steerability.runtime.diagnostics import ReducedTrajectoryRecorder
 
 
 METHOD_LABELS = {
@@ -20,6 +21,8 @@ METHOD_LABELS = {
     "alqr": "A-LQR",
     "spid": "S-PID",
     "hinf": "H-infinity",
+    "iti": "ITI", "actadd": "ActAdd", "mean_act": "Mean-AcT",
+    "linear_act": "Linear-AcT", "pid_act": "PID-AcT", "odesteer": "ODESteer",
 }
 
 
@@ -32,12 +35,14 @@ class ReducedControllerArtifact:
     decoders: torch.Tensor
     feature_unit: torch.Tensor
     setpoints: torch.Tensor
+    reference_controls: torch.Tensor
     control_channels: torch.Tensor
     lqr_gains: torch.Tensor
     hinf_gains: torch.Tensor
     hinf_feasible: bool
     gamma_star: float | None
     hinf_diagnostics: dict[str, object]
+    baselines: dict
 
 
 def build_policy(
@@ -47,13 +52,17 @@ def build_policy(
     kp: float,
     ki: float,
     kd: float,
+    record: bool = False,
 ):
     """Build the online policy for one canonical method name."""
 
     if method == "original":
         return None
+    if method in {"iti", "actadd", "mean_act", "linear_act", "pid_act", "odesteer"}:
+        from robust_steerability.experiments.baselines import BaselinePolicy
+        return BaselinePolicy(method, artifact.baselines, strength=artifact.baselines["strengths"][method], record=record)
     if method == "alqr":
-        controller = LQRController.from_tracking_gains(
+        controller = LQRController(
             artifact.lqr_gains,
             control_channels=artifact.control_channels,
         )
@@ -79,4 +88,6 @@ def build_policy(
         decoders=artifact.decoders,
         feature_unit=artifact.feature_unit,
         setpoints=artifact.setpoints,
+        reference_controls=artifact.reference_controls,
+        recorder=ReducedTrajectoryRecorder() if record else None,
     )

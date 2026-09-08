@@ -10,7 +10,7 @@ from robust_steerability.artifacts import configuration_hash
 
 
 ALLOWED_KINDS = {"truthfulness", "id_toxicity", "ood_toxicity", "calibration"}
-ALLOWED_METHODS = {"original", "alqr", "spid", "hinf"}
+ALLOWED_METHODS = {"original", "alqr", "spid", "hinf", "iti", "actadd", "mean_act", "linear_act", "pid_act", "odesteer"}
 
 
 @dataclass(frozen=True)

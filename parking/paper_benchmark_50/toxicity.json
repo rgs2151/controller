@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "kind": "id_toxicity",
+  "seed": 2151,
+  "sample_count": 50,
+  "mmlu_shots": 5,
+  "mmlu_max_length": 1024,
+  "judge_batch_size": 16,
+  "revisions": {
+    "truthful_qa": "741b8276f2d1982aa3d5b832d3ee81ed3b896490",
+    "mmlu": "c30699e8356da336a370243923dbaf21066bb9fe",
+    "truth_judge": "8f718cb4e68bc30a488727a0e37190835a7c129e",
+    "info_judge": "72601eff294cbf7e8d7188ae82397e19cb9bb9bd",
+    "real_toxicity_prompts": "f21629712ffd6a3d13a54fd2807ccd521c55ef74",
+    "jigsaw": "2bf801de1b879f287943ecfc81fdca8690d9fc61",
+    "toxic_chat": "29df8e4dba60e1f4af4b4075c0705c5b313548a8",
+    "toxicity_classifier": "048c25bb1e199b98802784f96325f4840f22145d",
+    "translator": "0cb88a4f764b7a12671c53f0838cd831a0843b95",
+    "perplexity_model": "27d67f1b5f57dc0953326b2601d68371d40ea8da",
+    "ml_act": "d2c3560b7022da795d58f892c398ab77cff13590",
+    "pid_act": "d705c44a2f9c67e54e4d551824f46cba3c3b187e",
+    "iti": "2c6b2179be7b5aa8f0a171688cf9e01b812ca327",
+    "odesteer": "8a3c481d6493ecb3325eea5ef9c448cccfced7eb"
+  },
+  "methods": [
+    "original",
+    "iti",
+    "actadd",
+    "mean_act",
+    "linear_act",
+    "pid_act",
+    "odesteer",
+    "spid",
+    "alqr",
+    "hinf"
+  ],
+  "models": [
+    {
+      "label": "DistilGPT-2",
+      "model_id": "distilgpt2",
+      "revision": "2290a62682d06624634c1f46a6ad5be0f47f38aa",
+      "dtype": "float32",
+      "quantized": false
+    },
+    {
+      "label": "Qwen-2.5-0.5B",
+      "model_id": "Qwen/Qwen2.5-0.5B",
+      "revision": "060db6499f32faf8b98477b0a26969ef7d8b9987",
+      "dtype": "bfloat16",
+      "quantized": false
+    },
+    {
+      "label": "Qwen-2.5-1.5B",
+      "model_id": "Qwen/Qwen2.5-1.5B",
+      "revision": "8faed761d45a263340a0528343f099c05c9a4323",
+      "dtype": "bfloat16",
+      "quantized": false
+    },
+    {
+      "label": "Qwen-2.5-7B",
+      "model_id": "Qwen/Qwen2.5-7B",
+      "revision": "d149729398750b98c0af14eb82c78cfe92750796",
+      "dtype": "bfloat16",
+      "quantized": true
+    },
+    {
+      "label": "Qwen-2.5-14B",
+      "model_id": "Qwen/Qwen2.5-14B",
+      "revision": "97e1e76335b7017d8f67c08a19d103c0504298c9",
+      "dtype": "bfloat16",
+      "quantized": true
+    }
+  ],
+  "controller_cache": "cache/controllers/toxicity",
+  "controller_cache_read_only": false,
+  "controller": {
+    "seed": 2151,
+    "fit_prompts_per_class": 50,
+    "disturbance_prompts": 50,
+    "calibration_max_length": 192,
+    "activation_batch_size": 8,
+    "state_rank": 8,
+    "whitening_floor": 0.0001,
+    "ridge": 0.001,
+    "disturbance_variance": 0.95,
+    "setpoint_multiplier": 2,
+    "q": 0.1,
+    "r": 1,
+    "q_final": 1,
+    "kp": 0.05,
+    "ki": 0,
+    "kd": 0,
+    "gamma_lower": 0,
+    "gamma_upper": 10,
+    "gamma_tolerance": 0.00001,
+    "gamma_max_iterations": 100,
+    "gamma_deployment_margin": 0.02,
+    "behavior": "toxicity_mitigation",
+    "disturbance_coverage": 0.95
+  },
+  "generation": {
+    "max_length": 192,
+    "max_new_tokens": 40,
+    "do_sample": true,
+    "top_p": 0.3,
+    "temperature": 1,
+    "repetition_penalty": 1.2
+  },
+  "subsets": [
+    "rtp_id",
+    "spanish",
+    "adversarial",
+    "jigsaw",
+    "long",
+    "mmlu"
+  ],
+  "prompt_source": "cache/toxicity_prompts.json",
+  "subset_generation": {
+    "spanish": {
+      "max_length": 512
+    },
+    "adversarial": {
+      "max_length": 900
+    },
+    "long": {
+      "max_length": 900
+    },
+    "jigsaw": {
+      "max_length": 256
+    },
+    "mmlu": {
+      "max_length": 1022,
+      "max_new_tokens": 2,
+      "do_sample": false,
+      "top_p": 1,
+      "temperature": 1
+    }
+  },
+  "job_timeout_seconds": 14400
+}

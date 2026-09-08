@@ -43,6 +43,8 @@
 
 ## Notes
 
+- These are archived results under their recorded original calibration. This unit now exposes plotting only; fresh 50-prompt execution is `python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1`. Historical caches are not upgraded or used as current benchmark results.
+
 - MMLU prompts are evaluated for collateral toxic generation, not MMLU answer accuracy, in this unit.
 
 ## References

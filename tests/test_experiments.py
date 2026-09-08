@@ -68,8 +68,9 @@ def test_reduced_policy_decodes_next_layer_control_coordinates() -> None:
         decoders=torch.tensor([[[2.0, 0.0], [0.0, 3.0], [0.0, 0.0]]]),
         feature_unit=torch.tensor([[1.0, 0.0]]),
         setpoints=torch.tensor([2.0]),
+        reference_controls=torch.zeros(1, 2),
     )
     policy.prepare(torch.device("cpu"), torch.float32)
     policy.reset()
     delta = policy.activation_delta(0, torch.tensor([[1.0, 4.0, 7.0]]))
-    torch.testing.assert_close(delta, torch.tensor([[2.0, 0.0, 0.0]]))
+    torch.testing.assert_close(delta, torch.tensor([[2.0, -12.0, 0.0]]))

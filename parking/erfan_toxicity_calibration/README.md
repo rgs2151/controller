@@ -45,6 +45,8 @@
 
 ## Notes
 
+- These are archived results under their recorded original calibration. This unit now exposes plotting only; fresh 50-prompt execution is `python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1`. Historical caches are not upgraded or used as current benchmark results.
+
 - Fit, calibration, and benchmark records are disjoint by prompt identifier.
 - Controller caches are intentionally ignored by Git and reused by every Erfan benchmark.
 

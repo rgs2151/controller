@@ -1,10 +1,8 @@
-"""Run and plot Erfan's multimodel in-distribution toxicity benchmark."""
+"""Plot archived Erfan results; fresh execution lives in paper_benchmark_50."""
 
 from __future__ import annotations
 
 import argparse
-import subprocess
-import sys
 from pathlib import Path
 
 import matplotlib
@@ -39,14 +37,6 @@ def setup_style() -> None:
     plt.rcParams["legend.frameon"] = False
     plt.rcParams["figure.dpi"] = 300
     plt.rcParams["savefig.dpi"] = 300
-
-
-def run(devices: str) -> None:
-    subprocess.run(
-        [sys.executable, "-m", "robust_steerability.experiments", "run", "--manifest", str(MANIFEST), "--devices", devices],
-        cwd=UNIT_DIR.parents[1],
-        check=True,
-    )
 
 
 def plot() -> None:
@@ -85,13 +75,9 @@ def plot() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("stage", choices=["run", "plot", "all"])
-    parser.add_argument("--devices", default="cuda:0,cuda:1")
+    parser.add_argument("stage", choices=["plot"])
     args = parser.parse_args()
-    if args.stage in {"run", "all"}:
-        run(args.devices)
-    if args.stage in {"plot", "all"}:
-        plot()
+    plot()
 
 
 if __name__ == "__main__":

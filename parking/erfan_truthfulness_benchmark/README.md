@@ -44,6 +44,8 @@
 
 ## Notes
 
+- These are archived results under their recorded original calibration. This unit now exposes plotting only; fresh 50-prompt execution is `python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1`. Historical caches are not upgraded or used as current benchmark results.
+
 - The run uses one paper-aligned protocol for every model; it does not mix Erfan’s earlier lexical smoke metric with official judge scores.
 
 ## References
