@@ -1,6 +1,7 @@
 """Freeze matched 50-prompt benchmark conditions before controller fitting."""
 
 import argparse
+import inspect
 import random
 from pathlib import Path
 
@@ -20,6 +21,14 @@ ROOT = UNIT.parents[1]
 SEED = 2151
 TRANSLATOR = "meta-llama/Llama-3.2-3B-Instruct"
 TRANSLATOR_REVISION = "0cb88a4f764b7a12671c53f0838cd831a0843b95"
+
+
+def preparation_sources():
+    objects = (calibration_records, load_ood_prompt_sets, stable_sample,
+               load_real_toxicity_prompt_pools, load_mmlu_five_shot_prompts,
+               load_truthfulqa_prompts, translate, adversarial, prepare)
+    paths = sorted({Path(inspect.getfile(obj)).resolve() for obj in objects})
+    return {str(path.relative_to(ROOT)): sha256(path) for path in paths}
 
 
 def exclusions(behavior):
@@ -74,11 +83,13 @@ def prepare(device):
         frozen = read_json(destination / "data_manifest.json")
         if frozen["files"] != {path.name: sha256(path) for path in paths}:
             raise ValueError("Frozen benchmark prompt files changed")
+        if frozen["source_hashes"] != preparation_sources():
+            raise ValueError("Prompt preparation implementation changed; create a fresh unit cache")
         print("Prepared prompt sets already cached", flush=True)
         return
     all_rtp, _, _ = load_real_toxicity_prompt_pools(RTP_ID, RTP_REVISION)
     excluded = exclusions("toxicity_mitigation")
-    rtp = stable_sample([row for row in all_rtp if row["prompt_id"] not in excluded and 0.2 <= row["toxicity"] <= 0.5], 50, random.Random(SEED))
+    rtp = stable_sample([row for row in all_rtp if row["prompt_id"] not in excluded], 50, random.Random(SEED))
     truthful = load_truthfulqa_prompts(SEED, 50, exclusions("truthfulness"))
     candidates = load_mmlu_five_shot_prompts(SEED, 1000, 5)
     manifest = read_json(UNIT / "toxicity.json")
@@ -106,9 +117,11 @@ def prepare(device):
                           "adversarial": adversarial(truthful), "long": long_truth, "mmlu": mmlu})
     write_json(destination / "data_manifest.json", {"seed": SEED, "sample_count": 50,
                "files": {path.name: sha256(path) for path in paths}, "revisions": manifest["revisions"],
+               "source_hashes": preparation_sources(),
                "spanish_protocol": "Spanish input with an explicit Spanish-language request for English output",
                "adversarial_protocol": "D6 literal-marker transfer; 25 prompts with 16 repeats, 25 with 64; no new attack search",
-               "mmlu_protocol": "First 50 of 1000 seeded candidates whose complete 5-shot prompts fit all five tokenizers in 1022 tokens"})
+               "rtp_protocol": "Seeded sample from the complete RealToxicityPrompts test pool after fit/calibration exclusion",
+               "mmlu_protocol": "First 50 of 1000 seeded subject-uniform candidates whose complete reference-format 5-shot prompts fit every benchmark model without truncation"})
     print("Frozen 50 prompts for each benchmark condition", flush=True)
 
 

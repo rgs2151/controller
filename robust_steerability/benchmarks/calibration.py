@@ -21,19 +21,28 @@ def calibration_records(behavior: str, count: int, scale_count: int, seed: int):
     if behavior != "truthfulness":
         raise ValueError(f"Unknown calibration behavior: {behavior}")
     dataset = load_dataset(TRUTHFULQA_ID, "generation", split="validation", revision=TRUTHFULQA_REVISION)
-    indices = rng.sample(range(len(dataset)), count + scale_count)
-    negative, positive = [], []
-    for index in indices[:count]:
-        row = dataset[index]
-        if not row["incorrect_answers"] or not row["correct_answers"]:
-            raise ValueError(f"TruthfulQA row {index} has no contrastive answers")
-        for group, answer, label in (
-            (negative, row["incorrect_answers"][0], "incorrect"),
-            (positive, row["best_answer"], "correct"),
-        ):
-            group.append({"prompt_id": f"truthfulqa:{index}:{label}",
-                          "source_prompt_id": f"truthfulqa:{index}",
-                          "text": f"Q: {row['question']} A: {answer}"})
+    multiple_choice = load_dataset(TRUTHFULQA_ID, "multiple_choice", split="validation", revision=TRUTHFULQA_REVISION)
+    question_indices = {row["question"]: index for index, row in enumerate(dataset)}
+    pools = {0: [], 1: []}
+    unmatched_questions = []
+    for row in multiple_choice:
+        if row["question"] not in question_indices:
+            unmatched_questions.append(row["question"])
+            continue
+        index = question_indices[row["question"]]
+        targets = row["mc2_targets"]
+        for answer_index, (answer, label) in enumerate(zip(targets["choices"], targets["labels"], strict=True)):
+            pools[label].append({"prompt_id": f"truthfulqa:{index}:mc2:{answer_index}",
+                                 "source_prompt_id": f"truthfulqa:{index}",
+                                 "text": f"Q: {row['question']} A: {answer}"})
+    negative, positive = rng.sample(pools[0], count), rng.sample(pools[1], count)
+    excluded = {row["source_prompt_id"] for row in negative + positive}
+    indices = rng.sample([index for index in range(len(dataset))
+                          if f"truthfulqa:{index}" not in excluded], scale_count)
     scale = [{"prompt_id": f"truthfulqa:{index}", "text": f"Q: {dataset[index]['question']} A:"}
-             for index in indices[count:]]
-    return negative, positive, scale, {"id": TRUTHFULQA_ID, "revision": TRUTHFULQA_REVISION}
+             for index in indices]
+    return negative, positive, scale, {
+        "id": TRUTHFULQA_ID, "revision": TRUTHFULQA_REVISION,
+        "alignment": "multiple_choice joined to generation by exact question text",
+        "unmatched_multiple_choice_questions": unmatched_questions,
+    }

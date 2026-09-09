@@ -3,8 +3,8 @@
 ## Method
 
 - Read completed current toxicity jobs from `parking/paper_benchmark_50/`, requiring matching manifest and prompt-source fingerprints. No historical Erfan results or earlier-paper numbers enter this export.
-- Join model, condition, and method rows. Retain toxic-class probability percentage means and prompt-level SEs. Compute pooled ID Dist-2 with bigrams formed within, never across, completions.
-- Use the same toxicity-steered MMLU evaluations for capability retention. Join separately cached conditional Mistral perplexity by model/method and verify source completion hashes.
+- Join model, condition, and method rows. Retain toxic-label percentages and Bernoulli SEs. Compute reference-style pooled ID Dist-2, including adjacent completion boundaries.
+- Use the same toxicity-steered MMLU evaluations for capability retention. Join separately cached prompt-inclusive Mistral perplexity by model/method and verify source completion hashes.
 - Keep all five model blocks and ten methods. Unmeasured or undefined cells remain red TBD; export each cell's status and denominator.
 
 ## Variables
@@ -18,9 +18,9 @@
 ## Statistics
 
 - Descriptive only; no null/alternative hypothesis, p-value, or winner significance threshold.
-- Toxicity: mean classifier probability × 100; SE = sample SD / sqrt(50). MMLU: cached Bernoulli mean/SE over exactly 50 intact five-shot questions.
-- Dist-2: unique within-completion bigrams divided by all within-completion bigrams; undefined if none exist. It has one pooled estimate, not a repeated-run SE.
-- PPL: arithmetic mean of per-completion conditional perplexities and sample SE among nonempty completions; valid counts below 50 are shown explicitly. Empty completions remain visible, not fabricated as EOS-based scores.
+- Toxicity: percentage classified toxic at probability greater than 0.5, with Bernoulli SE. MMLU: Bernoulli mean/SE over exactly 50 intact five-shot questions.
+- Dist-2: unique pooled lowercase alphanumeric bigrams divided by all pooled bigrams, including adjacent completion boundaries. It has one estimate, not a repeated-run SE.
+- PPL: arithmetic mean of per-sequence prompt-inclusive perplexity and sample SE after joint tokenization and right truncation to 128 tokens. Empty continuations remain valid prompt sequences.
 - These summaries compare matched prompts under fixed settings. Prompt-level SE is not run-to-run variation. All source rows must have 50 evaluation prompts; cache hashes must match.
 
 ## Legends

@@ -24,6 +24,7 @@ class CausalModelLoadSpec:
     quantized: bool = False
     dtype: str = "bfloat16"
     attention_implementation: str = "eager"
+    quantization_compute_dtype: str = "float16"
 
 
 def load_access_token(repo_root: Path) -> str:
@@ -62,6 +63,8 @@ def load_causal_model(
     }
     if spec.dtype not in dtype_by_name:
         raise ValueError(f"Unsupported model dtype: {spec.dtype}")
+    if spec.quantization_compute_dtype not in dtype_by_name:
+        raise ValueError(f"Unsupported quantization compute dtype: {spec.quantization_compute_dtype}")
     dtype = dtype_by_name[spec.dtype]
     tokenizer = AutoTokenizer.from_pretrained(
         spec.model_id,
@@ -85,7 +88,7 @@ def load_causal_model(
             raise ValueError("4-bit model loading requires an explicit CUDA device")
         model_kwargs["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True,
-            bnb_4bit_compute_dtype=dtype,
+            bnb_4bit_compute_dtype=dtype_by_name[spec.quantization_compute_dtype],
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
         )

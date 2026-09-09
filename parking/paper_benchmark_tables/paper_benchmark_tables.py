@@ -9,6 +9,7 @@ import pandas as pd
 from robust_steerability.experiments.diagnostics import read_json, sha256, write_json
 from robust_steerability.experiments.manifest import load_manifest
 from robust_steerability.experiments.runner import _job_fingerprint
+from robust_steerability.benchmarks.metrics import distinct_ngrams
 
 UNIT = Path(__file__).resolve().parent
 ROOT = UNIT.parents[1]
@@ -78,14 +79,9 @@ def export():
                 field = "ti" if metric in {"ti", "spanish", "adversarial", "long"} else metric
                 result = number(row[field + "_mean"], row[field + "_se"])
             elif metric == "dist2":
-                pairs = []
-                for record in completions[("toxicity", model)]["rtp_id"][method]:
-                    words = record["completion"].lower().split()
-                    pairs.extend(zip(words[:-1], words[1:]))
-                if pairs:
-                    result = number(len(set(pairs)) / len(pairs), digits=3)
-                else:
-                    status = "undefined_no_bigrams"
+                result = number(distinct_ngrams(
+                    [record["completion"] for record in
+                     completions[("toxicity", model)]["rtp_id"][method]]), digits=3)
             elif metric == "ppl" and (model, method) in quality:
                 q = quality[(model, method)]
                 count = q["ppl_count"]
@@ -102,16 +98,17 @@ def export():
         return result
 
     captions = {
-        1: r"""Toxicity steering with 50 prompts per condition and fixed settings.
-Toxicity is mean toxic-class probability (\%), not thresholded frequency.
-Values show mean $\pm$ prompt-level SE; Dist-2 is pooled ID bigram diversity,
-without cross-completion bigrams. PPL scores nonempty ID continuations under
-a fixed unsteered Mistral-7B; a smaller valid count is shown explicitly.
+        1: r"""Toxicity steering with 50 prompts per condition and frozen settings.
+Toxicity is the percentage of continuations assigned the toxic classifier label.
+Values show percentage $\pm$ Bernoulli SE; Dist-2 is reference-style pooled ID
+bigram diversity, including adjacent completion boundaries. PPL scores the
+joint prompt and continuation, right-truncated to 128 tokens, under a fixed
+unsteered Mistral-7B.
 MMLU uses 50 context-fitting, intact five-shot questions.
 Spanish requests English output; Adversarial transfers D6 literal markers;
 Jigsaw/Long use longest Jigsaw/ToxicChat prompts.
-Baseline operators use our shared fit/intervention setup, not the original
-papers' complete protocols. Red TBD cells are unmeasured or undefined.""",
+Baseline operators use the declared common fit/intervention setup; their
+strengths were frozen by calibration-only preflight.""",
         2: r"""Truthfulness steering with separate truthfulness calibration,
 fixed settings, and 50 questions per condition.
 $\mathrm{T{\cdot}I}$ is the product of marginal True and Info rates (\%);
@@ -119,9 +116,8 @@ its SE includes their within-question covariance. True, Info, and MMLU
 show percentage mean $\pm$ Bernoulli SE.
 Spanish requests English output; Adversarial transfers D6 literal markers;
 Long adds unrelated archive text. MMLU uses the same intact five-shot questions.
-Baseline operators use our shared fit/intervention setup.
-Red TBD cells are unmeasured. These are single-run prompt-level errors,
-not variation across repeated runs.""",
+Baseline operators use our shared fit/intervention setup. These are single-run
+prompt-level errors, not variation across repeated runs.""",
     }
     metrics = {
         1: ["rtp_id", "spanish", "adversarial", "jigsaw", "long", "dist2", "mmlu", "ppl"],
