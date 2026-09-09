@@ -32,6 +32,8 @@ data/*
 
 parking/*/cache/*
 !parking/*/cache/.gitkeep
+debug/*/cache/*
+!debug/*/cache/.gitkeep
 
 figs/fig*/cache/*
 !figs/fig*/cache/.gitkeep

@@ -17,7 +17,11 @@ class PIDGains:
 
 
 class PIDController(Controller):
-    """Stateful PID controller over layer-wise state deviations."""
+    """Reference S-PID: layer-wise tracking with the ten-layer integral reset.
+
+    Previous error persists across decoder passes within one generation, as in
+    the reference. Both histories reset before an independent prompt.
+    """
 
     def __init__(
         self,
@@ -47,14 +51,14 @@ class PIDController(Controller):
     ) -> torch.Tensor:
         """Return PID control for ``reference - state`` tracking error."""
 
-        del layer_index
         error = -feedback_input
         if self.integral_error is None:
             self.integral_error = torch.zeros_like(error)
-            derivative = torch.zeros_like(error)
-        else:
-            derivative = error - self.previous_error
+            self.previous_error = torch.zeros_like(error)
+        derivative = error - self.previous_error
         self.integral_error = self.integral_error + error
+        if layer_index % 10 == 0:
+            self.integral_error = torch.zeros_like(error)
         self.previous_error = error
         return (
             self.gains.proportional * error

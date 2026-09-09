@@ -8,17 +8,19 @@ from pathlib import Path
 
 import torch
 
-from robust_steerability.artifacts import configuration_hash
+from robust_steerability.artifacts import configuration_hash, implementation_hash
 from robust_steerability.benchmarks.calibration import calibration_records
 from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.calibration.disturbances import fit_disturbance_geometry
+from robust_steerability.calibration.nominal import average_prompt_jacobians, project_dynamics
+from robust_steerability.calibration.targets import build_contrastive_target
+from robust_steerability.control.lqr import solve_identity_input_lqr
 from robust_steerability.control import (
     FiniteHorizonControlProblem,
     HInfinityController,
     HInfinityOptions,
-    LQRController,
 )
-from robust_steerability.experiments.methods import ReducedControllerArtifact
+from robust_steerability.experiments.methods import ControllerArtifact
 from robust_steerability.experiments.baselines import fit_baselines
 from robust_steerability.experiments.diagnostics import cpu_tensors, score, verify_run
 
@@ -80,32 +82,23 @@ def collect_last_token_states(
     return {"hidden": torch.cat(batches, dim=0), "attention_heads": torch.cat(head_batches, dim=0)}
 
 
-def _fit_reduced_coordinates(fit_states, calibration_states, rank, scale_floor, contrast):
-    """Preserve the target direction; whiten using held-out calibration covariance."""
-    device = fit_states.device
+def _fit_reduced_basis(fit_states, rank, epsilon, contrast):
+    """Fit an orthonormal target-preserving basis from fit states only."""
     means = fit_states.mean(dim=0)
     retained_rank = min(rank, fit_states.shape[0] - 2, fit_states.shape[2])
-    bases, encoders, decoders, whitening, control_std = [], [], [], [], []
+    bases = []
     for k in range(fit_states.shape[1]):
-        direction = contrast[k] / contrast[k].norm().clamp_min(scale_floor)
+        direction = contrast[k] / contrast[k].norm().clamp_min(epsilon)
         centered = fit_states[:, k] - means[k]
         orthogonal = centered - (centered @ direction).unsqueeze(1) * direction
         _, _, vh = torch.linalg.svd(orthogonal, full_matrices=False)
-        basis = torch.linalg.qr(torch.cat([direction[:, None], vh[:retained_rank - 1].T], dim=1)).Q
-        projected = (calibration_states[:, k] - means[k]) @ basis
-        centered_cal = projected - projected.mean(dim=0)
-        covariance = centered_cal.T @ centered_cal / (projected.shape[0] - 1)
-        eigenvalues, eigenvectors = torch.linalg.eigh(covariance)
-        scales = eigenvalues.clamp_min(scale_floor ** 2).sqrt()
-        white = (eigenvectors / scales) @ eigenvectors.T
-        inverse = (eigenvectors * scales) @ eigenvectors.T
+        basis = torch.linalg.qr(
+            torch.cat([direction[:, None], vh[:retained_rank - 1].T], dim=1)
+        ).Q
+        alignment = torch.sign(basis[:, 0] @ direction)
+        basis[:, 0] *= torch.where(alignment == 0, alignment.new_tensor(1), alignment)
         bases.append(basis)
-        whitening.append(white)
-        encoders.append(basis @ white.T)
-        decoders.append(basis @ inverse.T)
-        control_std.append(projected.std(dim=0, correction=1).clamp_min(scale_floor))
-    return (means, torch.stack(bases), torch.stack(encoders), torch.stack(decoders),
-            torch.stack(whitening), torch.stack(control_std))
+    return means, torch.stack(bases)
 
 
 def _apply_coordinates(
@@ -117,30 +110,21 @@ def _apply_coordinates(
     return torch.einsum("nld,ldr->nlr", centered, encoders)
 
 
-def _fit_dynamics(reduced: torch.Tensor, ridge: float) -> torch.Tensor:
-    horizon = reduced.shape[1] - 1
-    state_dimension = reduced.shape[2]
-    identity = torch.eye(state_dimension, device=reduced.device)
-    dynamics = []
-    for layer_index in range(horizon):
-        inputs = reduced[:, layer_index]
-        outputs = reduced[:, layer_index + 1]
-        coefficients = torch.linalg.solve(
-            inputs.T @ inputs + ridge * identity,
-            inputs.T @ outputs,
-        )
-        dynamics.append(coefficients.T)
-    return torch.stack(dynamics)
-
-
-def _fit_controller_inputs(model, tokenizer, settings: dict) -> dict:
-    """Build the declared fixed-target, regression-dynamics benchmark problem."""
+def _fit_controller_inputs(model, tokenizer, settings: dict, cache_path: Path) -> dict:
+    """Identify actual full-order and projected Jacobian dynamics."""
     seed = int(settings["seed"])
     fit_per_class = int(settings["fit_prompts_per_class"])
     calibration_count = int(settings["disturbance_prompts"])
     negative, positive, calibration_records_list, dataset = calibration_records(
         settings["behavior"], fit_per_class, calibration_count, seed)
     fit_records = negative + positive
+    jacobian_records = positive[:int(settings["jacobian_prompts"])]
+    if len(jacobian_records) != int(settings["jacobian_prompts"]):
+        raise ValueError("Not enough positive fit prompts for Jacobian identification")
+    raw_dynamics = average_prompt_jacobians(
+        model, tokenizer, jacobian_records, cache_dir=cache_path.parent / (cache_path.stem + "_jacobians"),
+        max_length=int(settings["jacobian_max_length"]), vjp_chunk_size=int(settings["jacobian_vjp_chunk_size"]),
+        model_revision=str(settings["model_loading"]["revision"]))
     fit_states = collect_last_token_states(
         model,
         tokenizer,
@@ -160,52 +144,56 @@ def _fit_controller_inputs(model, tokenizer, settings: dict) -> dict:
     fit_states = fit_states["hidden"].to(device)
     calibration_states = calibration_states["hidden"].to(device)
     raw_contrast = fit_states[fit_per_class:].mean(dim=0) - fit_states[:fit_per_class].mean(dim=0)
-    means, basis, encoders_all, decoders_all, whitening, channel_std = _fit_reduced_coordinates(
-        fit_states, calibration_states, int(settings["state_rank"]),
-        float(settings["whitening_floor"]), raw_contrast)
+    raw_target = build_contrastive_target(
+        fit_states[fit_per_class:].mean(dim=0), fit_states[:fit_per_class].mean(dim=0),
+        float(settings["hinf_setpoint_multiplier"]))
+    means, basis = _fit_reduced_basis(
+        fit_states, int(settings["state_rank"]), float(settings["numerical_floor"]), raw_contrast)
+    encoders_all = decoders_all = basis
     fit_reduced = _apply_coordinates(fit_states, means, encoders_all)
     calibration_reduced = _apply_coordinates(calibration_states, means, encoders_all)
-    dynamics = _fit_dynamics(fit_reduced, float(settings["ridge"]))
-    predicted = torch.einsum(
-        "lij,nlj->nli", dynamics, calibration_reduced[:, :-1]
-    )
-    residuals = calibration_reduced[:, 1:] - predicted
+    dynamics = project_dynamics(raw_dynamics, encoders_all, decoders_all)
+    feature_unit_all = torch.einsum("ldr,ld->lr", basis, raw_target["feature_unit"])
+    feature_unit_all = feature_unit_all / feature_unit_all.norm(dim=1, keepdim=True).clamp_min(
+        float(settings["numerical_floor"]))
+    setpoints_all = raw_target["beta"] - torch.einsum("ld,ld->l", means, raw_target["feature_unit"])
+
+    def semantic_deviation(reduced):
+        scalar = torch.einsum("nlr,lr->nl", reduced, feature_unit_all) - setpoints_all
+        return scalar.unsqueeze(-1) * feature_unit_all.unsqueeze(0)
+
+    fit_deviations = semantic_deviation(fit_reduced)
+    calibration_deviations = semantic_deviation(calibration_reduced)
+    residuals = calibration_deviations[:, 1:] - torch.einsum(
+        "lij,nlj->nli", dynamics, calibration_deviations[:, :-1])
+    fit_residuals = fit_deviations[:, 1:] - torch.einsum(
+        "lij,nlj->nli", dynamics, fit_deviations[:, :-1])
     disturbance = fit_disturbance_geometry(
-        fit_reduced[:, 1:] - torch.einsum("lij,nlj->nli", dynamics, fit_reduced[:, :-1]),
+        fit_residuals,
         variance_threshold=float(settings["disturbance_variance"]),
     )
 
-    toxic_reduced = fit_reduced[:fit_per_class]
-    nontoxic_reduced = fit_reduced[fit_per_class:]
-    contrast = nontoxic_reduced.mean(dim=0) - toxic_reduced.mean(dim=0)
-    contrast_norm = torch.linalg.vector_norm(contrast, dim=1).clamp_min(1e-8)
-    feature_unit_all = contrast / contrast_norm.unsqueeze(1)
-    setpoints_all = float(settings["setpoint_multiplier"]) * contrast_norm
-
     horizon, state_dimension, _ = dynamics.shape
     identity = torch.eye(state_dimension, device=device)
-    control_channels = whitening[1:] @ torch.diag_embed(channel_std[1:])
+    control_channels = identity.unsqueeze(0).repeat(horizon, 1, 1)
     depth_weight = 1.0 / horizon
-    reference_states = setpoints_all.unsqueeze(1) * feature_unit_all
-    reference_controls = torch.linalg.solve(
-        control_channels,
-        (reference_states[1:] - torch.einsum("lij,lj->li", dynamics, reference_states[:-1])).unsqueeze(-1),
-    ).squeeze(-1)
-    # The target plus its orthogonal complement regulate the full reduced state.
+    reference_states = torch.zeros(horizon + 1, state_dimension, device=device)
+    reference_controls = torch.zeros(horizon, state_dimension, device=device)
     readout_bases = torch.linalg.qr(torch.cat([
         feature_unit_all.unsqueeze(-1), identity.expand(horizon + 1, -1, -1)], dim=-1)).Q
     readouts = readout_bases.transpose(-1, -2)
     output_std = torch.einsum("lpr,nlr->nlp", readouts, calibration_reduced).std(dim=0, correction=1)
-    output_std = output_std.clamp_min(float(settings["whitening_floor"]))
+    output_std = output_std.clamp_min(float(settings["numerical_floor"]))
     normalized_readouts = readouts / output_std.unsqueeze(-1)
     cost_metric = normalized_readouts.transpose(-1, -2) @ normalized_readouts
     state_costs = float(settings["q"]) * depth_weight * cost_metric[:-1]
     coordinates = torch.einsum(
         "lri,nli->nlr", torch.linalg.pinv(disturbance.channels), residuals - disturbance.means)
     energies = coordinates.square().sum(dim=(1, 2)).sqrt()
-    coverage_scale = torch.quantile(energies, float(settings["disturbance_coverage"]), interpolation="higher")
+    coverage_scale = torch.quantile(
+        energies, float(settings["disturbance_coverage"]), interpolation="higher")
     if not torch.isfinite(coverage_scale) or coverage_scale <= 0:
-        raise ValueError("Calibration disturbance energy must be positive")
+        raise ValueError("Disturbance scaling energy must be positive")
     scaled_channels = coverage_scale * disturbance.channels
     remainder = residuals - disturbance.means - torch.einsum("lir,nlr->nli", disturbance.channels, coordinates)
     control_costs = (float(settings["r"]) * depth_weight * identity).unsqueeze(0).repeat(
@@ -220,30 +208,36 @@ def _fit_controller_inputs(model, tokenizer, settings: dict) -> dict:
         control_costs=control_costs, terminal_cost=terminal_cost,
     )
     return {
+        "raw_dynamics": raw_dynamics,
+        "raw_target": raw_target,
         "problem": asdict(problem),
         "maps": {"means": means, "encoders": encoders_all, "decoders": decoders_all,
-                 "feature_unit": feature_unit_all, "setpoints": setpoints_all,
-                 "reference_controls": reference_controls},
+                 "feature_unit": feature_unit_all, "setpoints": setpoints_all},
         "splits": {"fit": [str(row["prompt_id"]) for row in fit_records],
                    "calibration": [str(row["prompt_id"]) for row in calibration_records_list]},
         "normalization": {
-            "protocol_id": "calibration-covariance-depth-v2", "coordinates": "normalized",
-            "state_whitening": whitening,
-            "control_std": channel_std[1:],
+            "protocol_id": "orthonormal-reduced-readout-depth-v1", "coordinates": "raw",
+            "state_whitening": identity.unsqueeze(0).repeat(horizon + 1, 1, 1),
+            "control_std": torch.ones(horizon, state_dimension, device=device),
             "semantic_output_std": output_std[:, :1],
             "depth_increment": torch.full((horizon,), depth_weight),
             "stage_costs_depth_weighted": True,
-            "description": "Fit-only target-preserving basis; calibration-only full covariance whitening; "
-                           "physical orthonormal intervention channels standardized by calibration SD; Q and R divided by T.",
+            "description": "Fit-only target-preserving orthonormal basis; no state whitening; "
+                           "standardized performance readouts; orthonormal intervention channels; Q and R divided by T.",
         },
         "calibration": {
             "source_snapshots": {name: Path(inspect.getfile(obj)).read_text() for name, obj in
                                  (("calibration.py", calibrate_controller), ("baselines.py", fit_baselines))},
-            "dynamics_estimator": "ridge regression on the fit split; not projected Jacobians",
-            "reference_rule": "fixed setpoint_multiplier times fit positive-minus-negative mean",
+            "dynamics_estimator": "averaged last-token transformer Jacobians, with prefix states fixed; projected using next-layer encoders and current-layer decoders",
+            "jacobian_prompt_ids": [row["prompt_id"] for row in jacobian_records],
+            "raw_jacobians": raw_dynamics,
+            "reference_rule": "nearest point on the semantic setpoint hyperplane, recomputed from each current context",
             "residuals": residuals, "state_basis": basis,
             "means": means, "encoders": encoders_all, "decoders": decoders_all,
             "fit_reduced_states": fit_reduced, "calibration_reduced_states": calibration_reduced,
+            "fit_state_deviations": fit_deviations,
+            "calibration_state_deviations": calibration_deviations,
+            "fit_residuals": fit_residuals,
             "fit_labels": [0] * fit_per_class + [1] * fit_per_class,
             "fit_records": fit_records, "calibration_records": calibration_records_list,
             "fit_hidden_states": fit_states, "calibration_hidden_states": calibration_states,
@@ -255,14 +249,16 @@ def _fit_controller_inputs(model, tokenizer, settings: dict) -> dict:
             "reference_states": reference_states,
             "reference_controls": reference_controls,
             "setpoints": setpoints_all,
-            "feedback_definition": "x - fixed reference; total intervention = reference_control + K @ feedback",
+            "feedback_definition": "context-updated semantic tracking error; intervention = K @ feedback",
             "protected_readouts_definition": "Orthogonal complement of the target within the reduced basis; representation preservation, not an independent behavior probe.",
-            "reference_controls_definition": "B @ u_ref = reference_next - A @ reference; fixed fit-only target in the fitted dynamics.",
+            "reference_controls_definition": "zero nominal feedforward; feedback alone supplies the intervention",
             "disturbance_construction": {
-                "method": "fit-only centered PCA covariance factor, ddof=1, scaled by held-out calibration trajectory-energy quantile",
-                "unscaled_channels": disturbance.channels, "coverage_scale": coverage_scale,
+                "method": "fit-only centered PCA covariance factor, ddof=1, scaled by calibration trajectory-energy quantile",
+                "unscaled_channels": disturbance.channels,
+                "coverage_scale": coverage_scale,
                 "coverage_quantile": settings["disturbance_coverage"],
-                "calibration_energy": energies, "calibration_coordinates": coordinates,
+                "calibration_energy": energies,
+                "calibration_coordinates": coordinates,
                 "out_of_subspace_residuals": remainder,
                 "variance_threshold": float(settings["disturbance_variance"]),
                 "means": disturbance.means,
@@ -286,7 +282,7 @@ def _options(settings: dict) -> HInfinityOptions:
 def _fingerprint(model_label: str, model_id: str, settings: dict) -> str:
     return configuration_hash({
         "model_label": model_label, "model_id": model_id, "settings": settings,
-        "calibration_version": "fixed_target_calibration_normalized_v2",
+        "implementation_sha256": implementation_hash(),
     })
 
 
@@ -308,7 +304,7 @@ def _freeze_inputs(inputs: dict, solution, *, model, model_label: str, model_id:
             "model_label": model_label, "model_revision": settings["model_loading"]["revision"],
             "model_family": str(model.config.model_type), "parameter_count": int(model.num_parameters()),
             "behavior": settings["behavior"], "intervention_channel": "reduced_semantic_setpoint",
-            "protocol_id": "fixed-target-" + configuration_hash(protocol_settings)[:16],
+            "protocol_id": "context-semantic-" + configuration_hash(protocol_settings)[:16],
             "synthetic": False, "calibration_fingerprint": fingerprint,
         },
         "splits": inputs["splits"], "normalization": inputs["normalization"],
@@ -326,7 +322,7 @@ def _freeze_inputs(inputs: dict, solution, *, model, model_label: str, model_id:
 def calibrate_controller(
     model, tokenizer, *, model_label: str, model_id: str, cache_path: Path,
     settings: dict[str, object], controller_device: str,
-) -> tuple[ReducedControllerArtifact, dict[str, object]]:
+) -> tuple[ControllerArtifact, dict[str, object]]:
     """Fit/load the shared controller; new fits freeze full H-infinity diagnostics."""
     fingerprint = _fingerprint(model_label, model_id, settings)
     if cache_path.exists():
@@ -334,24 +330,30 @@ def calibrate_controller(
         if cached["fingerprint"] != fingerprint:
             raise ValueError(f"Incompatible controller cache: {cache_path}")
         verify_run(diagnostic_run(cache_path, fingerprint))
-        return ReducedControllerArtifact(**cached["artifact"]), cached["metadata"]
+        return ControllerArtifact(**cached["artifact"]), cached["metadata"]
 
-    inputs = _fit_controller_inputs(model, tokenizer, settings)
+    inputs = _fit_controller_inputs(model, tokenizer, settings, cache_path)
     problem = FiniteHorizonControlProblem(**inputs["problem"])
-    lqr = LQRController.synthesize(problem, device=controller_device).solution()
-    lqr_gains = lqr.gains
+    lqr_gains = -solve_identity_input_lqr(inputs["raw_dynamics"], controller_device,
+                                        float(settings["alqr_q"]), float(settings["alqr_r"]),
+                                        float(settings["alqr_q_final"]))
     hinf = HInfinityController.synthesize(
         problem, device=controller_device, options=_options(settings),
     ).solution()
     maps = inputs["maps"]
-    artifact = ReducedControllerArtifact(
+    artifact = ControllerArtifact(
         means=maps["means"][:-1], encoders=maps["encoders"][:-1], decoders=maps["decoders"][1:],
         feature_unit=maps["feature_unit"][:-1], setpoints=maps["setpoints"][:-1],
-        reference_controls=maps["reference_controls"],
         control_channels=problem.control_channels, lqr_gains=lqr_gains,
         hinf_gains=hinf.gains, hinf_feasible=hinf.feasible,
         gamma_star=hinf.gamma_star, hinf_diagnostics=hinf.diagnostics,
-        baselines=fit_baselines(inputs["calibration"], seed=int(settings["seed"])),
+        raw_feature_unit=inputs["raw_target"]["feature_unit"][:-1],
+        alqr_setpoints=(float(settings["alqr_setpoint_multiplier"]) *
+                        inputs["raw_target"]["feature_norm"][:-1]),
+        spid_setpoints=(float(settings["spid_setpoint_multiplier"]) *
+                       inputs["raw_target"]["feature_norm"][:-1]),
+        baselines=fit_baselines(inputs["calibration"], seed=int(settings["seed"]),
+                                strengths=settings["baseline_strengths"]),
     )
     disturbance = inputs["calibration"]["disturbance_construction"]
     metadata = {
@@ -360,6 +362,7 @@ def calibrate_controller(
         "fingerprint": fingerprint, "model_label": model_label, "model_id": model_id,
         "fit_prompt_ids": sorted(inputs["splits"]["fit"]),
         "calibration_prompt_ids": inputs["splits"]["calibration"],
+        "tuning_records": inputs["calibration"]["calibration_records"],
         "state_rank": problem.state_dimension, "horizon": problem.horizon,
         "disturbance_ranks": disturbance["retained_ranks"].tolist(),
         "disturbance_explained_variance": disturbance["explained_variance"].tolist(),
@@ -368,7 +371,12 @@ def calibrate_controller(
         "hinf_feasible": hinf.feasible,
     }
     inputs["calibration"]["baseline_parameters"] = artifact.baselines
-    inputs["calibration"]["lqr_solution"] = asdict(lqr)
+    inputs["calibration"]["lqr_solution"] = {
+        "controller": "alqr", "gains": lqr_gains,
+        "feedback_definition": "u = K @ ((h dot v - beta) * v); post-block addition, identity input channel",
+        "costs": {key: settings[key] for key in ("alqr_q", "alqr_r", "alqr_q_final")},
+        "state_coordinates": "full physical hidden state",
+    }
     inputs["calibration"]["pid_gains"] = {key: settings[key] for key in ("kp", "ki", "kd")}
     _freeze_inputs(inputs, hinf, model=model, model_label=model_label, model_id=model_id,
                    settings=settings, fingerprint=fingerprint, cache_path=cache_path,

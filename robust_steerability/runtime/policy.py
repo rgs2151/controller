@@ -56,6 +56,8 @@ class SemanticSetpointPolicy:
     controller: Controller
     feature_unit: torch.Tensor
     setpoints: torch.Tensor
+    recorder: ReducedTrajectoryRecorder | None = None
+    coordinate_system: ClassVar[str] = "physical decoder-input semantic tracking error"
 
     def prepare(self, device: torch.device, dtype: torch.dtype) -> None:
         self.controller.to(device=device, dtype=dtype)
@@ -64,6 +66,8 @@ class SemanticSetpointPolicy:
 
     def reset(self) -> None:
         self.controller.reset()
+        if self.recorder is not None:
+            self.recorder.reset()
 
     def activation_delta(
         self,
@@ -74,16 +78,24 @@ class SemanticSetpointPolicy:
         setpoint = self.setpoints[layer_index]
         scalar_deviation = activation @ feature - setpoint
         state_deviation = scalar_deviation.unsqueeze(-1) * feature
-        return self.controller.intervention(layer_index, state_deviation)
+        control = self.controller.control(layer_index, state_deviation)
+        channels = self.controller.control_channels
+        delta = control if channels is None else control @ channels[layer_index].T
+        if self.recorder is not None:
+            self.recorder.append(layer_index, state=activation, feedback=state_deviation,
+                                 control=control, deviation_control=control,
+                                 reduced_intervention=delta, hidden_delta=delta.to(activation.dtype))
+        return delta
 
 
 @dataclass
-class ReducedStateSetpointPolicy:
-    """Apply a controller in calibrated reduced coordinates.
+class ReducedSemanticSetpointPolicy:
+    """Apply reduced control to a context-updated semantic tracking error.
 
-    Layer inputs are centered and projected with ``encoders``. The controller
-    returns an intervention in the next layer's standardized coordinates, and
-    ``decoders`` map it back to the model hidden space.
+    At every forward call, the reference is the nearest point on the fitted
+    semantic setpoint hyperplane. The controller therefore sees only the
+    current semantic tracking error. Orthonormal next-layer bases map its
+    intervention back to the model hidden space.
     """
 
     site: ClassVar[str] = "block_input"
@@ -93,8 +105,8 @@ class ReducedStateSetpointPolicy:
     decoders: torch.Tensor
     feature_unit: torch.Tensor
     setpoints: torch.Tensor
-    reference_controls: torch.Tensor
     recorder: ReducedTrajectoryRecorder | None = None
+    coordinate_system: ClassVar[str] = "orthonormal reduced semantic tracking error"
 
     def prepare(self, device: torch.device, dtype: torch.dtype) -> None:
         self.controller.to(device=device, dtype=torch.float32)
@@ -103,7 +115,6 @@ class ReducedStateSetpointPolicy:
         self.decoders = self.decoders.to(device=device, dtype=torch.float32)
         self.feature_unit = self.feature_unit.to(device=device, dtype=torch.float32)
         self.setpoints = self.setpoints.to(device=device, dtype=torch.float32)
-        self.reference_controls = self.reference_controls.to(device=device, dtype=torch.float32)
 
     def reset(self) -> None:
         self.controller.reset()
@@ -120,16 +131,16 @@ class ReducedStateSetpointPolicy:
             activation_float - self.means[layer_index]
         ) @ self.encoders[layer_index]
         feature = self.feature_unit[layer_index]
-        state_deviation = reduced - self.setpoints[layer_index] * feature
-        deviation_control = self.controller.control(layer_index, state_deviation)
-        control = self.reference_controls[layer_index] + deviation_control
+        scalar_deviation = reduced @ feature - self.setpoints[layer_index]
+        state_deviation = scalar_deviation.unsqueeze(-1) * feature
+        control = self.controller.control(layer_index, state_deviation)
         channels = self.controller.control_channels
         reduced_delta = control if channels is None else control @ channels[layer_index].T
         hidden_delta = reduced_delta @ self.decoders[layer_index].T
         hidden_delta = hidden_delta.to(dtype=activation.dtype)
         if self.recorder is not None:
             self.recorder.append(layer_index, state=reduced, feedback=state_deviation,
-                                 control=control, deviation_control=deviation_control, reduced_intervention=reduced_delta,
+                                 control=control, deviation_control=control, reduced_intervention=reduced_delta,
                                  hidden_delta=hidden_delta)
         return hidden_delta
 

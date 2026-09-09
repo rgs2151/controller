@@ -62,12 +62,12 @@ def generate_completions(
         generation_kwargs: dict[str, object] = {
             "max_new_tokens": max_new_tokens,
             "do_sample": do_sample,
-            "repetition_penalty": repetition_penalty,
+            "repetition_penalty": repetition_penalty if do_sample else 1.0,
             "use_cache": True,
             "pad_token_id": tokenizer.eos_token_id,
         }
         if do_sample:
-            generation_kwargs.update({"top_p": top_p, "temperature": temperature})
+            generation_kwargs.update({"top_p": top_p, "temperature": temperature, "top_k": 50})
         try:
             with torch.inference_mode():
                 generated = model.generate(
@@ -100,11 +100,14 @@ def generate_completions(
             trace.update({"prompt_id": str(record["prompt_id"]), "seed": sample_seed,
                           "prompt_tokens": prompt_length, "generated_tokens": int(completion_ids.shape[1])})
             trace["intervention_site"] = "none" if policy is None else policy.site
-            trace["coordinate_system"] = (
-                "none" if policy is None else
-                "normalized reduced state and standardized control" if policy.site == "block_input" else
-                "physical attention-head coordinates" if policy.site == "attention_heads" else
-                "physical post-block hidden-state coordinates")
+            if policy is None:
+                trace["coordinate_system"] = "none"
+            elif getattr(policy, "coordinate_system", None):
+                trace["coordinate_system"] = policy.coordinate_system
+            elif policy.site == "attention_heads":
+                trace["coordinate_system"] = "physical attention-head coordinates"
+            else:
+                trace["coordinate_system"] = "physical post-block hidden-state coordinates"
             trace_path = trace_directory / (prompt_key + ".pt")
             temporary = trace_path.with_suffix(".pt.tmp")
             torch.save(trace, temporary)

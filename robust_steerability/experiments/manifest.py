@@ -11,6 +11,18 @@ from robust_steerability.artifacts import configuration_hash
 
 ALLOWED_KINDS = {"truthfulness", "id_toxicity", "ood_toxicity", "calibration"}
 ALLOWED_METHODS = {"original", "alqr", "spid", "hinf", "iti", "actadd", "mean_act", "linear_act", "pid_act", "odesteer"}
+REQUIRED_CONTROLLER_FIELDS = {
+    "seed", "fit_prompts_per_class", "disturbance_prompts", "calibration_max_length",
+    "activation_batch_size", "jacobian_prompts", "jacobian_max_length",
+    "jacobian_vjp_chunk_size", "state_rank", "numerical_floor",
+    "disturbance_variance", "disturbance_coverage", "alqr_setpoint_multiplier",
+    "spid_setpoint_multiplier", "hinf_setpoint_multiplier",
+    "q", "r", "q_final", "alqr_q", "alqr_r", "alqr_q_final", "kp", "ki", "kd",
+    "gamma_lower", "gamma_upper", "gamma_tolerance", "gamma_max_iterations",
+    "gamma_deployment_margin", "behavior",
+    "baseline_strengths",
+}
+OBSOLETE_CONTROLLER_FIELDS = {"ridge", "whitening_floor"}
 
 
 @dataclass(frozen=True)
@@ -76,6 +88,29 @@ def load_manifest(path: str | Path) -> ExperimentManifest:
             raise ValueError(f"Unknown method names: {sorted(unknown)}")
         if len(methods) != len(set(methods)):
             raise ValueError("manifest methods must be unique")
+        if int(payload.get("sample_count", 0)) < 1:
+            raise ValueError("benchmark manifests require a positive sample_count")
+        controller = payload.get("controller")
+        if not isinstance(controller, dict):
+            raise ValueError("benchmark manifests require controller settings")
+        missing_controller = REQUIRED_CONTROLLER_FIELDS - set(controller)
+        if missing_controller:
+            raise ValueError(f"controller settings are missing {sorted(missing_controller)}")
+        obsolete = OBSOLETE_CONTROLLER_FIELDS & set(controller)
+        if obsolete:
+            raise ValueError(f"obsolete controller settings are forbidden: {sorted(obsolete)}")
+        if int(controller["jacobian_prompts"]) != int(controller["fit_prompts_per_class"]):
+            raise ValueError("the 50-sample reference pilot requires every positive fit prompt for Jacobians")
+        if int(controller["jacobian_max_length"]) != 24:
+            raise ValueError("reference A-LQR Jacobians require a 24-token context cap")
+        expected_baselines = {"iti", "actadd", "mean_act", "linear_act", "pid_act", "odesteer"}
+        if set(controller["baseline_strengths"]) != expected_baselines:
+            raise ValueError("baseline_strengths must specify every adapted baseline exactly once")
+        if any(float(value) <= 0 for value in controller["baseline_strengths"].values()):
+            raise ValueError("baseline strengths must be positive")
+        mmlu = payload.get("subset_generation", {}).get("mmlu", {})
+        if mmlu.get("do_sample") is not False or int(mmlu.get("max_new_tokens", 0)) != 1:
+            raise ValueError("reference MMLU requires one greedy generated token")
     return ExperimentManifest(
         path=manifest_path,
         payload=payload,

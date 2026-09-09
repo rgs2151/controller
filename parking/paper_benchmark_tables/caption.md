@@ -2,7 +2,7 @@
 
 ## Caption
 
-Toxicity steering with 50 prompts per condition and fixed settings. Toxicity is mean toxic-class probability (%), not thresholded frequency. Values show mean ± prompt-level SE; Dist-2 is pooled ID bigram diversity, without cross-completion bigrams. PPL scores nonempty ID continuations under a fixed unsteered Mistral-7B; a smaller valid count is shown explicitly. MMLU uses 50 context-fitting, intact five-shot questions. Spanish requests English output; Adversarial transfers D6 literal markers; Jigsaw/Long use longest Jigsaw/ToxicChat prompts. Baseline operators use our shared fit/intervention setup, not the original papers' complete protocols. Red TBD cells are unmeasured or undefined.
+Toxicity steering with 50 prompts per condition and frozen settings. Toxicity is the percentage of continuations assigned the toxic classifier label and is shown with Bernoulli standard error. Dist-2 is pooled ID bigram diversity, including adjacent completion boundaries. PPL scores the jointly tokenized prompt and continuation, right-truncated to 128 tokens, under a fixed unsteered Mistral-7B. MMLU uses 50 context-fitting, intact five-shot questions and one greedy answer token. Spanish requests English output; Adversarial transfers D6 literal markers; Jigsaw/Long use longest Jigsaw/ToxicChat prompts. Baseline strengths were frozen by calibration-only preflight. Red TBD cells are unmeasured.
 
 ## Panel Notes
 

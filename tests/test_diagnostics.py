@@ -21,7 +21,7 @@ from robust_steerability.experiments import diagnostics as diag
 from robust_steerability.experiments.generation import generate_completions
 from robust_steerability.experiments.methods import build_policy
 from robust_steerability.runtime.diagnostics import ReducedTrajectoryRecorder
-from robust_steerability.runtime.policy import ReducedStateSetpointPolicy
+from robust_steerability.runtime.policy import ReducedSemanticSetpointPolicy
 
 
 @pytest.fixture
@@ -188,7 +188,8 @@ def calibrated(tmp_path, monkeypatch, request):
     torch.manual_seed(44)
     model = GPT2LMHeadModel(GPT2Config(n_layer=2, n_embd=8, n_head=2, vocab_size=32,
                                       n_positions=32, eos_token_id=31, pad_token_id=31)).eval()
-    records = [{"prompt_id": f"rtp:{i}", "text": str(i)} for i in range(40)]
+    records = [{"prompt_id": f"rtp:{i}", "source_prompt_id": f"pair:{i % 4}", "text": str(i)}
+               for i in range(40)]
     monkeypatch.setattr(cal, "calibration_records", lambda *a: (records[:4], records[4:8], records[8:12], {"id": "toy", "revision": "pinned"}))
 
     def states(model, tokenizer, texts, **kwargs):
@@ -196,15 +197,22 @@ def calibrated(tmp_path, monkeypatch, request):
         return {"hidden": hidden, "attention_heads": hidden[:, :-1]}
 
     monkeypatch.setattr(cal, "collect_last_token_states", states)
+    monkeypatch.setattr(cal, "average_prompt_jacobians", lambda *a, **k: torch.eye(8).repeat(2, 1, 1))
     behavior = "toxicity_mitigation" if getattr(request.node, "callspec", None) is not None and request.node.callspec.params.get("kind") in {"id_toxicity", "ood_toxicity"} else "truthfulness"
     settings = {"behavior": behavior, "disturbance_coverage": 0.95, "seed": 4, "fit_prompts_per_class": 4, "disturbance_prompts": 4,
                 "calibration_max_length": 12, "activation_batch_size": 2, "state_rank": 2,
-                "whitening_floor": 1e-4, "ridge": 1e-3, "disturbance_variance": 0.95,
-                "setpoint_multiplier": 2.0, "q": 0.1, "r": 1.0, "q_final": 1.0,
+                "numerical_floor": 1e-4, "disturbance_variance": 0.95,
+                "jacobian_prompts": 4, "jacobian_max_length": 24, "jacobian_vjp_chunk_size": 4,
+                "alqr_q": 0.1, "alqr_r": 1.0, "alqr_q_final": 1.0,
+                "alqr_setpoint_multiplier": 2.0, "spid_setpoint_multiplier": 1.0,
+                "hinf_setpoint_multiplier": 2.0, "q": 0.1, "r": 1.0, "q_final": 1.0,
                 "gamma_lower": 0.01, "gamma_upper": 10.0, "gamma_tolerance": 1e-4,
                 "gamma_max_iterations": 50, "gamma_deployment_margin": 1e-3,
+                "baseline_strengths": {"iti": 1.0, "actadd": 0.1, "mean_act": 0.5,
+                                       "linear_act": 0.5, "pid_act": 0.5, "odesteer": 1.0},
                 "kp": 1.0, "ki": 0.0, "kd": 0.0,
-                "model_loading": {"revision": "pinned", "dtype": "float32", "quantized": False}}
+                "model_loading": {"revision": "pinned", "dtype": "float32", "quantized": False,
+                                  "quantization_compute_dtype": "float16"}}
     arguments = dict(model_label="toy", model_id="toy", cache_path=tmp_path / "controllers" / "toy.pt",
                      settings=settings, controller_device="cpu")
     artifact, metadata = cal.calibrate_controller(model, ToyTokenizer(), **arguments)
@@ -215,13 +223,13 @@ def test_calibration_bundle_and_missing_cache_rejection(calibrated, monkeypatch,
     model, arguments, artifact, metadata = calibrated
     source = cal.diagnostic_run(arguments["cache_path"], metadata["fingerprint"])
     loaded = diag.load_run(source)
-    assert loaded["score"]["coordinates"] == "normalized"
+    assert loaded["score"]["coordinates"] == "raw"
     assert loaded["score"]["stage_costs_depth_weighted"] is True
     assert loaded["calibration"]["calibration"]["encoders"].shape == (3, 8, 2)
     assert loaded["calibration"]["calibration"]["protected_readouts"].shape == (3, 1, 2)
     cal_data = loaded["calibration"]["calibration"]
-    residual = cal_data["calibration_reduced_states"][:, 1:] - torch.einsum(
-        "lij,nlj->nli", loaded["calibration"]["problem"]["dynamics"], cal_data["calibration_reduced_states"][:, :-1])
+    residual = cal_data["calibration_state_deviations"][:, 1:] - torch.einsum(
+        "lij,nlj->nli", loaded["calibration"]["problem"]["dynamics"], cal_data["calibration_state_deviations"][:, :-1])
     torch.testing.assert_close(residual, cal_data["residuals"], rtol=0, atol=0)
     before = diag.sha256(arguments["cache_path"])
     shutil.move(cal.diagnostic_root(arguments["cache_path"]), tmp_path / "saved-new-bundle")
@@ -252,7 +260,7 @@ def test_recording_preserves_generation_and_prompt_resume(calibrated, device, mo
     k = trace["layer_index"]
     expected = torch.einsum("tij,tbj->tbi", artifact.hinf_gains[k], trace["feedback"])
     torch.testing.assert_close(trace["deviation_control"], expected)
-    torch.testing.assert_close(trace["control"], expected + artifact.reference_controls[k, None])
+    torch.testing.assert_close(trace["control"], expected)
     assert trace["control_energy"] == float(trace["control"].double().square().sum())
     monkeypatch.setattr(model, "generate", lambda *a, **k: pytest.fail("cached prompt regenerated"))
     assert generate_completions(model, ToyTokenizer(), records, policy=recorded, trace_directory=folder, **kwargs) == rows
@@ -261,9 +269,9 @@ def test_recording_preserves_generation_and_prompt_resume(calibrated, device, mo
 def test_recorder_does_not_call_stateful_controller_twice():
     from robust_steerability.control import PIDController, PIDGains
     kwargs = dict(means=torch.zeros(1, 2), encoders=torch.eye(2).unsqueeze(0),
-                  decoders=torch.eye(2).unsqueeze(0), feature_unit=torch.tensor([[1.0, 0.0]]), setpoints=torch.tensor([2.0]), reference_controls=torch.zeros(1, 2))
-    original = ReducedStateSetpointPolicy(PIDController(PIDGains(1, 0.1, 0.3)), **kwargs)
-    recorded = ReducedStateSetpointPolicy(PIDController(PIDGains(1, 0.1, 0.3)), recorder=ReducedTrajectoryRecorder(), **kwargs)
+                  decoders=torch.eye(2).unsqueeze(0), feature_unit=torch.tensor([[1.0, 0.0]]), setpoints=torch.tensor([2.0]))
+    original = ReducedSemanticSetpointPolicy(PIDController(PIDGains(1, 0.1, 0.3)), **kwargs)
+    recorded = ReducedSemanticSetpointPolicy(PIDController(PIDGains(1, 0.1, 0.3)), recorder=ReducedTrajectoryRecorder(), **kwargs)
     for policy in [original, recorded]:
         policy.prepare(torch.device("cpu"), torch.float32)
         policy.reset()
@@ -273,6 +281,22 @@ def test_recorder_does_not_call_stateful_controller_twice():
     assert recorded.recorder.finish()["layer_index"].tolist() == [0, 0, 0]
 
 
+def test_non_hinf_policies_record_compact_exact_energy(calibrated):
+    _, _, artifact, _ = calibrated
+    policy = build_policy("alqr", artifact, kp=1, ki=0, kd=0, record=True)
+    policy.prepare(torch.device("cpu"), torch.float32)
+    policy.reset()
+    activation = torch.zeros(1, artifact.raw_feature_unit.shape[-1])
+    activation[:, :2] = torch.tensor([[0.5, -0.25]])
+    policy.activation_delta(0, activation)
+    trace = policy.recorder.finish()
+    assert trace["schema_version"] == 2
+    assert trace["storage"] == "per-step-norms"
+    assert "state" not in trace and "control" not in trace
+    assert trace["state_norm"].shape == (1, 1)
+    assert trace["control_energy"] == float(trace["control_energy_step"].double().sum())
+
+
 @pytest.mark.parametrize("kind", ["id_toxicity", "ood_toxicity", "truthfulness"])
 def test_benchmark_wires_all_method_caches(calibrated, tmp_path, monkeypatch, kind):
     from robust_steerability.experiments import runner
@@ -280,16 +304,17 @@ def test_benchmark_wires_all_method_caches(calibrated, tmp_path, monkeypatch, ki
     model, arguments, artifact, metadata = calibrated
     unit = tmp_path / "parking" / "test_benchmark"
     unit.mkdir(parents=True)
+    controller_settings = {k: v for k, v in arguments["settings"].items() if k != "model_loading"}
     config = {"schema_version": 1, "kind": kind, "seed": 12, "sample_count": 2,
               "revisions": {"synthetic": "pinned"}, "methods": ["original", "alqr", "spid", "hinf", "actadd", "iti", "mean_act", "linear_act", "pid_act", "odesteer"],
               "models": [{"label": "toy", "model_id": "toy", "revision": "pinned", "dtype": "float32", "quantized": False}],
-              "controller": {k: v for k, v in arguments["settings"].items() if k != "model_loading"},
+              "controller": controller_settings,
               "controller_cache": str(arguments["cache_path"].parent), "controller_cache_read_only": True,
               "generation": {"max_length": 8, "max_new_tokens": 2, "do_sample": True, "top_p": 0.9,
                              "temperature": 1.0, "repetition_penalty": 1.0},
               "mmlu_shots": 5, "mmlu_max_length": 8, "judge_batch_size": 2,
               "prompt_source": "prompts.json", "subsets": ["test_ood", "mmlu"],
-              "subset_generation": {"mmlu": {"do_sample": False, "max_new_tokens": 2}}}
+              "subset_generation": {"mmlu": {"do_sample": False, "max_new_tokens": 1}}}
     diag.write_json(unit / "prompts.json", {"synthetic": True})
     manifest_path = unit / "manifest.json"
     diag.write_json(manifest_path, config)
@@ -305,7 +330,7 @@ def test_benchmark_wires_all_method_caches(calibrated, tmp_path, monkeypatch, ki
     monkeypatch.setattr(runner, "_load_truth_judge", lambda *a: (object(), object()))
     def judge(model, tokenizer, prompts, batch_size):
         assert all("\nA:" in prompt and "\\nA:" not in prompt for prompt in prompts)
-        return [{"score": 1.0, "answer": "yes"} for prompt in prompts]
+        return [{"score": 1.0, "answer": "yes", "valid_binary_label": True} for prompt in prompts]
     monkeypatch.setattr(runner, "_judge_yes", judge)
     observed_methods = []
     original_builder = runner.build_policy

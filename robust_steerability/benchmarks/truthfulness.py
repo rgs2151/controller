@@ -40,7 +40,7 @@ def load_truthfulqa_prompts(seed: int, count: int, excluded_prompt_ids: set[str]
 
 
 def _format_mmlu_question(row: dict[str, object], include_answer: bool) -> str:
-    lines = [str(row["question"]).strip()]
+    lines = ["Question: " + str(row["question"]).strip()]
     for index, choice in enumerate(row["choices"][: len(LETTERS)]):
         lines.append(f"{LETTERS[index]}. {str(choice).strip()}")
     lines.append(
@@ -64,7 +64,15 @@ def load_mmlu_five_shot_prompts(
     rng = random.Random(seed + 17)
     if count < 1 or len(test) < count:
         raise ValueError(f"Requested {count} MMLU prompts; available: {len(test)}")
-    indices = rng.sample(range(len(test)), count)
+    test_by_subject = {}
+    for row_index, row in enumerate(test):
+        test_by_subject.setdefault(str(row["subject"]), []).append(row_index)
+    subjects = sorted(test_by_subject)
+    indices = []
+    while len(indices) < count:
+        row_index = rng.choice(test_by_subject[rng.choice(subjects)])
+        if row_index not in indices:
+            indices.append(row_index)
     output = []
     for row_index in indices:
         row = dict(test[row_index])
@@ -72,23 +80,21 @@ def load_mmlu_five_shot_prompts(
         if answer < 0 or answer >= len(LETTERS):
             raise ValueError(f"Invalid MMLU answer for test row {row_index}")
         subject = str(row["subject"])
-        examples = dev_by_subject[subject][:shots]
+        examples = rng.sample(dev_by_subject[subject], shots)
         if len(examples) != shots:
             raise ValueError(f"Missing {shots}-shot demonstrations for {subject}")
-        header = (
-            "The following are multiple choice questions (with answers) about "
-            f"{subject.replace('_', ' ')}.\n\n"
-        )
         demonstrations = "\n\n".join(
             _format_mmlu_question(example, True) for example in examples
         )
-        prompt = header + (demonstrations + "\n\n" if demonstrations else "")
+        prompt = demonstrations + "\n\n" if demonstrations else ""
         prompt += _format_mmlu_question(row, False)
         output.append(
             {
                 "prompt_id": f"mmlu:{subject}:{row_index}",
                 "prompt": prompt,
                 "answer_index": answer,
+                "subject": subject,
+                "demonstrations": examples,
             }
         )
     return output
@@ -103,10 +109,9 @@ def completion_after_prompt(text: str, prompt: str) -> str:
 
 
 def parse_mmlu_letter(text: str) -> int | None:
-    for character in text.strip().upper():
-        if character in LETTERS:
-            return LETTERS.index(character)
-    return None
+    """Accept one answer letter, never a letter embedded in a word or sentence."""
+    answer = text.strip().upper()
+    return LETTERS.index(answer) if answer in tuple(LETTERS) else None
 
 
 def bernoulli_percent(scores: list[float]) -> tuple[float, float]:

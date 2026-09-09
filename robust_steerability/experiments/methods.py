@@ -12,7 +12,7 @@ from robust_steerability.control import (
     PIDController,
     PIDGains,
 )
-from robust_steerability.runtime.policy import ReducedStateSetpointPolicy
+from robust_steerability.runtime.policy import ReducedSemanticSetpointPolicy, SemanticSetpointPolicy
 from robust_steerability.runtime.diagnostics import ReducedTrajectoryRecorder
 
 
@@ -27,7 +27,7 @@ METHOD_LABELS = {
 
 
 @dataclass
-class ReducedControllerArtifact:
+class ControllerArtifact:
     """Calibrated coordinates and controller solutions for one model."""
 
     means: torch.Tensor
@@ -35,7 +35,6 @@ class ReducedControllerArtifact:
     decoders: torch.Tensor
     feature_unit: torch.Tensor
     setpoints: torch.Tensor
-    reference_controls: torch.Tensor
     control_channels: torch.Tensor
     lqr_gains: torch.Tensor
     hinf_gains: torch.Tensor
@@ -43,11 +42,14 @@ class ReducedControllerArtifact:
     gamma_star: float | None
     hinf_diagnostics: dict[str, object]
     baselines: dict
+    raw_feature_unit: torch.Tensor
+    alqr_setpoints: torch.Tensor
+    spid_setpoints: torch.Tensor
 
 
 def build_policy(
     method: str,
-    artifact: ReducedControllerArtifact,
+    artifact: ControllerArtifact,
     *,
     kp: float,
     ki: float,
@@ -62,14 +64,10 @@ def build_policy(
         from robust_steerability.experiments.baselines import BaselinePolicy
         return BaselinePolicy(method, artifact.baselines, strength=artifact.baselines["strengths"][method], record=record)
     if method == "alqr":
-        controller = LQRController(
-            artifact.lqr_gains,
-            control_channels=artifact.control_channels,
-        )
+        controller = LQRController(artifact.lqr_gains)
     elif method == "spid":
         controller = PIDController(
             PIDGains(proportional=kp, integral=ki, derivative=kd),
-            control_channels=artifact.control_channels,
         )
     elif method == "hinf":
         controller = HInfinityController(
@@ -81,13 +79,16 @@ def build_policy(
         )
     else:
         raise ValueError(f"Unknown method: {method}")
-    return ReducedStateSetpointPolicy(
+    if method in {"alqr", "spid"}:
+        setpoints = artifact.alqr_setpoints if method == "alqr" else artifact.spid_setpoints
+        return SemanticSetpointPolicy(controller, artifact.raw_feature_unit, setpoints,
+                                      recorder=ReducedTrajectoryRecorder("norms") if record else None)
+    return ReducedSemanticSetpointPolicy(
         controller=controller,
         means=artifact.means,
         encoders=artifact.encoders,
         decoders=artifact.decoders,
         feature_unit=artifact.feature_unit,
         setpoints=artifact.setpoints,
-        reference_controls=artifact.reference_controls,
         recorder=ReducedTrajectoryRecorder() if record else None,
     )

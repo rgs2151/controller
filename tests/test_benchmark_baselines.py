@@ -33,15 +33,16 @@ def test_capture_uses_pre_final_norm_decoder_states():
     assert not torch.allclose(captured["hidden"][:, -1], normalized)
 
 
-def test_quality_boundary_and_complete_continuation():
+def test_quality_joint_tokenization_and_reference_truncation():
     path = Path(__file__).resolve().parents[1] / "parking/paper_benchmark_50/score_quality.py"
     spec = importlib.util.spec_from_file_location("score_quality", path)
     quality = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(quality)
-    def tokenizer(text, add_special_tokens):
-        return {"input_ids": ([0] if add_special_tokens else []) + list(range(1, len(text) + 1))}
-    ids, count = quality.continuation_input(tokenizer, "context", "new", 5)
-    assert ids == [6, 7, 1, 2, 3] and count == 3
-    assert quality.continuation_input(tokenizer, "context", "", 5)[1] == 0
-    assert quality.distinct_two(["a b", "a b"]) == 0.5
-    assert quality.distinct_two(["a", "b"]) is None
+    calls = []
+    def tokenizer(text, **kwargs):
+        calls.append((text, kwargs))
+        return {"input_ids": ([0] + list(range(1, len(text) + 1)))[:kwargs["max_length"]]}
+    assert quality.perplexity_input(tokenizer, "context", "new") == list(range(11))
+    assert calls[-1] == ("contextnew", {"add_special_tokens": True, "truncation": True, "max_length": 128})
+    assert len(quality.perplexity_input(tokenizer, "x" * 200, "new")) == 128
+    assert quality.perplexity_input(tokenizer, "context", "") == list(range(8))

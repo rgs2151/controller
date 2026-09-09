@@ -9,7 +9,7 @@ ITI instead acts on attention heads before their output projection.
 import numpy as np
 import torch
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit
 
 from robust_steerability.runtime.diagnostics import ReducedTrajectoryRecorder
 
@@ -44,7 +44,7 @@ def ode_gradient(values, parameters):
         values.norm(dim=-1, keepdim=True) + 1e-12)
 
 
-def fit_baselines(calibration: dict, *, seed: int) -> dict:
+def fit_baselines(calibration: dict, *, seed: int, strengths: dict[str, float]) -> dict:
     hidden = calibration["fit_hidden_states"].detach().cpu().float()[:, 1:]
     labels = np.asarray(calibration["fit_labels"])
     negative, positive = hidden[labels == 0], hidden[labels == 1]
@@ -65,16 +65,16 @@ def fit_baselines(calibration: dict, *, seed: int) -> dict:
         "mean_direction": difference.float(), "mean_mask": mask,
         "linear_slope": slope.float(), "linear_intercept": intercept.float(),
         "fit_prompt_ids": [row["prompt_id"] for row in calibration["fit_records"]],
-        "strengths": {"iti": 15.0, "actadd": 1.0, "mean_act": 1.0, "linear_act": 1.0, "pid_act": 1.0, "odesteer": 1.0},
+        "strengths": dict(strengths),
     }
     # ITI ranks heads using a held-out part of the fit split, never test outcomes.
     heads = calibration["fit_attention_heads"].detach().cpu().float()
     head_count = calibration["attention_head_count"]
     heads = heads.reshape(len(heads), horizon, head_count, -1)
-    per_class = len(hidden) // 2
-    train_groups, validation_groups = train_test_split(np.arange(per_class), test_size=0.2, random_state=seed)
-    train = np.concatenate([train_groups, train_groups + per_class])
-    validation = np.concatenate([validation_groups, validation_groups + per_class])
+    groups = [row.get("source_prompt_id", row["prompt_id"]) for row in calibration["fit_records"]]
+    train, validation = next(GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=seed).split(hidden, labels, groups))
+    if len(set(labels[train])) != 2 or len(set(labels[validation])) != 2:
+        raise ValueError("ITI grouped probe split requires both classes in train and validation")
     accuracy, coefficients, intercepts = [], [], []
     for k in range(horizon):
         for head in range(head_count):
@@ -114,7 +114,7 @@ class BaselinePolicy:
     def __init__(self, method, parameters, strength=1.0, record=False):
         self.method, self.parameters, self.strength = method, parameters, strength
         self.site = "attention_heads" if method == "iti" else "block_output"
-        self.recorder = ReducedTrajectoryRecorder() if record else None
+        self.recorder = ReducedTrajectoryRecorder("norms") if record else None
 
     def prepare(self, device, dtype):
         def move(value):
