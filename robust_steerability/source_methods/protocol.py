@@ -195,6 +195,7 @@ METHOD_MODEL_LOADING = {
     "original": {"quantization": "nf4", "double_quantization": True, "model_dtype": "float32"},
     "alqr": {"quantization": "nf4", "double_quantization": True, "model_dtype": "float32"},
     "spid": {"quantization": "nf4", "double_quantization": True, "model_dtype": "float32"},
+    "actadd_lfs": {"quantization": "nf4", "double_quantization": True, "model_dtype": "float32"},
     "actadd": {
         "quantization": "nf4", "double_quantization": True,
         "model_dtype": "float32", "compute_dtype": "float16",
@@ -291,9 +292,9 @@ def protocol_manifest(behavior: str, model_id: str, checkpoint_revision: str, ev
                 **settings,
                 **(
                     {"compute_dtype": "float32"}
-                    if name in {"original", "alqr", "spid"} and behavior == "truthfulness"
+                    if name in {"original", "alqr", "spid", "actadd_lfs"} and behavior == "truthfulness"
                     else {"compute_dtype": "float16"}
-                    if name in {"original", "alqr", "spid"}
+                    if name in {"original", "alqr", "spid", "actadd_lfs"}
                     else {}
                 ),
             }
