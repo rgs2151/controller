@@ -1,4 +1,9 @@
-"""Cache-first calibration of reduced transformer control problems."""
+"""Historical combined calibration used by ``paper_benchmark_50``.
+
+Source-faithful non-H-infinity calibration now lives in
+``robust_steerability.source_methods.calibration``. This module stays in place
+to preserve the completed pilot and Hannah's existing H-infinity handoff.
+"""
 
 from __future__ import annotations
 
