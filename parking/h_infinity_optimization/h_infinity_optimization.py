@@ -777,7 +777,9 @@ def write_summary(
 
 
 def main() -> None:
-    if len(sys.argv) > 1 and sys.argv[1] in {"score", "evaluate", "prepare-panels", "inspect", "pack"}:
+    if len(sys.argv) > 1 and sys.argv[1] in {
+        "score", "evaluate", "prepare-panels", "inspect", "pack", "audit-panels",
+    }:
         from diagnostic_analysis import main as diagnostic_main
         diagnostic_main(sys.argv[1:])
         return
