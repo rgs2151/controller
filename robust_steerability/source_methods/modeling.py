@@ -15,15 +15,13 @@ def source_model_spec(
     """Build a pinned spec without imposing the project's H∞ loading choices."""
 
     model_key(model_id)
-    if method == "actadd_lfs":
-        method = "alqr"
     if method not in METHOD_MODEL_LOADING:
         raise ValueError(f"Unsupported source method {method!r}")
     if behavior not in {"toxicity", "truthfulness"}:
         raise ValueError(f"Unsupported behavior {behavior!r}")
     settings = METHOD_MODEL_LOADING[method]
     compute_dtype = settings.get("compute_dtype")
-    if method in {"original", "alqr", "spid"}:
+    if method in {"original", "alqr", "spid", "actadd_lfs"}:
         compute_dtype = "float32" if behavior == "truthfulness" else "float16"
     return CausalModelLoadSpec(
         model_id=model_id,

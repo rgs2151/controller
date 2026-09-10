@@ -97,10 +97,12 @@ def test_each_method_keeps_its_source_model_loading_protocol():
     truth_alqr = source_model_spec("alqr", "truthfulness", "Qwen/Qwen2.5-14B", "revision")
     iti = source_model_spec("iti", "toxicity", "Qwen/Qwen2.5-14B", "revision")
     linear = source_model_spec("linear_act", "toxicity", "Qwen/Qwen2.5-14B", "revision")
+    actadd_lfs = source_model_spec("actadd_lfs", "toxicity", "Qwen/Qwen2.5-14B", "revision")
     assert alqr.quantized and alqr.dtype == "float32" and alqr.quantization_compute_dtype == "float16"
     assert truth_alqr.quantization_compute_dtype == "float32"
     assert not iti.quantized and iti.dtype == "float16"
     assert not linear.quantized and linear.dtype == "bfloat16"
+    assert actadd_lfs.quantized and actadd_lfs.quantization_compute_dtype == "float16"
     assert alqr.attention_implementation is None
 
 
