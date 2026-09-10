@@ -16,6 +16,9 @@ This package is the reusable boundary between language-model experiments and con
 - `experiments/diagnostics.py` exports and reads portable H∞ calibration,
   solution, and evaluation bundles. `runtime/diagnostics.py` records reduced
   online trajectories without changing the controller's feedback calculation.
+- `source_methods/` is the frozen, method-specific A-LQR-paper comparison path
+  for A-LQR, S-PID, ActAdd/ActAddLFS, ITI, Mean/Linear/PID-AcT, and ODESteer.
+  It is intentionally separate from H∞ and from the historical 50-sample run.
 
 Experiment-specific prompt subsets, thresholds, statistics, plots, captions, and output paths remain in their owning compact units under `parking/` or `figs/`.
 

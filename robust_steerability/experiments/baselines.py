@@ -1,9 +1,8 @@
-"""Fit portable baseline parameters from the same isolated behavior fit split.
+"""Historical local adaptations used only by ``paper_benchmark_50``.
 
-Algorithms: Turner et al. ActAdd; Apple ml-act sorted 1-D transport;
-dungnvnus/pid-steering mean transport; honest_llama head selection; ODESteer.
-The benchmark declares its common last-token, post-block intervention protocol.
-ITI instead acts on attention heads before their output projection.
+These are retained so the completed pilot remains inspectable. New comparison
+runs use :mod:`robust_steerability.source_methods`; this module is not a
+source-faithful implementation of the cited baselines.
 """
 
 import numpy as np

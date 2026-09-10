@@ -23,7 +23,7 @@ class CausalModelLoadSpec:
     revision: str = "main"
     quantized: bool = False
     dtype: str = "bfloat16"
-    attention_implementation: str = "eager"
+    attention_implementation: str | None = "eager"
     quantization_compute_dtype: str = "float16"
 
 
@@ -80,9 +80,10 @@ def load_causal_model(
         "revision": spec.revision,
         "token": token or None,
         "dtype": dtype,
-        "attn_implementation": spec.attention_implementation,
         "low_cpu_mem_usage": True,
     }
+    if spec.attention_implementation is not None:
+        model_kwargs["attn_implementation"] = spec.attention_implementation
     if spec.quantized:
         if not device.startswith("cuda:"):
             raise ValueError("4-bit model loading requires an explicit CUDA device")

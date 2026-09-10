@@ -101,6 +101,8 @@
 
 ## Notes
 
+- This is the frozen historical pilot. Its artifacts are retained unchanged;
+  corrected upstream-method runs use `robust_steerability/source_methods/`.
 - Run `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1`.
 - Toxicity continuations use at most 100 new tokens; truthfulness uses 50. Sampling uses temperature 1, top-p 0.3, top-k 50, and repetition penalty 1.2. MMLU uses one greedy token.
 - Every cache is bound to manifest, prompt, model revision, and source hashes. Mismatches fail; there is no old-cache reconstruction path or smoke/full flag.
