@@ -1,3 +1,3 @@
 # Comparison Summaries
 
-Plots shared in daily controller comparison summaries.
+Controller comparison plots based on data provided by Rudra.
