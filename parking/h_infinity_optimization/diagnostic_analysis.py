@@ -7,12 +7,142 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
+import torch
 from scipy.stats import spearmanr
 
 from robust_steerability.experiments.diagnostics import (
-    PREDICTORS, evaluate, load_run, pack_run, read_json, safe_id, score,
+    PREDICTORS, evaluate, load_run, pack_run, read_json, safe_id, score as freeze_score,
     sha256, share_report, verify_run, write_json,
 )
+
+SKETCH_PREDICTORS = (
+    "log_parameter_count", "probe_accuracy", "linearization_error",
+    "nominal_lqr_objective", "s_rob",
+)
+
+
+def calculate_panel_predictors(bundle: dict) -> dict[str, dict[str, object]]:
+    """Calculate the calibration-only predictors required by the sketch panels."""
+    calibration = bundle["calibration"]
+    problem = bundle["problem"]
+    iti = calibration["baseline_parameters"]["iti"]
+    selected = np.asarray(iti["selected_heads"], dtype=int)
+    accuracies = np.asarray(iti["head_accuracy"], dtype=float)
+    if selected.size == 0 or selected.min() < 0 or selected.max() >= len(accuracies):
+        raise ValueError("ITI selected-head indices do not match saved head accuracies")
+    probe_accuracy = float(accuracies[selected].mean())
+
+    residuals = calibration["residuals"].detach().cpu().double()
+    linearization_error = float(
+        residuals.square().sum(dim=-1).mean().sqrt().item()
+    )
+
+    states = calibration["calibration_reduced_states"].detach().cpu().double()
+    reference = calibration["reference_states"].detach().cpu().double()
+    gains = calibration["lqr_solution"]["gains"].detach().cpu().double()
+    dynamics = problem["dynamics"].detach().cpu().double()
+    channels = problem["control_channels"].detach().cpu().double()
+    state_costs = problem["state_costs"].detach().cpu().double()
+    control_costs = problem["control_costs"].detach().cpu().double()
+    terminal_cost = problem["terminal_cost"].detach().cpu().double()
+    error = states[:, 0] - reference[0]
+    objective = torch.zeros(len(error), dtype=torch.float64)
+    for layer in range(len(dynamics)):
+        feedback = error @ gains[layer].T
+        objective += torch.einsum("ni,ij,nj->n", error, state_costs[layer], error)
+        objective += torch.einsum("ni,ij,nj->n", feedback, control_costs[layer], feedback)
+        error = error @ dynamics[layer].T + feedback @ channels[layer].T
+    objective += torch.einsum("ni,ij,nj->n", error, terminal_cost, error)
+    nominal_lqr_objective = float(objective.mean().item())
+    values = (probe_accuracy, linearization_error, nominal_lqr_objective)
+    if not all(np.isfinite(values)):
+        raise ValueError("Calculated panel predictors must be finite")
+    return {
+        "probe_accuracy": {
+            "value": probe_accuracy,
+            "split": "fit",
+            "definition": "Mean validation accuracy of the 48 fit-split ITI head probes selected by saved validation accuracy.",
+        },
+        "linearization_error": {
+            "value": linearization_error,
+            "split": "calibration",
+            "definition": "Root mean squared Euclidean norm of one-step residuals in normalized reduced coordinates.",
+        },
+        "nominal_lqr_objective": {
+            "value": nominal_lqr_objective,
+            "split": "calibration",
+            "definition": "Mean finite-horizon quadratic state, feedback-control, and terminal cost from calibration initial errors under saved LQR gains and nominal dynamics, with residuals set to zero.",
+        },
+    }
+
+
+def score_with_panel_predictors(bundle_path: Path, device: str, *, cache_root: Path) -> Path:
+    """Persist a panel-complete input bundle, then freeze its H-infinity score."""
+    bundle = torch.load(bundle_path, map_location="cpu", weights_only=True)
+    computed = calculate_panel_predictors(bundle)
+    provided = dict(bundle["predictors"])
+    for name, entry in computed.items():
+        if name in provided and provided[name]["value"] is not None:
+            if not np.isclose(float(provided[name]["value"]), float(entry["value"]), rtol=1e-6, atol=1e-9):
+                raise ValueError(f"Saved and recomputed predictor disagree: {name}")
+        else:
+            provided[name] = entry
+    bundle["predictors"] = provided
+    input_directory = cache_root / "panel_inputs"
+    input_directory.mkdir(parents=True, exist_ok=True)
+    enriched_path = input_directory / f"{safe_id(bundle['record']['run_id'])}.pt"
+    temporary = enriched_path.with_suffix(".pt.tmp")
+    torch.save(bundle, temporary)
+    temporary.replace(enriched_path)
+    write_json(enriched_path.with_suffix(".json"), {
+        "run_id": bundle["record"]["run_id"],
+        "source_bundle": str(bundle_path.resolve()),
+        "source_sha256": sha256(bundle_path),
+        "enriched_sha256": sha256(enriched_path),
+        "predictors": provided,
+    })
+    return freeze_score(enriched_path, device, cache_root=cache_root)
+
+
+def audit_panels(cache_root: Path) -> Path:
+    """Write a readiness report and fail if the prospective plots lack inputs."""
+    runs = []
+    for score_path in sorted((cache_root / "runs").glob("*/score.json")):
+        score_record = read_json(score_path)
+        missing_predictors = [
+            name for name in SKETCH_PREDICTORS
+            if score_record.get("predictors", {}).get(name) is None
+        ]
+        evaluations = []
+        for summary_path in sorted((score_path.parent / "evaluations").glob("*/summary.json")):
+            summary = read_json(summary_path)
+            evaluations.append({
+                "path": str(summary_path.relative_to(cache_root)),
+                "shift": summary.get("shift"),
+                "controller": summary.get("controller"),
+                "reliability": summary.get("reliability"),
+            })
+        valid_evaluations = [item for item in evaluations if item["reliability"] is not None]
+        runs.append({
+            "run_id": score_record["run_id"],
+            "model_id": score_record["model_id"],
+            "model_family": score_record["model_family"],
+            "behavior": score_record["behavior"],
+            "missing_predictors": missing_predictors,
+            "evaluation_summaries": valid_evaluations,
+            "ready": not missing_predictors and bool(valid_evaluations),
+        })
+    report = cache_root / "analyses" / "panel_readiness.json"
+    write_json(report, {
+        "required_predictors": SKETCH_PREDICTORS,
+        "run_count": len(runs),
+        "ready_run_count": sum(row["ready"] for row in runs),
+        "model_families": sorted({row["model_family"] for row in runs}),
+        "runs": runs,
+    })
+    if not runs or not all(row["ready"] for row in runs):
+        raise ValueError(f"Prospective-panel inputs are incomplete; inspect {report}")
+    return report
 
 def rho(x, y):
     if len(x) < 3 or np.ptp(x) == 0 or np.ptp(y) == 0:
@@ -163,9 +293,11 @@ def main(argv=None) -> None:
     pack_parser = commands.add_parser("pack")
     pack_parser.add_argument("--run", type=Path, required=True)
     pack_parser.add_argument("--output", type=Path, required=True)
+    audit_parser = commands.add_parser("audit-panels")
+    audit_parser.add_argument("--cache-root", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.command == "score":
-        result = score(args.bundle, args.device, cache_root=args.cache_root)
+        result = score_with_panel_predictors(args.bundle, args.device, cache_root=args.cache_root)
     elif args.command == "evaluate":
         result = evaluate(args.input, cache_root=args.cache_root)
     elif args.command == "prepare-panels":
@@ -175,6 +307,8 @@ def main(argv=None) -> None:
         loaded = load_run(args.run)
         print(json.dumps(loaded["score"], indent=2))
         result = share_report(args.run, args.report) if args.report else args.run
+    elif args.command == "audit-panels":
+        result = audit_panels(args.cache_root)
     else:
         result = pack_run(args.run, args.output)
     print(result)
