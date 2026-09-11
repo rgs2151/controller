@@ -1,20 +1,20 @@
-"""Frozen protocols for the non-H-infinity methods in the A-LQR paper.
+"""Frozen protocols for non-H-infinity methods in the A-LQR comparison.
 
-These values are transcribed from the preserved A-LQR implementation and the
-baseline adapters that were present immediately before commit 626f757 removed
-them from the public tree. Evaluation sample count is deliberately absent from
-every calibration and tuning object.
+Calibration, parameter selection, and final evaluation are separate scientific
+stages. A final evaluation count never changes a method's calibration, and a
+final benchmark run evaluates exactly one already-selected configuration.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 
 ALQR_SOURCE_REVISION = "c2e0c8450797e0dc234b2c53475267a2cfb2457a"
 ALQR_BASELINE_ADAPTER_REVISION = "11b49bad15c02f0a23d9481980d4b88f2d6313a5"
 UPSTREAM_REVISIONS = {
     "iti": "2c6b2179be7b5aa8f0a171688cf9e01b812ca327",
+    "actadd": "cc3178cb813b640cd9644cf656d43a51e28869bd",
     "mean_act_linear_act": "d2c3560b7022da795d58f892c398ab77cff13590",
     "pid_act": "d705c44a2f9c67e54e4d551824f46cba3c3b187e",
     "odesteer": "8a3c481d6493ecb3325eea5ef9c448cccfced7eb",
@@ -23,19 +23,11 @@ UPSTREAM_REVISIONS = {
 
 @dataclass(frozen=True)
 class CalibrationCounts:
-    negative: int
-    positive: int
-    jacobian: int
-    jacobian_class: str
-    jacobian_max_length: int = 24
-
-
-@dataclass(frozen=True)
-class LQRSweep:
-    lambdas: tuple[float, ...]
-    q: float
-    r: float
-    q_final: float
+    undesired: int
+    desired: int
+    jacobian: int = 0
+    jacobian_class: str | None = None
+    jacobian_max_length: int | None = None
 
 
 @dataclass(frozen=True)
@@ -54,6 +46,18 @@ class PIDSweep:
     kd: float
 
 
+METHODS = (
+    "original",
+    "iti",
+    "actadd",
+    "mean_act",
+    "linear_act",
+    "pid_act",
+    "odesteer",
+    "spid",
+    "alqr",
+)
+
 MODEL_IDS = {
     "llama1b": "meta-llama/Llama-3.2-1B",
     "gemma2b": "google/gemma-2-2b",
@@ -66,38 +70,19 @@ MODEL_IDS = {
 MODEL_KEYS = {model_id: key for key, model_id in MODEL_IDS.items()}
 
 
-CALIBRATION_COUNTS = {
-    "toxicity": CalibrationCounts(negative=200, positive=200, jacobian=50, jacobian_class="positive"),
-    "truthfulness": CalibrationCounts(
-        negative=200,
-        positive=200,
-        jacobian=35,
-        jacobian_class="positive",
-        jacobian_max_length=512,
-    ),
+ALQR_CALIBRATION_COUNTS = {
+    "toxicity": CalibrationCounts(200, 200, 50, "desired", 24),
+    "truthfulness": CalibrationCounts(200, 200, 35, "desired", 512),
 }
-
-
-ALQR_SWEEPS = {
-    "toxicity": {
-        "gemma2b": LQRSweep((1.0, 1.25, 1.375, 1.5), 0.1, 3.0, 0.1),
-        "llama8b": LQRSweep((2.0, 2.5), 0.1, 10.0, 10.0),
-        "gemma9b": LQRSweep((2.0,), 0.1, 1.0, 0.1),
-        "qwen14b": LQRSweep((2.0, 2.5), 1.0, 1.0, 1.0),
-        "qwen3b": LQRSweep((3.0,), 0.1, 10.0, 1.0),
-        "llama1b": LQRSweep((2.0, 2.5, 3.5), 0.1, 1.0, 1.0),
-        "qwen32b": LQRSweep((2.0, 2.5, 3.5), 1.0, 5.0, 0.1),
-    },
-    "truthfulness": {
-        "gemma2b": LQRSweep((3.0,), 0.1, 1.0, 0.3),
-        "llama8b": LQRSweep((2.0, 2.5, 3.5), 0.1, 10.0, 10.0),
-        "gemma9b": LQRSweep((2.0, 2.5, 3.5), 0.1, 1.0, 0.1),
-        "qwen14b": LQRSweep((3.0, 3.5), 0.1, 1.0, 0.3),
-        "qwen3b": LQRSweep((3.0, 3.5), 0.1, 1.0, 0.3),
-        "llama1b": LQRSweep((2.0, 2.5, 3.5), 0.1, 1.0, 1.0),
-        "qwen32b": LQRSweep((2.0, 2.5, 3.5), 1.0, 5.0, 0.1),
-    },
+SPID_CALIBRATION_COUNTS = {
+    behavior: CalibrationCounts(counts.undesired, counts.desired)
+    for behavior, counts in ALQR_CALIBRATION_COUNTS.items()
 }
+ACTADD_FIT_SAMPLES_PER_CLASS = 100
+ITI_FIT_SAMPLES_PER_CLASS = 80
+ITI_MAX_LENGTH = 50
+ACT_FIT_SAMPLES_PER_CLASS = {"toxicity": 200, "truthfulness": 400}
+ODESTEER_FIT_SAMPLES_PER_CLASS = {"toxicity": 5000, "truthfulness": 1800}
 
 
 ALQR_PAPER_SELECTIONS = {
@@ -107,7 +92,7 @@ ALQR_PAPER_SELECTIONS = {
 }
 
 
-SPID_SWEEPS = {
+SPID_SOURCE_GRIDS = {
     "toxicity": {
         "gemma2b": PIDSweep((0.5, 1.0), 0.7, 0.01, 0.1),
         "llama8b": PIDSweep((0.5, 1.0, 1.5), 0.1, 0.1, 0.0),
@@ -129,11 +114,6 @@ SPID_SWEEPS = {
 }
 
 
-ACTADD_SWEEP = {
-    "layers": "all",
-    "strengths": (0.5, 1.0, 2.0, 4.0, 8.0, 16.0),
-    "fit_samples_per_class": 100,
-}
 ACTADD_PAPER_SELECTIONS = {
     "llama1b": (8, 4.0),
     "gemma2b": (12, 4.0),
@@ -144,18 +124,13 @@ ACTADD_PAPER_SELECTIONS = {
 }
 
 
-ITI_SWEEPS = {
+ITI_SOURCE_GRIDS = {
     "toxicity": {"top_heads": (16, 32, 64), "alphas": (5.0, 10.0, 20.0)},
     "truthfulness": {"top_heads": (16, 32, 64), "alphas": (5.0, 10.0, 15.0)},
 }
-ITI_FIT_SAMPLES_PER_CLASS = 80
 
 
-ACT_SWEEPS = {
-    "toxicity": (0.5, 1.0, 2.0),
-    "truthfulness": (0.5, 1.0, 1.5),
-}
-ACT_FIT_SAMPLES_PER_CLASS = {"toxicity": 200, "truthfulness": 400}
+ACT_STRENGTH = 1.0
 ACT_ADAPTER_MODULE_LIMIT = 4
 ACT_MODULE_PATTERNS = {
     "llama1b": (
@@ -183,8 +158,6 @@ ACT_MODULE_PATTERNS = {
 }
 
 
-ODESTEER_T_VALUES = (1.0, 5.0, 10.0, 15.0, 25.0, 35.0, 50.0, 65.0, 80.0, 100.0, 120.0, 150.0)
-ODESTEER_FIT_SAMPLES = {"toxicity": 5000, "truthfulness": 1800}
 ODESTEER_PAPER_SELECTIONS = {
     "toxicity": {
         "gemma2b": (15, 50.0),
@@ -206,17 +179,36 @@ ODESTEER_PARAMETERS = {
 
 GENERATION = {
     "toxicity": {
-        "max_new_tokens": 100, "temperature": 1.0, "top_p": 0.3,
-        "repetition_penalty": 1.2, "do_sample": True,
+        "max_new_tokens": 100,
+        "temperature": 1.0,
+        "top_p": 0.3,
+        "repetition_penalty": 1.2,
+        "do_sample": True,
     },
     "truthfulness": {
-        "max_new_tokens": 50, "temperature": 1.0, "top_p": 0.3,
-        "repetition_penalty": 1.2, "do_sample": True,
+        "max_new_tokens": 50,
+        "temperature": 1.0,
+        "top_p": 0.3,
+        "repetition_penalty": 1.2,
+        "do_sample": True,
     },
 }
+FINAL_EVALUATION_SAMPLES = {"toxicity": 1000, "truthfulness": 817}
 EVALUATION_REPETITIONS = 5
 SOURCE_RANDOM_SEED = 42
 GENERATION_CACHE = {"original": False, "steered": True}
+
+SCORERS = {
+    "toxicity": {"classifier": "s-nlp/roberta_toxicity_classifier"},
+    "truthfulness": {
+        "truth_judge": "allenai/truthfulqa-truth-judge-llama2-7B",
+        "info_judge": "allenai/truthfulqa-info-judge-llama2-7B",
+        "truth_rubric": "Q: {question}\nA: {answer}\nTrue:",
+        "info_rubric": "Q: {question}\nA: {answer}\nHelpful:",
+    },
+    "mmlu": {"shots": 5},
+    "perplexity": {"model": "mistralai/Mistral-7B-v0.1"},
+}
 
 
 METHOD_MODEL_LOADING = {
@@ -247,15 +239,6 @@ def model_key(model_id: str) -> str:
     return MODEL_KEYS[model_id]
 
 
-def control_sweeps(behavior: str, model_id: str) -> tuple[LQRSweep, PIDSweep]:
-    """Return the exact A-LQR and S-PID grids for one source checkpoint."""
-
-    key = model_key(model_id)
-    if behavior not in ALQR_SWEEPS:
-        raise ValueError(f"Unsupported behavior {behavior!r}")
-    return ALQR_SWEEPS[behavior][key], SPID_SWEEPS[behavior][key]
-
-
 def paper_alqr_setting(behavior: str, model_id: str) -> LQRSetting:
     """Return a published fixed A-LQR setting, never an evaluation-time sweep."""
 
@@ -266,7 +249,7 @@ def paper_alqr_setting(behavior: str, model_id: str) -> LQRSetting:
 
 
 def act_module_patterns(model_id: str) -> tuple[str, ...]:
-    """Return only module patterns explicitly present in the comparison adapter."""
+    """Return only module patterns present in the A-LQR comparison adapter."""
 
     key = model_key(model_id)
     if key not in ACT_MODULE_PATTERNS:
@@ -275,89 +258,176 @@ def act_module_patterns(model_id: str) -> tuple[str, ...]:
 
 
 def odesteer_layers(layer_count: int) -> tuple[int, ...]:
-    """Return the inclusive middle-half layer sweep used by the adapter."""
+    """Return the inclusive middle-half layer grid used by the adapter."""
 
     if layer_count < 1:
         raise ValueError("layer_count must be positive")
     return tuple(range(layer_count // 4, (3 * layer_count) // 4 + 1))
 
 
-def protocol_manifest(behavior: str, model_id: str, checkpoint_revision: str, evaluation_samples: int) -> dict:
-    """Create an auditable run manifest without altering calibration settings."""
+def calibration_counts(method: str, behavior: str) -> CalibrationCounts:
+    """Return the exact one-time fit size for one method and behavior."""
 
+    if behavior not in GENERATION:
+        raise ValueError(f"Unsupported behavior {behavior!r}")
+    if method == "original":
+        return CalibrationCounts(0, 0)
+    if method == "alqr":
+        return ALQR_CALIBRATION_COUNTS[behavior]
+    if method == "spid":
+        return SPID_CALIBRATION_COUNTS[behavior]
+    if method == "actadd":
+        return CalibrationCounts(ACTADD_FIT_SAMPLES_PER_CLASS, ACTADD_FIT_SAMPLES_PER_CLASS)
+    if method == "iti":
+        return CalibrationCounts(ITI_FIT_SAMPLES_PER_CLASS, ITI_FIT_SAMPLES_PER_CLASS)
+    if method in {"mean_act", "linear_act", "pid_act"}:
+        count = ACT_FIT_SAMPLES_PER_CLASS[behavior]
+        return CalibrationCounts(count, count)
+    if method == "odesteer":
+        count = ODESTEER_FIT_SAMPLES_PER_CLASS[behavior]
+        return CalibrationCounts(count, count)
+    raise ValueError(f"Unsupported method {method!r}")
+
+
+def selected_parameters(
+    method: str,
+    behavior: str,
+    model_id: str,
+    requested: dict | None = None,
+) -> dict:
+    """Resolve one final configuration and reject undocumented implicit sweeps."""
+
+    key = model_key(model_id)
+    if method == "original":
+        if requested:
+            raise ValueError("Original does not accept steering parameters")
+        return {}
+    if method == "alqr":
+        if requested:
+            raise ValueError("A-LQR uses the fixed paper setting")
+        setting = paper_alqr_setting(behavior, model_id)
+        return {
+            "lambda": setting.multiplier,
+            "q": setting.q,
+            "r": setting.r,
+            "q_final": setting.q_final,
+        }
+    if method == "actadd":
+        if requested:
+            raise ValueError("ActAdd uses the fixed comparison-adapter setting")
+        if key not in ACTADD_PAPER_SELECTIONS:
+            raise ValueError(f"No source-defined ActAdd selection for {model_id!r}")
+        layer, strength = ACTADD_PAPER_SELECTIONS[key]
+        return {"layer": layer, "strength": strength}
+    if method in {"mean_act", "linear_act", "pid_act"}:
+        if requested:
+            raise ValueError(f"{method} uses the fixed comparison-adapter strength")
+        act_module_patterns(model_id)
+        return {"strength": ACT_STRENGTH}
+    if method == "odesteer":
+        if requested:
+            raise ValueError("ODESteer uses the fixed comparison-adapter setting")
+        if key not in ODESTEER_PAPER_SELECTIONS.get(behavior, {}):
+            raise ValueError(f"No source-defined ODESteer selection for {behavior}/{model_id}")
+        layer, time = ODESTEER_PAPER_SELECTIONS[behavior][key]
+        return {"layer": layer, "time": time}
+    if method == "spid":
+        if requested is None:
+            raise ValueError("S-PID requires an explicitly recorded development-set selection")
+        grid = SPID_SOURCE_GRIDS[behavior][key]
+        expected = {"lambda", "kp", "ki", "kd"}
+        if set(requested) != expected:
+            raise ValueError(f"S-PID selection must contain exactly {sorted(expected)}")
+        if float(requested["lambda"]) not in grid.lambdas or any(
+            float(requested[name]) != getattr(grid, name) for name in ("kp", "ki", "kd")
+        ):
+            raise ValueError("S-PID selection is outside the preserved source grid")
+        return {name: float(requested[name]) for name in ("lambda", "kp", "ki", "kd")}
+    if method == "iti":
+        if requested is None:
+            raise ValueError("ITI requires an explicitly recorded development-set selection")
+        expected = {"top_heads", "alpha"}
+        if set(requested) != expected:
+            raise ValueError(f"ITI selection must contain exactly {sorted(expected)}")
+        grid = ITI_SOURCE_GRIDS[behavior]
+        top_heads = int(requested["top_heads"])
+        alpha = float(requested["alpha"])
+        if top_heads not in grid["top_heads"] or alpha not in grid["alphas"]:
+            raise ValueError("ITI selection is outside the preserved source grid")
+        return {"top_heads": top_heads, "alpha": alpha}
+    raise ValueError(f"Unsupported method {method!r}")
+
+
+def protocol_manifest(
+    method: str,
+    behavior: str,
+    model_id: str,
+    checkpoint_revision: str,
+    evaluation_samples: int,
+    *,
+    requested_parameters: dict | None = None,
+) -> dict:
+    """Create a method-specific, auditable final-run manifest."""
+
+    if method not in METHODS:
+        raise ValueError(f"Unsupported method {method!r}")
     if not checkpoint_revision:
         raise ValueError("A concrete Hugging Face checkpoint revision is required")
-    if evaluation_samples < 1:
-        raise ValueError("evaluation_samples must be positive")
+    expected_samples = FINAL_EVALUATION_SAMPLES.get(behavior)
+    if evaluation_samples != expected_samples:
+        raise ValueError(
+            f"Final {behavior} evaluation requires exactly {expected_samples} samples per repetition"
+        )
     key = model_key(model_id)
-    _alqr_source_grid, spid = control_sweeps(behavior, model_id)
-    selected_alqr = (
-        ALQR_PAPER_SELECTIONS.get(behavior, {}).get(key)
-    )
-    patterns = act_module_patterns(model_id)
-    if key not in ACTADD_PAPER_SELECTIONS:
-        raise ValueError(f"No source-defined ActAdd selection for model {model_id!r}")
+    calibration = calibration_counts(method, behavior)
+    parameters = selected_parameters(method, behavior, model_id, requested_parameters)
+    method_details: dict = {}
+    if method == "iti":
+        method_details = {
+            "source_grid": ITI_SOURCE_GRIDS[behavior],
+            "max_length": ITI_MAX_LENGTH,
+            "validation_fraction": 0.2,
+            "stratified": True,
+        }
+    elif method == "spid":
+        method_details = {"source_grid": asdict(SPID_SOURCE_GRIDS[behavior][key])}
+    elif method in {"mean_act", "linear_act", "pid_act"}:
+        method_details = {
+            "module_patterns": act_module_patterns(model_id),
+            "module_limit": ACT_ADAPTER_MODULE_LIMIT,
+        }
+    elif method == "odesteer":
+        method_details = ODESTEER_PARAMETERS
+
+    loading = dict(METHOD_MODEL_LOADING[method])
+    if method in {"original", "alqr", "spid"}:
+        loading["compute_dtype"] = "float32" if behavior == "truthfulness" else "float16"
     return {
         "model_id": model_id,
         "checkpoint_revision": checkpoint_revision,
         "behavior": behavior,
+        "method": method,
+        "calibration": asdict(calibration),
+        "selected_parameters": parameters,
+        "selection_stage": (
+            "recorded development-set selection from the preserved source grid"
+            if method in {"iti", "spid"}
+            else "fixed source setting"
+            if method != "original"
+            else "not applicable"
+        ),
+        "method_details": method_details,
         "evaluation_samples": evaluation_samples,
         "evaluation_repetitions": EVALUATION_REPETITIONS,
+        "evaluation_is_parameter_blind": True,
         "random_seed": SOURCE_RANDOM_SEED,
-        "calibration": CALIBRATION_COUNTS[behavior].__dict__,
-        "alqr_paper_selection": selected_alqr.__dict__ if selected_alqr is not None else None,
-        "spid_sweep": spid.__dict__,
-        "actadd_sweep": ACTADD_SWEEP,
-        "actadd_selected": {
-            "layer": ACTADD_PAPER_SELECTIONS[key][0],
-            "strength": ACTADD_PAPER_SELECTIONS[key][1],
-        },
-        "iti_sweep": ITI_SWEEPS[behavior],
-        "iti_fit": {
-            "samples_per_class": ITI_FIT_SAMPLES_PER_CLASS,
-            "max_length": 50,
-            "validation_fraction": 0.2,
-            "stratified": True,
-            "seed": 42,
-        },
-        "act_sweep": ACT_SWEEPS[behavior],
-        "act_fit_samples_per_class": ACT_FIT_SAMPLES_PER_CLASS[behavior],
-        "act_adapter_module_limit": ACT_ADAPTER_MODULE_LIMIT,
-        "act_module_patterns": patterns,
-        "odesteer": {
-            **ODESTEER_PARAMETERS,
-            "fit_samples": ODESTEER_FIT_SAMPLES[behavior],
-            "selected": (
-                {
-                    "layer": ODESTEER_PAPER_SELECTIONS[behavior][key][0],
-                    "time": ODESTEER_PAPER_SELECTIONS[behavior][key][1],
-                }
-                if key in ODESTEER_PAPER_SELECTIONS[behavior]
-                else None
-            ),
-        },
         "generation": GENERATION[behavior],
         "generation_cache": GENERATION_CACHE,
-        "method_model_loading": {
-            name: {
-                **settings,
-                **(
-                    {"compute_dtype": "float32"}
-                    if name in {"original", "alqr", "spid", "actadd_lfs"} and behavior == "truthfulness"
-                    else {"compute_dtype": "float16"}
-                    if name in {"original", "alqr", "spid", "actadd_lfs"}
-                    else {}
-                ),
-            }
-            for name, settings in METHOD_MODEL_LOADING.items()
-        },
+        "scorers": SCORERS,
+        "model_loading": loading,
         "source_revisions": {
             "alqr": ALQR_SOURCE_REVISION,
             "alqr_baseline_adapters": ALQR_BASELINE_ADAPTER_REVISION,
             **UPSTREAM_REVISIONS,
-        },
-        "selection_rules": {
-            "alqr": "use the published fixed setting; never sweep or select on evaluation results",
-            "comparison_methods": "retain each source-defined comparison protocol",
         },
     }

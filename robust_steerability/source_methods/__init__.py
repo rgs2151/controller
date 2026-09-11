@@ -7,14 +7,14 @@ from robust_steerability.source_methods.actadd import (
     positionwise_mean,
 )
 from robust_steerability.source_methods.calibration import (
-    ControlCalibration,
     collect_attention_head_activations,
     collect_block_output_activations,
     collect_decoder_states,
     fit_actadd_calibration,
-    fit_control_calibration,
+    fit_dynamics_from_records,
     fit_iti_calibration,
     fit_odesteer_calibration,
+    fit_setpoint_from_records,
     fit_transport_stack,
 )
 from robust_steerability.source_methods.control import (
@@ -53,7 +53,6 @@ from robust_steerability.source_methods.transport import (
 
 __all__ = [
     "ActAddSteerer",
-    "ControlCalibration",
     "ITIFit",
     "LayerSelectedSetpointPolicy",
     "LinearTransport",
@@ -69,7 +68,7 @@ __all__ = [
     "collect_decoder_states",
     "collect_positionwise_mean",
     "fit_actadd_calibration",
-    "fit_control_calibration",
+    "fit_dynamics_from_records",
     "fit_actadd_direction",
     "fit_iti",
     "fit_iti_calibration",
@@ -79,6 +78,7 @@ __all__ = [
     "fit_odesteer_calibration",
     "fit_pid_transport",
     "fit_setpoint_calibration",
+    "fit_setpoint_from_records",
     "fit_transport_stack",
     "generate_full_texts",
     "generate_unsteered",

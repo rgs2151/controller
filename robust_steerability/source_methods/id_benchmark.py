@@ -24,9 +24,10 @@ from robust_steerability.modeling.interventions import register_generation_polic
 from robust_steerability.source_methods.actadd import ActAddSteerer
 from robust_steerability.source_methods.calibration import (
     fit_actadd_calibration,
-    fit_control_calibration,
+    fit_dynamics_from_records,
     fit_iti_calibration,
     fit_odesteer_calibration,
+    fit_setpoint_from_records,
     fit_transport_stack,
 )
 from robust_steerability.source_methods.control import build_alqr_policy, build_spid_policy
@@ -36,34 +37,18 @@ from robust_steerability.source_methods.modeling import load_source_model
 from robust_steerability.source_methods.odesteer import register_odesteer_hook
 from robust_steerability.source_methods.protocol import (
     ACT_FIT_SAMPLES_PER_CLASS,
-    ACT_SWEEPS,
-    ACTADD_PAPER_SELECTIONS,
-    CALIBRATION_COUNTS,
     ITI_FIT_SAMPLES_PER_CLASS,
-    ITI_SWEEPS,
-    ODESTEER_FIT_SAMPLES,
-    ODESTEER_PAPER_SELECTIONS,
-    SPID_SWEEPS,
+    ITI_MAX_LENGTH,
+    METHODS,
+    ODESTEER_FIT_SAMPLES_PER_CLASS,
     SOURCE_RANDOM_SEED,
     act_module_patterns,
+    calibration_counts,
     model_key,
-    paper_alqr_setting,
     protocol_manifest,
+    selected_parameters as resolve_selected_parameters,
 )
 from robust_steerability.source_methods.transport import register_transport_hooks
-
-
-METHODS = (
-    "original",
-    "iti",
-    "actadd",
-    "mean_act",
-    "linear_act",
-    "pid_act",
-    "odesteer",
-    "spid",
-    "alqr",
-)
 
 
 def _hash(payload: object) -> str:
@@ -94,11 +79,15 @@ def _implementation_files() -> dict[str, str]:
         "robust_steerability/modeling/jacobians.py",
         "robust_steerability/runtime/policy.py",
         "robust_steerability/source_methods/calibration.py",
+        "robust_steerability/source_methods/actadd.py",
         "robust_steerability/source_methods/control.py",
         "robust_steerability/source_methods/generation.py",
         "robust_steerability/source_methods/id_benchmark.py",
+        "robust_steerability/source_methods/iti.py",
         "robust_steerability/source_methods/modeling.py",
+        "robust_steerability/source_methods/odesteer.py",
         "robust_steerability/source_methods/protocol.py",
+        "robust_steerability/source_methods/transport.py",
     )
     return {relative: _sha(repo / relative) for relative in relative_paths}
 
@@ -229,7 +218,14 @@ def _generate_candidate(
 ) -> None:
     repetitions_expected = int(data["evaluation_repetitions"])
     evaluation_samples = len(_records(data, behavior, 0))
-    manifest = protocol_manifest(behavior, model_id, revision, evaluation_samples)
+    manifest = protocol_manifest(
+        method,
+        behavior,
+        model_id,
+        revision,
+        evaluation_samples,
+        requested_parameters=parameters if method in {"iti", "spid"} else None,
+    )
     identity = _json_identity({
         "schema_version": 3,
         "data_fingerprint": data["fingerprint"],
@@ -368,6 +364,7 @@ def run_generation_job(
     method: str,
     device: str,
     token: str,
+    selected_parameters: dict | None = None,
 ) -> None:
     """Fit one source method and cache every configured ID repetition."""
 
@@ -375,30 +372,37 @@ def run_generation_job(
         raise ValueError(f"Unsupported method {method!r}")
     if not device.startswith("cuda:"):
         raise ValueError("Source benchmark jobs require an explicit CUDA device")
-    alqr_setting = paper_alqr_setting(behavior, model_id) if method == "alqr" else None
     data_path = unit / "cache/data.json"
     data = json.loads(data_path.read_text())
     key = model_key(model_id)
-    job_root = unit / "cache/generations" / behavior / key / method
-    job_root.mkdir(parents=True, exist_ok=True)
-    if method == "odesteer" and key not in ODESTEER_PAPER_SELECTIONS[behavior]:
-        _write_json(
-            job_root / "unsupported.json",
-            {
-                "status": "unsupported",
-                "reason": "The preserved comparison source does not record this paper selection.",
-                "behavior": behavior,
-                "model_id": model_id,
-                "method": method,
-            },
-        )
-        return
-
     evaluation_samples = len(_records(data, behavior, 0))
+    parameters = resolve_selected_parameters(
+        method, behavior, model_id, selected_parameters
+    )
+    manifest = protocol_manifest(
+        method,
+        behavior,
+        model_id,
+        revision,
+        evaluation_samples,
+        requested_parameters=selected_parameters,
+    )
+    counts = calibration_counts(method, behavior)
     undesired = data["calibration"][behavior]["undesired"]
     desired = data["calibration"][behavior]["desired"]
-    jacobian = data["calibration"][behavior]["jacobian"]
-    counts = CALIBRATION_COUNTS[behavior]
+    jacobian = data["calibration"][behavior].get("jacobian", [])
+    if len(undesired) < counts.undesired or len(desired) < counts.desired:
+        raise ValueError(
+            f"Calibration cache has {len(undesired)}/{len(desired)} class prompts; "
+            f"{method} requires {counts.undesired}/{counts.desired}"
+        )
+    if len(jacobian) < counts.jacobian:
+        raise ValueError(
+            f"Calibration cache has {len(jacobian)} Jacobian prompts; "
+            f"{method} requires {counts.jacobian}"
+        )
+    job_root = unit / "cache/generations" / behavior / key / method
+    job_root.mkdir(parents=True, exist_ok=True)
     run_identity = _json_identity({
         "schema_version": 1,
         "data_sha256": _sha(data_path),
@@ -409,10 +413,10 @@ def run_generation_job(
         "method": method,
         "requested_device": device,
         "implementation_files_sha256": _implementation_files(),
-        "protocol": protocol_manifest(behavior, model_id, revision, evaluation_samples),
+        "protocol": manifest,
         "calibration_selection": {
-            "negative_prompt_ids": [row["prompt_id"] for row in undesired[:counts.negative]],
-            "positive_prompt_ids": [row["prompt_id"] for row in desired[:counts.positive]],
+            "undesired_prompt_ids": [row["prompt_id"] for row in undesired[:counts.undesired]],
+            "desired_prompt_ids": [row["prompt_id"] for row in desired[:counts.desired]],
             "jacobian_prompt_ids": [row["prompt_id"] for row in jacobian[:counts.jacobian]],
         },
     })
@@ -447,7 +451,6 @@ def run_generation_job(
         "model_id": model_id,
         "revision": revision,
         "behavior": behavior,
-        "method": method,
     }
     artifact_root = unit / "cache/calibrations" / behavior / key
 
@@ -467,48 +470,56 @@ def run_generation_job(
             use_cache=False,
         )
     elif method in {"alqr", "spid"}:
-        calibration = _artifact(
-            artifact_root / "control.pt",
+        setpoint = _artifact(
+            artifact_root / "setpoint.pt",
             {
                 **common_identity,
-                "method": "control",
-                "counts": counts.__dict__,
-                "negative_prompt_ids": [row["prompt_id"] for row in undesired[:counts.negative]],
-                "positive_prompt_ids": [row["prompt_id"] for row in desired[:counts.positive]],
-                "jacobian_prompt_ids": [row["prompt_id"] for row in jacobian[:counts.jacobian]],
+                "artifact": "shared_alqr_spid_setpoint",
+                "undesired_count": counts.undesired,
+                "desired_count": counts.desired,
+                "undesired_prompt_ids": [row["prompt_id"] for row in undesired[:counts.undesired]],
+                "desired_prompt_ids": [row["prompt_id"] for row in desired[:counts.desired]],
                 "activation_batch_size": _activation_batch_size(model_id, method),
-                "jacobian_vjp_chunk_size": 32,
             },
-            lambda: fit_control_calibration(
+            lambda: fit_setpoint_from_records(
                 model,
                 tokenizer,
                 behavior=behavior,
-                negative_records=undesired[:counts.negative],
-                positive_records=desired[:counts.positive],
-                jacobian_records=jacobian[:counts.jacobian],
-                checkpoint_revision=revision,
-                jacobian_cache=artifact_root / "jacobians",
+                negative_records=undesired[:counts.undesired],
+                positive_records=desired[:counts.desired],
                 activation_batch_size=_activation_batch_size(model_id, method),
-                jacobian_vjp_chunk_size=32,
             ),
             device,
         )
         if method == "alqr":
-            if alqr_setting is None:
-                raise RuntimeError("A-LQR paper setting was not resolved before model loading")
-            parameters = {
-                "lambda": alqr_setting.multiplier,
-                "q": alqr_setting.q,
-                "r": alqr_setting.r,
-                "q_final": alqr_setting.q_final,
-            }
+            dynamics = _artifact(
+                artifact_root / "dynamics.pt",
+                {
+                    **common_identity,
+                    "artifact": "alqr_dynamics",
+                    "jacobian_count": counts.jacobian,
+                    "jacobian_max_length": counts.jacobian_max_length,
+                    "jacobian_prompt_ids": [row["prompt_id"] for row in jacobian[:counts.jacobian]],
+                    "jacobian_vjp_chunk_size": 32,
+                },
+                lambda: fit_dynamics_from_records(
+                    model,
+                    tokenizer,
+                    behavior=behavior,
+                    jacobian_records=jacobian[:counts.jacobian],
+                    checkpoint_revision=revision,
+                    jacobian_cache=artifact_root / "jacobians",
+                    jacobian_vjp_chunk_size=32,
+                ),
+                device,
+            )
             policy = build_alqr_policy(
-                calibration.dynamics,
-                calibration.setpoint,
-                multiplier=alqr_setting.multiplier,
-                q=alqr_setting.q,
-                r=alqr_setting.r,
-                q_final=alqr_setting.q_final,
+                dynamics,
+                setpoint,
+                multiplier=parameters["lambda"],
+                q=parameters["q"],
+                r=parameters["r"],
+                q_final=parameters["q_final"],
                 device=device,
             )
             _generate_candidate(
@@ -527,38 +538,30 @@ def run_generation_job(
             del policy
             torch.cuda.empty_cache()
         else:
-            spid_sweep = SPID_SWEEPS[behavior][key]
-            for multiplier in spid_sweep.lambdas:
-                parameters = {
-                    "lambda": multiplier,
-                    "kp": spid_sweep.kp,
-                    "ki": spid_sweep.ki,
-                    "kd": spid_sweep.kd,
-                }
-                policy = build_spid_policy(
-                    calibration.setpoint,
-                    multiplier=multiplier,
-                    kp=spid_sweep.kp,
-                    ki=spid_sweep.ki,
-                    kd=spid_sweep.kd,
-                )
-                _generate_candidate(
-                    output=job_root / f"{_candidate_name(parameters)}.json",
-                    model=model,
-                    tokenizer=tokenizer,
-                    data=data,
-                    behavior=behavior,
-                    model_id=model_id,
-                    revision=revision,
-                    method=method,
-                    device=device,
-                    parameters=parameters,
-                    register_hooks=lambda policy=policy: register_generation_policy_hooks(model, policy),
-                )
-                del policy
-                torch.cuda.empty_cache()
+            policy = build_spid_policy(
+                setpoint,
+                multiplier=parameters["lambda"],
+                kp=parameters["kp"],
+                ki=parameters["ki"],
+                kd=parameters["kd"],
+            )
+            _generate_candidate(
+                output=job_root / f"{_candidate_name(parameters)}.json",
+                model=model,
+                tokenizer=tokenizer,
+                data=data,
+                behavior=behavior,
+                model_id=model_id,
+                revision=revision,
+                method=method,
+                device=device,
+                parameters=parameters,
+                register_hooks=lambda: register_generation_policy_hooks(model, policy),
+            )
+            del policy
+            torch.cuda.empty_cache()
     elif method == "actadd":
-        required = 100
+        required = counts.undesired
         direction = _artifact(
             artifact_root / "actadd.pt",
             {**common_identity, "fit_samples_per_class": required},
@@ -571,9 +574,7 @@ def run_generation_job(
             ),
             device,
         )
-        layer, strength = ACTADD_PAPER_SELECTIONS[key]
-        parameters = {"layer": layer, "strength": strength}
-        steerer = ActAddSteerer(direction, layer, strength)
+        steerer = ActAddSteerer(direction, parameters["layer"], parameters["strength"])
         _generate_candidate(
             output=job_root / f"{_candidate_name(parameters)}.json",
             model=model,
@@ -592,36 +593,36 @@ def run_generation_job(
         required = ITI_FIT_SAMPLES_PER_CLASS
         fitted = _artifact(
             artifact_root / "iti.pt",
-            {**common_identity, "fit_samples_per_class": required, "max_length": 50},
+            {**common_identity, "fit_samples_per_class": required, "max_length": ITI_MAX_LENGTH},
             lambda: fit_iti_calibration(
                 model,
                 tokenizer,
                 undesired_texts=_texts(undesired[:required]),
                 desired_texts=_texts(desired[:required]),
                 batch_size=_activation_batch_size(model_id, method),
-                max_length=50,
+                max_length=ITI_MAX_LENGTH,
                 seed=SOURCE_RANDOM_SEED,
             ),
             device,
         )
-        for top_heads in ITI_SWEEPS[behavior]["top_heads"]:
-            for alpha in ITI_SWEEPS[behavior]["alphas"]:
-                parameters = {"top_heads": top_heads, "alpha": alpha}
-                _generate_candidate(
-                    output=job_root / f"{_candidate_name(parameters)}.json",
-                    model=model,
-                    tokenizer=tokenizer,
-                    data=data,
-                    behavior=behavior,
-                    model_id=model_id,
-                    revision=revision,
-                    method=method,
-                    device=device,
-                    parameters=parameters,
-                    register_hooks=lambda top_heads=top_heads, alpha=alpha: register_iti_hooks(
-                        model, fitted, top_heads=top_heads, alpha=alpha
-                    ),
-                )
+        _generate_candidate(
+            output=job_root / f"{_candidate_name(parameters)}.json",
+            model=model,
+            tokenizer=tokenizer,
+            data=data,
+            behavior=behavior,
+            model_id=model_id,
+            revision=revision,
+            method=method,
+            device=device,
+            parameters=parameters,
+            register_hooks=lambda: register_iti_hooks(
+                model,
+                fitted,
+                top_heads=parameters["top_heads"],
+                alpha=parameters["alpha"],
+            ),
+        )
     elif method in {"mean_act", "linear_act", "pid_act"}:
         required = ACT_FIT_SAMPLES_PER_CLASS[behavior]
         fitted = _artifact(
@@ -640,41 +641,37 @@ def run_generation_job(
             ),
             device,
         )
-        for strength in ACT_SWEEPS[behavior]:
-            parameters = {"strength": strength}
-            _generate_candidate(
-                output=job_root / f"{_candidate_name(parameters)}.json",
-                model=model,
-                tokenizer=tokenizer,
-                data=data,
-                behavior=behavior,
-                model_id=model_id,
-                revision=revision,
-                method=method,
-                device=device,
-                parameters=parameters,
-                register_hooks=lambda strength=strength: register_transport_hooks(
-                    model, fitted, strength=strength
-                ),
-            )
+        _generate_candidate(
+            output=job_root / f"{_candidate_name(parameters)}.json",
+            model=model,
+            tokenizer=tokenizer,
+            data=data,
+            behavior=behavior,
+            model_id=model_id,
+            revision=revision,
+            method=method,
+            device=device,
+            parameters=parameters,
+            register_hooks=lambda: register_transport_hooks(
+                model, fitted, strength=parameters["strength"]
+            ),
+        )
     else:
-        required = ODESTEER_FIT_SAMPLES[behavior]
-        layer, time = ODESTEER_PAPER_SELECTIONS[behavior][key]
+        required = ODESTEER_FIT_SAMPLES_PER_CLASS[behavior]
         fitted = _artifact(
             artifact_root / "odesteer.pt",
-            {**common_identity, "fit_samples_per_class": required, "layer": layer},
+            {**common_identity, "fit_samples_per_class": required, "layer": parameters["layer"]},
             lambda: fit_odesteer_calibration(
                 model,
                 tokenizer,
                 behavior=behavior,
-                layer_index=layer,
+                layer_index=parameters["layer"],
                 undesired_texts=_texts(undesired[:required]),
                 desired_texts=_texts(desired[:required]),
                 batch_size=_activation_batch_size(model_id, method),
             ),
             device,
         )
-        parameters = {"layer": layer, "time": time}
         _generate_candidate(
             output=job_root / f"{_candidate_name(parameters)}.json",
             model=model,
@@ -687,7 +684,10 @@ def run_generation_job(
             device=device,
             parameters=parameters,
             register_hooks=lambda: register_odesteer_hook(
-                model, fitted, layer_index=layer, time=time
+                model,
+                fitted,
+                layer_index=parameters["layer"],
+                time=parameters["time"],
             ),
         )
 

@@ -22,8 +22,10 @@ from robust_steerability.benchmarks.metrics import judge_label, truth_judge_prom
 from robust_steerability.modeling.huggingface import cuda_device_index, load_access_token
 from robust_steerability.source_methods.id_benchmark import run_generation_job, runtime_provenance
 from robust_steerability.source_methods.protocol import (
-    CALIBRATION_COUNTS,
+    ALQR_CALIBRATION_COUNTS,
+    METHODS as SOURCE_METHODS,
     SOURCE_RANDOM_SEED,
+    calibration_counts,
     paper_alqr_setting,
 )
 
@@ -135,9 +137,12 @@ def build_truthfulqa_data(generation_rows: list[dict], multiple_choice_rows: lis
         }
         for row_index, row in enumerate(generation_rows)
     ]
-    counts = CALIBRATION_COUNTS["truthfulness"]
+    counts = ALQR_CALIBRATION_COUNTS["truthfulness"]
+    maximum_per_class = max(
+        calibration_counts(method, "truthfulness").desired for method in SOURCE_METHODS
+    )
     payload = {
-        "schema_version": 2,
+        "schema_version": 3,
         "seed": SOURCE_RANDOM_SEED,
         "evaluation_repetitions": EVALUATION_REPETITIONS,
         "evaluation_samples": len(evaluation),
@@ -149,8 +154,13 @@ def build_truthfulqa_data(generation_rows: list[dict], multiple_choice_rows: lis
             }
         },
         "calibration_protocol": {
-            "negative_count": counts.negative,
-            "positive_count": counts.positive,
+            "shared_pool_count_per_class": maximum_per_class,
+            "nested_prefixes": {
+                method: calibration_counts(method, "truthfulness").__dict__
+                for method in SOURCE_METHODS
+            },
+            "alqr_negative_count": counts.undesired,
+            "alqr_positive_count": counts.desired,
             "jacobian_count": counts.jacobian,
             "jacobian_class": counts.jacobian_class,
             "jacobian_max_length": counts.jacobian_max_length,
@@ -166,8 +176,8 @@ def build_truthfulqa_data(generation_rows: list[dict], multiple_choice_rows: lis
         },
         "calibration": {
             "truthfulness": {
-                "undesired": _sample(false_records, counts.negative, SOURCE_RANDOM_SEED),
-                "desired": _sample(true_records, counts.positive, SOURCE_RANDOM_SEED + 1),
+                "undesired": _sample(false_records, maximum_per_class, SOURCE_RANDOM_SEED),
+                "desired": _sample(true_records, maximum_per_class, SOURCE_RANDOM_SEED + 1),
                 "jacobian": _sample(true_records, counts.jacobian, SOURCE_RANDOM_SEED + 2),
             }
         },
@@ -191,13 +201,16 @@ def prepare() -> None:
     if destination.exists():
         saved = json.loads(destination.read_text())
         calibration = saved.get("calibration", {}).get("truthfulness", {})
-        counts = CALIBRATION_COUNTS["truthfulness"]
+        counts = ALQR_CALIBRATION_COUNTS["truthfulness"]
+        maximum_per_class = max(
+            calibration_counts(method, "truthfulness").desired for method in SOURCE_METHODS
+        )
         if (
-            saved.get("schema_version") != 2
+            saved.get("schema_version") != 3
             or saved.get("evaluation_samples") != EVALUATION_SAMPLES
             or saved.get("evaluation_repetitions") != EVALUATION_REPETITIONS
-            or len(calibration.get("undesired", [])) != counts.negative
-            or len(calibration.get("desired", [])) != counts.positive
+            or len(calibration.get("undesired", [])) != maximum_per_class
+            or len(calibration.get("desired", [])) != maximum_per_class
             or len(calibration.get("jacobian", [])) != counts.jacobian
             or saved.get("calibration_protocol", {}).get("jacobian_max_length")
             != counts.jacobian_max_length
@@ -594,13 +607,13 @@ def launch_pair(stage: str) -> None:
 
 
 def smoke() -> None:
-    counts = CALIBRATION_COUNTS["truthfulness"]
+    counts = ALQR_CALIBRATION_COUNTS["truthfulness"]
     setting = paper_alqr_setting("truthfulness", MODEL_ID)
     if counts.__dict__ != {
-        "negative": 200,
-        "positive": 200,
+        "undesired": 200,
+        "desired": 200,
         "jacobian": 35,
-        "jacobian_class": "positive",
+        "jacobian_class": "desired",
         "jacobian_max_length": 512,
     }:
         raise ValueError("Truthfulness calibration no longer matches the paper-producing protocol")
