@@ -8,6 +8,7 @@ import random
 UNIT = Path(__file__).resolve().parent
 CACHE = UNIT / "cache"
 PLOTS = UNIT / "plots"
+OUTPUT = PLOTS / "ood_examples"
 SEED = 2151
 EXAMPLE_COUNT = 5
 
@@ -35,17 +36,17 @@ SECTIONS = (
     (
         "D2",
         "d2",
-        "The exact fixed text-only overshoot suffix found against Llama-3.2-1B is appended unchanged to every Gemma question.",
+        "D2 uses gradient search to find one text-only suffix that maximized A-LQR overshoot on a single Llama-3.2-1B prompt, then appends that exact frozen suffix to every TruthfulQA prompt.",
     ),
     (
         "D3",
         "d3",
-        "The exact shared suffix refined on the four hardest Llama-3.2-1B D2 cases is appended unchanged to every Gemma question.",
+        "D3 starts from D2 and jointly refines one text-only suffix against the four Llama-3.2-1B prompts where D2 transferred weakest, then appends that exact frozen suffix to every TruthfulQA prompt.",
     ),
     (
         "D6",
         "d6",
-        "A seeded split appends the exact Llama `<|begin_of_text|>` string 16 times to 25 Gemma questions and 64 times to the other 25.",
+        "D6 distributes Gemma-2-2B's actual `<bos>` token evenly through each Q/A prompt, using seed 2151 to assign 16 insertions to 25 questions and 64 insertions to the other 25 without consulting outcomes.",
     ),
 )
 
@@ -73,16 +74,9 @@ def main() -> None:
         for condition, records in rows.items()
     }
 
-    lines: list[str] = []
+    OUTPUT.mkdir(parents=True, exist_ok=True)
     for title, condition, meaning in SECTIONS:
-        lines.extend(
-            [
-                f"# {title}",
-                "",
-                meaning,
-                "",
-            ]
-        )
+        lines = [f"# {title}", "", meaning, ""]
         for source_id in selected_ids:
             row = by_condition[condition][source_id]
             prompt = "\n".join(
@@ -97,7 +91,7 @@ def main() -> None:
                     "",
                 ]
             )
-    (PLOTS / "ood_examples.md").write_text("\n".join(lines))
+        (OUTPUT / f"{condition}.md").write_text("\n".join(lines))
 
 
 if __name__ == "__main__":

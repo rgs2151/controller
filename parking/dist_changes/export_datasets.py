@@ -71,16 +71,17 @@ def _sets() -> dict[str, list[dict[str, object]]]:
 
 
 def main() -> None:
+    if DATASETS.exists():
+        raise FileExistsError(
+            f"Frozen dataset bundle already exists: {DATASETS}; evaluation reads it directly"
+        )
     sets = _sets()
     tokenizer = AutoTokenizer.from_pretrained(
         MODEL_ID,
         revision=MODEL_REVISION,
         local_files_only=True,
     )
-    DATASETS.mkdir(parents=True, exist_ok=True)
-    retired = DATASETS / "adversarial.csv"
-    if retired.exists():
-        retired.unlink()
+    DATASETS.mkdir(parents=True)
     manifest_sets = {}
     fieldnames = (
         "row",
@@ -93,6 +94,9 @@ def main() -> None:
         "prompt_sha256",
         "construction",
         "marker_repeats",
+        "bos_token",
+        "bos_token_id",
+        "insertion_gaps",
         "prompt",
         "source_spans_json",
     )
@@ -123,6 +127,9 @@ def main() -> None:
                         "prompt_sha256": prompt_hash,
                         "construction": record.get("construction", "unchanged ID prompt"),
                         "marker_repeats": record.get("marker_repeats", ""),
+                        "bos_token": record.get("bos_token", ""),
+                        "bos_token_id": record.get("bos_token_id", ""),
+                        "insertion_gaps": record.get("insertion_gaps", ""),
                         "prompt": prompt,
                         "source_spans_json": json.dumps(
                             record.get("source_spans", []),
@@ -143,7 +150,7 @@ def main() -> None:
         }
 
     manifest = {
-        "schema_version": 2,
+        "schema_version": 3,
         "model": {"id": MODEL_ID, "revision": MODEL_REVISION},
         "source_questions": (
             "the same ordered 50 held-out TruthfulQA questions in every set"

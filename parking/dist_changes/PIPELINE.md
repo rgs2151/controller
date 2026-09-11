@@ -16,12 +16,12 @@ The anchor set is 50 held-out questions from the pinned TruthfulQA `generation` 
 | `spanish.csv` | 50 | Evaluated, but the automatic translations require replacement or manual validation |
 | `japanese_romaji.csv` | 50 | New candidate; not yet evaluated |
 | `long_context.csv` | 50 | New long-context candidate; not yet evaluated |
-| `d2.csv` | 50 | Fixed Llama-3.2-1B text-only suffix transferred unchanged to Gemma; not yet evaluated |
-| `d3.csv` | 50 | Shared Llama-3.2-1B text suffix transferred unchanged to Gemma; not yet evaluated |
-| `d6.csv` | 50 | Seeded 16/64 mix of the literal Llama begin-of-text string on Gemma; not yet evaluated |
+| `d2.csv` | 50 | A gradient-searched suffix from one Llama prompt, frozen and appended to every TruthfulQA prompt; not yet evaluated |
+| `d3.csv` | 50 | D2 jointly refined on its four weakest Llama transfers, frozen and appended to every TruthfulQA prompt; not yet evaluated |
+| `d6.csv` | 50 | Gemma's actual BOS token distributed evenly through each prompt in a seeded 16/64 split; not yet evaluated |
 | `manifest.json` | — | Model revision, token lengths, statuses, and ordered prompt hashes |
 
-Each CSV contains the source question, complete model prompt, exact Gemma token count, prompt hash, construction label, and source metadata. Run `python parking/dist_changes/export_datasets.py` after changing any set.
+Each CSV contains the source question, complete model prompt, exact Gemma token count, prompt hash, construction label, and source metadata; the bundle is created once and every evaluation reads these CSVs directly.
 
 Prepare the local datasets in this order:
 
@@ -29,8 +29,10 @@ Prepare the local datasets in this order:
 python parking/dist_changes/dist_changes.py --stage prepare
 python parking/dist_changes/dist_changes.py --stage translate --device cuda:0
 python parking/dist_changes/dist_changes.py --stage translate-romaji --device cuda:0
-python parking/dist_changes/dist_changes.py --stage datasets
+python parking/dist_changes/dist_changes.py --stage prepare-datasets
 ```
+
+Evaluation does not rerun translation or dataset construction. A later full-size dataset must be frozen as a separate bundle rather than overwriting this 50-question bundle.
 
 ## 3. Gemma-2-2B long-context formula
 
@@ -97,13 +99,13 @@ Each judge returns `yes` or `no`. Exact `yes` maps to 1 and exact `no` maps to 0
 
 ## 7. Plot and prompt inspection
 
-The 1×2 figure reports Truth and Info as separate percentage bars with no confidence intervals. `plots/ood_examples.md` follows the frozen inspection format: one H1 set name, one short explanation, then five complete literal prompt code blocks without IDs or example labels.
+The 1×2 figure reports Truth and Info as separate percentage bars with no confidence intervals. `plots/ood_examples/` contains one Markdown file per dataset; each file has one H1 set name, one explanation, and five complete literal prompt code blocks without IDs or example labels.
 
 The plot must not be regenerated with the new long-context label until both controllers and both judges have completed the replacement set. Until then, the existing long-context bar belongs to the retired repeated-sentence construction.
 
 ## 8. Cache rules
 
 - All mutable or large outputs stay inside `parking/dist_changes/cache/`.
-- Dataset changes create new prompt hashes and invalidate only the affected distribution's generation and judge rows.
+- The frozen 50-question dataset bundle is immutable; a changed construction or later full-size run gets a separate bundle.
 - No old cache is adapted, reconstructed, or relabeled as a new protocol.
 - `cache/datasets/manifest.json` is the first place to verify row counts, prompt identity, model revision, and evaluation status.

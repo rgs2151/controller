@@ -1002,7 +1002,28 @@ def _run_parallel(jobs: list[tuple[str, list[str]]]) -> None:
         raise RuntimeError(f"Parallel stages failed: {failures}")
 
 
-def build_datasets() -> None:
+def require_datasets() -> None:
+    manifest_path = CACHE / "datasets" / "manifest.json"
+    if not manifest_path.exists():
+        raise FileNotFoundError(
+            "Frozen datasets are missing; run --stage prepare-datasets once"
+        )
+    manifest = _load_json(manifest_path)
+    if manifest.get("schema_version") != 3:
+        raise ValueError("Frozen dataset manifest has the wrong schema")
+    if tuple(manifest.get("sets", {})) != CONDITION_ORDER:
+        raise ValueError("Frozen dataset manifest has the wrong condition order")
+    for condition in CONDITION_ORDER:
+        entry = manifest["sets"][condition]
+        path = UNIT / entry["path"]
+        if not path.exists() or int(entry["rows"]) != EVALUATION_COUNT:
+            raise ValueError(f"Frozen dataset is incomplete: {condition}")
+
+
+def prepare_datasets() -> None:
+    if (CACHE / "datasets" / "manifest.json").exists():
+        require_datasets()
+        return
     if not (CACHE / "long_context_v2.json").exists():
         subprocess.run([sys.executable, str(UNIT / "long_context.py")], cwd=REPO, check=True)
     subprocess.run([sys.executable, str(UNIT / "template_attacks.py")], cwd=REPO, check=True)
@@ -1014,14 +1035,8 @@ def run_all() -> None:
     _directories()
     prepare()
     prepare_shared_a()
-    _run_parallel(
-        [
-            ("translate", ["--stage", "translate", "--device", "cuda:0"]),
-            ("calibrate_hinf", ["--stage", "calibrate-hinf", "--device", "cuda:1"]),
-        ]
-    )
-    translate_romaji("cuda:0")
-    build_datasets()
+    require_datasets()
+    calibrate_hinf("cuda:1")
     _run_parallel(
         [
             ("generate_alqr", ["--stage", "generate", "--method", "alqr", "--device", "cuda:0"]),
@@ -1047,7 +1062,7 @@ def main() -> None:
             "shared-a",
             "translate",
             "translate-romaji",
-            "datasets",
+            "prepare-datasets",
             "calibrate-hinf",
             "generate",
             "judge",
@@ -1071,8 +1086,8 @@ def main() -> None:
         if arguments.device is None:
             raise ValueError("translate-romaji requires --device")
         translate_romaji(arguments.device)
-    elif arguments.stage == "datasets":
-        build_datasets()
+    elif arguments.stage == "prepare-datasets":
+        prepare_datasets()
     elif arguments.stage == "calibrate-hinf":
         if arguments.device is None:
             raise ValueError("calibrate-hinf requires --device")
