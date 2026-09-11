@@ -37,6 +37,7 @@ from robust_steerability.source_methods.modeling import load_source_model
 from robust_steerability.source_methods.odesteer import register_odesteer_hook
 from robust_steerability.source_methods.protocol import (
     ACT_FIT_SAMPLES_PER_CLASS,
+    GENERATION_CACHE,
     ITI_FIT_SAMPLES_PER_CLASS,
     ITI_MAX_LENGTH,
     METHODS,
@@ -200,6 +201,21 @@ def _candidate_name(parameters: dict) -> str:
     return _hash(parameters)[:16]
 
 
+def _output_rows(records: list[dict], completions: list[str]) -> list[dict]:
+    rows = []
+    for record, completion in zip(records, completions, strict=True):
+        row = {
+            "prompt_id": record["prompt_id"],
+            "text": record["text"],
+            "completion": completion,
+        }
+        for key in ("question", "answer_index", "subject"):
+            if key in record:
+                row[key] = record[key]
+        rows.append(row)
+    return rows
+
+
 def _generate_candidate(
     *,
     output: Path,
@@ -214,10 +230,11 @@ def _generate_candidate(
     parameters: dict,
     register_hooks: Callable[[], list[torch.utils.hooks.RemovableHandle]] | None,
     reset: Callable[[], None] | None = None,
-    use_cache: bool = True,
 ) -> None:
     repetitions_expected = int(data["evaluation_repetitions"])
     evaluation_samples = len(_records(data, behavior, 0))
+    auxiliary_expected = data.get("capability_evaluation", {})
+    cache_policy = GENERATION_CACHE[method]
     manifest = protocol_manifest(
         method,
         behavior,
@@ -227,7 +244,7 @@ def _generate_candidate(
         requested_parameters=parameters if method in {"iti", "spid"} else None,
     )
     identity = _json_identity({
-        "schema_version": 3,
+        "schema_version": 4,
         "data_fingerprint": data["fingerprint"],
         "implementation_files_sha256": _implementation_files(),
         "protocol": manifest,
@@ -238,6 +255,7 @@ def _generate_candidate(
             "seed": SOURCE_RANDOM_SEED,
             "repetition_seed_stride": 100_000,
             "batch_seed_rule": "repetition_seed_plus_batch_start",
+            "capability_seed_start": SOURCE_RANDOM_SEED + 900_000,
         },
     })
     payload = {
@@ -245,6 +263,7 @@ def _generate_candidate(
         "status": "partial",
         "attempts": [],
         "repetitions": [],
+        "capability_evaluation": {},
     }
     if output.exists():
         payload = json.loads(output.read_text())
@@ -253,6 +272,16 @@ def _generate_candidate(
         if payload["status"] == "complete":
             if len(payload["repetitions"]) != repetitions_expected:
                 raise ValueError(f"Incomplete generation cache marked complete: {output}")
+            incomplete = [
+                name
+                for name, records in auxiliary_expected.items()
+                if len(payload["capability_evaluation"].get(name, {}).get("rows", []))
+                != len(records)
+            ]
+            if incomplete:
+                raise ValueError(
+                    f"Incomplete capability evaluation marked complete for {incomplete}: {output}"
+                )
             return
         if payload["status"] != "partial":
             raise ValueError(f"Unknown generation cache status: {output}")
@@ -281,7 +310,7 @@ def _generate_candidate(
             behavior=behavior,
             batch_size=_batch_size(model_id, method),
             seed=repetition_seed,
-            use_cache=use_cache,
+            use_cache=cache_policy["evaluation"],
             register_hooks=register_hooks,
             reset=reset,
         )
@@ -294,19 +323,41 @@ def _generate_candidate(
                 "sample_count": len(records),
                 "generation_seed": repetition_seed,
                 "prompt_ids_sha256": _hash([record["prompt_id"] for record in records]),
-                "rows": [
-                    {
-                        "prompt_id": record["prompt_id"],
-                        "text": record["text"],
-                        "question": record.get("question"),
-                        "completion": completion,
-                    }
-                    for record, completion in zip(records, completions, strict=True)
-                ],
+                "rows": _output_rows(records, completions),
             }
         )
-        payload["status"] = "complete" if len(repetitions) == repetitions_expected else "partial"
         _write_json(output, payload)
+    for auxiliary_index, (name, records) in enumerate(sorted(auxiliary_expected.items())):
+        if name in payload["capability_evaluation"]:
+            saved_rows = payload["capability_evaluation"][name]["rows"]
+            if len(saved_rows) != len(records):
+                raise ValueError(f"Incomplete cached {name} evaluation: {output}")
+            continue
+        auxiliary_started = time.perf_counter()
+        auxiliary_started_at = _utc_now()
+        auxiliary_seed = SOURCE_RANDOM_SEED + 900_000 + auxiliary_index * 100_000
+        completions = generate_batched(
+            model,
+            tokenizer,
+            _texts(records),
+            behavior=name,
+            batch_size=_batch_size(model_id, method),
+            seed=auxiliary_seed,
+            use_cache=cache_policy["capability"],
+            register_hooks=register_hooks,
+            reset=reset,
+        )
+        payload["capability_evaluation"][name] = {
+            "started_at_utc": auxiliary_started_at,
+            "finished_at_utc": _utc_now(),
+            "elapsed_seconds": time.perf_counter() - auxiliary_started,
+            "sample_count": len(records),
+            "generation_seed": auxiliary_seed,
+            "prompt_ids_sha256": _hash([record["prompt_id"] for record in records]),
+            "rows": _output_rows(records, completions),
+        }
+        _write_json(output, payload)
+    payload["status"] = "complete"
     attempt["finished_at_utc"] = _utc_now()
     attempt["elapsed_seconds"] = time.perf_counter() - attempt_started
     attempt["completed_repetitions"] = len(repetitions)
@@ -372,7 +423,7 @@ def run_generation_job(
         raise ValueError(f"Unsupported method {method!r}")
     if not device.startswith("cuda:"):
         raise ValueError("Source benchmark jobs require an explicit CUDA device")
-    data_path = unit / "cache/data.json"
+    data_path = unit / "cache/data" / f"{behavior}.json"
     data = json.loads(data_path.read_text())
     key = model_key(model_id)
     evaluation_samples = len(_records(data, behavior, 0))
@@ -467,7 +518,6 @@ def run_generation_job(
             device=device,
             parameters={},
             register_hooks=None,
-            use_cache=False,
         )
     elif method in {"alqr", "spid"}:
         setpoint = _artifact(

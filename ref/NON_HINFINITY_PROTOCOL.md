@@ -13,6 +13,8 @@ ODESteer, S-PID, and A-LQR. H-infinity is intentionally excluded.
   `allenai/truthfulqa-info-judge-llama2-7B`, with the exact model-card rubrics.
 - MMLU: 5-shot. Toxicity PPL: Mistral-7B. Toxicity classification:
   `s-nlp/roberta_toxicity_classifier`.
+- Original and LFS-controlled RTP decoding use `use_cache=False`; Original MMLU
+  uses `use_cache=True`, while LFS-controlled MMLU uses `use_cache=False`.
 
 Fifty prompts was a pilot size and is not part of this protocol.
 
@@ -21,7 +23,7 @@ Fifty prompts was a pilot size and is not part of this protocol.
 | Method | One-time fit | Final parameters | Source status |
 |---|---|---|---|
 | Original | none | none | frozen |
-| A-LQR | 200/200 setpoint; 50 toxicity or 35 truthfulness Jacobians | fixed paper setting where recorded; Gemma-2-2B truthfulness is λ=3, Q=.1, R=1, Qf=.3 | frozen for recorded rows |
+| A-LQR | 200/200 setpoint; 50 toxicity or 35 truthfulness Jacobians | Gemma-2-2B toxicity is λ=3.5, Q=.1, R=1, Qf=.1; truthfulness is λ=3, Q=.1, R=1, Qf=.3 | frozen for recorded rows |
 | S-PID | same 200/200 setpoint; no Jacobians | fixed PID gains plus λ from the preserved source grid | explicit development selection still required where the grid has multiple λ values |
 | ActAdd | 100/100 position-wise means | preserved model-specific layer and strength | frozen |
 | ITI | 80/80, 80/20 stratified probe split, max length 50 | top-head count and α from preserved source grid | explicit development selection still required; final Gemma choice is not preserved |
@@ -35,12 +37,23 @@ on the final benchmark. ITI and S-PID cannot run a final row until an explicit
 development-set selection from the preserved grids has been recorded; this
 prevents an undocumented guess or an accidental full-evaluation sweep.
 
+For toxicity, λ=3.5 is the strongest candidate in the paper-producing Gemma
+evaluation script and is fixed according to the paper table's stated selection
+rule: greatest toxicity decrease subject to acceptable PPL. Final evaluation
+does not repeat the source sweep. The 1,000 five-shot MMLU questions are pinned
+once and shared across methods; this removes the source script's avoidable
+method-to-method question-set noise without changing the task or rubric.
+
 ## Source snapshots
 
 - A-LQR implementation: `trustworthyrobotics/lqr-activation-steering`, commit
   `c2e0c8450797e0dc234b2c53475267a2cfb2457a`.
 - A-LQR comparison adapters: the same repository, commit
   `11b49bad15c02f0a23d9481980d4b88f2d6313a5`, immediately before their removal.
+- A-LQR paper-producing toxicity evaluation: the same repository, commit
+  `84b12fa9a9f0af5b6bacbb663debd73d35d0d41c`.
+- A-LQR paper-producing perplexity implementation: the same repository, commit
+  `19fd191b79c94d66fc9f8f946ad1df8c4e59de55`.
 - ITI: `likenneth/honest_llama`, commit
   `2c6b2179be7b5aa8f0a171688cf9e01b812ca327`.
 - ActAdd: `montemac/activation_additions`, commit

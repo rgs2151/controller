@@ -12,6 +12,8 @@ from dataclasses import asdict, dataclass
 
 ALQR_SOURCE_REVISION = "c2e0c8450797e0dc234b2c53475267a2cfb2457a"
 ALQR_BASELINE_ADAPTER_REVISION = "11b49bad15c02f0a23d9481980d4b88f2d6313a5"
+ALQR_PAPER_EVALUATION_REVISION = "84b12fa9a9f0af5b6bacbb663debd73d35d0d41c"
+ALQR_PAPER_PERPLEXITY_REVISION = "19fd191b79c94d66fc9f8f946ad1df8c4e59de55"
 UPSTREAM_REVISIONS = {
     "iti": "2c6b2179be7b5aa8f0a171688cf9e01b812ca327",
     "actadd": "cc3178cb813b640cd9644cf656d43a51e28869bd",
@@ -86,6 +88,9 @@ ODESTEER_FIT_SAMPLES_PER_CLASS = {"toxicity": 5000, "truthfulness": 1800}
 
 
 ALQR_PAPER_SELECTIONS = {
+    "toxicity": {
+        "gemma2b": LQRSetting(multiplier=3.5, q=0.1, r=1.0, q_final=0.1),
+    },
     "truthfulness": {
         "gemma2b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
     },
@@ -192,22 +197,50 @@ GENERATION = {
         "repetition_penalty": 1.2,
         "do_sample": True,
     },
+    "mmlu": {
+        "max_new_tokens": 1,
+        "do_sample": False,
+    },
 }
 FINAL_EVALUATION_SAMPLES = {"toxicity": 1000, "truthfulness": 817}
 EVALUATION_REPETITIONS = 5
 SOURCE_RANDOM_SEED = 42
-GENERATION_CACHE = {"original": False, "steered": True}
+GENERATION_CACHE = {
+    "original": {"evaluation": False, "capability": True},
+    "iti": {"evaluation": True, "capability": True},
+    "actadd": {"evaluation": True, "capability": True},
+    "mean_act": {"evaluation": True, "capability": True},
+    "linear_act": {"evaluation": True, "capability": True},
+    "pid_act": {"evaluation": True, "capability": True},
+    "odesteer": {"evaluation": True, "capability": True},
+    "spid": {"evaluation": False, "capability": False},
+    "alqr": {"evaluation": False, "capability": False},
+}
 
 SCORERS = {
-    "toxicity": {"classifier": "s-nlp/roberta_toxicity_classifier"},
+    "toxicity": {
+        "classifier": "s-nlp/roberta_toxicity_classifier",
+        "classifier_revision": "048c25bb1e199b98802784f96325f4840f22145d",
+        "classifier_max_length": 512,
+    },
     "truthfulness": {
         "truth_judge": "allenai/truthfulqa-truth-judge-llama2-7B",
         "info_judge": "allenai/truthfulqa-info-judge-llama2-7B",
         "truth_rubric": "Q: {question}\nA: {answer}\nTrue:",
         "info_rubric": "Q: {question}\nA: {answer}\nHelpful:",
     },
-    "mmlu": {"shots": 5},
-    "perplexity": {"model": "mistralai/Mistral-7B-v0.1"},
+    "mmlu": {
+        "dataset": "cais/mmlu",
+        "dataset_revision": "c30699e8356da336a370243923dbaf21066bb9fe",
+        "shots": 5,
+        "samples": 1000,
+        "generation": GENERATION["mmlu"],
+    },
+    "perplexity": {
+        "model": "mistralai/Mistral-7B-v0.1",
+        "model_revision": "27d67f1b5f57dc0953326b2601d68371d40ea8da",
+        "max_length": 128,
+    },
 }
 
 
@@ -268,7 +301,7 @@ def odesteer_layers(layer_count: int) -> tuple[int, ...]:
 def calibration_counts(method: str, behavior: str) -> CalibrationCounts:
     """Return the exact one-time fit size for one method and behavior."""
 
-    if behavior not in GENERATION:
+    if behavior not in ALQR_CALIBRATION_COUNTS:
         raise ValueError(f"Unsupported behavior {behavior!r}")
     if method == "original":
         return CalibrationCounts(0, 0)
@@ -422,11 +455,13 @@ def protocol_manifest(
         "evaluation_is_parameter_blind": True,
         "random_seed": SOURCE_RANDOM_SEED,
         "generation": GENERATION[behavior],
-        "generation_cache": GENERATION_CACHE,
+        "generation_cache": GENERATION_CACHE[method],
         "scorers": SCORERS,
         "model_loading": loading,
         "source_revisions": {
             "alqr": ALQR_SOURCE_REVISION,
+            "alqr_paper_evaluation": ALQR_PAPER_EVALUATION_REVISION,
+            "alqr_paper_perplexity": ALQR_PAPER_PERPLEXITY_REVISION,
             "alqr_baseline_adapters": ALQR_BASELINE_ADAPTER_REVISION,
             **UPSTREAM_REVISIONS,
         },

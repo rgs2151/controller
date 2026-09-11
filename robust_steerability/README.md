@@ -76,8 +76,9 @@ baseline parameters, LQR/H∞ solutions, and PID settings. No old-cache
 reconstruction or compatibility interface is supported. Historical Erfan outputs
 remain available for inspection; fresh execution belongs to the new unit.
 
-Run the active full-set TruthfulQA slice:
-`python parking/paper_benchmark/paper_benchmark.py --stage generate-pair`.
+Run the active full-set slices with an explicit behavior, for example:
+`python parking/paper_benchmark/paper_benchmark.py --stage generate-pair --behavior truthfulness`
+or `python parking/paper_benchmark/paper_benchmark.py --stage generate-pair --behavior toxicity`.
 Historical 50-prompt artifacts are not current benchmark inputs.
 
 Bundle contents and independent reading/sharing:
