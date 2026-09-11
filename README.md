@@ -32,14 +32,15 @@ Run the cache-first A-LQR residual and generated-toxicity smoke test from the re
 python parking/residual_checks/residual_checks.py all
 ```
 
-Run a complete manifest-defined model matrix on both GPUs:
+Prepare the paper benchmark, then run the current Original/A-LQR slice on both GPUs:
 
 ```bash
-python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1
+python parking/paper_benchmark/paper_benchmark.py --stage prepare
+python parking/paper_benchmark/paper_benchmark.py --stage generate-pair
 ```
 
-Each model job checkpoints its completions and final records inside the owning
-unit's ignored `cache/` directory. Repeating the command skips completed jobs.
+Each method checkpoints complete repetitions inside the owning unit's ignored
+`cache/` directory. Repeating a stage resumes only an identity-matched cache.
 
 Each unit owns its own `cache/` and `plots/` folders. Existing caches are reused by default. To recompute a unit, delete that unit's relevant cache or run the unit with `--recompute` when supported.
 

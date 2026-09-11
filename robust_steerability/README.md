@@ -10,9 +10,8 @@ This package is the reusable boundary between language-model experiments and con
 - `calibration/` converts fitted/calibration trajectories into targets, actual transformer Jacobians, residuals, disturbance channels, and reduced coordinates.
 - `runtime/` converts a controller solution or online controller into activation deltas.
 - `benchmarks/` contains reusable behavior records and evaluators.
-- `experiments/` contains the manifest runner, reduced-state calibration,
-  canonical method dispatch, matched-seed generation, cache handling, and GPU
-  job scheduling used by `parking/paper_benchmark_50/`.
+- `experiments/` contains manifest, cache, calibration, generation, and GPU
+  scheduling helpers for compact benchmark units.
 - `experiments/diagnostics.py` exports and reads portable H∞ calibration,
   solution, and evaluation bundles. `runtime/diagnostics.py` records reduced
   online trajectories without changing the controller's feedback calculation.
@@ -77,9 +76,9 @@ baseline parameters, LQR/H∞ solutions, and PID settings. No old-cache
 reconstruction or compatibility interface is supported. Historical Erfan outputs
 remain available for inspection; fresh execution belongs to the new unit.
 
-Run the 50-prompt matrix:
-`python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1`.
-A different sample count belongs to a separate analysis unit, not a smoke/full flag.
+Run the active full-set TruthfulQA slice:
+`python parking/paper_benchmark/paper_benchmark.py --stage generate-pair`.
+Historical 50-prompt artifacts are not current benchmark inputs.
 
 Bundle contents and independent reading/sharing:
 [`parking/h_infinity_optimization/README.md`](../parking/h_infinity_optimization/README.md#diagnostic_analysis).

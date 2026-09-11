@@ -2,9 +2,8 @@
 
 These values are transcribed from the preserved A-LQR implementation and the
 baseline adapters that were present immediately before commit 626f757 removed
-them from the public tree.  Evaluation sample count is deliberately absent
-from every calibration and tuning object: callers choose 50 for the pilot and
-the paper-sized count later without changing the methods.
+them from the public tree. Evaluation sample count is deliberately absent from
+every calibration and tuning object.
 """
 
 from __future__ import annotations
@@ -135,7 +134,7 @@ ACT_SWEEPS = {
     "toxicity": (0.5, 1.0, 2.0),
     "truthfulness": (0.5, 1.0, 1.5),
 }
-ACT_FIT_SAMPLES_PER_CLASS = 200
+ACT_FIT_SAMPLES_PER_CLASS = {"toxicity": 200, "truthfulness": 400}
 ACT_ADAPTER_MODULE_LIMIT = 4
 ACT_MODULE_PATTERNS = {
     "llama1b": (
@@ -164,7 +163,15 @@ ACT_MODULE_PATTERNS = {
 
 
 ODESTEER_T_VALUES = (1.0, 5.0, 10.0, 15.0, 25.0, 35.0, 50.0, 65.0, 80.0, 100.0, 120.0, 150.0)
-ODESTEER_FIT_SAMPLES = {"toxicity": 5000, "truthfulness": 1000}
+ODESTEER_FIT_SAMPLES = {"toxicity": 5000, "truthfulness": 1800}
+ODESTEER_PAPER_SELECTIONS = {
+    "toxicity": {
+        "gemma2b": (15, 50.0),
+        "llama8b": (19, 25.0),
+        "qwen14b": (24, 65.0),
+    },
+    "truthfulness": {"gemma2b": (15, 50.0)},
+}
 ODESTEER_PARAMETERS = {
     "solver": "euler",
     "steps": 10,
@@ -281,10 +288,21 @@ def protocol_manifest(behavior: str, model_id: str, checkpoint_revision: str, ev
             "seed": 42,
         },
         "act_sweep": ACT_SWEEPS[behavior],
-        "act_fit_samples_per_class": ACT_FIT_SAMPLES_PER_CLASS,
+        "act_fit_samples_per_class": ACT_FIT_SAMPLES_PER_CLASS[behavior],
         "act_adapter_module_limit": ACT_ADAPTER_MODULE_LIMIT,
         "act_module_patterns": patterns,
-        "odesteer": {**ODESTEER_PARAMETERS, "fit_samples": ODESTEER_FIT_SAMPLES[behavior]},
+        "odesteer": {
+            **ODESTEER_PARAMETERS,
+            "fit_samples": ODESTEER_FIT_SAMPLES[behavior],
+            "selected": (
+                {
+                    "layer": ODESTEER_PAPER_SELECTIONS[behavior][key][0],
+                    "time": ODESTEER_PAPER_SELECTIONS[behavior][key][1],
+                }
+                if key in ODESTEER_PAPER_SELECTIONS[behavior]
+                else None
+            ),
+        },
         "generation": GENERATION[behavior],
         "generation_cache": GENERATION_CACHE,
         "method_model_loading": {

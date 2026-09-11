@@ -1,8 +1,8 @@
 # Source-faithful comparison methods
 
-This package is the only implementation path for A-LQR-paper comparisons made
-after the historical `paper_benchmark_50` unit. It deliberately does not
-contain H-infinity.
+This package is the implementation path for A-LQR-paper comparison methods used
+by the active `paper_benchmark` unit. It deliberately does not contain
+H-infinity.
 
 The operators, calibration sizes, intervention sites, generation settings,
 and sweep grids are frozen from:
@@ -19,15 +19,20 @@ and sweep grids are frozen from:
 
 `protocol_manifest()` requires a concrete model revision and records all of
 these source revisions. The evaluation sample count is independent of every
-calibration and sweep setting. The pilot is five repetitions of 50 examples;
-changing 50 to the full count later must not change the fitted data sizes,
-sweep grid, intervention site, generation settings, or model-loading protocol.
+calibration and sweep setting. The active TruthfulQA comparison uses five
+repetitions of the complete 817-question generation split.
 
 The high-level calibration functions enforce the source fit sizes before any
 model work begins: 200/200 plus 50 Jacobian prompts for toxicity A-LQR/S-PID,
 12/12 plus one Jacobian prompt for truthfulness A-LQR/S-PID, 100/100 for
-ActAdd, 80/80 for ITI, 200/200 for AcT, and 5000/5000 (toxicity) or 1000/1000
-(truthfulness) for ODESteer. Every sweep candidate is retained.
+ActAdd, 80/80 for ITI, 200/200 (toxicity) or 400/400 (truthfulness) for AcT,
+and 5000/5000 (toxicity) or 1800/1800 (truthfulness) for ODESteer. Every
+source-defined sweep candidate is retained.
+
+The surviving ODESteer comparison source records toxicity selections for
+Gemma-2-2B, Llama-3-8B, and Qwen-2.5-14B, but records a truthfulness selection
+only for Gemma-2-2B. Missing paper selections remain unsupported; they are not
+filled by borrowing parameters from another behavior.
 
 Unsupported checkpoints fail. They are not assigned borrowed layers, gains,
 or strengths. A new checkpoint needs a newly run, recorded source sweep.
