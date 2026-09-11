@@ -24,6 +24,7 @@ from robust_steerability.source_methods.iti import fit_iti, register_iti_hooks
 from robust_steerability.source_methods.modeling import source_model_spec
 from robust_steerability.source_methods.protocol import (
     ALQR_CALIBRATION_COUNTS,
+    GENERATION_CACHE,
     act_module_patterns,
     calibration_counts,
     odesteer_layers,
@@ -50,6 +51,7 @@ def test_final_manifest_rejects_pilot_counts_and_contains_only_one_method():
     assert full["evaluation_repetitions"] == 5
     assert full["random_seed"] == 42
     assert full["method"] == "actadd"
+    assert full["generation_cache"] == {"evaluation": True, "capability": True}
     assert full["calibration"]["desired"] == 100
     assert full["selected_parameters"] == {"layer": 21, "strength": 4.0}
     assert "top_k" not in full["generation"]
@@ -84,8 +86,8 @@ def test_generation_cache_uses_configured_shape_and_resumes_by_repetition(tmp_pa
     monkeypatch.setattr(id_benchmark, "_batch_size", lambda *_args: 2)
     monkeypatch.setattr(id_benchmark, "runtime_provenance", lambda _device: {"device": "test"})
 
-    def fake_generate(_model, _tokenizer, prompts, **_kwargs):
-        calls.append(tuple(prompts))
+    def fake_generate(_model, _tokenizer, prompts, **kwargs):
+        calls.append((tuple(prompts), kwargs["use_cache"]))
         return [f"completion:{prompt}" for prompt in prompts]
 
     monkeypatch.setattr(id_benchmark, "generate_batched", fake_generate)
@@ -102,20 +104,80 @@ def test_generation_cache_uses_configured_shape_and_resumes_by_repetition(tmp_pa
         "device": "cuda:0",
         "parameters": {},
         "register_hooks": None,
-        "use_cache": False,
     }
     id_benchmark._generate_candidate(**arguments)
     saved = json.loads(output.read_text())
     assert saved["status"] == "complete"
     assert len(saved["repetitions"]) == 2
-    assert calls == [("A0", "A1", "A2"), ("B0", "B1", "B2")]
+    assert calls == [(("A0", "A1", "A2"), False), (("B0", "B1", "B2"), False)]
 
     saved["status"] = "partial"
     saved["repetitions"] = saved["repetitions"][:1]
     output.write_text(json.dumps(saved))
     calls.clear()
     id_benchmark._generate_candidate(**arguments)
-    assert calls == [("B0", "B1", "B2")]
+    assert calls == [(("B0", "B1", "B2"), False)]
+
+
+def test_generation_cache_records_shared_capability_set(tmp_path, monkeypatch):
+    data = {
+        "fingerprint": "data",
+        "evaluation_repetitions": 1,
+        "evaluation": {
+            "toxicity": {
+                "0": [{"prompt_id": "rtp:0", "text": "RTP"}],
+            }
+        },
+        "capability_evaluation": {
+            "mmlu": [
+                {
+                    "prompt_id": "mmlu:0",
+                    "text": "Question\nAnswer:",
+                    "answer_index": 2,
+                    "subject": "test",
+                }
+            ]
+        },
+    }
+    calls = []
+    monkeypatch.setattr(
+        id_benchmark,
+        "protocol_manifest",
+        lambda *args, **_kwargs: {"evaluation_samples": args[-1]},
+    )
+    monkeypatch.setattr(id_benchmark, "_batch_size", lambda *_args: 2)
+    monkeypatch.setattr(id_benchmark, "runtime_provenance", lambda _device: {"device": "test"})
+
+    def fake_generate(_model, _tokenizer, prompts, **kwargs):
+        calls.append((kwargs["behavior"], tuple(prompts), kwargs["use_cache"]))
+        return ["C" for _prompt in prompts]
+
+    monkeypatch.setattr(id_benchmark, "generate_batched", fake_generate)
+    output = tmp_path / "generation.json"
+    id_benchmark._generate_candidate(
+        output=output,
+        model=object(),
+        tokenizer=object(),
+        data=data,
+        behavior="toxicity",
+        model_id="google/gemma-2-2b",
+        revision="revision",
+        method="original",
+        device="cuda:0",
+        parameters={},
+        register_hooks=None,
+    )
+    saved = json.loads(output.read_text())
+    assert calls == [
+        ("toxicity", ("RTP",), False),
+        ("mmlu", ("Question\nAnswer:",), True),
+    ]
+    assert saved["capability_evaluation"]["mmlu"]["rows"][0]["answer_index"] == 2
+
+
+def test_alqr_cache_policy_matches_source_tracking_calls():
+    assert GENERATION_CACHE["alqr"] == {"evaluation": False, "capability": False}
+    assert GENERATION_CACHE["spid"] == {"evaluation": False, "capability": False}
 
 
 def test_unsupported_checkpoint_is_not_given_borrowed_parameters():
@@ -190,6 +252,30 @@ def test_gemma_truthfulness_alqr_uses_fixed_paper_setting_without_selection():
         "q_final": 0.3,
     }
     assert calibration_counts("spid", "truthfulness").jacobian == 0
+
+
+def test_gemma_toxicity_alqr_uses_fixed_paper_setting_without_selection():
+    counts = ALQR_CALIBRATION_COUNTS["toxicity"]
+    setting = paper_alqr_setting("toxicity", "google/gemma-2-2b")
+    assert counts.__dict__ == {
+        "undesired": 200,
+        "desired": 200,
+        "jacobian": 50,
+        "jacobian_class": "desired",
+        "jacobian_max_length": 24,
+    }
+    assert setting.__dict__ == {
+        "multiplier": 3.5,
+        "q": 0.1,
+        "r": 1.0,
+        "q_final": 0.1,
+    }
+    assert selected_parameters("alqr", "toxicity", "google/gemma-2-2b") == {
+        "lambda": 3.5,
+        "q": 0.1,
+        "r": 1.0,
+        "q_final": 0.1,
+    }
 
 
 def test_unpublished_final_settings_cannot_trigger_implicit_full_sweeps():

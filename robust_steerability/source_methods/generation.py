@@ -56,7 +56,7 @@ def generate_with_control_policy(model, tokenizer, prompts: list[str], policy, *
 
     handles = register_generation_policy_hooks(model, policy)
     try:
-        full_texts = generate_full_texts(model, tokenizer, prompts, behavior=behavior, use_cache=True)
+        full_texts = generate_full_texts(model, tokenizer, prompts, behavior=behavior, use_cache=False)
     finally:
         for handle in handles:
             handle.remove()
