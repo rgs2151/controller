@@ -26,6 +26,7 @@ from robust_steerability.source_methods.protocol import (
     act_module_patterns,
     control_sweeps,
     odesteer_layers,
+    paper_alqr_setting,
     protocol_manifest,
 )
 from robust_steerability.source_methods.transport import (
@@ -75,6 +76,7 @@ def test_generation_cache_uses_configured_shape_and_resumes_by_repetition(tmp_pa
     calls = []
     monkeypatch.setattr(id_benchmark, "protocol_manifest", lambda *args: {"evaluation_samples": args[-1]})
     monkeypatch.setattr(id_benchmark, "_batch_size", lambda *_args: 2)
+    monkeypatch.setattr(id_benchmark, "runtime_provenance", lambda _device: {"device": "test"})
 
     def fake_generate(_model, _tokenizer, prompts, **_kwargs):
         calls.append(tuple(prompts))
@@ -91,6 +93,7 @@ def test_generation_cache_uses_configured_shape_and_resumes_by_repetition(tmp_pa
         "model_id": "google/gemma-2-2b",
         "revision": "revision",
         "method": "original",
+        "device": "cuda:0",
         "parameters": {},
         "register_hooks": None,
         "use_cache": False,
@@ -118,7 +121,7 @@ def test_unsupported_checkpoint_is_not_given_borrowed_parameters():
 
 
 def test_source_calibration_sizes_are_enforced_before_model_execution():
-    with pytest.raises(ValueError, match="truthfulness requires exactly 12 negative, 12 positive, and 1 Jacobian"):
+    with pytest.raises(ValueError, match="truthfulness requires exactly 200 negative, 200 positive, and 35 Jacobian"):
         fit_control_calibration(
             None,
             None,
@@ -156,6 +159,24 @@ def test_source_calibration_sizes_are_enforced_before_model_execution():
             method="mean_act",
             batch_size=1,
         )
+
+
+def test_gemma_truthfulness_alqr_uses_fixed_paper_setting_without_selection():
+    counts = CALIBRATION_COUNTS["truthfulness"]
+    setting = paper_alqr_setting("truthfulness", "google/gemma-2-2b")
+    assert counts.__dict__ == {
+        "negative": 200,
+        "positive": 200,
+        "jacobian": 35,
+        "jacobian_class": "positive",
+        "jacobian_max_length": 512,
+    }
+    assert setting.__dict__ == {
+        "multiplier": 3.0,
+        "q": 0.1,
+        "r": 1.0,
+        "q_final": 0.3,
+    }
 
 
 def test_each_method_keeps_its_source_model_loading_protocol():
