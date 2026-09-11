@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import torch
 
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
@@ -59,3 +61,48 @@ def generate_with_control_policy(model, tokenizer, prompts: list[str], policy, *
         for handle in handles:
             handle.remove()
     return source_completions(prompts, full_texts)
+
+
+def generate_batched(
+    model,
+    tokenizer,
+    prompts: list[str],
+    *,
+    behavior: str,
+    batch_size: int,
+    seed: int,
+    use_cache: bool,
+    register_hooks: Callable[[], list[torch.utils.hooks.RemovableHandle]] | None = None,
+    reset: Callable[[], None] | None = None,
+) -> list[str]:
+    """Generate source-style completions in bounded batches.
+
+    The preserved scripts submit one sampling call per batch.  Resetting and
+    registering hooks for each batch prevents PID state and first-call ActAdd
+    state from leaking between independent prompt batches.
+    """
+
+    if batch_size < 1:
+        raise ValueError("batch_size must be positive")
+    output: list[str] = []
+    for start in range(0, len(prompts), batch_size):
+        batch = prompts[start:start + batch_size]
+        torch.manual_seed(seed + start)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed + start)
+        if reset is not None:
+            reset()
+        handles = register_hooks() if register_hooks is not None else []
+        try:
+            full_texts = generate_full_texts(
+                model,
+                tokenizer,
+                batch,
+                behavior=behavior,
+                use_cache=use_cache,
+            )
+        finally:
+            for handle in handles:
+                handle.remove()
+        output.extend(source_completions(batch, full_texts))
+    return output

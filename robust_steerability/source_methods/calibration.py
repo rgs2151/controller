@@ -114,6 +114,7 @@ def fit_control_calibration(
     behavior: str,
     negative_records: list[dict],
     positive_records: list[dict],
+    jacobian_records: list[dict],
     checkpoint_revision: str,
     jacobian_cache: Path,
     activation_batch_size: int,
@@ -122,9 +123,14 @@ def fit_control_calibration(
     """Fit A-LQR/S-PID exactly; evaluation sample count never enters here."""
 
     counts = CALIBRATION_COUNTS[behavior]
-    if len(negative_records) != counts.negative or len(positive_records) != counts.positive:
+    if (
+        len(negative_records) != counts.negative
+        or len(positive_records) != counts.positive
+        or len(jacobian_records) != counts.jacobian
+    ):
         raise ValueError(
-            f"{behavior} requires exactly {counts.negative} negative and {counts.positive} positive fit prompts"
+            f"{behavior} requires exactly {counts.negative} negative, "
+            f"{counts.positive} positive, and {counts.jacobian} Jacobian prompts"
         )
     negative_states = collect_decoder_states(
         model, tokenizer, [row["text"] for row in negative_records], batch_size=activation_batch_size
@@ -133,7 +139,6 @@ def fit_control_calibration(
         model, tokenizer, [row["text"] for row in positive_records], batch_size=activation_batch_size
     )
     setpoint = fit_setpoint_calibration(negative_states.mean(dim=0), positive_states.mean(dim=0))
-    jacobian_records = (positive_records if counts.jacobian_class == "positive" else negative_records)[:counts.jacobian]
     dynamics = average_prompt_jacobians(
         model,
         tokenizer,
@@ -349,6 +354,7 @@ def fit_transport_stack(
     source_texts: list[str],
     target_texts: list[str],
     module_patterns: tuple[str, ...],
+    behavior: str,
     method: str,
     batch_size: int,
     max_length: int = 128,
@@ -357,8 +363,11 @@ def fit_transport_stack(
 ) -> dict[str, MeanTransport | LinearTransport | PIDTransport]:
     """Fit AcT modules incrementally with all preceding source hooks active."""
 
-    if len(source_texts) != ACT_FIT_SAMPLES_PER_CLASS or len(target_texts) != ACT_FIT_SAMPLES_PER_CLASS:
-        raise ValueError(f"AcT requires exactly {ACT_FIT_SAMPLES_PER_CLASS} prompts per class")
+    if behavior not in ACT_FIT_SAMPLES_PER_CLASS:
+        raise ValueError(f"Unsupported behavior {behavior!r}")
+    required = ACT_FIT_SAMPLES_PER_CLASS[behavior]
+    if len(source_texts) != required or len(target_texts) != required:
+        raise ValueError(f"AcT {behavior} requires exactly {required} prompts per class")
     module_names = matching_module_names(model, module_patterns)[:module_limit]
     if not module_names:
         raise ValueError("no modules match the source AcT patterns")

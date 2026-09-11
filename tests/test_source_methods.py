@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 import torch
 
+from robust_steerability.source_methods import id_benchmark
 from robust_steerability.source_methods.actadd import ActAddSteerer, fit_actadd_direction, positionwise_mean
 from robust_steerability.source_methods.calibration import (
     fit_actadd_calibration,
+    fit_control_calibration,
     fit_iti_calibration,
     fit_odesteer_calibration,
     fit_transport_stack,
@@ -36,9 +40,9 @@ from robust_steerability.source_methods.transport import (
 
 
 def test_evaluation_count_does_not_change_source_calibration_or_sweeps():
-    small = protocol_manifest("toxicity", "Qwen/Qwen2.5-14B", "revision", 50)
+    small = protocol_manifest("toxicity", "Qwen/Qwen2.5-14B", "revision", 7)
     full = protocol_manifest("toxicity", "Qwen/Qwen2.5-14B", "revision", 1000)
-    assert small["evaluation_samples"] == 50
+    assert small["evaluation_samples"] == 7
     assert full["evaluation_samples"] == 1000
     assert small["evaluation_repetitions"] == 5
     assert small["random_seed"] == 42
@@ -57,15 +61,76 @@ def test_evaluation_count_does_not_change_source_calibration_or_sweeps():
     )
 
 
+def test_generation_cache_uses_configured_shape_and_resumes_by_repetition(tmp_path, monkeypatch):
+    data = {
+        "fingerprint": "data",
+        "evaluation_repetitions": 2,
+        "evaluation": {
+            "truthfulness": {
+                "0": [{"prompt_id": f"a{index}", "text": f"A{index}"} for index in range(3)],
+                "1": [{"prompt_id": f"b{index}", "text": f"B{index}"} for index in range(3)],
+            }
+        },
+    }
+    calls = []
+    monkeypatch.setattr(id_benchmark, "protocol_manifest", lambda *args: {"evaluation_samples": args[-1]})
+    monkeypatch.setattr(id_benchmark, "_batch_size", lambda *_args: 2)
+
+    def fake_generate(_model, _tokenizer, prompts, **_kwargs):
+        calls.append(tuple(prompts))
+        return [f"completion:{prompt}" for prompt in prompts]
+
+    monkeypatch.setattr(id_benchmark, "generate_batched", fake_generate)
+    output = tmp_path / "generation.json"
+    arguments = {
+        "output": output,
+        "model": object(),
+        "tokenizer": object(),
+        "data": data,
+        "behavior": "truthfulness",
+        "model_id": "google/gemma-2-2b",
+        "revision": "revision",
+        "method": "original",
+        "parameters": {},
+        "register_hooks": None,
+        "use_cache": False,
+    }
+    id_benchmark._generate_candidate(**arguments)
+    saved = json.loads(output.read_text())
+    assert saved["status"] == "complete"
+    assert len(saved["repetitions"]) == 2
+    assert calls == [("A0", "A1", "A2"), ("B0", "B1", "B2")]
+
+    saved["status"] = "partial"
+    saved["repetitions"] = saved["repetitions"][:1]
+    output.write_text(json.dumps(saved))
+    calls.clear()
+    id_benchmark._generate_candidate(**arguments)
+    assert calls == [("B0", "B1", "B2")]
+
+
 def test_unsupported_checkpoint_is_not_given_borrowed_parameters():
     with pytest.raises(ValueError, match="No source-defined protocol"):
-        protocol_manifest("toxicity", "Qwen/Qwen2.5-0.5B", "revision", 50)
+        protocol_manifest("toxicity", "Qwen/Qwen2.5-0.5B", "revision", 7)
 
     with pytest.raises(ValueError, match="No source-defined AcT module protocol"):
-        protocol_manifest("toxicity", "Qwen/Qwen2.5-32B", "revision", 50)
+        protocol_manifest("toxicity", "Qwen/Qwen2.5-32B", "revision", 7)
 
 
 def test_source_calibration_sizes_are_enforced_before_model_execution():
+    with pytest.raises(ValueError, match="truthfulness requires exactly 12 negative, 12 positive, and 1 Jacobian"):
+        fit_control_calibration(
+            None,
+            None,
+            behavior="truthfulness",
+            negative_records=[],
+            positive_records=[],
+            jacobian_records=[],
+            checkpoint_revision="revision",
+            jacobian_cache=None,
+            activation_batch_size=1,
+            jacobian_vjp_chunk_size=1,
+        )
     with pytest.raises(ValueError, match="ActAdd requires exactly 100"):
         fit_actadd_calibration(None, None, undesired_texts=[], desired_texts=[], batch_size=1)
     with pytest.raises(ValueError, match="ITI requires exactly 80"):
@@ -80,13 +145,14 @@ def test_source_calibration_sizes_are_enforced_before_model_execution():
             desired_texts=[],
             batch_size=1,
         )
-    with pytest.raises(ValueError, match="AcT requires exactly 200"):
+    with pytest.raises(ValueError, match="AcT toxicity requires exactly 200"):
         fit_transport_stack(
             None,
             None,
             source_texts=[],
             target_texts=[],
             module_patterns=(".*",),
+            behavior="toxicity",
             method="mean_act",
             batch_size=1,
         )
