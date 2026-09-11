@@ -39,6 +39,14 @@ class LQRSweep:
 
 
 @dataclass(frozen=True)
+class LQRSetting:
+    multiplier: float
+    q: float
+    r: float
+    q_final: float
+
+
+@dataclass(frozen=True)
 class PIDSweep:
     lambdas: tuple[float, ...]
     kp: float
@@ -60,7 +68,13 @@ MODEL_KEYS = {model_id: key for key, model_id in MODEL_IDS.items()}
 
 CALIBRATION_COUNTS = {
     "toxicity": CalibrationCounts(negative=200, positive=200, jacobian=50, jacobian_class="positive"),
-    "truthfulness": CalibrationCounts(negative=12, positive=12, jacobian=1, jacobian_class="positive"),
+    "truthfulness": CalibrationCounts(
+        negative=200,
+        positive=200,
+        jacobian=35,
+        jacobian_class="positive",
+        jacobian_max_length=512,
+    ),
 }
 
 
@@ -82,6 +96,13 @@ ALQR_SWEEPS = {
         "qwen3b": LQRSweep((3.0, 3.5), 0.1, 1.0, 0.3),
         "llama1b": LQRSweep((2.0, 2.5, 3.5), 0.1, 1.0, 1.0),
         "qwen32b": LQRSweep((2.0, 2.5, 3.5), 1.0, 5.0, 0.1),
+    },
+}
+
+
+ALQR_PAPER_SELECTIONS = {
+    "truthfulness": {
+        "gemma2b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
     },
 }
 
@@ -235,6 +256,15 @@ def control_sweeps(behavior: str, model_id: str) -> tuple[LQRSweep, PIDSweep]:
     return ALQR_SWEEPS[behavior][key], SPID_SWEEPS[behavior][key]
 
 
+def paper_alqr_setting(behavior: str, model_id: str) -> LQRSetting:
+    """Return a published fixed A-LQR setting, never an evaluation-time sweep."""
+
+    key = model_key(model_id)
+    if behavior not in ALQR_PAPER_SELECTIONS or key not in ALQR_PAPER_SELECTIONS[behavior]:
+        raise ValueError(f"No fixed paper A-LQR setting for {behavior}/{model_id}")
+    return ALQR_PAPER_SELECTIONS[behavior][key]
+
+
 def act_module_patterns(model_id: str) -> tuple[str, ...]:
     """Return only module patterns explicitly present in the comparison adapter."""
 
@@ -260,7 +290,10 @@ def protocol_manifest(behavior: str, model_id: str, checkpoint_revision: str, ev
     if evaluation_samples < 1:
         raise ValueError("evaluation_samples must be positive")
     key = model_key(model_id)
-    alqr, spid = control_sweeps(behavior, model_id)
+    _alqr_source_grid, spid = control_sweeps(behavior, model_id)
+    selected_alqr = (
+        ALQR_PAPER_SELECTIONS.get(behavior, {}).get(key)
+    )
     patterns = act_module_patterns(model_id)
     if key not in ACTADD_PAPER_SELECTIONS:
         raise ValueError(f"No source-defined ActAdd selection for model {model_id!r}")
@@ -272,7 +305,7 @@ def protocol_manifest(behavior: str, model_id: str, checkpoint_revision: str, ev
         "evaluation_repetitions": EVALUATION_REPETITIONS,
         "random_seed": SOURCE_RANDOM_SEED,
         "calibration": CALIBRATION_COUNTS[behavior].__dict__,
-        "alqr_sweep": alqr.__dict__,
+        "alqr_paper_selection": selected_alqr.__dict__ if selected_alqr is not None else None,
         "spid_sweep": spid.__dict__,
         "actadd_sweep": ACTADD_SWEEP,
         "actadd_selected": {
@@ -323,5 +356,8 @@ def protocol_manifest(behavior: str, model_id: str, checkpoint_revision: str, ev
             "alqr_baseline_adapters": ALQR_BASELINE_ADAPTER_REVISION,
             **UPSTREAM_REVISIONS,
         },
-        "sweep_rule": "run and retain every source-defined candidate before selecting a reported row",
+        "selection_rules": {
+            "alqr": "use the published fixed setting; never sweep or select on evaluation results",
+            "comparison_methods": "retain each source-defined comparison protocol",
+        },
     }

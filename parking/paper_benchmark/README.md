@@ -4,19 +4,20 @@
 
 - Load the pinned TruthfulQA validation split and format every generation question as `Q: ... A:`.
 - Run the complete 817-question set five times. Each repetition contains the same questions in a separately pinned permutation and uses an independent generation seed.
-- Build Gemma-2-2B A-LQR from 12 false examples, 12 true examples, and one independently selected true-example Jacobian, matching the current official refactored source.
-- Use the current source-selected Gemma-2-2B setting: lambda 3, Q 0.1, R 1, and terminal Q 0.3. No A-LQR parameter sweep is run in this first slice.
+- Build Gemma-2-2B A-LQR from 200 false examples, 200 true examples, and 35 independently selected true-example Jacobians, matching the paper-producing calibration protocol.
+- Use the paper-selected Gemma-2-2B setting: lambda 3, Q 0.1, R 1, and terminal Q 0.3. This setting is fixed before evaluation; no A-LQR parameter sweep is run.
 - Generate Original and A-LQR completions with the source sampling settings: temperature 1, top-p 0.3, repetition penalty 1.2, and at most 50 new tokens.
 - Score every completion with the pinned TruthfulQA True and Info judges using the source prompts `Q: ...\nA: ...\nTrue:` and `Q: ...\nA: ...\nHelpful:`.
-- Cache generation after each complete repetition and cache judge records during scoring. Cache identities include the dataset, checkpoint, method parameters, and content hashes; a mismatch fails instead of reusing stale data.
+- Cache generation after each complete repetition and cache judge records during scoring. Cache identities include the exact calibration prompt IDs, dataset and checkpoint revisions, controller and generation parameters, seeds, and content hashes; a mismatch fails instead of reusing stale data.
+- Record UTC start/end times, elapsed time, command, commit and dirty state, package versions, requested CUDA device, GPU identity, memory peaks, and output hashes for each run.
 
 ## Variables
 
 - Data/input: `truthful_qa`, generation and multiple-choice validation configurations, revision `741b8276f2d1982aa3d5b832d3ee81ed3b896490`.
 - Sessions/groups: five stochastic repetitions of all 817 generation questions.
 - Labels/targets: MC2 true answers are desired calibration examples; MC2 false answers are undesired examples.
-- Signals/features/measures: last-token residual states, one full-state Jacobian sequence, A-LQR intervention, binary True labels, and binary Helpful labels.
-- Parameters/thresholds: Gemma-2-2B revision `c5ebcd40d208330abc697524c919956e692655cf`; calibration seed 42; judge outputs must parse exactly as `yes` or `no`.
+- Signals/features/measures: last-token residual states, 35 full-state Jacobian sequences averaged into the nominal dynamics, A-LQR intervention, binary True labels, and binary Helpful labels.
+- Parameters/thresholds: Gemma-2-2B revision `c5ebcd40d208330abc697524c919956e692655cf`; 200/200/35 calibration; Jacobian context limit 512; lambda 3; Q 0.1; R 1; terminal Q 0.3; calibration seed 42; judge outputs must parse exactly as `yes` or `no`.
 - Outputs: ignored artifacts under `cache/`; final descriptive metrics under `cache/results/`; Markdown table under `plots/benchmark_table.md`.
 
 ## Statistics
@@ -40,8 +41,8 @@
 
 ## Interpretation
 
-- The first completed comparison will show whether current-source A-LQR improves Gemma-2-2B TruthfulQA T×I over the reusable Original result at full evaluation scale.
-- This is not an exact rerun of the paper-era offline sweep. The paper-era repository used 200 false examples, 200 true examples, 35 Jacobians, and multiple A-LQR candidates; this unit uses the later official fixed 12/12/1 calibration and fixed controller parameters to avoid that expensive sweep.
+- The first completed comparison will show whether paper-protocol A-LQR improves Gemma-2-2B TruthfulQA T×I over the reusable Original result at full evaluation scale.
+- The published controller setting is reused as a fixed prior result. The benchmark does not pay to rediscover it and does not use evaluation outcomes for parameter selection.
 
 ## Notes
 
@@ -56,8 +57,9 @@
 
 ## References
 
-- Current official source: `ref/lqr-activation-steering/steer/tqa_eval.py` and `steer/truthfulness/tqa_data_script.py`.
-- Paper-era full evaluation: upstream commit `626f757976d3b8e83bdf61a4e35bbed002b58925`, `lqr/supertqa.py`.
+- Fixed Gemma-2-2B controller setting: `ref/lqr-activation-steering/steer/tqa_eval.py`.
+- Paper-producing calibration and full evaluation: upstream commit `626f757976d3b8e83bdf61a4e35bbed002b58925`, `steer/truthfulness/tqa_data_script.py` and `lqr/supertqa.py`.
+- The current refactored `*test` calibration files are debug artifacts and are not this unit's protocol.
 - Paper: `ref/2604.19018v1.pdf`.
 
 # benchmark_table.md
