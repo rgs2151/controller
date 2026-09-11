@@ -1,5 +1,7 @@
 # distribution_shift_txi
 
+The explicit data-to-figure workflow and model-specific long-context formula are documented in `PIPELINE.md`.
+
 ## Method
 
 - Use the pinned `google/gemma-2-2b` checkpoint and the clean TruthfulQA A-LQR artifacts in `parking/bench_artifacts`.
@@ -24,7 +26,7 @@ The x-axis distributions are:
 | --- | --- |
 | ID | The unchanged held-out TruthfulQA prompt `Q: question A:`. |
 | Spanish | A pinned Llama-3.2-3B-Instruct translation of the question, followed by the frozen request to answer in English. |
-| Long context | The existing neutral-archive prefix followed by an instruction to ignore it and the unchanged ID question. |
+| Long context | Replacement candidate: seven coherent public-domain document excerpts, token-trimmed to 7,167–7,168 Gemma tokens, followed by the unchanged ID question. Not yet evaluated. |
 | Adversarial | One of three existing recipes: D6 literal boundary-marker severity mix, A2 context saturation, or A4 role conflict. The selected recipe is named in `plots/summary.json`. |
 
 ## Statistics
@@ -59,6 +61,7 @@ The x-axis distributions are:
 - This unit reuses existing adversarial constructions only. D6 is transferred exactly as the earlier literal `<|begin_of_text|>` marker recipe: 25 questions receive 16 repeats and 25 receive 64, assigned without using outcomes.
 - Selecting the displayed adversarial recipe on these same 50 questions is exploratory and optimistic. A fresh disjoint confirmation set is required before treating the selected gap as population evidence.
 - `plots/ood_examples.md` contains five real, matched prompts from every displayed distribution and explains their exact construction. The complete generation and judge records remain in the ignored unit-local cache rather than in large plot-level CSV files.
+- `cache/datasets/` contains the four current 50-row dataset CSVs and their manifest. The existing plotted long-context value belongs to the retired repeated-sentence construction and must not be attributed to the replacement candidate.
 - Every artifact produced by this analysis—the H∞ controller and diagnostics, shared-A copy, translations, generations, judge outputs, logs, CSVs, and plots—is stored under `parking/dist_changes/`. The unit only reads the frozen A-LQR inputs in `parking/bench_artifacts/`; it does not write to them.
 - Large model artifacts, controller diagnostics, translations, and judge caches remain under ignored `cache/` storage.
 
