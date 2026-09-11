@@ -15,20 +15,20 @@ CONDITIONS = (
     "id",
     "spanish",
     "japanese_romaji",
-    "long_context",
-    "d2",
-    "d3",
-    "d6",
+    "long_context_end",
+    "long_context_start",
+    "corrupting_words",
+    "bos_mix",
 )
 METHODS = ("alqr", "hinf")
 LABELS = {
     "id": "ID",
     "spanish": "Spanish",
     "japanese_romaji": "Japanese\n(romaji)",
-    "long_context": "Long\ncontext",
-    "d2": "D2",
-    "d3": "D3",
-    "d6": "D6",
+    "long_context_end": "Long context\nend",
+    "long_context_start": "Long context\nstart",
+    "corrupting_words": "Corrupting\nwords",
+    "bos_mix": "BOS\nmix",
 }
 COLORS = {"alqr": "black", "hinf": "#d62728"}
 

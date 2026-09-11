@@ -1,4 +1,4 @@
-"""Export the seven current 50-prompt distribution sets into unit-local CSV files."""
+"""Export the current frozen 50-prompt datasets into unit-local CSV files."""
 
 from __future__ import annotations
 
@@ -20,10 +20,11 @@ SET_STATUS = {
     "id": "evaluated",
     "spanish": "evaluated_translation_requires_review",
     "japanese_romaji": "proposed_not_evaluated",
-    "long_context": "proposed_not_evaluated",
-    "d2": "proposed_not_evaluated",
-    "d3": "proposed_not_evaluated",
-    "d6": "proposed_not_evaluated",
+    "long_context_end": "proposed_not_evaluated",
+    "long_context_start": "proposed_not_evaluated",
+    "corrupting_words": "proposed_not_evaluated",
+    "bos_mix": "proposed_not_evaluated",
+    "lciteeval_complexity": "candidate_requires_lciteeval_evaluator",
 }
 
 
@@ -39,16 +40,18 @@ def _sets() -> dict[str, list[dict[str, object]]]:
     prepared = _load_json(CACHE / "prepared.json")
     translations = _load_json(CACHE / "translations.json")
     japanese = _load_json(CACHE / "japanese_romaji.json")
-    long_context = _load_json(CACHE / "long_context_v2.json")
-    attacks = _load_json(CACHE / "template_attacks.json")
+    long_context = _load_json(CACHE / "long_context.json")
+    attacks = _load_json(CACHE / "prompt_attacks.json")
+    lciteeval = _load_json(CACHE / "lciteeval_complexity.json")
     result = {
         "id": prepared["prompt_sets"]["id"],
         "spanish": translations["rows"],
         "japanese_romaji": japanese["rows"],
-        "long_context": long_context["records"],
-        "d2": attacks["sets"]["d2"],
-        "d3": attacks["sets"]["d3"],
-        "d6": attacks["sets"]["d6"],
+        "long_context_end": long_context["sets"]["long_context_end"],
+        "long_context_start": long_context["sets"]["long_context_start"],
+        "corrupting_words": attacks["sets"]["corrupting_words"],
+        "bos_mix": attacks["sets"]["bos_mix"],
+        "lciteeval_complexity": lciteeval["records"],
     }
     if translations.get("status") != "complete":
         raise ValueError("Spanish translations are incomplete")
@@ -58,12 +61,16 @@ def _sets() -> dict[str, list[dict[str, object]]]:
         raise ValueError("Unexpected long-context status")
     if attacks["identity"].get("status") != "proposed_not_evaluated":
         raise ValueError("Unexpected template-attack status")
+    if lciteeval["identity"].get("status") != "candidate_requires_lciteeval_evaluator":
+        raise ValueError("Unexpected L-CiteEval status")
     for name, records in result.items():
         if len(records) != 50:
             raise ValueError(f"{name} must contain exactly 50 prompts")
+    paired_names = tuple(name for name in result if name != "lciteeval_complexity")
     anchors = {
         name: [str(record["source_prompt_id"]) for record in records]
         for name, records in result.items()
+        if name in paired_names
     }
     if any(ids != anchors["id"] for ids in anchors.values()):
         raise ValueError("Distribution sets do not contain the same ordered questions")
@@ -97,6 +104,14 @@ def main() -> None:
         "bos_token",
         "bos_token_id",
         "insertion_gaps",
+        "paired_with_truthfulqa",
+        "source_dataset",
+        "source_config",
+        "source_task",
+        "hardness",
+        "source_length",
+        "document_count",
+        "reference_answer_json",
         "prompt",
         "source_spans_json",
     )
@@ -111,7 +126,11 @@ def main() -> None:
                 prompt = str(record["prompt"])
                 prompt_hash = _sha256_text(prompt)
                 input_tokens = len(tokenizer.encode(prompt, add_special_tokens=True))
-                if set_name == "long_context":
+                if set_name in {
+                    "long_context_end",
+                    "long_context_start",
+                    "lciteeval_complexity",
+                }:
                     recorded_tokens = int(record["input_tokens"])
                     if input_tokens != recorded_tokens:
                         raise ValueError("Long-context token count changed during export")
@@ -130,6 +149,23 @@ def main() -> None:
                         "bos_token": record.get("bos_token", ""),
                         "bos_token_id": record.get("bos_token_id", ""),
                         "insertion_gaps": record.get("insertion_gaps", ""),
+                        "paired_with_truthfulqa": record.get(
+                            "paired_with_truthfulqa",
+                            set_name != "lciteeval_complexity",
+                        ),
+                        "source_dataset": record.get(
+                            "source_dataset", "truthful_qa"
+                        ),
+                        "source_config": record.get("source_config", "generation"),
+                        "source_task": record.get("source_task", "truthfulness"),
+                        "hardness": record.get("hardness", ""),
+                        "source_length": record.get("source_length", ""),
+                        "document_count": record.get("document_count", ""),
+                        "reference_answer_json": json.dumps(
+                            record.get("reference_answer"), ensure_ascii=False
+                        )
+                        if "reference_answer" in record
+                        else "",
                         "prompt": prompt,
                         "source_spans_json": json.dumps(
                             record.get("source_spans", []),
@@ -147,22 +183,28 @@ def main() -> None:
             "minimum_input_tokens": min(lengths),
             "maximum_input_tokens": max(lengths),
             "ordered_prompt_hash": _sha256_text("\n".join(hashes)),
+            "paired_with_truthfulqa": set_name != "lciteeval_complexity",
         }
 
     manifest = {
-        "schema_version": 3,
+        "schema_version": 4,
         "model": {"id": MODEL_ID, "revision": MODEL_REVISION},
         "source_questions": (
-            "the same ordered 50 held-out TruthfulQA questions in every set"
+            "Seven sets share the same ordered 50 held-out TruthfulQA questions; "
+            "lciteeval_complexity contains 50 separate L-CiteEval questions"
         ),
         "long_context_formula": {
             "model_context_tokens": 8192,
             "target_fraction": 0.875,
             "target_input_tokens": 7168,
             "formula": (
-                "floor(0.875 * model_context_tokens); deterministic document text is "
-                "cut with the model tokenizer so the unchanged Q/A suffix remains last"
+                "floor(0.875 * model_context_tokens); one deterministic document "
+                "prefix is cut so both question-at-end and question-at-start prompts fit"
             ),
+        },
+        "lciteeval_complexity": {
+            "paired_with_truthfulqa": False,
+            "evaluation": "L-CiteEval correctness and citation metrics",
         },
         "sets": manifest_sets,
     }
