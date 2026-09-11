@@ -1,4 +1,4 @@
-"""Render separate Truth and Info bootstrap box plots from cached judge outputs."""
+"""Render separate Truth and Info bars from cached aggregate scores."""
 
 from pathlib import Path
 
@@ -20,21 +20,13 @@ LABELS = {
     "adversarial": "Adversarial",
 }
 COLORS = {"alqr": "black", "hinf": "#d62728"}
-BOOTSTRAP_SAMPLES = 10_000
-SEED = 2151
-
-
-def _bootstrap_percent(values: np.ndarray, seed: int) -> np.ndarray:
-    rng = np.random.default_rng(seed)
-    indices = rng.integers(0, len(values), size=(BOOTSTRAP_SAMPLES, len(values)))
-    return 100.0 * values[indices].mean(axis=1)
 
 
 def main() -> None:
-    frame = pd.read_csv(PLOTS / "generations.csv")
-    expected_rows = len(CONDITIONS) * len(METHODS) * 50
+    frame = pd.read_csv(PLOTS / "distribution_scores.csv")
+    expected_rows = len(CONDITIONS) * len(METHODS)
     if len(frame) != expected_rows:
-        raise ValueError(f"Expected {expected_rows} displayed rows; found {len(frame)}")
+        raise ValueError(f"Expected {expected_rows} aggregate rows; found {len(frame)}")
 
     sns.set_theme(context="talk", style="ticks", palette="dark")
     plt.rcParams.update(
@@ -52,44 +44,36 @@ def main() -> None:
     )
 
     panels = (
-        ("truth_score", "Truthfulness", "Truth score (%)"),
-        ("info_score", "Informativeness", "Info score (%)"),
+        ("truth_percent", "Truthfulness", "Truth score (%)"),
+        ("info_percent", "Informativeness", "Info score (%)"),
     )
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.4), sharey=False)
     base_positions = np.arange(len(CONDITIONS), dtype=float)
-    offsets = {"alqr": -0.19, "hinf": 0.19}
+    width = 0.34
 
     for panel_index, (column, title, ylabel) in enumerate(panels):
         ax = axes[panel_index]
-        for condition_index, condition in enumerate(CONDITIONS):
-            for method_index, method in enumerate(METHODS):
-                group = frame[
-                    (frame["display_condition"] == condition)
-                    & (frame["method"] == method)
-                ]
-                if len(group) != 50:
-                    raise ValueError(f"Expected 50 rows for {method}/{condition}")
-                values = group[column].to_numpy(dtype=float)
-                samples = _bootstrap_percent(
-                    values,
-                    SEED + 1000 * panel_index + 100 * condition_index + method_index,
-                )
-                position = base_positions[condition_index] + offsets[method]
-                ax.boxplot(
-                    [samples],
-                    positions=[position],
-                    widths=0.32,
-                    whis=(2.5, 97.5),
-                    showfliers=False,
-                    patch_artist=True,
-                    boxprops={
-                        "facecolor": COLORS[method],
-                        "edgecolor": COLORS[method],
-                        "linewidth": 1.1,
-                    },
-                    medianprops={"color": "white", "linewidth": 1.5},
-                    whiskerprops={"color": COLORS[method], "linewidth": 1.1},
-                    capprops={"color": COLORS[method], "linewidth": 1.1},
+        for method_index, method in enumerate(METHODS):
+            group = frame[frame["method"] == method].set_index("display_condition")
+            values = np.asarray(
+                [group.loc[condition, column] for condition in CONDITIONS], dtype=float
+            )
+            positions = base_positions + (method_index - 0.5) * width
+            bars = ax.bar(
+                positions,
+                values,
+                width=width,
+                color=COLORS[method],
+            )
+            for bar, value in zip(bars, values, strict=True):
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    min(value + 2.0, 102.0),
+                    f"{value:.0f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                    color=COLORS[method],
                 )
         ax.set_title(title, fontsize=16)
         ax.set_xticks(base_positions, [LABELS[item] for item in CONDITIONS])
