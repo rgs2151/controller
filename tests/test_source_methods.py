@@ -12,9 +12,10 @@ from robust_steerability.source_methods import id_benchmark
 from robust_steerability.source_methods.actadd import ActAddSteerer, fit_actadd_direction, positionwise_mean
 from robust_steerability.source_methods.calibration import (
     fit_actadd_calibration,
-    fit_control_calibration,
+    fit_dynamics_from_records,
     fit_iti_calibration,
     fit_odesteer_calibration,
+    fit_setpoint_from_records,
     fit_transport_stack,
 )
 from robust_steerability.source_methods.control import fit_setpoint_calibration
@@ -22,12 +23,13 @@ from robust_steerability.source_methods.odesteer import ODESteerFit, polynomial_
 from robust_steerability.source_methods.iti import fit_iti, register_iti_hooks
 from robust_steerability.source_methods.modeling import source_model_spec
 from robust_steerability.source_methods.protocol import (
-    CALIBRATION_COUNTS,
+    ALQR_CALIBRATION_COUNTS,
     act_module_patterns,
-    control_sweeps,
+    calibration_counts,
     odesteer_layers,
     paper_alqr_setting,
     protocol_manifest,
+    selected_parameters,
 )
 from robust_steerability.source_methods.transport import (
     apply_linear_transport,
@@ -40,21 +42,21 @@ from robust_steerability.source_methods.transport import (
 )
 
 
-def test_evaluation_count_does_not_change_source_calibration_or_sweeps():
-    small = protocol_manifest("toxicity", "Qwen/Qwen2.5-14B", "revision", 7)
-    full = protocol_manifest("toxicity", "Qwen/Qwen2.5-14B", "revision", 1000)
-    assert small["evaluation_samples"] == 7
+def test_final_manifest_rejects_pilot_counts_and_contains_only_one_method():
+    with pytest.raises(ValueError, match="requires exactly 1000"):
+        protocol_manifest("actadd", "toxicity", "Qwen/Qwen2.5-14B", "revision", 50)
+    full = protocol_manifest("actadd", "toxicity", "Qwen/Qwen2.5-14B", "revision", 1000)
     assert full["evaluation_samples"] == 1000
-    assert small["evaluation_repetitions"] == 5
-    assert small["random_seed"] == 42
-    assert "top_k" not in small["generation"]
-    for key in small.keys() - {"evaluation_samples"}:
-        assert small[key] == full[key]
-    assert CALIBRATION_COUNTS["toxicity"].positive == 200
-    assert CALIBRATION_COUNTS["toxicity"].jacobian == 50
-    assert control_sweeps("toxicity", "Qwen/Qwen2.5-14B")[0].lambdas == (2.0, 2.5)
+    assert full["evaluation_repetitions"] == 5
+    assert full["random_seed"] == 42
+    assert full["method"] == "actadd"
+    assert full["calibration"]["desired"] == 100
+    assert full["selected_parameters"] == {"layer": 21, "strength": 4.0}
+    assert "top_k" not in full["generation"]
+    assert "source_grid" not in full["method_details"]
+    assert ALQR_CALIBRATION_COUNTS["toxicity"].desired == 200
+    assert ALQR_CALIBRATION_COUNTS["toxicity"].jacobian == 50
     assert odesteer_layers(32) == tuple(range(8, 25))
-    assert small["actadd_selected"] == {"layer": 21, "strength": 4.0}
     assert act_module_patterns("Qwen/Qwen2.5-14B") == (
         r"model.layers.*.mlp.up_proj",
         r"model.layers.*.mlp.down_proj",
@@ -74,7 +76,11 @@ def test_generation_cache_uses_configured_shape_and_resumes_by_repetition(tmp_pa
         },
     }
     calls = []
-    monkeypatch.setattr(id_benchmark, "protocol_manifest", lambda *args: {"evaluation_samples": args[-1]})
+    monkeypatch.setattr(
+        id_benchmark,
+        "protocol_manifest",
+        lambda *args, **_kwargs: {"evaluation_samples": args[-1]},
+    )
     monkeypatch.setattr(id_benchmark, "_batch_size", lambda *_args: 2)
     monkeypatch.setattr(id_benchmark, "runtime_provenance", lambda _device: {"device": "test"})
 
@@ -114,24 +120,30 @@ def test_generation_cache_uses_configured_shape_and_resumes_by_repetition(tmp_pa
 
 def test_unsupported_checkpoint_is_not_given_borrowed_parameters():
     with pytest.raises(ValueError, match="No source-defined protocol"):
-        protocol_manifest("toxicity", "Qwen/Qwen2.5-0.5B", "revision", 7)
+        protocol_manifest("original", "toxicity", "Qwen/Qwen2.5-0.5B", "revision", 1000)
 
     with pytest.raises(ValueError, match="No source-defined AcT module protocol"):
-        protocol_manifest("toxicity", "Qwen/Qwen2.5-32B", "revision", 7)
+        protocol_manifest("linear_act", "toxicity", "Qwen/Qwen2.5-32B", "revision", 1000)
 
 
 def test_source_calibration_sizes_are_enforced_before_model_execution():
-    with pytest.raises(ValueError, match="truthfulness requires exactly 200 negative, 200 positive, and 35 Jacobian"):
-        fit_control_calibration(
+    with pytest.raises(ValueError, match="truthfulness.*exactly 200 undesired.*200 desired"):
+        fit_setpoint_from_records(
             None,
             None,
             behavior="truthfulness",
             negative_records=[],
             positive_records=[],
+            activation_batch_size=1,
+        )
+    with pytest.raises(ValueError, match="truthfulness.*exactly 35 Jacobian"):
+        fit_dynamics_from_records(
+            None,
+            None,
+            behavior="truthfulness",
             jacobian_records=[],
             checkpoint_revision="revision",
             jacobian_cache=None,
-            activation_batch_size=1,
             jacobian_vjp_chunk_size=1,
         )
     with pytest.raises(ValueError, match="ActAdd requires exactly 100"):
@@ -162,13 +174,13 @@ def test_source_calibration_sizes_are_enforced_before_model_execution():
 
 
 def test_gemma_truthfulness_alqr_uses_fixed_paper_setting_without_selection():
-    counts = CALIBRATION_COUNTS["truthfulness"]
+    counts = ALQR_CALIBRATION_COUNTS["truthfulness"]
     setting = paper_alqr_setting("truthfulness", "google/gemma-2-2b")
     assert counts.__dict__ == {
-        "negative": 200,
-        "positive": 200,
+        "undesired": 200,
+        "desired": 200,
         "jacobian": 35,
-        "jacobian_class": "positive",
+        "jacobian_class": "desired",
         "jacobian_max_length": 512,
     }
     assert setting.__dict__ == {
@@ -177,6 +189,26 @@ def test_gemma_truthfulness_alqr_uses_fixed_paper_setting_without_selection():
         "r": 1.0,
         "q_final": 0.3,
     }
+    assert calibration_counts("spid", "truthfulness").jacobian == 0
+
+
+def test_unpublished_final_settings_cannot_trigger_implicit_full_sweeps():
+    with pytest.raises(ValueError, match="S-PID requires an explicitly recorded"):
+        selected_parameters("spid", "truthfulness", "google/gemma-2-2b")
+    with pytest.raises(ValueError, match="ITI requires an explicitly recorded"):
+        selected_parameters("iti", "truthfulness", "google/gemma-2-2b")
+    assert selected_parameters(
+        "spid",
+        "truthfulness",
+        "google/gemma-2-2b",
+        {"lambda": 1.0, "kp": 0.7, "ki": 0.01, "kd": 0.1},
+    ) == {"lambda": 1.0, "kp": 0.7, "ki": 0.01, "kd": 0.1}
+    assert selected_parameters(
+        "iti",
+        "truthfulness",
+        "google/gemma-2-2b",
+        {"top_heads": 32, "alpha": 10.0},
+    ) == {"top_heads": 32, "alpha": 10.0}
 
 
 def test_each_method_keeps_its_source_model_loading_protocol():

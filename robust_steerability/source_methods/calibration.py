@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -17,10 +16,10 @@ from robust_steerability.source_methods.odesteer import ODESteerFit, fit_odestee
 from robust_steerability.source_methods.protocol import (
     ACT_ADAPTER_MODULE_LIMIT,
     ACT_FIT_SAMPLES_PER_CLASS,
-    ACTADD_SWEEP,
-    CALIBRATION_COUNTS,
+    ACTADD_FIT_SAMPLES_PER_CLASS,
+    ALQR_CALIBRATION_COUNTS,
     ITI_FIT_SAMPLES_PER_CLASS,
-    ODESTEER_FIT_SAMPLES,
+    ODESTEER_FIT_SAMPLES_PER_CLASS,
     ODESTEER_PARAMETERS,
 )
 from robust_steerability.source_methods.transport import (
@@ -35,15 +34,6 @@ from robust_steerability.source_methods.transport import (
 )
 
 
-@dataclass(frozen=True)
-class ControlCalibration:
-    setpoint: SetpointCalibration
-    dynamics: torch.Tensor
-    negative_prompt_ids: tuple[str, ...]
-    positive_prompt_ids: tuple[str, ...]
-    jacobian_prompt_ids: tuple[str, ...]
-
-
 def fit_actadd_calibration(
     model,
     tokenizer,
@@ -54,7 +44,7 @@ def fit_actadd_calibration(
 ) -> torch.Tensor:
     """Fit the source's 100-per-class, position-wise ActAdd direction."""
 
-    required = int(ACTADD_SWEEP["fit_samples_per_class"])
+    required = ACTADD_FIT_SAMPLES_PER_CLASS
     if len(undesired_texts) != required or len(desired_texts) != required:
         raise ValueError(f"ActAdd requires exactly {required} prompts per class")
     undesired = collect_positionwise_mean(model, tokenizer, undesired_texts, batch_size=batch_size)
@@ -107,30 +97,22 @@ def collect_decoder_states(
     return torch.cat(collected)
 
 
-def fit_control_calibration(
+def fit_setpoint_from_records(
     model,
     tokenizer,
     *,
     behavior: str,
     negative_records: list[dict],
     positive_records: list[dict],
-    jacobian_records: list[dict],
-    checkpoint_revision: str,
-    jacobian_cache: Path,
     activation_batch_size: int,
-    jacobian_vjp_chunk_size: int,
-) -> ControlCalibration:
-    """Fit A-LQR/S-PID exactly; evaluation sample count never enters here."""
+) -> SetpointCalibration:
+    """Fit the shared A-LQR/S-PID setpoint from exact source counts."""
 
-    counts = CALIBRATION_COUNTS[behavior]
-    if (
-        len(negative_records) != counts.negative
-        or len(positive_records) != counts.positive
-        or len(jacobian_records) != counts.jacobian
-    ):
+    counts = ALQR_CALIBRATION_COUNTS[behavior]
+    if len(negative_records) != counts.undesired or len(positive_records) != counts.desired:
         raise ValueError(
-            f"{behavior} requires exactly {counts.negative} negative, "
-            f"{counts.positive} positive, and {counts.jacobian} Jacobian prompts"
+            f"{behavior} setpoint requires exactly {counts.undesired} undesired "
+            f"and {counts.desired} desired prompts"
         )
     negative_states = collect_decoder_states(
         model, tokenizer, [row["text"] for row in negative_records], batch_size=activation_batch_size
@@ -138,8 +120,27 @@ def fit_control_calibration(
     positive_states = collect_decoder_states(
         model, tokenizer, [row["text"] for row in positive_records], batch_size=activation_batch_size
     )
-    setpoint = fit_setpoint_calibration(negative_states.mean(dim=0), positive_states.mean(dim=0))
-    dynamics = average_prompt_jacobians(
+    return fit_setpoint_calibration(negative_states.mean(dim=0), positive_states.mean(dim=0))
+
+
+def fit_dynamics_from_records(
+    model,
+    tokenizer,
+    *,
+    behavior: str,
+    jacobian_records: list[dict],
+    checkpoint_revision: str,
+    jacobian_cache: Path,
+    jacobian_vjp_chunk_size: int,
+) -> torch.Tensor:
+    """Fit A-LQR dynamics only; S-PID must never call this function."""
+
+    counts = ALQR_CALIBRATION_COUNTS[behavior]
+    if len(jacobian_records) != counts.jacobian:
+        raise ValueError(
+            f"{behavior} dynamics requires exactly {counts.jacobian} Jacobian prompts"
+        )
+    return average_prompt_jacobians(
         model,
         tokenizer,
         jacobian_records,
@@ -147,13 +148,6 @@ def fit_control_calibration(
         max_length=counts.jacobian_max_length,
         vjp_chunk_size=jacobian_vjp_chunk_size,
         model_revision=checkpoint_revision,
-    )
-    return ControlCalibration(
-        setpoint,
-        dynamics,
-        tuple(str(row["prompt_id"]) for row in negative_records),
-        tuple(str(row["prompt_id"]) for row in positive_records),
-        tuple(str(row["prompt_id"]) for row in jacobian_records),
     )
 
 
@@ -280,9 +274,9 @@ def fit_odesteer_calibration(
 ) -> ODESteerFit:
     """Fit one source ODESteer layer with the behavior-specific full fit size."""
 
-    if behavior not in ODESTEER_FIT_SAMPLES:
+    if behavior not in ODESTEER_FIT_SAMPLES_PER_CLASS:
         raise ValueError(f"Unsupported behavior {behavior!r}")
-    required = ODESTEER_FIT_SAMPLES[behavior]
+    required = ODESTEER_FIT_SAMPLES_PER_CLASS[behavior]
     if len(undesired_texts) != required or len(desired_texts) != required:
         raise ValueError(f"ODESteer {behavior} requires exactly {required} prompts per class")
     desired = collect_block_output_activations(

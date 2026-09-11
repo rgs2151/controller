@@ -20,7 +20,7 @@ def test_full_dataset_is_repeated_without_subsampling():
             "question": f"calibration {index}",
             "mc2_targets": {"choices": ["true", "false"], "labels": [1, 0]},
         }
-        for index in range(220)
+        for index in range(1900)
     ]
     data = paper_benchmark.build_truthfulqa_data(generation, multiple_choice)
     expected_ids = {f"truthfulqa:{index}" for index in range(len(generation))}
@@ -30,9 +30,11 @@ def test_full_dataset_is_repeated_without_subsampling():
         assert len(repetition) == len(generation)
         assert {row["prompt_id"] for row in repetition} == expected_ids
     calibration = data["calibration"]["truthfulness"]
-    assert len(calibration["undesired"]) == 200
-    assert len(calibration["desired"]) == 200
+    assert len(calibration["undesired"]) == 1800
+    assert len(calibration["desired"]) == 1800
     assert len(calibration["jacobian"]) == 35
+    assert data["calibration_protocol"]["nested_prefixes"]["alqr"]["desired"] == 200
+    assert data["calibration_protocol"]["nested_prefixes"]["odesteer"]["desired"] == 1800
     assert data["calibration_protocol"]["jacobian_max_length"] == 512
 
 
