@@ -1,4 +1,4 @@
-"""Historical local adaptations used only by ``paper_benchmark_50``.
+"""Historical local adaptations used only by ``ref/paper_benchmark_50``.
 
 These are retained so the completed pilot remains inspectable. New comparison
 runs use :mod:`robust_steerability.source_methods`; this module is not a

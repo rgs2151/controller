@@ -106,8 +106,8 @@
 
 - Reference retained unchanged: `ref/h_infinity_optimization.py`, SHA-256 `6d75d6c734e647322493d69a59798c3c98fd2213bf929dbfc8c50e1c2ce55ce4`. Its numerical exporter and panel preparation were copied into the package/this unit; the optimized H∞ solver equations were not changed.
 - Targeted tests cover schema validation, exact exported numerical values, leakage/timestamp checks, corrupted-file rejection, independent CPU reading after ZIP transfer, recording parity, prompt resume, and all ten methods. GPU recording parity was checked separately. Do not run the whole test suite merely to inspect a bundle.
-- Fresh run: `python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1`. Each evaluation condition contains 50 prompts. Failed/incomplete runs resume only matching current checkpoints; there is no old-cache reconstruction command.
-- Calibration bundles live in `parking/paper_benchmark_50/cache/controllers/<toxicity|truthfulness>/<model>_diagnostics/runs/<run_id>/`. Each benchmark copies them into `cache/jobs/<toxicity|truthfulness>/<model>/diagnostics/runs/<run_id>/`; shared calibration inputs remain immutable.
+- The superseded 50-prompt runner is retained at `ref/paper_benchmark_50/`; active source-protocol evaluation lives in `parking/bench_evaluations/`.
+- Historical pilot calibration bundles, when produced by that reference runner, live under `ref/paper_benchmark_50/cache/controllers/<toxicity|truthfulness>/<model>_diagnostics/runs/<run_id>/`.
 - Hannah can set `RUN_DIR` to a received run folder and read it without an LLM:
 
   ```python

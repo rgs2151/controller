@@ -61,7 +61,7 @@ def test_manifest_rejects_moving_model_revision(tmp_path) -> None:
 
 
 def test_current_reference_manifests_are_complete() -> None:
-    root = Path(__file__).resolve().parents[1] / "parking/paper_benchmark_50"
+    root = Path(__file__).resolve().parents[1] / "ref/paper_benchmark_50"
     for name in ("toxicity.json", "truthfulness.json"):
         manifest = load_manifest(root / name)
         assert manifest.payload["sample_count"] == 50

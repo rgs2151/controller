@@ -1,4 +1,4 @@
-"""Plot archived Erfan results; fresh execution lives in paper_benchmark_50."""
+"""Plot archived Erfan results; the superseded pilot lives in ref."""
 
 from __future__ import annotations
 

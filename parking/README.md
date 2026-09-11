@@ -21,5 +21,5 @@ Use descriptive snake_case folder names. Do not use figure numbers here.
 - `erfan_id_toxicity_benchmark/`: 50-prompt RealToxicityPrompts comparison.
 - `erfan_ood_steering_benchmark/`: 50-prompt Jigsaw, ToxicChat, and MMLU concept-shift comparison.
 - `erfan_benchmark_summary/`: derived cross-benchmark summary figure.
-- `paper_benchmark/`: cache-first benchmark filled one model, method, and dataset at a time; the first slice is full-set Gemma-2-2B TruthfulQA Original versus A-LQR.
-- `paper_benchmark_50/`: historical pilot code and tracked summaries; its superseded local cache has been removed.
+- `bench_artifacts/`: reusable offline Gemma-2-2B TruthfulQA A-LQR setpoint, Jacobian, and dynamics artifacts; it intentionally stops before generation.
+- `bench_evaluations/`: active source-comparable benchmark evaluation, filled one model, method, and dataset at a time.

@@ -8,7 +8,7 @@ from pathlib import Path
 import torch
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "parking/benchmark/benchmark.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "parking/bench_artifacts/bench_artifacts.py"
 SPEC = importlib.util.spec_from_file_location("calibration_benchmark", SCRIPT)
 benchmark = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

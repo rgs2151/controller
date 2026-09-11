@@ -102,5 +102,5 @@
 
 ## References
 
-- `parking/paper_benchmark_50/{toxicity,truthfulness}.json`.
+- `ref/paper_benchmark_50/{toxicity,truthfulness}.json`.
 - `robust_steerability/experiments/{calibration,generation,methods}.py`.

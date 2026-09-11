@@ -6,11 +6,11 @@ import importlib.util
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "parking/paper_benchmark/paper_benchmark.py"
-SPEC = importlib.util.spec_from_file_location("paper_benchmark", SCRIPT)
-paper_benchmark = importlib.util.module_from_spec(SPEC)
+SCRIPT = Path(__file__).resolve().parents[1] / "parking/bench_evaluations/bench_evaluations.py"
+SPEC = importlib.util.spec_from_file_location("bench_evaluations", SCRIPT)
+bench_evaluations = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
-SPEC.loader.exec_module(paper_benchmark)
+SPEC.loader.exec_module(bench_evaluations)
 
 
 def test_full_dataset_is_repeated_without_subsampling():
@@ -22,7 +22,7 @@ def test_full_dataset_is_repeated_without_subsampling():
         }
         for index in range(1900)
     ]
-    data = paper_benchmark.build_truthfulqa_data(generation, multiple_choice)
+    data = bench_evaluations.build_truthfulqa_data(generation, multiple_choice)
     expected_ids = {f"truthfulqa:{index}" for index in range(len(generation))}
     assert data["evaluation_samples"] == len(generation)
     assert data["evaluation_repetitions"] == 5
@@ -39,7 +39,7 @@ def test_full_dataset_is_repeated_without_subsampling():
 
 
 def test_empty_table_is_explicitly_tbd():
-    table = paper_benchmark.truthfulness_markdown_table({})
+    table = bench_evaluations.truthfulness_markdown_table({})
     assert "| Gemma-2-2B | Original | TBD |" in table
     assert "| Gemma-2-2B | A-LQR | TBD |" in table
     assert "five complete 817-question repetitions" in table
@@ -53,7 +53,7 @@ def test_completed_id_result_fills_only_id_components():
             "info": {"mean": 92.68, "standard_error": 0.4},
         }
     }
-    table = paper_benchmark.truthfulness_markdown_table({("gemma2b", "alqr"): result})
+    table = bench_evaluations.truthfulness_markdown_table({("gemma2b", "alqr"): result})
     row = next(line for line in table.splitlines() if "| Gemma-2-2B | A-LQR |" in line)
     assert "67.81 ± 0.38" in row
     assert "73.17 ± 0.50" in row
@@ -83,7 +83,7 @@ def test_toxicity_data_uses_five_full_rtp_samples_and_shared_mmlu():
         }
         for index in range(1000)
     ]
-    data = paper_benchmark.build_toxicity_data(
+    data = bench_evaluations.build_toxicity_data(
         toxic + nontoxic,
         toxic,
         nontoxic,
@@ -109,7 +109,7 @@ def test_toxicity_table_fills_only_completed_source_metrics():
             "perplexity": {"mean": 12.26, "standard_error": 0.08},
         }
     }
-    table = paper_benchmark.toxicity_markdown_table({("gemma2b", "alqr"): result})
+    table = bench_evaluations.toxicity_markdown_table({("gemma2b", "alqr"): result})
     row = next(line for line in table.splitlines() if "| Gemma-2-2B | A-LQR |" in line)
     assert "0.18 ± 0.08" in row
     assert "0.68 ± 0.00" in row

@@ -44,7 +44,7 @@
 
 ## Notes
 
-- These are archived results under their recorded original calibration. This unit now exposes plotting only; fresh 50-prompt execution is `python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1`. Historical caches are not upgraded or used as current benchmark results.
+- These are archived results under their recorded original calibration. This unit now exposes plotting only; the superseded 50-prompt runner is retained at `ref/paper_benchmark_50/`. Historical caches are not upgraded or used as current benchmark results.
 
 - Cache files contain prompt-level completions and make reruns resumable.
 

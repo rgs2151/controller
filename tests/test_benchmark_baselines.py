@@ -34,7 +34,7 @@ def test_capture_uses_pre_final_norm_decoder_states():
 
 
 def test_quality_joint_tokenization_and_reference_truncation():
-    path = Path(__file__).resolve().parents[1] / "parking/paper_benchmark_50/score_quality.py"
+    path = Path(__file__).resolve().parents[1] / "ref/paper_benchmark_50/score_quality.py"
     spec = importlib.util.spec_from_file_location("score_quality", path)
     quality = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(quality)

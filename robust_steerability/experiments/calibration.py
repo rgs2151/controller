@@ -1,4 +1,4 @@
-"""Historical combined calibration used by ``paper_benchmark_50``.
+"""Historical combined calibration used by ``ref/paper_benchmark_50``.
 
 Source-faithful non-H-infinity calibration now lives in
 ``robust_steerability.source_methods.calibration``. This module stays in place

@@ -1,4 +1,4 @@
-# paper_benchmark.py
+# bench_evaluations.py
 
 ## Method
 
@@ -49,10 +49,10 @@
 
 - The source RTP scripts permit calibration prompts to reappear in random evaluation samples; this unit preserves that sampling population.
 - Toxicity λ 3.5 is the strongest candidate in the paper-producing Gemma script and is fixed by the paper table's stated rule of maximizing toxicity reduction subject to acceptable PPL.
-- Prepare: `python parking/paper_benchmark/paper_benchmark.py --stage prepare --behavior toxicity`.
-- Cheap validation: `python parking/paper_benchmark/paper_benchmark.py --stage smoke --behavior toxicity`.
-- Two-GPU generation: `python parking/paper_benchmark/paper_benchmark.py --stage generate-pair --behavior toxicity`.
-- Two-GPU scoring: `python parking/paper_benchmark/paper_benchmark.py --stage score-pair --behavior toxicity`.
+- Prepare: `python parking/bench_evaluations/bench_evaluations.py --stage prepare --behavior toxicity`.
+- Cheap validation: `python parking/bench_evaluations/bench_evaluations.py --stage smoke --behavior toxicity`.
+- Two-GPU generation: `python parking/bench_evaluations/bench_evaluations.py --stage generate-pair --behavior toxicity`.
+- Two-GPU scoring: `python parking/bench_evaluations/bench_evaluations.py --stage score-pair --behavior toxicity`.
 - Summarize and render with `--stage summarize --behavior toxicity --method <method>` and `--stage render --behavior toxicity`.
 
 ## References
@@ -106,7 +106,7 @@
 
 ## References
 
-- `paper_benchmark.py` in this unit.
+- `bench_evaluations.py` in this unit.
 - `/home/dev/controller/paper/benchmark_table2.tex` for manuscript column organization.
 
 # toxicity_benchmark_table.md
@@ -154,6 +154,6 @@
 
 ## References
 
-- `paper_benchmark.py` in this unit.
+- `bench_evaluations.py` in this unit.
 - A-LQR paper Table 1 and Appendix F.
 - `/home/dev/controller/paper/benchmark_table1.tex` for manuscript column organization.
