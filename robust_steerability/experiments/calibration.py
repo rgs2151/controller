@@ -30,7 +30,6 @@ from robust_steerability.control import (
     HInfinityOptions,
 )
 from robust_steerability.experiments.methods import ControllerArtifact
-from robust_steerability.experiments.baselines import fit_baselines
 from robust_steerability.experiments.diagnostics import cpu_tensors, score, verify_run
 
 
@@ -338,8 +337,7 @@ def _fit_controller_inputs(
             "source_snapshots": {name: Path(inspect.getfile(obj)).read_text() for name, obj in
                                  (("calibration.py", calibrate_controller),
                                   ("nominal.py", project_dynamics),
-                                  ("nominal_artifact.py", reuse_or_fit_nominal_dynamics),
-                                  ("baselines.py", fit_baselines))},
+                                  ("nominal_artifact.py", reuse_or_fit_nominal_dynamics))},
             "dynamics_estimator": "averaged last-token transformer Jacobians, with prefix states fixed; projected using next-layer encoders and current-layer decoders",
             "jacobian_prompt_ids": [
                 row["prompt_id"] for row in nominal_signature["identity"]["records"]
@@ -494,8 +492,7 @@ def calibrate_controller(
                         inputs["raw_target"]["feature_norm"][:-1]),
         spid_setpoints=(float(settings["spid_setpoint_multiplier"]) *
                        inputs["raw_target"]["feature_norm"][:-1]),
-        baselines=fit_baselines(inputs["calibration"], seed=int(settings["seed"]),
-                                strengths=settings["baseline_strengths"]),
+        baselines={},
     )
     disturbance = inputs["calibration"]["disturbance_construction"]
     metadata = {
@@ -515,7 +512,6 @@ def calibrate_controller(
         "robust_steerability": None if hinf.gamma_star is None else 1.0 / hinf.gamma_star,
         "hinf_feasible": hinf.feasible,
     }
-    inputs["calibration"]["baseline_parameters"] = artifact.baselines
     inputs["calibration"]["lqr_solution"] = {
         "controller": "alqr", "gains": lqr_gains,
         "feedback_definition": "u = K @ ((h dot v - beta) * v); post-block addition, identity input channel",

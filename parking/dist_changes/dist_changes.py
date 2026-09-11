@@ -497,14 +497,6 @@ def _hinf_settings() -> dict[str, object]:
         "gamma_tolerance": 1e-5,
         "gamma_max_iterations": 100,
         "gamma_deployment_margin": 0.01,
-        "baseline_strengths": {
-            "iti": 0.25,
-            "actadd": 0.1,
-            "mean_act": 0.5,
-            "linear_act": 0.5,
-            "pid_act": 0.5,
-            "odesteer": 1.0,
-        },
         "model_loading": model_loading,
     }
 
