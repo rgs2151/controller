@@ -157,11 +157,13 @@ def _source_id(record: dict) -> str:
 
 def _base_record(row: dict, index: int) -> dict[str, object]:
     question = str(row["question"]).strip()
+    prompt = f"Q: {question} A:"
     return {
         "prompt_id": f"truthfulqa:{index}",
         "source_prompt_id": f"truthfulqa:{index}",
         "question": question,
-        "prompt": f"Q: {question} A:",
+        "prompt": prompt,
+        "text": prompt,
     }
 
 
