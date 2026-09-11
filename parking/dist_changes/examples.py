@@ -34,7 +34,9 @@ SECTIONS = (
             "public-domain books and ends directly with the unchanged TruthfulQA "
             "question. Every input is 7,167–7,168 Gemma tokens long; there is no "
             "repeated filler sentence and no instruction to ignore the context. "
-            "This set has not yet been evaluated."
+            "For Gemma-2-2B, the target is floor(0.875 × 8192) = 7168 input "
+            "tokens; document text is cut with Gemma's tokenizer so the unchanged "
+            "question remains last. This set has not yet been evaluated."
         ),
     ),
     (
