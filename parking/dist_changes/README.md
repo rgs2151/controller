@@ -7,7 +7,7 @@
 - Select 50 evaluation questions that overlap neither the semantic-fit questions nor the disturbance questions. Apply the same question and sampling seed to A-LQR and H∞.
 - Evaluate ID, Spanish, and long-context prompts plus three already-existing adversarial recipes. No new adversarial prompt is designed in this unit. The displayed adversarial condition is the existing recipe with the largest observed H∞ minus A-LQR Truth × Info difference.
 - Generate with the A-LQR paper settings and source generation protocol. Score every completion with the pinned TruthfulQA truth and informativeness judges, then compute `Truth (%) × Info (%) / 100`.
-- Write the grouped bar plot, aggregate scores, adversarial screen, and prompt-level generations with raw judge decisions.
+- Write a 1×2 box-plot figure separating Truth and Info, aggregate scores, the adversarial screen, and prompt-level generations with raw judge decisions.
 
 ## Variables
 
@@ -16,7 +16,7 @@
 - Labels/targets: positive-minus-negative TruthfulQA MC2 semantic target; binary `True` and `Helpful` judge decisions.
 - Signals/features/measures: generated completion, truth percentage, information percentage, their product, and bootstrap uncertainty.
 - Parameters/thresholds: seed 2151 for evaluation selection; 200 false plus 200 true fit prompts; 35 shared Jacobians; 200 disturbance prompts; rank 8; 50 evaluations per method and condition; 50 generated tokens.
-- Outputs: `plots/distribution_shift_txi.pdf`, `plots/distribution_shift_txi.png`, `plots/generations.csv`, `plots/distribution_scores.csv`, `plots/adversarial_screen.csv`, `plots/all_generations.csv`, `plots/all_condition_scores.csv`, and `plots/summary.json`.
+- Outputs: `plots/distribution_shift_truth_info.pdf`, `plots/distribution_shift_truth_info.png`, `plots/generations.csv`, `plots/distribution_scores.csv`, `plots/adversarial_screen.csv`, `plots/all_generations.csv`, `plots/all_condition_scores.csv`, and `plots/summary.json`.
 
 The x-axis distributions are:
 
@@ -32,19 +32,20 @@ The x-axis distributions are:
 - Tests/models: descriptive comparison with a prompt bootstrap; no null-hypothesis test is used.
 - Null hypothesis: not tested in this exploratory unit.
 - Alternative hypothesis: not tested; the practical question is whether H∞ has higher Truth × Info than A-LQR under an existing distribution shift.
-- Thresholds/decision rule: each bar is `100 × mean(True) × mean(Helpful)` over 50 prompts. Error bars are percentile 95% intervals from 10,000 prompt bootstrap resamples. The adversarial recipe maximizes the observed H∞ minus A-LQR bar among the three frozen candidates.
-- What the statistic means: a high value requires the method's outputs to be both factually truthful and informative; refusals or generic empty answers lose informativeness.
-- Why this statistic is appropriate here: it is the paper's behavioral TruthfulQA metric and directly tests generated answers rather than an internal steering-direction projection.
+- Thresholds/decision rule: each prompt receives a binary `yes`/`no` decision from each judge. Each box is the distribution of the corresponding percentage across 10,000 prompt bootstrap resamples; its whiskers are the 2.5th and 97.5th percentiles. The adversarial recipe was selected using the previously reported Truth × Info product among the three frozen candidates.
+- What the statistic means: Truth measures whether the answer is factually true; Info measures whether it is helpful or informative. Both are binary per prompt and reported as percentages across the 50 prompts.
+- Why this statistic is appropriate here: separating the two paper judges reveals whether a method improves factuality, informativeness, or merely trades one against the other.
 
 ## Legends
 
 - X axis: ID, Spanish, Long context, and Adversarial.
-- Y axis: Truth × Info in percent; higher is better.
+- Left y axis: bootstrapped Truth percentage; higher is better.
+- Right y axis: bootstrapped Info percentage on the same 0–100 scale; higher is better.
 - Color/value: black is A-LQR and red is H∞.
 - Grouping: two bars per distribution, each based on the same 50 source questions.
 - Ordering/sorting: distributions use the fixed conceptual order above; methods always appear A-LQR then H∞.
-- Lines/markers/labels: bar labels give point estimates; thin error bars give prompt-bootstrap 95% intervals.
-- Panels: one standalone grouped bar chart.
+- Boxes/whiskers: boxes give the bootstrap median and interquartile range; whiskers give the bootstrap 95% interval. Raw judge decisions remain in `plots/generations.csv`.
+- Panels: Truthfulness is on the left and Informativeness is on the right.
 
 ## Interpretation
 
