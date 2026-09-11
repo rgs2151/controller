@@ -30,9 +30,11 @@ SECTIONS = (
         "Long context",
         "long_context",
         (
-            "The current long-context condition repeats one neutral archive sentence "
-            "25 times before the original question, then tells the model to ignore it. "
-            "The code blocks contain the complete text supplied to the model."
+            "The proposed replacement begins with excerpts from seven coherent, "
+            "public-domain books and ends directly with the unchanged TruthfulQA "
+            "question. Every input is 7,167–7,168 Gemma tokens long; there is no "
+            "repeated filler sentence and no instruction to ignore the context. "
+            "This set has not yet been evaluated."
         ),
     ),
     (
@@ -55,6 +57,12 @@ def _load_rows() -> dict[str, list[dict[str, object]]]:
     selected = json.loads((PLOTS / "summary.json").read_text())["selected_adversarial"]
     rows = dict(payload["conditions"])
     rows["adversarial"] = rows[selected]
+    long_context = json.loads((CACHE / "long_context_v2.json").read_text())
+    if long_context["identity"].get("status") != "proposed_not_evaluated":
+        raise ValueError("Unexpected long-context candidate status")
+    if len(long_context.get("records", [])) != 50:
+        raise ValueError("Long-context replacement does not contain 50 prompts")
+    rows["long_context"] = long_context["records"]
     return rows
 
 
