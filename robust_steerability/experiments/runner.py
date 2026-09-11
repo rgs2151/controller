@@ -18,6 +18,7 @@ import torch
 
 from robust_steerability.artifacts import configuration_hash, implementation_hash
 from robust_steerability.calibration.nominal_artifact import nominal_dynamics_cache_path
+from robust_steerability.benchmarks.calibration import calibration_records
 from robust_steerability.benchmarks.toxicity import (
     toxicity_probabilities,
 )
@@ -133,8 +134,30 @@ def _controller_arguments(
 
 
 def _load_controller(manifest, model_entry, model, tokenizer, device):
-    return calibrate_controller(model, tokenizer, **_controller_arguments(
-        manifest, model_entry, model, tokenizer, device))
+    arguments = _controller_arguments(manifest, model_entry, model, tokenizer, device)
+    settings = arguments["settings"]
+    negative, positive, disturbance, dataset = calibration_records(
+        str(settings["behavior"]),
+        int(settings["fit_prompts_per_class"]),
+        int(settings["disturbance_prompts"]),
+        int(settings["seed"]),
+    )
+    jacobian_count = int(settings["jacobian_prompts"])
+    if len(positive) < jacobian_count:
+        raise ValueError("Not enough desired records for H-infinity Jacobian fitting")
+    calibration_data = {
+        "negative": negative,
+        "positive": positive,
+        "disturbance": disturbance,
+        "jacobian": positive[:jacobian_count],
+        "dataset": dataset,
+    }
+    return calibrate_controller(
+        model,
+        tokenizer,
+        calibration_data=calibration_data,
+        **arguments,
+    )
 
 
 def _prepare_diagnostic_run(manifest, model_entry, model, tokenizer, device, job_dir,

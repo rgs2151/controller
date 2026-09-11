@@ -188,10 +188,10 @@ def calibrated(tmp_path, monkeypatch, request):
     torch.manual_seed(44)
     model = GPT2LMHeadModel(GPT2Config(n_layer=2, n_embd=8, n_head=2, vocab_size=32,
                                       n_positions=32, eos_token_id=31, pad_token_id=31)).eval()
-    records = [{"prompt_id": f"rtp:{i}", "source_prompt_id": f"pair:{i % 4}", "text": str(i)}
+    records = [{"prompt_id": f"rtp:{i}",
+                "source_prompt_id": f"pair:{i % 4}" if i < 8 else f"pair:{i}",
+                "text": str(i)}
                for i in range(40)]
-    monkeypatch.setattr(cal, "calibration_records", lambda *a: (records[:4], records[4:8], records[8:12], {"id": "toy", "revision": "pinned"}))
-
     def states(model, tokenizer, texts, **kwargs):
         hidden = torch.stack([torch.randn(3, 8, generator=torch.Generator().manual_seed(200 + int(text))) for text in texts])
         return {"hidden": hidden, "attention_heads": hidden[:, :-1]}
@@ -226,6 +226,9 @@ def calibrated(tmp_path, monkeypatch, request):
                                   "quantization_compute_dtype": "float16"}}
     arguments = dict(model_label="toy", model_id="toy", cache_path=tmp_path / "controllers" / "toy.pt",
                      nominal_dynamics_path=tmp_path / "nominal_dynamics" / "toy.pt",
+                     calibration_data={"negative": records[:4], "positive": records[4:8],
+                                       "disturbance": records[8:12], "jacobian": records[4:8],
+                                       "dataset": {"id": "toy", "revision": "pinned"}},
                      settings=settings, controller_device="cpu")
     artifact, metadata = cal.calibrate_controller(model, ToyTokenizer(), **arguments)
     return model, arguments, artifact, metadata

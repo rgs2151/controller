@@ -15,7 +15,6 @@ from pathlib import Path
 import torch
 
 from robust_steerability.artifacts import configuration_hash, implementation_hash
-from robust_steerability.benchmarks.calibration import calibration_records
 from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.calibration.disturbances import fit_disturbance_geometry
 from robust_steerability.calibration.nominal import project_dynamics
@@ -33,6 +32,71 @@ from robust_steerability.control import (
 from robust_steerability.experiments.methods import ControllerArtifact
 from robust_steerability.experiments.baselines import fit_baselines
 from robust_steerability.experiments.diagnostics import cpu_tensors, score, verify_run
+
+
+def _record_identity(record: dict[str, object]) -> dict[str, str]:
+    identity = {
+        "prompt_id": str(record["prompt_id"]),
+        "text": str(record["text"]),
+    }
+    for key in ("source_prompt_id", "question_id"):
+        if key in record:
+            identity[key] = str(record[key])
+    return identity
+
+
+def calibration_data_identity(
+    calibration_data: dict[str, object],
+    settings: dict[str, object],
+) -> dict[str, object]:
+    """Validate and fingerprint the exact records used for H-infinity fitting."""
+
+    required = {"negative", "positive", "disturbance", "jacobian", "dataset"}
+    if set(calibration_data) != required:
+        raise ValueError(
+            "calibration_data must contain exactly negative, positive, "
+            "disturbance, jacobian, and dataset"
+        )
+    expected_counts = {
+        "negative": int(settings["fit_prompts_per_class"]),
+        "positive": int(settings["fit_prompts_per_class"]),
+        "disturbance": int(settings["disturbance_prompts"]),
+        "jacobian": int(settings["jacobian_prompts"]),
+    }
+    normalized: dict[str, list[dict[str, str]]] = {}
+    for split, expected in expected_counts.items():
+        records = calibration_data[split]
+        if not isinstance(records, list) or len(records) != expected:
+            raise ValueError(
+                f"H-infinity {split} split must contain exactly {expected} records"
+            )
+        normalized[split] = [_record_identity(record) for record in records]
+        prompt_ids = [record["prompt_id"] for record in normalized[split]]
+        if len(set(prompt_ids)) != len(prompt_ids):
+            raise ValueError(f"H-infinity {split} split contains duplicate prompt IDs")
+
+    fit_sources = {
+        record.get("source_prompt_id", record.get("question_id", record["prompt_id"]))
+        for split in ("negative", "positive")
+        for record in normalized[split]
+    }
+    disturbance_sources = {
+        record.get("source_prompt_id", record.get("question_id", record["prompt_id"]))
+        for record in normalized["disturbance"]
+    }
+    overlap = sorted(fit_sources & disturbance_sources)
+    if overlap:
+        raise ValueError(
+            "H-infinity disturbance records overlap the semantic fit split: "
+            + ", ".join(overlap[:5])
+        )
+    identity = {
+        "schema_version": 1,
+        "splits": normalized,
+        "dataset": calibration_data["dataset"],
+    }
+    identity["fingerprint"] = configuration_hash(identity)
+    return identity
 
 
 def collect_last_token_states(
@@ -126,17 +190,17 @@ def _fit_controller_inputs(
     model_id: str,
     settings: dict,
     nominal_dynamics_path: Path,
+    calibration_data: dict[str, object],
 ) -> dict:
     """Identify actual full-order and projected Jacobian dynamics."""
-    seed = int(settings["seed"])
     fit_per_class = int(settings["fit_prompts_per_class"])
-    calibration_count = int(settings["disturbance_prompts"])
-    negative, positive, calibration_records_list, dataset = calibration_records(
-        settings["behavior"], fit_per_class, calibration_count, seed)
+    calibration_identity = calibration_data_identity(calibration_data, settings)
+    negative = calibration_data["negative"]
+    positive = calibration_data["positive"]
+    calibration_records_list = calibration_data["disturbance"]
+    jacobian_records = calibration_data["jacobian"]
+    dataset = calibration_data["dataset"]
     fit_records = negative + positive
-    jacobian_records = positive[:int(settings["jacobian_prompts"])]
-    if len(jacobian_records) != int(settings["jacobian_prompts"]):
-        raise ValueError("Not enough positive fit prompts for Jacobian identification")
     model_device = next(model.parameters()).device
     runtime = {
         "model_device": str(model_device),
@@ -253,6 +317,7 @@ def _fit_controller_inputs(
     return {
         "raw_dynamics": raw_dynamics,
         "nominal_dynamics": nominal_signature,
+        "calibration_data": calibration_identity,
         "raw_target": raw_target,
         "problem": asdict(problem),
         "maps": {"means": means, "encoders": encoders_all, "decoders": decoders_all,
@@ -334,10 +399,12 @@ def _fingerprint(
     model_id: str,
     settings: dict,
     nominal_dynamics: dict[str, object],
+    calibration_data: dict[str, object],
 ) -> str:
     return configuration_hash({
         "model_label": model_label, "model_id": model_id, "settings": settings,
         "nominal_dynamics": nominal_dynamics,
+        "calibration_data": calibration_data,
         "implementation_sha256": implementation_hash(),
     })
 
@@ -377,12 +444,16 @@ def _freeze_inputs(inputs: dict, solution, *, model, model_label: str, model_id:
 
 def calibrate_controller(
     model, tokenizer, *, model_label: str, model_id: str, cache_path: Path,
-    nominal_dynamics_path: Path, settings: dict[str, object], controller_device: str,
+    nominal_dynamics_path: Path, calibration_data: dict[str, object],
+    settings: dict[str, object], controller_device: str,
 ) -> tuple[ControllerArtifact, dict[str, object]]:
     """Fit/load the shared controller; new fits freeze full H-infinity diagnostics."""
     if cache_path.exists():
         nominal_signature = nominal_dynamics_signature(nominal_dynamics_path)
-        fingerprint = _fingerprint(model_label, model_id, settings, nominal_signature)
+        data_identity = calibration_data_identity(calibration_data, settings)
+        fingerprint = _fingerprint(
+            model_label, model_id, settings, nominal_signature, data_identity
+        )
         cached = torch.load(cache_path, map_location="cpu", weights_only=True)
         if cached["fingerprint"] != fingerprint:
             raise ValueError(f"Incompatible controller cache: {cache_path}")
@@ -395,8 +466,15 @@ def calibrate_controller(
         model_id,
         settings,
         nominal_dynamics_path,
+        calibration_data,
     )
-    fingerprint = _fingerprint(model_label, model_id, settings, inputs["nominal_dynamics"])
+    fingerprint = _fingerprint(
+        model_label,
+        model_id,
+        settings,
+        inputs["nominal_dynamics"],
+        inputs["calibration_data"],
+    )
     problem = FiniteHorizonControlProblem(**inputs["problem"])
     lqr_gains = -solve_identity_input_lqr(inputs["raw_dynamics"], controller_device,
                                         float(settings["alqr_q"]), float(settings["alqr_r"]),
@@ -426,6 +504,7 @@ def calibrate_controller(
         "fingerprint": fingerprint, "model_label": model_label, "model_id": model_id,
         "nominal_dynamics_path": str(nominal_dynamics_path.resolve()),
         "nominal_dynamics": inputs["nominal_dynamics"],
+        "calibration_data": inputs["calibration_data"],
         "fit_prompt_ids": sorted(inputs["splits"]["fit"]),
         "calibration_prompt_ids": inputs["splits"]["calibration"],
         "tuning_records": inputs["calibration"]["calibration_records"],
