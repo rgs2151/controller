@@ -1,0 +1,96 @@
+{
+  "metric": "TruthfulQA True percentage times Info percentage divided by 100",
+  "selected_adversarial": "adversarial_context_saturation",
+  "selection_rule": "largest observed H-infinity minus A-LQR T x I among three existing, previously frozen adversarial recipes",
+  "post_selection_warning": "exploratory selection on the displayed 50 questions; requires a fresh held-out confirmation before a population claim",
+  "scores": [
+    {
+      "condition": "id",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 60.0,
+      "info_percent": 94.0,
+      "truth_x_info_percent": 56.4,
+      "bootstrap_95_low": 44.0,
+      "bootstrap_95_high": 69.12,
+      "display_condition": "id"
+    },
+    {
+      "condition": "id",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 48.0,
+      "info_percent": 100.0,
+      "truth_x_info_percent": 48.0,
+      "bootstrap_95_low": 34.0,
+      "bootstrap_95_high": 62.0,
+      "display_condition": "id"
+    },
+    {
+      "condition": "spanish",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 76.0,
+      "info_percent": 60.0,
+      "truth_x_info_percent": 45.6,
+      "bootstrap_95_low": 34.96,
+      "bootstrap_95_high": 56.24,
+      "display_condition": "spanish"
+    },
+    {
+      "condition": "spanish",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 50.0,
+      "info_percent": 84.0,
+      "truth_x_info_percent": 42.0,
+      "bootstrap_95_low": 29.92,
+      "bootstrap_95_high": 54.51999999999999,
+      "display_condition": "spanish"
+    },
+    {
+      "condition": "long_context",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 70.0,
+      "info_percent": 86.0,
+      "truth_x_info_percent": 60.2,
+      "bootstrap_95_low": 49.28000000000001,
+      "bootstrap_95_high": 72.0,
+      "display_condition": "long_context"
+    },
+    {
+      "condition": "long_context",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 42.0,
+      "info_percent": 98.0,
+      "truth_x_info_percent": 41.16,
+      "bootstrap_95_low": 28.000000000000004,
+      "bootstrap_95_high": 54.88,
+      "display_condition": "long_context"
+    },
+    {
+      "condition": "adversarial_context_saturation",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 86.0,
+      "info_percent": 24.0,
+      "truth_x_info_percent": 20.64,
+      "bootstrap_95_low": 11.28,
+      "bootstrap_95_high": 30.24,
+      "display_condition": "adversarial"
+    },
+    {
+      "condition": "adversarial_context_saturation",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 52.0,
+      "info_percent": 42.0,
+      "truth_x_info_percent": 21.84,
+      "bootstrap_95_low": 14.72,
+      "bootstrap_95_high": 29.04,
+      "display_condition": "adversarial"
+    }
+  ]
+}

@@ -48,13 +48,17 @@ The x-axis distributions are:
 
 ## Interpretation
 
-- Pending completion of the cached GPU run.
+- The proposed long-context failure pattern was not observed: A-LQR scored 60.2% and H∞ scored 41.2% Truth × Info.
+- H∞ also trailed A-LQR on ID (48.0% versus 56.4%) and Spanish (42.0% versus 45.6%).
+- Of the three previously frozen adversarial recipes, context saturation produced the largest H∞−A-LQR difference. The gap was only +1.2 percentage points (21.8% versus 20.6%), with strongly overlapping bootstrap intervals, so this run does not establish an H∞ advantage.
+- The adversarial result appears to reflect severe degradation of both methods rather than robust recovery by H∞. The prompt-level outputs in `plots/generations.csv` should be inspected before deciding whether this distribution is useful for a confirmatory experiment.
 
 ## Notes
 
 - This unit reuses existing adversarial constructions only. D6 is transferred exactly as the earlier literal `<|begin_of_text|>` marker recipe: 25 questions receive 16 repeats and 25 receive 64, assigned without using outcomes.
 - Selecting the displayed adversarial recipe on these same 50 questions is exploratory and optimistic. A fresh disjoint confirmation set is required before treating the selected gap as population evidence.
 - `plots/generations.csv` contains the exact 400 displayed prompt/method rows. `plots/all_generations.csv` also retains the nonselected adversarial candidates.
+- Every artifact produced by this analysis—the H∞ controller and diagnostics, shared-A copy, translations, generations, judge outputs, logs, CSVs, and plots—is stored under `parking/dist_changes/`. The unit only reads the frozen A-LQR inputs in `parking/bench_artifacts/`; it does not write to them.
 - Large model artifacts, controller diagnostics, translations, and judge caches remain under ignored `cache/` storage.
 
 ## References
