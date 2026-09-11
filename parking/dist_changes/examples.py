@@ -114,7 +114,7 @@ def main() -> None:
                 "",
             ]
         )
-        for index, source_id in enumerate(selected_ids, start=1):
+        for source_id in selected_ids:
             row = by_condition[condition][source_id]
             prompt = "\n".join(
                 line.rstrip()
@@ -122,8 +122,6 @@ def main() -> None:
             ).rstrip()
             lines.extend(
                 [
-                    f"**Example {index}**",
-                    "",
                     "```text",
                     prompt,
                     "```",
