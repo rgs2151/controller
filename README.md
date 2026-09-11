@@ -35,8 +35,14 @@ python parking/residual_checks/residual_checks.py all
 Prepare the paper benchmark, then run the current Original/A-LQR slice on both GPUs:
 
 ```bash
-python parking/paper_benchmark/paper_benchmark.py --stage prepare
-python parking/paper_benchmark/paper_benchmark.py --stage generate-pair
+python parking/paper_benchmark/paper_benchmark.py --stage prepare --behavior truthfulness
+python parking/paper_benchmark/paper_benchmark.py --stage generate-pair --behavior truthfulness
+```
+
+Prepare only the reusable Gemma-2-2B TruthfulQA A-LQR setpoint and Jacobians:
+
+```bash
+python parking/benchmark/benchmark.py --stage all --devices cuda:0,cuda:1
 ```
 
 Each method checkpoints complete repetitions inside the owning unit's ignored
