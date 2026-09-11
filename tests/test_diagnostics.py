@@ -21,7 +21,7 @@ from robust_steerability.experiments import diagnostics as diag
 from robust_steerability.experiments.generation import generate_completions
 from robust_steerability.experiments.methods import build_policy
 from robust_steerability.runtime.diagnostics import ReducedTrajectoryRecorder
-from robust_steerability.runtime.policy import ReducedSemanticSetpointPolicy
+from robust_steerability.runtime.policy import ReducedStateSetpointPolicy
 
 
 @pytest.fixture
@@ -197,7 +197,18 @@ def calibrated(tmp_path, monkeypatch, request):
         return {"hidden": hidden, "attention_heads": hidden[:, :-1]}
 
     monkeypatch.setattr(cal, "collect_last_token_states", states)
-    monkeypatch.setattr(cal, "average_prompt_jacobians", lambda *a, **k: torch.eye(8).repeat(2, 1, 1))
+    monkeypatch.setattr(cal, "reuse_or_fit_nominal_dynamics", lambda *a, **k: torch.eye(8).repeat(2, 1, 1))
+    monkeypatch.setattr(
+        cal,
+        "nominal_dynamics_signature",
+        lambda path: {
+            "identity": {
+                "fingerprint": "toy-a",
+                "records": [{"prompt_id": f"rtp:{index}", "text": str(index)} for index in range(4, 8)],
+            },
+            "artifact_sha256": "toy-sha",
+        },
+    )
     behavior = "toxicity_mitigation" if getattr(request.node, "callspec", None) is not None and request.node.callspec.params.get("kind") in {"id_toxicity", "ood_toxicity"} else "truthfulness"
     settings = {"behavior": behavior, "disturbance_coverage": 0.95, "seed": 4, "fit_prompts_per_class": 4, "disturbance_prompts": 4,
                 "calibration_max_length": 12, "activation_batch_size": 2, "state_rank": 2,
@@ -214,6 +225,7 @@ def calibrated(tmp_path, monkeypatch, request):
                 "model_loading": {"revision": "pinned", "dtype": "float32", "quantized": False,
                                   "quantization_compute_dtype": "float16"}}
     arguments = dict(model_label="toy", model_id="toy", cache_path=tmp_path / "controllers" / "toy.pt",
+                     nominal_dynamics_path=tmp_path / "nominal_dynamics" / "toy.pt",
                      settings=settings, controller_device="cpu")
     artifact, metadata = cal.calibrate_controller(model, ToyTokenizer(), **arguments)
     return model, arguments, artifact, metadata
@@ -228,6 +240,10 @@ def test_calibration_bundle_and_missing_cache_rejection(calibrated, monkeypatch,
     assert loaded["calibration"]["calibration"]["encoders"].shape == (3, 8, 2)
     assert loaded["calibration"]["calibration"]["protected_readouts"].shape == (3, 1, 2)
     cal_data = loaded["calibration"]["calibration"]
+    torch.testing.assert_close(
+        cal_data["calibration_state_deviations"],
+        cal_data["calibration_reduced_states"] - cal_data["reference_states"].unsqueeze(0),
+    )
     residual = cal_data["calibration_state_deviations"][:, 1:] - torch.einsum(
         "lij,nlj->nli", loaded["calibration"]["problem"]["dynamics"], cal_data["calibration_state_deviations"][:, :-1])
     torch.testing.assert_close(residual, cal_data["residuals"], rtol=0, atol=0)
@@ -270,8 +286,8 @@ def test_recorder_does_not_call_stateful_controller_twice():
     from robust_steerability.control import PIDController, PIDGains
     kwargs = dict(means=torch.zeros(1, 2), encoders=torch.eye(2).unsqueeze(0),
                   decoders=torch.eye(2).unsqueeze(0), feature_unit=torch.tensor([[1.0, 0.0]]), setpoints=torch.tensor([2.0]))
-    original = ReducedSemanticSetpointPolicy(PIDController(PIDGains(1, 0.1, 0.3)), **kwargs)
-    recorded = ReducedSemanticSetpointPolicy(PIDController(PIDGains(1, 0.1, 0.3)), recorder=ReducedTrajectoryRecorder(), **kwargs)
+    original = ReducedStateSetpointPolicy(PIDController(PIDGains(1, 0.1, 0.3)), **kwargs)
+    recorded = ReducedStateSetpointPolicy(PIDController(PIDGains(1, 0.1, 0.3)), recorder=ReducedTrajectoryRecorder(), **kwargs)
     for policy in [original, recorded]:
         policy.prepare(torch.device("cpu"), torch.float32)
         policy.reset()

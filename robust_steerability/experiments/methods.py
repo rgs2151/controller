@@ -12,7 +12,7 @@ from robust_steerability.control import (
     PIDController,
     PIDGains,
 )
-from robust_steerability.runtime.policy import ReducedSemanticSetpointPolicy, SemanticSetpointPolicy
+from robust_steerability.runtime.policy import ReducedStateSetpointPolicy, SemanticSetpointPolicy
 from robust_steerability.runtime.diagnostics import ReducedTrajectoryRecorder
 
 
@@ -83,7 +83,7 @@ def build_policy(
         setpoints = artifact.alqr_setpoints if method == "alqr" else artifact.spid_setpoints
         return SemanticSetpointPolicy(controller, artifact.raw_feature_unit, setpoints,
                                       recorder=ReducedTrajectoryRecorder("norms") if record else None)
-    return ReducedSemanticSetpointPolicy(
+    return ReducedStateSetpointPolicy(
         controller=controller,
         means=artifact.means,
         encoders=artifact.encoders,

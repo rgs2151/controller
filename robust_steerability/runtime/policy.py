@@ -89,13 +89,13 @@ class SemanticSetpointPolicy:
 
 
 @dataclass
-class ReducedSemanticSetpointPolicy:
-    """Apply reduced control to a context-updated semantic tracking error.
+class ReducedStateSetpointPolicy:
+    """Apply full reduced-state feedback around a semantic reference state.
 
-    At every forward call, the reference is the nearest point on the fitted
-    semantic setpoint hyperplane. The controller therefore sees only the
-    current semantic tracking error. Orthonormal next-layer bases map its
-    intervention back to the model hidden space.
+    The first reduced coordinate follows the fitted semantic setpoint. The
+    remaining coordinates have zero reference, so the controller receives all
+    state coordinates for which its gain was synthesized. Orthonormal
+    next-layer bases map its intervention back to the model hidden space.
     """
 
     site: ClassVar[str] = "block_input"
@@ -106,7 +106,7 @@ class ReducedSemanticSetpointPolicy:
     feature_unit: torch.Tensor
     setpoints: torch.Tensor
     recorder: ReducedTrajectoryRecorder | None = None
-    coordinate_system: ClassVar[str] = "orthonormal reduced semantic tracking error"
+    coordinate_system: ClassVar[str] = "orthonormal full reduced-state tracking error"
 
     def prepare(self, device: torch.device, dtype: torch.dtype) -> None:
         self.controller.to(device=device, dtype=torch.float32)
@@ -131,8 +131,8 @@ class ReducedSemanticSetpointPolicy:
             activation_float - self.means[layer_index]
         ) @ self.encoders[layer_index]
         feature = self.feature_unit[layer_index]
-        scalar_deviation = reduced @ feature - self.setpoints[layer_index]
-        state_deviation = scalar_deviation.unsqueeze(-1) * feature
+        reference = self.setpoints[layer_index] * feature
+        state_deviation = reduced - reference
         control = self.controller.control(layer_index, state_deviation)
         channels = self.controller.control_channels
         reduced_delta = control if channels is None else control @ channels[layer_index].T

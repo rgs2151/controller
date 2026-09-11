@@ -7,7 +7,7 @@
 - Load the pinned `google/gemma-2-2b` checkpoint using the frozen A-LQR TruthfulQA model-loading configuration.
 - Average the last-token decoder states of the false and true calibration prompts and save the resulting positive-minus-negative semantic direction and its per-depth norm.
 - Compute the full last-token state Jacobian of every decoder block for each of the 35 Jacobian prompts, holding prefix states fixed. Split prompts deterministically across two GPUs and save every prompt-layer matrix.
-- Average the 35 raw prompt Jacobians in float64 and save the resulting A-LQR nominal dynamics tensor.
+- Average the 35 raw prompt Jacobians in float64 and save the resulting controller-neutral nominal dynamics tensor in the strict artifact format shared by A-LQR and H∞.
 - Record model-loading time, setpoint fitting time, per-shard Jacobian time, aggregation time, total elapsed time, GPU identity, peak GPU memory, software versions, command, Git state, prompt identifiers, and artifact hashes.
 
 ## Variables
@@ -17,7 +17,7 @@
 - Labels/targets: false answers are undesired; true answers are desired; the target direction is desired mean minus undesired mean.
 - Signals/features/measures: last-token decoder inputs, terminal decoder output, per-block full-state Jacobians, averaged dynamics, wall-clock time, and peak CUDA memory.
 - Parameters/thresholds: Gemma-2-2B revision `c5ebcd40d208330abc697524c919956e692655cf`; Jacobian maximum context length 512; VJP chunk size 32; activation batch size 16; frozen A-LQR setting λ 3, Q 0.1, R 1, Qf 0.3.
-- Outputs: ignored files `cache/data.json`, `cache/setpoint.pt`, `cache/jacobians/`, `cache/dynamics.pt`, `cache/timings.json`, `cache/manifest.json`, and `cache/runs/`.
+- Outputs: ignored files `cache/data.json`, `cache/setpoint.pt`, `cache/jacobians/`, `cache/dynamics.pt`, `cache/dynamics.json`, `cache/timings.json`, `cache/manifest.json`, and `cache/runs/`.
 
 ## Statistics
 
@@ -40,14 +40,14 @@
 
 ## Interpretation
 
-- `setpoint.pt` and `dynamics.pt` are the reusable offline A-LQR calibration artifacts for subsequent small truthfulness/OOD steering experiments.
+- `setpoint.pt` is the reusable A-LQR semantic calibration. `dynamics.pt` is the reusable controller-neutral A matrix consumed unchanged by A-LQR or H∞.
 - This unit establishes calibration only and makes no steering-performance claim.
 
 ## Notes
 
 - Run the complete requested calibration with `python parking/bench_artifacts/bench_artifacts.py --stage all --devices cuda:0,cuda:1`.
 - Inspect paths and completion status with `python parking/bench_artifacts/bench_artifacts.py --stage status`.
-- `setpoint.pt` contains `contrast` and `feature_norm`; `dynamics.pt` contains the averaged tensor under `dynamics`. Both include the complete calibration identity.
+- `setpoint.pt` contains `contrast` and `feature_norm`. `dynamics.pt` contains the averaged tensor under `dynamics`; `dynamics.json` records the exact model, prompt texts and identifiers, Jacobian settings, implementation hashes, timing, device provenance, and artifact checksum.
 - Per-shard run records retain the exact prompt identifiers corresponding to the raw Jacobian directories.
 - The unit intentionally has no generation or evaluation stage. The five-repeat benchmark remains unrun.
 - Gemma-2-2B has roughly 2.6B parameters and is the frozen checkpoint intended by the user's “Gemma 3B / 2.5B” description.

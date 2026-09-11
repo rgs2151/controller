@@ -1,13 +1,14 @@
-"""Historical combined calibration used by ``ref/paper_benchmark_50``.
+"""Reduced-state H-infinity calibration and Hannah's diagnostic handoff.
 
-Source-faithful non-H-infinity calibration now lives in
-``robust_steerability.source_methods.calibration``. This module stays in place
-to preserve the completed pilot and Hannah's existing H-infinity handoff.
+Source-faithful non-H-infinity calibration lives in
+``robust_steerability.source_methods.calibration``. Nominal transformer
+dynamics are controller-neutral and shared with A-LQR.
 """
 
 from __future__ import annotations
 
 import inspect
+import os
 from dataclasses import asdict
 from pathlib import Path
 
@@ -17,7 +18,11 @@ from robust_steerability.artifacts import configuration_hash, implementation_has
 from robust_steerability.benchmarks.calibration import calibration_records
 from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.calibration.disturbances import fit_disturbance_geometry
-from robust_steerability.calibration.nominal import average_prompt_jacobians, project_dynamics
+from robust_steerability.calibration.nominal import project_dynamics
+from robust_steerability.calibration.nominal_artifact import (
+    nominal_dynamics_signature,
+    reuse_or_fit_nominal_dynamics,
+)
 from robust_steerability.calibration.targets import build_contrastive_target
 from robust_steerability.control.lqr import solve_identity_input_lqr
 from robust_steerability.control import (
@@ -115,7 +120,13 @@ def _apply_coordinates(
     return torch.einsum("nld,ldr->nlr", centered, encoders)
 
 
-def _fit_controller_inputs(model, tokenizer, settings: dict, cache_path: Path) -> dict:
+def _fit_controller_inputs(
+    model,
+    tokenizer,
+    model_id: str,
+    settings: dict,
+    nominal_dynamics_path: Path,
+) -> dict:
     """Identify actual full-order and projected Jacobian dynamics."""
     seed = int(settings["seed"])
     fit_per_class = int(settings["fit_prompts_per_class"])
@@ -126,10 +137,38 @@ def _fit_controller_inputs(model, tokenizer, settings: dict, cache_path: Path) -
     jacobian_records = positive[:int(settings["jacobian_prompts"])]
     if len(jacobian_records) != int(settings["jacobian_prompts"]):
         raise ValueError("Not enough positive fit prompts for Jacobian identification")
-    raw_dynamics = average_prompt_jacobians(
-        model, tokenizer, jacobian_records, cache_dir=cache_path.parent / (cache_path.stem + "_jacobians"),
-        max_length=int(settings["jacobian_max_length"]), vjp_chunk_size=int(settings["jacobian_vjp_chunk_size"]),
-        model_revision=str(settings["model_loading"]["revision"]))
+    model_device = next(model.parameters()).device
+    runtime = {
+        "model_device": str(model_device),
+        "torch_version": str(torch.__version__),
+        "cuda_runtime": torch.version.cuda,
+        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+    }
+    if model_device.type == "cuda":
+        properties = torch.cuda.get_device_properties(model_device)
+        runtime["gpu"] = {
+            "logical_index": model_device.index,
+            "name": properties.name,
+            "total_memory_bytes": properties.total_memory,
+            "compute_capability": [properties.major, properties.minor],
+        }
+    nominal_behavior = {
+        "toxicity_mitigation": "toxicity",
+        "truthfulness": "truthfulness",
+    }[str(settings["behavior"])]
+    raw_dynamics = reuse_or_fit_nominal_dynamics(
+        model,
+        tokenizer,
+        jacobian_records,
+        artifact_path=nominal_dynamics_path,
+        behavior=nominal_behavior,
+        model_id=model_id,
+        model_revision=str(settings["model_loading"]["revision"]),
+        max_length=int(settings["jacobian_max_length"]),
+        vjp_chunk_size=int(settings["jacobian_vjp_chunk_size"]),
+        runtime=runtime,
+    )
+    nominal_signature = nominal_dynamics_signature(nominal_dynamics_path)
     fit_states = collect_last_token_states(
         model,
         tokenizer,
@@ -144,7 +183,7 @@ def _fit_controller_inputs(model, tokenizer, settings: dict, cache_path: Path) -
         max_length=int(settings["calibration_max_length"]),
         batch_size=int(settings["activation_batch_size"]),
     )
-    device = next(model.parameters()).device
+    device = model_device
     fit_heads, calibration_heads = fit_states["attention_heads"], calibration_states["attention_heads"]
     fit_states = fit_states["hidden"].to(device)
     calibration_states = calibration_states["hidden"].to(device)
@@ -162,13 +201,13 @@ def _fit_controller_inputs(model, tokenizer, settings: dict, cache_path: Path) -
     feature_unit_all = feature_unit_all / feature_unit_all.norm(dim=1, keepdim=True).clamp_min(
         float(settings["numerical_floor"]))
     setpoints_all = raw_target["beta"] - torch.einsum("ld,ld->l", means, raw_target["feature_unit"])
+    reference_states = setpoints_all.unsqueeze(-1) * feature_unit_all
 
-    def semantic_deviation(reduced):
-        scalar = torch.einsum("nlr,lr->nl", reduced, feature_unit_all) - setpoints_all
-        return scalar.unsqueeze(-1) * feature_unit_all.unsqueeze(0)
+    def state_deviation(reduced):
+        return reduced - reference_states.unsqueeze(0)
 
-    fit_deviations = semantic_deviation(fit_reduced)
-    calibration_deviations = semantic_deviation(calibration_reduced)
+    fit_deviations = state_deviation(fit_reduced)
+    calibration_deviations = state_deviation(calibration_reduced)
     residuals = calibration_deviations[:, 1:] - torch.einsum(
         "lij,nlj->nli", dynamics, calibration_deviations[:, :-1])
     fit_residuals = fit_deviations[:, 1:] - torch.einsum(
@@ -182,7 +221,6 @@ def _fit_controller_inputs(model, tokenizer, settings: dict, cache_path: Path) -
     identity = torch.eye(state_dimension, device=device)
     control_channels = identity.unsqueeze(0).repeat(horizon, 1, 1)
     depth_weight = 1.0 / horizon
-    reference_states = torch.zeros(horizon + 1, state_dimension, device=device)
     reference_controls = torch.zeros(horizon, state_dimension, device=device)
     readout_bases = torch.linalg.qr(torch.cat([
         feature_unit_all.unsqueeze(-1), identity.expand(horizon + 1, -1, -1)], dim=-1)).Q
@@ -214,6 +252,7 @@ def _fit_controller_inputs(model, tokenizer, settings: dict, cache_path: Path) -
     )
     return {
         "raw_dynamics": raw_dynamics,
+        "nominal_dynamics": nominal_signature,
         "raw_target": raw_target,
         "problem": asdict(problem),
         "maps": {"means": means, "encoders": encoders_all, "decoders": decoders_all,
@@ -232,11 +271,17 @@ def _fit_controller_inputs(model, tokenizer, settings: dict, cache_path: Path) -
         },
         "calibration": {
             "source_snapshots": {name: Path(inspect.getfile(obj)).read_text() for name, obj in
-                                 (("calibration.py", calibrate_controller), ("baselines.py", fit_baselines))},
+                                 (("calibration.py", calibrate_controller),
+                                  ("nominal.py", project_dynamics),
+                                  ("nominal_artifact.py", reuse_or_fit_nominal_dynamics),
+                                  ("baselines.py", fit_baselines))},
             "dynamics_estimator": "averaged last-token transformer Jacobians, with prefix states fixed; projected using next-layer encoders and current-layer decoders",
-            "jacobian_prompt_ids": [row["prompt_id"] for row in jacobian_records],
+            "jacobian_prompt_ids": [
+                row["prompt_id"] for row in nominal_signature["identity"]["records"]
+            ],
+            "nominal_dynamics": nominal_signature,
             "raw_jacobians": raw_dynamics,
-            "reference_rule": "nearest point on the semantic setpoint hyperplane, recomputed from each current context",
+            "reference_rule": "fixed reduced reference: semantic setpoint along the target direction and zero on every orthogonal coordinate",
             "residuals": residuals, "state_basis": basis,
             "means": means, "encoders": encoders_all, "decoders": decoders_all,
             "fit_reduced_states": fit_reduced, "calibration_reduced_states": calibration_reduced,
@@ -254,7 +299,7 @@ def _fit_controller_inputs(model, tokenizer, settings: dict, cache_path: Path) -
             "reference_states": reference_states,
             "reference_controls": reference_controls,
             "setpoints": setpoints_all,
-            "feedback_definition": "context-updated semantic tracking error; intervention = K @ feedback",
+            "feedback_definition": "full reduced-state tracking error; intervention = K @ (reduced_state - reference_state)",
             "protected_readouts_definition": "Orthogonal complement of the target within the reduced basis; representation preservation, not an independent behavior probe.",
             "reference_controls_definition": "zero nominal feedforward; feedback alone supplies the intervention",
             "disturbance_construction": {
@@ -284,9 +329,15 @@ def _options(settings: dict) -> HInfinityOptions:
     )
 
 
-def _fingerprint(model_label: str, model_id: str, settings: dict) -> str:
+def _fingerprint(
+    model_label: str,
+    model_id: str,
+    settings: dict,
+    nominal_dynamics: dict[str, object],
+) -> str:
     return configuration_hash({
         "model_label": model_label, "model_id": model_id, "settings": settings,
+        "nominal_dynamics": nominal_dynamics,
         "implementation_sha256": implementation_hash(),
     })
 
@@ -308,8 +359,8 @@ def _freeze_inputs(inputs: dict, solution, *, model, model_label: str, model_id:
             "run_id": "calibration-" + fingerprint[:20], "model_id": model_id,
             "model_label": model_label, "model_revision": settings["model_loading"]["revision"],
             "model_family": str(model.config.model_type), "parameter_count": int(model.num_parameters()),
-            "behavior": settings["behavior"], "intervention_channel": "reduced_semantic_setpoint",
-            "protocol_id": "context-semantic-" + configuration_hash(protocol_settings)[:16],
+            "behavior": settings["behavior"], "intervention_channel": "full_reduced_state_setpoint",
+            "protocol_id": "full-reduced-state-" + configuration_hash(protocol_settings)[:16],
             "synthetic": False, "calibration_fingerprint": fingerprint,
         },
         "splits": inputs["splits"], "normalization": inputs["normalization"],
@@ -326,18 +377,26 @@ def _freeze_inputs(inputs: dict, solution, *, model, model_label: str, model_id:
 
 def calibrate_controller(
     model, tokenizer, *, model_label: str, model_id: str, cache_path: Path,
-    settings: dict[str, object], controller_device: str,
+    nominal_dynamics_path: Path, settings: dict[str, object], controller_device: str,
 ) -> tuple[ControllerArtifact, dict[str, object]]:
     """Fit/load the shared controller; new fits freeze full H-infinity diagnostics."""
-    fingerprint = _fingerprint(model_label, model_id, settings)
     if cache_path.exists():
+        nominal_signature = nominal_dynamics_signature(nominal_dynamics_path)
+        fingerprint = _fingerprint(model_label, model_id, settings, nominal_signature)
         cached = torch.load(cache_path, map_location="cpu", weights_only=True)
         if cached["fingerprint"] != fingerprint:
             raise ValueError(f"Incompatible controller cache: {cache_path}")
         verify_run(diagnostic_run(cache_path, fingerprint))
         return ControllerArtifact(**cached["artifact"]), cached["metadata"]
 
-    inputs = _fit_controller_inputs(model, tokenizer, settings, cache_path)
+    inputs = _fit_controller_inputs(
+        model,
+        tokenizer,
+        model_id,
+        settings,
+        nominal_dynamics_path,
+    )
+    fingerprint = _fingerprint(model_label, model_id, settings, inputs["nominal_dynamics"])
     problem = FiniteHorizonControlProblem(**inputs["problem"])
     lqr_gains = -solve_identity_input_lqr(inputs["raw_dynamics"], controller_device,
                                         float(settings["alqr_q"]), float(settings["alqr_r"]),
@@ -365,6 +424,8 @@ def calibrate_controller(
         "behavior": settings["behavior"],
         "source_fit_prompt_ids": sorted({row.get("source_prompt_id", row["prompt_id"]) for row in inputs["calibration"]["fit_records"]}),
         "fingerprint": fingerprint, "model_label": model_label, "model_id": model_id,
+        "nominal_dynamics_path": str(nominal_dynamics_path.resolve()),
+        "nominal_dynamics": inputs["nominal_dynamics"],
         "fit_prompt_ids": sorted(inputs["splits"]["fit"]),
         "calibration_prompt_ids": inputs["splits"]["calibration"],
         "tuning_records": inputs["calibration"]["calibration_records"],

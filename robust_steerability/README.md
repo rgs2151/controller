@@ -62,10 +62,14 @@ small, tensor-free inventory into that unit's `plots/diagnostics/`.
 
 Current runs do not whiten state coordinates. They use a target-preserving
 orthonormal reduced basis, standardized performance readouts, orthonormal
-control channels, normalized-depth costs, and a semantic-hyperplane reference
-recomputed from the current context. Nominal feedforward is zero. Toxicity and
-truthfulness have separate fit/calibration splits and targets. Hannah's solver
-and diagnostic formulas are unchanged; the reference files are not edited.
+control channels, normalized-depth costs, and a fixed reduced reference whose
+semantic coordinate is the fitted setpoint and whose orthogonal coordinates
+are zero. H∞ receives the complete reduced-state deviation for which its gain
+was synthesized. Nominal feedforward is zero. A-LQR and H∞ read the same strict
+nominal-dynamics artifact; if it is absent, the same averaged-Jacobian estimator
+creates it. Toxicity and truthfulness have separate fit/calibration splits and
+targets. Hannah's solver and diagnostic formulas are unchanged; the reference
+files are not edited.
 
 All ten methods save prompt checkpoints and intervention traces. H-infinity
 saves full reduced controller-coordinate tensors for the diagnostic handoff;

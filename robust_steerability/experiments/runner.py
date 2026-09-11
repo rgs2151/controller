@@ -17,6 +17,7 @@ import numpy as np
 import torch
 
 from robust_steerability.artifacts import configuration_hash, implementation_hash
+from robust_steerability.calibration.nominal_artifact import nominal_dynamics_cache_path
 from robust_steerability.benchmarks.toxicity import (
     toxicity_probabilities,
 )
@@ -42,7 +43,7 @@ from robust_steerability.modeling.huggingface import (
     load_causal_model,
     load_sequence_classifier,
 )
-from robust_steerability.runtime.policy import ReducedSemanticSetpointPolicy
+from robust_steerability.runtime.policy import ReducedStateSetpointPolicy
 
 
 TOXICITY_MODEL_ID = "s-nlp/roberta_toxicity_classifier"
@@ -108,6 +109,15 @@ def _controller_arguments(
     if not cache_root.is_absolute():
         cache_root = manifest.unit_dir / cache_root
     cache_path = cache_root / f"{_slug(str(model_entry['label']))}.pt"
+    nominal_behavior = {
+        "toxicity_mitigation": "toxicity",
+        "truthfulness": "truthfulness",
+    }[str(settings["behavior"])]
+    nominal_path = nominal_dynamics_cache_path(
+        cache_root.parent,
+        behavior=nominal_behavior,
+        model_id=str(model_entry["model_id"]),
+    )
     if bool(manifest.payload.get("controller_cache_read_only", False)) and not cache_path.exists():
         raise FileNotFoundError(
             f"Missing shared calibration artifact: {cache_path}. Run the calibration manifest first."
@@ -116,6 +126,7 @@ def _controller_arguments(
         model_label=str(model_entry["label"]),
         model_id=str(model_entry["model_id"]),
         cache_path=cache_path,
+        nominal_dynamics_path=nominal_path,
         settings=settings,
         controller_device=device,
     )
@@ -145,7 +156,7 @@ def _prepare_diagnostic_run(manifest, model_entry, model, tokenizer, device, job
     from robust_steerability.runtime.diagnostics import ReducedTrajectoryRecorder
     from robust_steerability.control import LQRController, PIDController
     source_paths = [Path(__file__), *[Path(inspect.getfile(obj)) for obj in (
-        generate_completions, ReducedSemanticSetpointPolicy, BaselinePolicy,
+        generate_completions, ReducedStateSetpointPolicy, BaselinePolicy,
         register_generation_policy_hooks, ReducedTrajectoryRecorder, LQRController, PIDController)]]
     sources = {"runtime_" + path.name: sha256(path) for path in source_paths}
     config = {"manifest": manifest.payload, "fingerprint": _job_fingerprint(manifest, model_entry),

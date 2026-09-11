@@ -17,6 +17,11 @@ import torch
 from datasets import load_dataset
 
 from robust_steerability.calibration.nominal import average_prompt_jacobians
+from robust_steerability.calibration.nominal_artifact import (
+    load_nominal_dynamics,
+    nominal_dynamics_identity,
+    save_nominal_dynamics,
+)
 from robust_steerability.modeling.huggingface import cuda_device_index, load_access_token
 from robust_steerability.source_methods.calibration import fit_setpoint_from_records
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
@@ -194,6 +199,7 @@ def _implementation_hashes() -> dict[str, str]:
     paths = (
         Path(__file__).resolve(),
         REPO / "robust_steerability/calibration/nominal.py",
+        REPO / "robust_steerability/calibration/nominal_artifact.py",
         REPO / "robust_steerability/modeling/jacobians.py",
         REPO / "robust_steerability/source_methods/calibration.py",
         REPO / "robust_steerability/source_methods/modeling.py",
@@ -388,10 +394,17 @@ def fit_jacobians(devices: list[str]) -> None:
     identity = {**calibration_identity(data), "devices": devices, "shard_count": len(devices)}
     run_path = CACHE / "runs/jacobians.json"
     artifact_path = CACHE / "dynamics.pt"
+    nominal_identity = nominal_dynamics_identity(
+        behavior=BEHAVIOR,
+        model_id=MODEL_ID,
+        model_revision=MODEL_REVISION,
+        records=data["calibration"]["jacobian"],
+        max_length=ALQR_CALIBRATION_COUNTS[BEHAVIOR].jacobian_max_length,
+        vjp_chunk_size=JACOBIAN_VJP_CHUNK_SIZE,
+    )
     run = _load_run(run_path, identity)
     if run["status"] == "complete":
-        if not artifact_path.exists():
-            raise ValueError("Jacobian run is complete but dynamics.pt is missing")
+        load_nominal_dynamics(artifact_path, nominal_identity)
         return
 
     attempt = {
@@ -467,16 +480,21 @@ def fit_jacobians(devices: list[str]) -> None:
         expected_counts,
     )
     attempt["aggregation_elapsed_seconds"] = time.perf_counter() - aggregation_started
-    _save_torch(artifact_path, {"identity": calibration_identity(data), "dynamics": dynamics})
     shard_runs = [
         json.loads((CACHE / "runs" / f"jacobian_shard_{index:02d}.json").read_text())
         for index in range(len(devices))
     ]
     attempt["finished_at_utc"] = _utc_now()
     attempt["elapsed_seconds"] = time.perf_counter() - started
-    attempt["artifact_sha256"] = _sha256(artifact_path)
     attempt["matrix_shape"] = list(dynamics.shape)
     attempt["status"] = "complete"
+    save_nominal_dynamics(
+        artifact_path,
+        nominal_identity,
+        dynamics,
+        attempts=run["attempts"],
+    )
+    attempt["artifact_sha256"] = _sha256(artifact_path)
     run["status"] = "complete"
     run["shards"] = [
         {
