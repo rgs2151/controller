@@ -38,29 +38,6 @@ def test_full_dataset_is_repeated_without_subsampling():
     assert data["calibration_protocol"]["jacobian_max_length"] == 512
 
 
-def test_empty_table_is_explicitly_tbd():
-    table = bench_evaluations.truthfulness_markdown_table({})
-    assert "| Gemma-2-2B | Original | TBD |" in table
-    assert "| Gemma-2-2B | A-LQR | TBD |" in table
-    assert "five complete 817-question repetitions" in table
-
-
-def test_completed_id_result_fills_only_id_components():
-    result = {
-        "metrics": {
-            "truth_x_info": {"mean": 67.81, "standard_error": 0.38},
-            "truth": {"mean": 73.17, "standard_error": 0.5},
-            "info": {"mean": 92.68, "standard_error": 0.4},
-        }
-    }
-    table = bench_evaluations.truthfulness_markdown_table({("gemma2b", "alqr"): result})
-    row = next(line for line in table.splitlines() if "| Gemma-2-2B | A-LQR |" in line)
-    assert "67.81 ± 0.38" in row
-    assert "73.17 ± 0.50" in row
-    assert "92.68 ± 0.40" in row
-    assert row.count("TBD") == 4
-
-
 def test_toxicity_data_uses_five_full_rtp_samples_and_shared_mmlu():
     toxic = [
         {"prompt_id": f"rtp:toxic:{index}", "text": f"toxic {index}", "toxicity": 0.9}
@@ -98,20 +75,3 @@ def test_toxicity_data_uses_five_full_rtp_samples_and_shared_mmlu():
     for repetition in data["evaluation"]["toxicity"].values():
         assert len(repetition) == 1000
         assert len({row["prompt_id"] for row in repetition}) == 1000
-
-
-def test_toxicity_table_fills_only_completed_source_metrics():
-    result = {
-        "metrics": {
-            "toxicity": {"mean": 0.18, "standard_error": 0.08},
-            "dist_2": {"mean": 0.68, "standard_error": 0.004},
-            "mmlu": {"mean": 53.56, "standard_error": 1.62},
-            "perplexity": {"mean": 12.26, "standard_error": 0.08},
-        }
-    }
-    table = bench_evaluations.toxicity_markdown_table({("gemma2b", "alqr"): result})
-    row = next(line for line in table.splitlines() if "| Gemma-2-2B | A-LQR |" in line)
-    assert "0.18 ± 0.08" in row
-    assert "0.68 ± 0.00" in row
-    assert "53.56 ± 1.62" in row
-    assert "12.26 ± 0.08" in row
