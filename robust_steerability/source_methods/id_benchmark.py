@@ -20,11 +20,14 @@ from typing import Callable
 import numpy as np
 import torch
 
+from robust_steerability.calibration.nominal_artifact import (
+    load_or_fit_nominal_dynamics,
+    nominal_dynamics_cache_path,
+)
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.source_methods.actadd import ActAddSteerer
 from robust_steerability.source_methods.calibration import (
     fit_actadd_calibration,
-    fit_dynamics_from_records,
     fit_iti_calibration,
     fit_odesteer_calibration,
     fit_setpoint_from_records,
@@ -70,6 +73,7 @@ def _implementation_files() -> dict[str, str]:
     repo = Path(__file__).resolve().parents[2]
     relative_paths = (
         "robust_steerability/calibration/nominal.py",
+        "robust_steerability/calibration/nominal_artifact.py",
         "robust_steerability/control/base.py",
         "robust_steerability/control/lqr.py",
         "robust_steerability/control/pid.py",
@@ -542,26 +546,19 @@ def run_generation_job(
             device,
         )
         if method == "alqr":
-            dynamics = _artifact(
-                artifact_root / "dynamics.pt",
-                {
-                    **common_identity,
-                    "artifact": "alqr_dynamics",
-                    "jacobian_count": counts.jacobian,
-                    "jacobian_max_length": counts.jacobian_max_length,
-                    "jacobian_prompt_ids": [row["prompt_id"] for row in jacobian[:counts.jacobian]],
-                    "jacobian_vjp_chunk_size": 32,
-                },
-                lambda: fit_dynamics_from_records(
-                    model,
-                    tokenizer,
-                    behavior=behavior,
-                    jacobian_records=jacobian[:counts.jacobian],
-                    checkpoint_revision=revision,
-                    jacobian_cache=artifact_root / "jacobians",
-                    jacobian_vjp_chunk_size=32,
+            dynamics = load_or_fit_nominal_dynamics(
+                model,
+                tokenizer,
+                jacobian[:counts.jacobian],
+                artifact_path=nominal_dynamics_cache_path(
+                    unit / "cache", behavior=behavior, model_id=model_id
                 ),
-                device,
+                behavior=behavior,
+                model_id=model_id,
+                model_revision=revision,
+                max_length=counts.jacobian_max_length,
+                vjp_chunk_size=32,
+                runtime=runtime_provenance(device),
             )
             policy = build_alqr_policy(
                 dynamics,

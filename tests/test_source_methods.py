@@ -12,7 +12,6 @@ from robust_steerability.source_methods import id_benchmark
 from robust_steerability.source_methods.actadd import ActAddSteerer, fit_actadd_direction, positionwise_mean
 from robust_steerability.source_methods.calibration import (
     fit_actadd_calibration,
-    fit_dynamics_from_records,
     fit_iti_calibration,
     fit_odesteer_calibration,
     fit_setpoint_from_records,
@@ -197,16 +196,6 @@ def test_source_calibration_sizes_are_enforced_before_model_execution():
             negative_records=[],
             positive_records=[],
             activation_batch_size=1,
-        )
-    with pytest.raises(ValueError, match="truthfulness.*exactly 35 Jacobian"):
-        fit_dynamics_from_records(
-            None,
-            None,
-            behavior="truthfulness",
-            jacobian_records=[],
-            checkpoint_revision="revision",
-            jacobian_cache=None,
-            jacobian_vjp_chunk_size=1,
         )
     with pytest.raises(ValueError, match="ActAdd requires exactly 100"):
         fit_actadd_calibration(None, None, undesired_texts=[], desired_texts=[], batch_size=1)

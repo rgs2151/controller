@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import torch
 
-from robust_steerability.calibration.nominal import average_prompt_jacobians
 from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.source_methods.actadd import collect_positionwise_mean, fit_actadd_direction
 from robust_steerability.source_methods.control import SetpointCalibration, fit_setpoint_calibration
@@ -121,34 +118,6 @@ def fit_setpoint_from_records(
         model, tokenizer, [row["text"] for row in positive_records], batch_size=activation_batch_size
     )
     return fit_setpoint_calibration(negative_states.mean(dim=0), positive_states.mean(dim=0))
-
-
-def fit_dynamics_from_records(
-    model,
-    tokenizer,
-    *,
-    behavior: str,
-    jacobian_records: list[dict],
-    checkpoint_revision: str,
-    jacobian_cache: Path,
-    jacobian_vjp_chunk_size: int,
-) -> torch.Tensor:
-    """Fit A-LQR dynamics only; S-PID must never call this function."""
-
-    counts = ALQR_CALIBRATION_COUNTS[behavior]
-    if len(jacobian_records) != counts.jacobian:
-        raise ValueError(
-            f"{behavior} dynamics requires exactly {counts.jacobian} Jacobian prompts"
-        )
-    return average_prompt_jacobians(
-        model,
-        tokenizer,
-        jacobian_records,
-        cache_dir=jacobian_cache,
-        max_length=counts.jacobian_max_length,
-        vjp_chunk_size=jacobian_vjp_chunk_size,
-        model_revision=checkpoint_revision,
-    )
 
 
 def collect_attention_head_activations(

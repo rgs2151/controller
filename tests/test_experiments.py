@@ -8,7 +8,7 @@ import torch
 
 from robust_steerability.control import PIDController, PIDGains
 from robust_steerability.experiments.manifest import load_manifest
-from robust_steerability.runtime.policy import ReducedSemanticSetpointPolicy
+from robust_steerability.runtime.policy import ReducedStateSetpointPolicy
 
 
 def test_manifest_rejects_obsolete_method_name(tmp_path) -> None:
@@ -69,7 +69,7 @@ def test_current_reference_manifests_are_complete() -> None:
 
 def test_reduced_policy_decodes_next_layer_control_coordinates() -> None:
     identity = torch.eye(2).unsqueeze(0)
-    policy = ReducedSemanticSetpointPolicy(
+    policy = ReducedStateSetpointPolicy(
         controller=PIDController(PIDGains(1.0, 0.0, 0.0), identity),
         means=torch.zeros(1, 3),
         encoders=torch.tensor([[[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]]]),
@@ -80,4 +80,4 @@ def test_reduced_policy_decodes_next_layer_control_coordinates() -> None:
     policy.prepare(torch.device("cpu"), torch.float32)
     policy.reset()
     delta = policy.activation_delta(0, torch.tensor([[1.0, 4.0, 7.0]]))
-    torch.testing.assert_close(delta, torch.tensor([[2.0, 0.0, 0.0]]))
+    torch.testing.assert_close(delta, torch.tensor([[2.0, -12.0, 0.0]]))
