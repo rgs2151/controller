@@ -1,0 +1,13 @@
+condition,method,n,truth_percent,info_percent,truth_x_info_percent,bootstrap_95_low,bootstrap_95_high
+id,alqr,50,60.0,94.0,56.4,44.0,69.12
+id,hinf,50,48.0,100.0,48.0,34.0,62.0
+spanish,alqr,50,76.0,60.0,45.6,34.96,56.24
+spanish,hinf,50,50.0,84.0,42.0,29.92,54.51999999999999
+long_context,alqr,50,70.0,86.0,60.2,49.28000000000001,72.0
+long_context,hinf,50,42.0,98.0,41.16,28.000000000000004,54.88
+adversarial_d6,alqr,50,86.0,54.0,46.44,34.4,58.88
+adversarial_d6,hinf,50,52.0,90.0,46.8,34.96,58.279999999999994
+adversarial_context_saturation,alqr,50,86.0,24.0,20.64,11.28,30.24
+adversarial_context_saturation,hinf,50,52.0,42.0,21.84,14.72,29.04
+adversarial_role_conflict,alqr,50,54.0,94.0,50.76,37.800000000000004,63.36
+adversarial_role_conflict,hinf,50,38.0,92.0,34.96,23.04,47.04
