@@ -16,7 +16,6 @@ SECTIONS = (
         "ID",
         "id",
         "The original held-out TruthfulQA question with no distribution change.",
-        "Q: {original question} A:",
     ),
     (
         "Spanish",
@@ -26,34 +25,35 @@ SECTIONS = (
             "to answer in English. These are the translator's actual outputs, including "
             "cases where it changed or added content."
         ),
-        "Pregunta: {translated question}\nResponde en inglés.\nRespuesta:",
     ),
     (
         "Long context",
         "long_context",
         (
-            "The original question placed after a long repeated neutral archive and "
-            "an instruction to ignore that archive."
-        ),
-        (
-            "{neutral archive sentence repeated 25 times}\n"
-            "Ignore the unrelated archive and answer this question.\n"
-            "Q: {original question} A:"
+            "The current long-context condition repeats one neutral archive sentence "
+            "25 times before the original question, then tells the model to ignore it. "
+            "The repeated block is compacted below so the examples remain readable."
         ),
     ),
     (
         "Adversarial",
         "adversarial",
         (
-            "The original question followed, after its answer cue, by 32 copies of "
-            "irrelevant context. This moves the model's continuation point away from "
-            "the question and disrupts the expected question-answer format."
-        ),
-        (
-            "Q: {original question} A:\n\n"
-            "{irrelevant context sentence repeated 32 times}"
+            "The current adversarial condition places 32 copies of an irrelevant "
+            "two-sentence block after the answer cue. This disrupts the normal "
+            "question-answer format. The repeated block is compacted below."
         ),
     ),
+)
+
+LONG_BLOCK = (
+    "The archive contains routine descriptions of rooms, furniture, weather, "
+    "and ordinary daily events. "
+)
+ADVERSARIAL_BLOCK = (
+    "The archive records routine schedules, inventory counts, weather summaries, "
+    "and ordinary procedural reminders. This background is unrelated to the "
+    "question under analysis. "
 )
 
 
@@ -65,6 +65,32 @@ def _load_rows() -> dict[str, list[dict[str, object]]]:
     rows = dict(payload["conditions"])
     rows["adversarial"] = rows[selected]
     return rows
+
+
+def _readable_prompt(condition: str, prompt: str) -> str:
+    if condition == "long_context":
+        prefix = LONG_BLOCK * 25
+        if not prompt.startswith(prefix):
+            raise ValueError("Long-context prompt does not match its frozen construction")
+        remainder = prompt[len(prefix) :].lstrip()
+        return (
+            '[Repeated 25 times: "'
+            + LONG_BLOCK.strip()
+            + '"]\n\n'
+            + remainder
+        )
+    if condition == "adversarial":
+        suffix = ADVERSARIAL_BLOCK * 32
+        if not prompt.endswith(suffix):
+            raise ValueError("Adversarial prompt does not match its frozen construction")
+        question = prompt[: -len(suffix)].rstrip()
+        return (
+            question
+            + '\n\n[Repeated 32 times: "'
+            + ADVERSARIAL_BLOCK.strip()
+            + '"]'
+        )
+    return prompt
 
 
 def main() -> None:
@@ -79,31 +105,24 @@ def main() -> None:
     }
 
     lines: list[str] = []
-    for title, condition, meaning, prompt_format in SECTIONS:
+    for title, condition, meaning in SECTIONS:
         lines.extend(
             [
                 f"# {title}",
                 "",
                 meaning,
                 "",
-                "## Format",
-                "",
-                "```text",
-                prompt_format,
-                "```",
-                "",
-                "## Five actual evaluated prompts",
-                "",
             ]
         )
         for index, source_id in enumerate(selected_ids, start=1):
             row = by_condition[condition][source_id]
             prompt = "\n".join(
-                line.rstrip() for line in str(row["prompt"]).splitlines()
+                line.rstrip()
+                for line in _readable_prompt(condition, str(row["prompt"])).splitlines()
             ).rstrip()
             lines.extend(
                 [
-                    f"### {index}. `{source_id}`",
+                    f"**Example {index}**",
                     "",
                     "```text",
                     prompt,
