@@ -43,7 +43,7 @@
 
 ## Notes
 
-- Run `python parking/paper_benchmark_50/prepare_data.py --device cuda:0`.
+- Run `python ref/paper_benchmark_50/prepare_data.py --device cuda:0`.
 - A source or revision mismatch is an error; this unit does not reconstruct or adapt old prompt caches.
 
 ## References
@@ -91,7 +91,7 @@
 - Grouping: model, method, behavior, and condition.
 - Ordering/sorting: manifest model/method order and frozen prompt order.
 - Lines/markers/labels: method labels are Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer, S-PID, A-LQR, and H-infinity.
-- Panels: paper table placement is owned by `parking/paper_benchmark_tables/`.
+- Panels: current paper table placement is owned by `parking/bench_evaluations/`.
 
 ## Interpretation
 
@@ -103,7 +103,7 @@
 
 - This is the frozen historical pilot. Its artifacts are retained unchanged;
   corrected upstream-method runs use `robust_steerability/source_methods/`.
-- Run `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python parking/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1`.
+- Run `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python ref/paper_benchmark_50/paper_benchmark_50.py --devices cuda:0,cuda:1`.
 - Toxicity continuations use at most 100 new tokens; truthfulness uses 50. Sampling uses temperature 1, top-p 0.3, top-k 50, and repetition penalty 1.2. MMLU uses one greedy token.
 - Every cache is bound to manifest, prompt, model revision, and source hashes. Mismatches fail; there is no old-cache reconstruction path or smoke/full flag.
 - H-infinity handoff data includes exact problem tensors, fitted/calibration activations and IDs, residuals, disturbance construction, gains, solver diagnostics, online traces, evaluator observations, and source hashes.
@@ -159,7 +159,7 @@
 
 ## Notes
 
-- Run after generation with `python parking/paper_benchmark_50/score_quality.py --device cuda:0`.
+- Run after generation with `python ref/paper_benchmark_50/score_quality.py --device cuda:0`.
 - Checkpoints bind the exact prompt, completion, scorer revision, protocol, and implementation source.
 
 ## References

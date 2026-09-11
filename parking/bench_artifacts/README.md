@@ -1,4 +1,4 @@
-# benchmark.py
+# bench_artifacts.py
 
 ## Method
 
@@ -45,8 +45,8 @@
 
 ## Notes
 
-- Run the complete requested calibration with `python parking/benchmark/benchmark.py --stage all --devices cuda:0,cuda:1`.
-- Inspect paths and completion status with `python parking/benchmark/benchmark.py --stage status`.
+- Run the complete requested calibration with `python parking/bench_artifacts/bench_artifacts.py --stage all --devices cuda:0,cuda:1`.
+- Inspect paths and completion status with `python parking/bench_artifacts/bench_artifacts.py --stage status`.
 - `setpoint.pt` contains `contrast` and `feature_norm`; `dynamics.pt` contains the averaged tensor under `dynamics`. Both include the complete calibration identity.
 - Per-shard run records retain the exact prompt identifiers corresponding to the raw Jacobian directories.
 - The unit intentionally has no generation or evaluation stage. The five-repeat benchmark remains unrun.
