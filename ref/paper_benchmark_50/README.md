@@ -71,7 +71,7 @@
 - Labels/targets: negative/positive behavior classes, toxic/neutral classifier labels, True/Helpful judge labels, and MMLU answers A--D.
 - Signals/features/measures: raw decoder activations, attention-head inputs, full and reduced Jacobians, semantic tracking errors, residuals, disturbance channels, gains, online interventions, generations, and evaluator outputs.
 - Parameters/thresholds: rank 8, residual variance 0.95, disturbance coverage 0.95, H-infinity absolute bisection tolerance `1e-5`, and deployment margin 1%.
-- Outputs: controller/Jacobian caches, Hannah diagnostic runs, per-prompt generations/traces/evaluator records, and `plots/toxicity_results.csv` plus `plots/truthfulness_results.csv`. H-infinity keeps the complete controller-coordinate tensors required by Hannah's handoff. Original is scalar-only; the six baselines, A-LQR, and S-PID keep per-step norm/energy trajectories plus controller artifacts and generations, avoiding redundant model-width tensor copies at 7B and 14B scale.
+- Outputs: controller/Jacobian caches, Hannah diagnostic runs, per-prompt generations/traces/evaluator records, `plots/toxicity_results.csv`, `plots/truthfulness_results.csv`, and the historical manuscript tables `benchmark_table1.tex` and `benchmark_table2.tex`. H-infinity keeps the complete controller-coordinate tensors required by Hannah's handoff. Original is scalar-only; the six baselines, A-LQR, and S-PID keep per-step norm/energy trajectories plus controller artifacts and generations, avoiding redundant model-width tensor copies at 7B and 14B scale.
 
 ## Statistics
 
@@ -91,7 +91,7 @@
 - Grouping: model, method, behavior, and condition.
 - Ordering/sorting: manifest model/method order and frozen prompt order.
 - Lines/markers/labels: method labels are Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer, S-PID, A-LQR, and H-infinity.
-- Panels: current paper table placement is owned by `parking/bench_evaluations/`.
+- Panels: current paper table placement is owned by `figs/bench_table/`.
 
 ## Interpretation
 

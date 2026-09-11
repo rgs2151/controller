@@ -45,6 +45,12 @@ Prepare only the reusable Gemma-2-2B TruthfulQA A-LQR setpoint and Jacobians:
 python parking/bench_artifacts/bench_artifacts.py --stage all --devices cuda:0,cuda:1
 ```
 
+Render the synchronized Markdown and TeX benchmark tables:
+
+```bash
+python figs/bench_table/bench_table.py
+```
+
 Each method checkpoints complete repetitions inside the owning unit's ignored
 `cache/` directory. Repeating a stage resumes only an identity-matched cache.
 

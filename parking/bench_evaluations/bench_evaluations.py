@@ -76,37 +76,6 @@ JUDGE_MAX_NEW_TOKENS = 20
 TOXICITY_BATCH_SIZE = 16
 PERPLEXITY_BATCH_SIZE = 10
 PERPLEXITY_MAX_LENGTH = 128
-METHODS = (
-    "original",
-    "iti",
-    "actadd",
-    "mean_act",
-    "linear_act",
-    "pid_act",
-    "odesteer",
-    "spid",
-    "alqr",
-    "h_infinity",
-)
-METHOD_LABELS = {
-    "original": "Original",
-    "iti": "ITI",
-    "actadd": "ActAdd",
-    "mean_act": "Mean-AcT",
-    "linear_act": "Linear-AcT",
-    "pid_act": "PID-AcT",
-    "odesteer": "ODESteer",
-    "spid": "S-PID",
-    "alqr": "A-LQR",
-    "h_infinity": "H∞ (ours)",
-}
-TABLE_MODELS = (
-    ("gemma2b", "Gemma-2-2B"),
-    ("llama8b", "Llama-3-8B"),
-    ("qwen14b", "Qwen-2.5-14B"),
-)
-
-
 def _write_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -969,84 +938,6 @@ def summarize(method: str, behavior: str) -> dict:
     return summarize_toxicity(method)
 
 
-def _cell(result: dict | None, metric: str) -> str:
-    if result is None:
-        return "TBD"
-    value = result["metrics"][metric]
-    return f"{value['mean']:.2f} ± {value['standard_error']:.2f}"
-
-
-def truthfulness_markdown_table(results: dict[tuple[str, str], dict]) -> str:
-    lines = [
-        "# Truthfulness benchmark",
-        "",
-        "| Model | Method | TruthfulQA–ID T×I ↑ | Spanish | Adversarial | Long | True (%) ↑ | Info (%) ↑ | MMLU (%) ↑ |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|",
-    ]
-    for model_key, model_label in TABLE_MODELS:
-        for method in METHODS:
-            result = results.get((model_key, method))
-            lines.append(
-                f"| {model_label} | {METHOD_LABELS[method]} | {_cell(result, 'truth_x_info')} | "
-                f"TBD | TBD | TBD | {_cell(result, 'truth')} | {_cell(result, 'info')} | TBD |"
-            )
-    lines.extend(
-        [
-            "",
-            "Values are mean ± SE across five complete 817-question repetitions. TBD cells have not been run.",
-            "",
-        ]
-    )
-    return "\n".join(lines)
-
-
-def toxicity_markdown_table(results: dict[tuple[str, str], dict]) -> str:
-    lines = [
-        "# Toxicity benchmark",
-        "",
-        "| Model | Method | CLS Tox. (%) ↓ | Dist 2 ↑ | MMLU (%) ↑ | PPL ↓ |",
-        "|---|---|---:|---:|---:|---:|",
-    ]
-    for model_key, model_label in TABLE_MODELS:
-        for method in METHODS:
-            result = results.get((model_key, method))
-            lines.append(
-                f"| {model_label} | {METHOD_LABELS[method]} | {_cell(result, 'toxicity')} | "
-                f"{_cell(result, 'dist_2')} | {_cell(result, 'mmlu')} | "
-                f"{_cell(result, 'perplexity')} |"
-            )
-    lines.extend(
-        [
-            "",
-            "Toxicity, Dist-2, and PPL are mean ± SE across five complete "
-            "1,000-prompt RTP repetitions. MMLU is accuracy ± prompt-level SE "
-            "on one shared 1,000-question 5-shot set. TBD cells have not been run.",
-            "",
-        ]
-    )
-    return "\n".join(lines)
-
-
-def render(behavior: str) -> None:
-    results = {}
-    root = UNIT / "cache/results" / behavior
-    for model_key, _model_label in TABLE_MODELS:
-        for method in METHODS:
-            path = root / model_key / f"{method}.json"
-            if path.exists():
-                results[(model_key, method)] = json.loads(path.read_text())
-    destination = UNIT / "plots" / (
-        "benchmark_table.md" if behavior == "truthfulness" else "toxicity_benchmark_table.md"
-    )
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    table = (
-        truthfulness_markdown_table(results)
-        if behavior == "truthfulness"
-        else toxicity_markdown_table(results)
-    )
-    destination.write_text(table)
-
-
 def launch_pair(stage: str, behavior: str) -> None:
     log_root = UNIT / "cache/logs"
     log_root.mkdir(parents=True, exist_ok=True)
@@ -1124,7 +1015,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--stage",
-        choices=("prepare", "generate", "score", "summarize", "render", "generate-pair", "score-pair", "smoke"),
+        choices=("prepare", "generate", "score", "summarize", "generate-pair", "score-pair", "smoke"),
         required=True,
     )
     parser.add_argument("--method", choices=("original", "alqr"))
@@ -1143,8 +1034,6 @@ def main() -> None:
         if arguments.method is None:
             raise ValueError("summarize requires --method")
         summarize(arguments.method, arguments.behavior)
-    elif arguments.stage == "render":
-        render(arguments.behavior)
     elif arguments.stage in {"generate-pair", "score-pair"}:
         launch_pair(arguments.stage.removesuffix("-pair"), arguments.behavior)
     else:
