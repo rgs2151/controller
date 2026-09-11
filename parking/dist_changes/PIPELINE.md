@@ -14,11 +14,23 @@ The anchor set is 50 held-out questions from the pinned TruthfulQA `generation` 
 | --- | ---: | --- |
 | `id.csv` | 50 | Evaluated |
 | `spanish.csv` | 50 | Evaluated, but the automatic translations require replacement or manual validation |
+| `japanese_romaji.csv` | 50 | New candidate; not yet evaluated |
 | `long_context.csv` | 50 | New long-context candidate; not yet evaluated |
-| `adversarial.csv` | 50 | Previously evaluated construction; requires replacement |
+| `d2.csv` | 50 | Fixed Llama-3.2-1B text-only suffix transferred unchanged to Gemma; not yet evaluated |
+| `d3.csv` | 50 | Shared Llama-3.2-1B text suffix transferred unchanged to Gemma; not yet evaluated |
+| `d6.csv` | 50 | Seeded 16/64 mix of the literal Llama begin-of-text string on Gemma; not yet evaluated |
 | `manifest.json` | — | Model revision, token lengths, statuses, and ordered prompt hashes |
 
 Each CSV contains the source question, complete model prompt, exact Gemma token count, prompt hash, construction label, and source metadata. Run `python parking/dist_changes/export_datasets.py` after changing any set.
+
+Prepare the local datasets in this order:
+
+```bash
+python parking/dist_changes/dist_changes.py --stage prepare
+python parking/dist_changes/dist_changes.py --stage translate --device cuda:0
+python parking/dist_changes/dist_changes.py --stage translate-romaji --device cuda:0
+python parking/dist_changes/dist_changes.py --stage datasets
+```
 
 ## 3. Gemma-2-2B long-context formula
 
@@ -61,7 +73,7 @@ When another model is added later, the 50 questions, source books, source hashes
 
 ## 5. Paired generation
 
-For each dataset, A-LQR and H∞ receive identical ordered prompts, model revision, seed, decoding settings, and output-token limit. Only the controller changes. Model-specific batch sizes may change for memory, but they must not change the prompts or decoding parameters.
+For each of the seven datasets, A-LQR and H∞ receive identical ordered prompts, model revision, seed, decoding settings, and output-token limit. Only the controller changes. Model-specific batch sizes may change for memory, but they must not change the prompts or decoding parameters.
 
 The new long-context set should use batch size 1 because each input is near Gemma's context limit. Its generation cache must use a new identity; the previous repeated-sentence long-context results must never be reused.
 

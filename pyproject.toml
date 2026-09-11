@@ -19,6 +19,7 @@ dependencies = [
   "numpy",
   "pandas",
   "protobuf",
+  "pykakasi==2.3.0",
   "scikit-learn",
   "scipy",
   "seaborn",

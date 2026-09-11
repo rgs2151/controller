@@ -1,4 +1,4 @@
-"""Export the four current 50-prompt distribution sets into unit-local CSV files."""
+"""Export the seven current 50-prompt distribution sets into unit-local CSV files."""
 
 from __future__ import annotations
 
@@ -19,8 +19,11 @@ MODEL_REVISION = "c5ebcd40d208330abc697524c919956e692655cf"
 SET_STATUS = {
     "id": "evaluated",
     "spanish": "evaluated_translation_requires_review",
+    "japanese_romaji": "proposed_not_evaluated",
     "long_context": "proposed_not_evaluated",
-    "adversarial": "evaluated_construction_requires_replacement",
+    "d2": "proposed_not_evaluated",
+    "d3": "proposed_not_evaluated",
+    "d6": "proposed_not_evaluated",
 }
 
 
@@ -35,19 +38,26 @@ def _sha256_text(value: str) -> str:
 def _sets() -> dict[str, list[dict[str, object]]]:
     prepared = _load_json(CACHE / "prepared.json")
     translations = _load_json(CACHE / "translations.json")
+    japanese = _load_json(CACHE / "japanese_romaji.json")
     long_context = _load_json(CACHE / "long_context_v2.json")
-    summary = _load_json(UNIT / "plots" / "summary.json")
-    selected_adversarial = str(summary["selected_adversarial"])
+    attacks = _load_json(CACHE / "template_attacks.json")
     result = {
         "id": prepared["prompt_sets"]["id"],
         "spanish": translations["rows"],
+        "japanese_romaji": japanese["rows"],
         "long_context": long_context["records"],
-        "adversarial": prepared["prompt_sets"][selected_adversarial],
+        "d2": attacks["sets"]["d2"],
+        "d3": attacks["sets"]["d3"],
+        "d6": attacks["sets"]["d6"],
     }
     if translations.get("status") != "complete":
         raise ValueError("Spanish translations are incomplete")
+    if japanese.get("status") != "complete":
+        raise ValueError("Japanese romaji translations are incomplete")
     if long_context["identity"].get("status") != "proposed_not_evaluated":
         raise ValueError("Unexpected long-context status")
+    if attacks["identity"].get("status") != "proposed_not_evaluated":
+        raise ValueError("Unexpected template-attack status")
     for name, records in result.items():
         if len(records) != 50:
             raise ValueError(f"{name} must contain exactly 50 prompts")
@@ -68,6 +78,9 @@ def main() -> None:
         local_files_only=True,
     )
     DATASETS.mkdir(parents=True, exist_ok=True)
+    retired = DATASETS / "adversarial.csv"
+    if retired.exists():
+        retired.unlink()
     manifest_sets = {}
     fieldnames = (
         "row",
@@ -79,6 +92,7 @@ def main() -> None:
         "input_tokens",
         "prompt_sha256",
         "construction",
+        "marker_repeats",
         "prompt",
         "source_spans_json",
     )
@@ -108,6 +122,7 @@ def main() -> None:
                         "input_tokens": input_tokens,
                         "prompt_sha256": prompt_hash,
                         "construction": record.get("construction", "unchanged ID prompt"),
+                        "marker_repeats": record.get("marker_repeats", ""),
                         "prompt": prompt,
                         "source_spans_json": json.dumps(
                             record.get("source_spans", []),
@@ -128,7 +143,7 @@ def main() -> None:
         }
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "model": {"id": MODEL_ID, "revision": MODEL_REVISION},
         "source_questions": (
             "the same ordered 50 held-out TruthfulQA questions in every set"

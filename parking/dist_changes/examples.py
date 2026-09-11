@@ -1,6 +1,6 @@
-"""Write five complete, matched prompt examples for each displayed distribution."""
+"""Write five complete, matched prompt examples for each current distribution."""
 
-import json
+import csv
 from pathlib import Path
 import random
 
@@ -20,51 +20,45 @@ SECTIONS = (
     (
         "Spanish",
         "spanish",
-        (
-            "A Spanish rendering of the original question followed by an instruction "
-            "to answer in English. These are the translator's actual outputs, including "
-            "cases where it changed or added content."
-        ),
+        "Llama-3.2-3B-Instruct deterministically translated each English question into Spanish, then the prompt asks for an English answer.",
+    ),
+    (
+        "Japanese (romaji)",
+        "japanese_romaji",
+        "Meta-Llama-3.1-8B-Instruct deterministically translated each English question into Japanese, pykakasi converted it to Hepburn romaji, and the prompt asks for an English answer.",
     ),
     (
         "Long context",
         "long_context",
-        (
-            "The proposed replacement begins with excerpts from seven coherent, "
-            "public-domain books and ends directly with the unchanged TruthfulQA "
-            "question. Every input is 7,167–7,168 Gemma tokens long; there is no "
-            "repeated filler sentence and no instruction to ignore the context. "
-            "For Gemma-2-2B, the target is floor(0.875 × 8192) = 7168 input "
-            "tokens; document text is cut with Gemma's tokenizer so the unchanged "
-            "question remains last. This set has not yet been evaluated."
-        ),
+        "Seven deterministic public-domain book excerpts are token-trimmed to about 7,168 Gemma tokens and placed before the unchanged question.",
     ),
     (
-        "Adversarial",
-        "adversarial",
-        (
-            "The current adversarial condition places 32 copies of an irrelevant "
-            "two-sentence block after the answer cue. This disrupts the normal "
-            "question-answer format. The code blocks contain the complete text "
-            "supplied to the model."
-        ),
+        "D2",
+        "d2",
+        "The exact fixed text-only overshoot suffix found against Llama-3.2-1B is appended unchanged to every Gemma question.",
+    ),
+    (
+        "D3",
+        "d3",
+        "The exact shared suffix refined on the four hardest Llama-3.2-1B D2 cases is appended unchanged to every Gemma question.",
+    ),
+    (
+        "D6",
+        "d6",
+        "A seeded split appends the exact Llama `<|begin_of_text|>` string 16 times to 25 Gemma questions and 64 times to the other 25.",
     ),
 )
 
 
 def _load_rows() -> dict[str, list[dict[str, object]]]:
-    payload = json.loads((CACHE / "generations" / "alqr.json").read_text())
-    if payload.get("status") != "complete":
-        raise ValueError("A-LQR generation cache is incomplete")
-    selected = json.loads((PLOTS / "summary.json").read_text())["selected_adversarial"]
-    rows = dict(payload["conditions"])
-    rows["adversarial"] = rows[selected]
-    long_context = json.loads((CACHE / "long_context_v2.json").read_text())
-    if long_context["identity"].get("status") != "proposed_not_evaluated":
-        raise ValueError("Unexpected long-context candidate status")
-    if len(long_context.get("records", [])) != 50:
-        raise ValueError("Long-context replacement does not contain 50 prompts")
-    rows["long_context"] = long_context["records"]
+    rows = {}
+    for _, condition, _ in SECTIONS:
+        with (CACHE / "datasets" / f"{condition}.csv").open(
+            newline="", encoding="utf-8"
+        ) as handle:
+            rows[condition] = list(csv.DictReader(handle))
+        if len(rows[condition]) != 50:
+            raise ValueError(f"{condition} does not contain 50 prompts")
     return rows
 
 

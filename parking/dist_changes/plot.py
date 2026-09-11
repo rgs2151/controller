@@ -11,13 +11,24 @@ import seaborn as sns
 
 UNIT = Path(__file__).resolve().parent
 PLOTS = UNIT / "plots"
-CONDITIONS = ("id", "spanish", "long_context", "adversarial")
+CONDITIONS = (
+    "id",
+    "spanish",
+    "japanese_romaji",
+    "long_context",
+    "d2",
+    "d3",
+    "d6",
+)
 METHODS = ("alqr", "hinf")
 LABELS = {
     "id": "ID",
     "spanish": "Spanish",
+    "japanese_romaji": "Japanese\n(romaji)",
     "long_context": "Long\ncontext",
-    "adversarial": "Adversarial",
+    "d2": "D2",
+    "d3": "D3",
+    "d6": "D6",
 }
 COLORS = {"alqr": "black", "hinf": "#d62728"}
 
@@ -47,7 +58,7 @@ def main() -> None:
         ("truth_percent", "Truthfulness", "Truth score (%)"),
         ("info_percent", "Informativeness", "Info score (%)"),
     )
-    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.4), sharey=False)
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.4), sharey=False)
     base_positions = np.arange(len(CONDITIONS), dtype=float)
     width = 0.34
 
