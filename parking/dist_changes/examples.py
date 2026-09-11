@@ -32,7 +32,7 @@ SECTIONS = (
         (
             "The current long-context condition repeats one neutral archive sentence "
             "25 times before the original question, then tells the model to ignore it. "
-            "The repeated block is compacted below so the examples remain readable."
+            "The code blocks contain the complete text supplied to the model."
         ),
     ),
     (
@@ -41,19 +41,10 @@ SECTIONS = (
         (
             "The current adversarial condition places 32 copies of an irrelevant "
             "two-sentence block after the answer cue. This disrupts the normal "
-            "question-answer format. The repeated block is compacted below."
+            "question-answer format. The code blocks contain the complete text "
+            "supplied to the model."
         ),
     ),
-)
-
-LONG_BLOCK = (
-    "The archive contains routine descriptions of rooms, furniture, weather, "
-    "and ordinary daily events. "
-)
-ADVERSARIAL_BLOCK = (
-    "The archive records routine schedules, inventory counts, weather summaries, "
-    "and ordinary procedural reminders. This background is unrelated to the "
-    "question under analysis. "
 )
 
 
@@ -65,32 +56,6 @@ def _load_rows() -> dict[str, list[dict[str, object]]]:
     rows = dict(payload["conditions"])
     rows["adversarial"] = rows[selected]
     return rows
-
-
-def _readable_prompt(condition: str, prompt: str) -> str:
-    if condition == "long_context":
-        prefix = LONG_BLOCK * 25
-        if not prompt.startswith(prefix):
-            raise ValueError("Long-context prompt does not match its frozen construction")
-        remainder = prompt[len(prefix) :].lstrip()
-        return (
-            '[Repeated 25 times: "'
-            + LONG_BLOCK.strip()
-            + '"]\n\n'
-            + remainder
-        )
-    if condition == "adversarial":
-        suffix = ADVERSARIAL_BLOCK * 32
-        if not prompt.endswith(suffix):
-            raise ValueError("Adversarial prompt does not match its frozen construction")
-        question = prompt[: -len(suffix)].rstrip()
-        return (
-            question
-            + '\n\n[Repeated 32 times: "'
-            + ADVERSARIAL_BLOCK.strip()
-            + '"]'
-        )
-    return prompt
 
 
 def main() -> None:
@@ -118,7 +83,7 @@ def main() -> None:
             row = by_condition[condition][source_id]
             prompt = "\n".join(
                 line.rstrip()
-                for line in _readable_prompt(condition, str(row["prompt"])).splitlines()
+                for line in str(row["prompt"]).splitlines()
             ).rstrip()
             lines.extend(
                 [
