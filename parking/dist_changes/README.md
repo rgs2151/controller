@@ -18,7 +18,7 @@ The explicit data-to-figure workflow and model-specific long-context formula are
 - Labels/targets: positive-minus-negative TruthfulQA MC2 semantic target; binary `True` and `Helpful` judge decisions.
 - Signals/features/measures: generated completion, truth percentage, information percentage, and their product as a secondary aggregate.
 - Parameters/thresholds: seed 2151; 200 false plus 200 true fit prompts; 35 shared Jacobians; 200 disturbance prompts; rank 8; 50 evaluations per method and condition; 50 generated tokens.
-- Outputs: `plots/distribution_shift_truth_info.pdf`, `plots/distribution_shift_truth_info.png`, `plots/ood_examples.md`, `plots/distribution_scores.csv`, and `plots/summary.json`.
+- Outputs: `plots/distribution_shift_truth_info.pdf`, `plots/distribution_shift_truth_info.png`, one file per dataset under `plots/ood_examples/`, `plots/distribution_scores.csv`, and `plots/summary.json`.
 
 The x-axis distributions are:
 
@@ -28,9 +28,9 @@ The x-axis distributions are:
 | Spanish | Llama-3.2-3B-Instruct deterministically translates the question into Spanish, followed by a request to answer in English. |
 | Japanese (romaji) | Meta-Llama-3.1-8B-Instruct deterministically translates the question into Japanese, pykakasi converts it to Hepburn romaji, and the prompt asks for an English answer. |
 | Long context | Seven deterministic public-domain book excerpts are token-trimmed to about 7,168 Gemma tokens and placed before the unchanged question. |
-| D2 | The exact fixed text-only overshoot suffix found against Llama-3.2-1B is appended unchanged to every Gemma question. |
-| D3 | The exact shared suffix refined on the four hardest Llama-3.2-1B D2 cases is appended unchanged to every Gemma question. |
-| D6 | A seeded split appends the exact Llama `<|begin_of_text|>` string 16 times to 25 Gemma questions and 64 times to the other 25. |
+| D2 | Gradient search found one text-only suffix that maximized A-LQR overshoot on a single Llama-3.2-1B prompt; that exact frozen suffix is appended to every TruthfulQA prompt. |
+| D3 | Starting from D2, one text-only suffix was jointly refined against the four Llama-3.2-1B prompts where D2 transferred weakest; that exact frozen suffix is appended to every TruthfulQA prompt. |
+| D6 | Gemma-2-2B's actual `<bos>` token is distributed evenly through each Q/A prompt, with seed 2151 assigning 16 insertions to 25 questions and 64 to the other 25 without using outcomes. |
 
 ## Statistics
 
@@ -60,8 +60,9 @@ The x-axis distributions are:
 ## Notes
 
 - D2, D3, and D6 are temporary names retained so their prompt sets can be inspected before final naming.
-- `plots/ood_examples.md` contains five real, matched prompts from every displayed distribution and explains their exact construction. The complete generation and judge records remain in the ignored unit-local cache rather than in large plot-level CSV files.
+- `plots/ood_examples/` contains one inspection file per dataset, each with five complete matched prompts.
 - `cache/datasets/` contains the seven current 50-row dataset CSVs and their manifest; the existing plot must not be attributed to this unevaluated layout.
+- Evaluation reads the frozen CSVs directly and never reruns translation or dataset construction; a later full-size run must use a separate frozen bundle.
 - Every artifact produced by this analysis—the H∞ controller and diagnostics, shared-A copy, translations, generations, judge outputs, logs, CSVs, and plots—is stored under `parking/dist_changes/`. The unit only reads the frozen A-LQR inputs in `parking/bench_artifacts/`; it does not write to them.
 - Large model artifacts, controller diagnostics, translations, and judge caches remain under ignored `cache/` storage.
 
