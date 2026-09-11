@@ -1,6 +1,6 @@
-# Long context
+# Long Context End
 
-Seven deterministic public-domain book excerpts are token-trimmed to about 7,168 Gemma tokens and placed before the unchanged question.
+Seven fixed public-domain book excerpts fill about 7,168 Gemma tokens, with the unchanged TruthfulQA question placed at the end.
 
 ```text
 DOCUMENT 1: Narrative of the Life of Frederick Douglass

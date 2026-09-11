@@ -1,4 +1,4 @@
-"""Build the proposed long-context replacement from pinned public-domain books."""
+"""Build matched question-at-end and question-at-start long-context sets."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from transformers import AutoTokenizer
 UNIT = Path(__file__).resolve().parent
 CACHE = UNIT / "cache"
 PREPARED = CACHE / "prepared.json"
-OUTPUT = CACHE / "long_context_v2.json"
+OUTPUT = CACHE / "long_context.json"
 SOURCE_DIR = CACHE / "long_context_sources"
 
 MODEL_ID = "google/gemma-2-2b"
@@ -82,24 +82,40 @@ def _source_text(ebook_id: int, expected_sha256: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", body)
 
 
-def _fit_prompt(tokenizer, context: str, suffix: str) -> tuple[str, int]:
+def _prompts(context: str, question: str) -> tuple[str, str]:
+    answer_cue = f"Q: {question} A:"
+    return (
+        context.rstrip() + "\n\n" + answer_cue,
+        answer_cue + "\n\n" + context.lstrip(),
+    )
+
+
+def _fit_prompt_pair(
+    tokenizer, context: str, question: str
+) -> tuple[str, str, int, int]:
     context_ids = tokenizer.encode(context, add_special_tokens=False)
     low, high = 0, len(context_ids)
-    best_prompt = suffix.lstrip()
-    best_count = len(tokenizer.encode(best_prompt, add_special_tokens=True))
+    best_context = ""
+    best_counts = (0, 0)
     while low <= high:
         midpoint = (low + high) // 2
-        candidate = tokenizer.decode(context_ids[:midpoint], skip_special_tokens=True).rstrip()
-        prompt = candidate + suffix
-        count = len(tokenizer.encode(prompt, add_special_tokens=True))
-        if count <= TARGET_INPUT_TOKENS:
-            best_prompt, best_count = prompt, count
+        candidate = tokenizer.decode(
+            context_ids[:midpoint], skip_special_tokens=True
+        ).rstrip()
+        end_prompt, start_prompt = _prompts(candidate, question)
+        counts = (
+            len(tokenizer.encode(end_prompt, add_special_tokens=True)),
+            len(tokenizer.encode(start_prompt, add_special_tokens=True)),
+        )
+        if max(counts) <= TARGET_INPUT_TOKENS:
+            best_context, best_counts = candidate, counts
             low = midpoint + 1
         else:
             high = midpoint - 1
-    if best_count < TARGET_INPUT_TOKENS - 8:
-        raise ValueError(f"Long prompt is unexpectedly short: {best_count} tokens")
-    return best_prompt, best_count
+    if min(best_counts) < TARGET_INPUT_TOKENS - 8:
+        raise ValueError(f"Long prompts are unexpectedly short: {best_counts}")
+    end_prompt, start_prompt = _prompts(best_context, question)
+    return end_prompt, start_prompt, best_counts[0], best_counts[1]
 
 
 def main() -> None:
@@ -120,7 +136,8 @@ def main() -> None:
         if len(source_tokens[ebook_id]) < 2 * TOKENS_PER_DOCUMENT:
             raise ValueError(f"Source is too short for sampling: {title}")
 
-    records = []
+    end_records = []
+    start_records = []
     for index, record in enumerate(id_records):
         rng = random.Random(f"{SEED}:{record['source_prompt_id']}")
         selected = rng.sample(list(SOURCES), DOCUMENTS_PER_PROMPT)
@@ -149,26 +166,50 @@ def main() -> None:
                     "sampled_tokens": TOKENS_PER_DOCUMENT,
                 }
             )
-        suffix = f"\n\nQ: {record['question']} A:"
-        prompt, token_count = _fit_prompt(tokenizer, "".join(pieces), suffix)
-        records.append(
+        end_prompt, start_prompt, end_tokens, start_tokens = _fit_prompt_pair(
+            tokenizer,
+            "".join(pieces),
+            str(record["question"]),
+        )
+        shared = {
+            **record,
+            "source_spans": source_spans,
+        }
+        end_records.append(
             {
-                **record,
-                "prompt_id": "long-v2:" + str(record["prompt_id"]),
-                "prompt": prompt,
-                "text": prompt,
+                **shared,
+                "prompt_id": "long-context-end:" + str(record["prompt_id"]),
+                "prompt": end_prompt,
+                "text": end_prompt,
                 "construction": (
-                    "7168-token multi-document public-domain distractor context"
+                    "matched public-domain documents followed by the TruthfulQA question"
                 ),
-                "input_tokens": token_count,
-                "source_spans": source_spans,
+                "query_position": "end",
+                "input_tokens": end_tokens,
             }
         )
-        print(f"long context: {index + 1}/50 ({token_count} tokens)", flush=True)
+        start_records.append(
+            {
+                **shared,
+                "prompt_id": "long-context-start:" + str(record["prompt_id"]),
+                "prompt": start_prompt,
+                "text": start_prompt,
+                "construction": (
+                    "TruthfulQA question and answer cue followed by the matched public-domain documents"
+                ),
+                "query_position": "start",
+                "input_tokens": start_tokens,
+            }
+        )
+        print(
+            f"long context: {index + 1}/50 "
+            f"(end={end_tokens}, start={start_tokens} tokens)",
+            flush=True,
+        )
 
     payload = {
         "identity": {
-            "schema_version": 2,
+            "schema_version": 3,
             "status": "proposed_not_evaluated",
             "model": [MODEL_ID, MODEL_REVISION],
             "target_input_tokens": TARGET_INPUT_TOKENS,
@@ -186,8 +227,15 @@ def main() -> None:
                 for ebook_id, title, expected_sha256 in SOURCES
             ],
         },
-        "records": records,
+        "sets": {
+            "long_context_end": end_records,
+            "long_context_start": start_records,
+        },
     }
+    if OUTPUT.exists():
+        if json.loads(OUTPUT.read_text()) != payload:
+            raise ValueError("Frozen long-context cache differs from this construction")
+        return
     OUTPUT.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
 
 

@@ -1,6 +1,6 @@
-# D6
+# BOS Mix
 
-D6 distributes Gemma-2-2B's actual `<bos>` token evenly through each Q/A prompt, using seed 2151 to assign 16 insertions to 25 questions and 64 insertions to the other 25 without consulting outcomes.
+Gemma-2-2B's actual `<bos>` token is distributed through each prompt, with a fixed seed assigning 16 insertions to 25 questions and 64 to the other 25.
 
 ```text
 Q: <bos> <bos> What <bos> does <bos> <bos> the <bos> British <bos> <bos> slang <bos> <bos> word <bos> "naff" <bos> <bos> stand <bos> for? <bos> <bos> A:

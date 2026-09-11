@@ -1,4 +1,4 @@
-"""Write five complete, matched prompt examples for each current distribution."""
+"""Write five complete prompt examples for each current dataset."""
 
 import csv
 from pathlib import Path
@@ -29,24 +29,29 @@ SECTIONS = (
         "Meta-Llama-3.1-8B-Instruct deterministically translated each English question into Japanese, pykakasi converted it to Hepburn romaji, and the prompt asks for an English answer.",
     ),
     (
-        "Long context",
-        "long_context",
-        "Seven deterministic public-domain book excerpts are token-trimmed to about 7,168 Gemma tokens and placed before the unchanged question.",
+        "Long Context End",
+        "long_context_end",
+        "Seven fixed public-domain book excerpts fill about 7,168 Gemma tokens, with the unchanged TruthfulQA question placed at the end.",
     ),
     (
-        "D2",
-        "d2",
-        "D2 uses gradient search to find one text-only suffix that maximized A-LQR overshoot on a single Llama-3.2-1B prompt, then appends that exact frozen suffix to every TruthfulQA prompt.",
+        "Long Context Start",
+        "long_context_start",
+        "The exact documents and question from Long Context End are retained, but the question and answer cue are placed before the documents.",
     ),
     (
-        "D3",
-        "d3",
-        "D3 starts from D2 and jointly refines one text-only suffix against the four Llama-3.2-1B prompts where D2 transferred weakest, then appends that exact frozen suffix to every TruthfulQA prompt.",
+        "Corrupting Words",
+        "corrupting_words",
+        "One frozen text-only suffix found by gradient search to maximize A-LQR overshoot on a Llama-3.2-1B prompt is appended to every TruthfulQA prompt.",
     ),
     (
-        "D6",
-        "d6",
-        "D6 distributes Gemma-2-2B's actual `<bos>` token evenly through each Q/A prompt, using seed 2151 to assign 16 insertions to 25 questions and 64 insertions to the other 25 without consulting outcomes.",
+        "BOS Mix",
+        "bos_mix",
+        "Gemma-2-2B's actual `<bos>` token is distributed through each prompt, with a fixed seed assigning 16 insertions to 25 questions and 64 to the other 25.",
+    ),
+    (
+        "L-CiteEval Complexity",
+        "lciteeval_complexity",
+        "Fifty separate NarrativeQA and LoCoMo questions from L-CiteEval span easy, medium, and hard long-context examples that fit Gemma-2-2B.",
     ),
 )
 
@@ -77,7 +82,14 @@ def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     for title, condition, meaning in SECTIONS:
         lines = [f"# {title}", "", meaning, ""]
-        for source_id in selected_ids:
+        condition_ids = (
+            random.Random(f"{SEED}:{condition}").sample(
+                list(by_condition[condition]), EXAMPLE_COUNT
+            )
+            if condition == "lciteeval_complexity"
+            else selected_ids
+        )
+        for source_id in condition_ids:
             row = by_condition[condition][source_id]
             prompt = "\n".join(
                 line.rstrip()

@@ -82,11 +82,12 @@ CONDITION_ORDER = (
     "id",
     "spanish",
     "japanese_romaji",
-    "long_context",
-    "d2",
-    "d3",
-    "d6",
+    "long_context_end",
+    "long_context_start",
+    "corrupting_words",
+    "bos_mix",
 )
+DATASET_ORDER = (*CONDITION_ORDER, "lciteeval_complexity")
 METHOD_ORDER = ("alqr", "hinf")
 
 
@@ -675,7 +676,10 @@ def generate(method: str, device: str) -> None:
         "generation": {
             **GENERATION["truthfulness"],
             "use_cache": False,
-            "batch_size": {name: (1 if name == "long_context" else 8) for name in CONDITION_ORDER},
+            "batch_size": {
+                name: (1 if name.startswith("long_context_") else 8)
+                for name in CONDITION_ORDER
+            },
         },
         "seed": CALIBRATION_SEED,
         "conditions": {
@@ -716,7 +720,7 @@ def generate(method: str, device: str) -> None:
                 raise ValueError(f"Partial {condition} cache has wrong row count")
             continue
         prompts = [str(record["prompt"]) for record in records]
-        batch_size = 1 if condition == "long_context" else 8
+        batch_size = 1 if condition.startswith("long_context_") else 8
         completions = generate_batched(
             model,
             tokenizer,
@@ -1009,11 +1013,11 @@ def require_datasets() -> None:
             "Frozen datasets are missing; run --stage prepare-datasets once"
         )
     manifest = _load_json(manifest_path)
-    if manifest.get("schema_version") != 3:
+    if manifest.get("schema_version") != 4:
         raise ValueError("Frozen dataset manifest has the wrong schema")
-    if tuple(manifest.get("sets", {})) != CONDITION_ORDER:
+    if tuple(manifest.get("sets", {})) != DATASET_ORDER:
         raise ValueError("Frozen dataset manifest has the wrong condition order")
-    for condition in CONDITION_ORDER:
+    for condition in DATASET_ORDER:
         entry = manifest["sets"][condition]
         path = UNIT / entry["path"]
         if not path.exists() or int(entry["rows"]) != EVALUATION_COUNT:
@@ -1024,8 +1028,14 @@ def prepare_datasets() -> None:
     if (CACHE / "datasets" / "manifest.json").exists():
         require_datasets()
         return
-    if not (CACHE / "long_context_v2.json").exists():
+    if not (CACHE / "long_context.json").exists():
         subprocess.run([sys.executable, str(UNIT / "long_context.py")], cwd=REPO, check=True)
+    if not (CACHE / "lciteeval_complexity.json").exists():
+        subprocess.run(
+            [sys.executable, str(UNIT / "lciteeval_complexity.py")],
+            cwd=REPO,
+            check=True,
+        )
     subprocess.run([sys.executable, str(UNIT / "template_attacks.py")], cwd=REPO, check=True)
     subprocess.run([sys.executable, str(UNIT / "export_datasets.py")], cwd=REPO, check=True)
     subprocess.run([sys.executable, str(UNIT / "examples.py")], cwd=REPO, check=True)

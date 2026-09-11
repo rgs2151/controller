@@ -7,14 +7,14 @@ The explicit data-to-figure workflow and model-specific long-context formula are
 - Use the pinned `google/gemma-2-2b` checkpoint and the clean TruthfulQA A-LQR artifacts in `parking/bench_artifacts`.
 - Reuse A-LQR's averaged 35-prompt Jacobian matrix unchanged when fitting the rank-8 full-state H∞ controller. Fit both semantic targets from the same 200 false and 200 true MC2 answer prompts; fit H∞ disturbance geometry on 200 separate generation questions.
 - Select 50 evaluation questions that overlap neither the semantic-fit questions nor the disturbance questions. Apply the same question and sampling seed to A-LQR and H∞.
-- Evaluate the matched ID, Spanish, Japanese-romaji, long-context, D2, D3, and D6 sets; D2/D3/D6 reuse completed attacks rather than designing new ones.
+- Evaluate seven matched sets: ID, Spanish, Japanese-romaji, Long Context End, Long Context Start, Corrupting Words, and BOS Mix.
 - Generate with the A-LQR paper settings and source generation protocol. Score every completion with the pinned TruthfulQA truth and informativeness judges, then compute `Truth (%) × Info (%) / 100`.
 - Write a 1×2 grouped-bar figure separating Truth and Info, aggregate scores, and five real prompt examples from every distribution.
 
 ## Variables
 
-- Data/input: pinned TruthfulQA generation and multiple-choice validation splits; 50 matched evaluation questions per condition.
-- Sessions/groups: A-LQR and corrected full-state H∞ on ID, Spanish, Japanese romaji, long context, D2, D3, and D6.
+- Data/input: pinned TruthfulQA generation and multiple-choice validation splits; 50 matched questions per evaluated condition. A separate 50-question L-CiteEval set is frozen for a later, non-TxI analysis.
+- Sessions/groups: A-LQR and corrected full-state H∞ on the seven matched TruthfulQA conditions.
 - Labels/targets: positive-minus-negative TruthfulQA MC2 semantic target; binary `True` and `Helpful` judge decisions.
 - Signals/features/measures: generated completion, truth percentage, information percentage, and their product as a secondary aggregate.
 - Parameters/thresholds: seed 2151; 200 false plus 200 true fit prompts; 35 shared Jacobians; 200 disturbance prompts; rank 8; 50 evaluations per method and condition; 50 generated tokens.
@@ -27,10 +27,10 @@ The x-axis distributions are:
 | ID | The unchanged held-out TruthfulQA prompt `Q: question A:`. |
 | Spanish | Llama-3.2-3B-Instruct deterministically translates the question into Spanish, followed by a request to answer in English. |
 | Japanese (romaji) | Meta-Llama-3.1-8B-Instruct deterministically translates the question into Japanese, pykakasi converts it to Hepburn romaji, and the prompt asks for an English answer. |
-| Long context | Seven deterministic public-domain book excerpts are token-trimmed to about 7,168 Gemma tokens and placed before the unchanged question. |
-| D2 | Gradient search found one text-only suffix that maximized A-LQR overshoot on a single Llama-3.2-1B prompt; that exact frozen suffix is appended to every TruthfulQA prompt. |
-| D3 | Starting from D2, one text-only suffix was jointly refined against the four Llama-3.2-1B prompts where D2 transferred weakest; that exact frozen suffix is appended to every TruthfulQA prompt. |
-| D6 | Gemma-2-2B's actual `<bos>` token is distributed evenly through each Q/A prompt, with seed 2151 assigning 16 insertions to 25 questions and 64 to the other 25 without using outcomes. |
+| Long Context End | Seven fixed public-domain excerpts fill about 7,168 Gemma tokens; the unchanged question is at the end. |
+| Long Context Start | The same documents and question are used, but the question and `A:` cue come before the documents. |
+| Corrupting Words | A frozen text-only suffix found by gradient search to maximize A-LQR overshoot on one Llama-3.2-1B prompt is appended to every TruthfulQA prompt. |
+| BOS Mix | Gemma-2-2B's actual `<bos>` token is distributed through each prompt; a fixed seed assigns 16 insertions to 25 questions and 64 to the other 25. |
 
 ## Statistics
 
@@ -43,7 +43,7 @@ The x-axis distributions are:
 
 ## Legends
 
-- X axis: ID, Spanish, Japanese (romaji), Long context, D2, D3, and D6.
+- X axis: ID, Spanish, Japanese (romaji), Long Context End, Long Context Start, Corrupting Words, and BOS Mix.
 - Left y axis: Truth percentage; higher is better.
 - Right y axis: Info percentage on the same 0–100 scale; higher is better.
 - Color/value: black is A-LQR and red is H∞.
@@ -54,14 +54,14 @@ The x-axis distributions are:
 
 ## Interpretation
 
-- The current plotted scores predate this finalized seven-set dataset layout and are retained only as the previous iteration.
-- No comparison among the new Japanese-romaji, D2, D3, D6, or replacement long-context sets is claimed until reevaluation.
+- The current plotted scores predate this finalized seven-set layout and remain only as the previous iteration.
+- No claim about the renamed or replacement sets is made until reevaluation.
 
 ## Notes
 
-- D2, D3, and D6 are temporary names retained so their prompt sets can be inspected before final naming.
-- `plots/ood_examples/` contains one inspection file per dataset, each with five complete matched prompts.
-- `cache/datasets/` contains the seven current 50-row dataset CSVs and their manifest; the existing plot must not be attributed to this unevaluated layout.
+- `plots/ood_examples/` contains one inspection file per dataset, each with five complete literal prompts.
+- `cache/datasets/` contains eight 50-row CSVs: seven matched TruthfulQA sets and one separate L-CiteEval set.
+- `lciteeval_complexity.csv` contains 25 NarrativeQA and 25 LoCoMo examples spanning easy, medium, and hard labels. It is not paired with TruthfulQA and requires L-CiteEval correctness/citation metrics, so it is excluded from the TxI plot.
 - Evaluation reads the frozen CSVs directly and never reruns translation or dataset construction; a later full-size run must use a separate frozen bundle.
 - Every artifact produced by this analysis—the H∞ controller and diagnostics, shared-A copy, translations, generations, judge outputs, logs, CSVs, and plots—is stored under `parking/dist_changes/`. The unit only reads the frozen A-LQR inputs in `parking/bench_artifacts/`; it does not write to them.
 - Large model artifacts, controller diagnostics, translations, and judge caches remain under ignored `cache/` storage.
@@ -71,6 +71,7 @@ The x-axis distributions are:
 - `parking/bench_artifacts/`
 - `parking/ood_explore/`
 - `parking/ood_adversarial/`
+- [L-CiteEval dataset](https://huggingface.co/datasets/Jonaszky123/L-CiteEval)
 - `ref/paper_benchmark_50/prepare_data.py`
 - `robust_steerability/experiments/calibration.py`
 - `robust_steerability/source_methods/`
