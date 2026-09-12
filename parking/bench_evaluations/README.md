@@ -47,6 +47,8 @@
 - Evaluation starts only after the frozen artifact identities and their exact 200 false-answer, 200 true-answer, and 35 Jacobian prompt selections validate internally. These immutable selections—not the evaluation unit's calibration pools—are recorded as the A-LQR run inputs.
 - On five complete 817-question repetitions, Original reaches 47.59 ± 0.38 T×I, 50.04 ± 0.24 True, and 95.10 ± 0.33 Info; A-LQR reaches 66.89 ± 0.40 T×I, 75.69 ± 0.45 True, and 88.37 ± 0.23 Info.
 - The primary A-LQR reproduction is close to the published Gemma-2-2B T×I result (66.89 here versus 67.81 in the source paper). The submetrics show a different stochastic tradeoff: higher True and lower Info than the published 73.17/92.68.
+- For Llama-3-8B, Original reaches 46.26 ± 1.20 T×I, 47.54 ± 1.27 True, and 97.31 ± 0.21 Info; A-LQR reaches 64.61 ± 0.40 T×I, 66.22 ± 0.26 True, and 97.58 ± 0.27 Info.
+- The Llama reproduction closely matches the source paper: Original 46.22/47.44/97.43 and A-LQR 63.63/65.80/96.70 for T×I/True/Info.
 
 ## Notes
 
