@@ -11,6 +11,7 @@ import random
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -56,9 +57,28 @@ from robust_steerability.source_methods.protocol import (
 UNIT = Path(__file__).resolve().parent
 REPO = UNIT.parents[1]
 ALQR_ARTIFACT_ROOT = REPO / "parking/bench_artifacts/cache"
-MODEL_KEY = "gemma2b"
-MODEL_ID = "google/gemma-2-2b"
-MODEL_REVISION = "c5ebcd40d208330abc697524c919956e692655cf"
+
+
+@dataclass(frozen=True)
+class EvaluatedModel:
+    model_id: str
+    revision: str
+
+
+MODELS = {
+    "gemma2b": EvaluatedModel(
+        "google/gemma-2-2b",
+        "c5ebcd40d208330abc697524c919956e692655cf",
+    ),
+    "llama8b": EvaluatedModel(
+        "meta-llama/Meta-Llama-3-8B",
+        "8cde5ca8380496c9a6cc7ef3a8b46a0372a1d920",
+    ),
+    "qwen14b": EvaluatedModel(
+        "Qwen/Qwen2.5-14B",
+        "97e1e76335b7017d8f67c08a19d103c0504298c9",
+    ),
+}
 TRUTHFULQA_ID = "truthful_qa"
 TRUTHFULQA_REVISION = "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
 RTP_ID = "allenai/real-toxicity-prompts"
@@ -378,25 +398,26 @@ def prepare(behavior: str) -> None:
     _write_json(destination, payload)
 
 
-def generate(method: str, device: str, behavior: str) -> None:
+def generate(model_key: str, method: str, device: str, behavior: str) -> None:
     if method not in {"original", "alqr"}:
         raise ValueError("The first benchmark slice permits only original or alqr")
     if not _data_path(behavior).exists():
         raise ValueError(f"Run the prepare stage for {behavior} before generation")
+    model = MODELS[model_key]
     run_generation_job(
         unit=UNIT,
         behavior=behavior,
-        model_id=MODEL_ID,
-        revision=MODEL_REVISION,
+        model_id=model.model_id,
+        revision=model.revision,
         method=method,
         device=device,
         token=load_access_token(REPO),
-        alqr_artifact_root=ALQR_ARTIFACT_ROOT,
+        alqr_artifact_root=ALQR_ARTIFACT_ROOT / model_key,
     )
 
 
-def _generation_files(method: str, behavior: str) -> list[Path]:
-    root = UNIT / "cache/generations" / behavior / MODEL_KEY / method
+def _generation_files(model_key: str, method: str, behavior: str) -> list[Path]:
+    root = UNIT / "cache/generations" / behavior / model_key / method
     return sorted(path for path in root.glob("*.json") if path.name != "unsupported.json")
 
 
@@ -790,8 +811,8 @@ def _score_toxicity_generation(generation_path: Path, device: str, token: str) -
     _write_json(destination, saved)
 
 
-def score(method: str, device: str, behavior: str) -> None:
-    files = _generation_files(method, behavior)
+def score(model_key: str, method: str, device: str, behavior: str) -> None:
+    files = _generation_files(model_key, method, behavior)
     if len(files) != 1:
         raise ValueError(f"Expected one {method} generation cache; found {len(files)}")
     token = load_access_token(REPO)
@@ -806,8 +827,9 @@ def _mean_se(values: list[float]) -> tuple[float, float]:
     return float(array.mean()), float(array.std(ddof=1) / math.sqrt(len(array)))
 
 
-def summarize_truthfulness(method: str) -> dict:
-    files = _generation_files(method, "truthfulness")
+def summarize_truthfulness(model_key: str, method: str) -> dict:
+    model = MODELS[model_key]
+    files = _generation_files(model_key, method, "truthfulness")
     if len(files) != 1:
         raise ValueError(f"Expected one {method} generation cache; found {len(files)}")
     generation_path = files[0]
@@ -856,8 +878,8 @@ def summarize_truthfulness(method: str) -> dict:
         "identity": {
             "generation_sha256": _sha(generation_path),
             "scores_sha256": _sha(score_path),
-            "model_id": MODEL_ID,
-            "model_revision": MODEL_REVISION,
+            "model_id": model.model_id,
+            "model_revision": model.revision,
             "method": method,
             "dataset": [TRUTHFULQA_ID, TRUTHFULQA_REVISION],
         },
@@ -868,12 +890,13 @@ def summarize_truthfulness(method: str) -> dict:
         "metrics": metrics,
         "invalid_judge_outputs": invalid_judge_outputs,
     }
-    _write_json(UNIT / "cache/results/truthfulness" / MODEL_KEY / f"{method}.json", result)
+    _write_json(UNIT / "cache/results/truthfulness" / model_key / f"{method}.json", result)
     return result
 
 
-def summarize_toxicity(method: str) -> dict:
-    files = _generation_files(method, "toxicity")
+def summarize_toxicity(model_key: str, method: str) -> dict:
+    model = MODELS[model_key]
+    files = _generation_files(model_key, method, "toxicity")
     if len(files) != 1:
         raise ValueError(f"Expected one {method} generation cache; found {len(files)}")
     generation_path = files[0]
@@ -932,8 +955,8 @@ def summarize_toxicity(method: str) -> dict:
         "identity": {
             "generation_sha256": _sha(generation_path),
             "scores_sha256": _sha(score_path),
-            "model_id": MODEL_ID,
-            "model_revision": MODEL_REVISION,
+            "model_id": model.model_id,
+            "model_revision": model.revision,
             "method": method,
             "dataset": [RTP_ID, RTP_REVISION],
             "mmlu_dataset": [MMLU_ID, MMLU_REVISION],
@@ -945,22 +968,22 @@ def summarize_toxicity(method: str) -> dict:
         "per_repetition": per_repetition,
         "metrics": metrics,
     }
-    _write_json(UNIT / "cache/results/toxicity" / MODEL_KEY / f"{method}.json", result)
+    _write_json(UNIT / "cache/results/toxicity" / model_key / f"{method}.json", result)
     return result
 
 
-def summarize(method: str, behavior: str) -> dict:
+def summarize(model_key: str, method: str, behavior: str) -> dict:
     if behavior == "truthfulness":
-        return summarize_truthfulness(method)
-    return summarize_toxicity(method)
+        return summarize_truthfulness(model_key, method)
+    return summarize_toxicity(model_key, method)
 
 
-def launch_pair(stage: str, behavior: str) -> None:
+def launch_pair(model_key: str, stage: str, behavior: str) -> None:
     log_root = UNIT / "cache/logs"
     log_root.mkdir(parents=True, exist_ok=True)
     running = []
     for method, device in (("original", "cuda:0"), ("alqr", "cuda:1")):
-        log_path = log_root / f"{stage}_{behavior}_{MODEL_KEY}_{method}.log"
+        log_path = log_root / f"{stage}_{behavior}_{model_key}_{method}.log"
         handle = log_path.open("a")
         process = subprocess.Popen(
             [
@@ -968,6 +991,8 @@ def launch_pair(stage: str, behavior: str) -> None:
                 str(Path(__file__).resolve()),
                 "--stage",
                 stage,
+                "--model",
+                model_key,
                 "--method",
                 method,
                 "--behavior",
@@ -990,9 +1015,10 @@ def launch_pair(stage: str, behavior: str) -> None:
         raise RuntimeError(f"Pair stage failed: {failures}")
 
 
-def smoke(behavior: str) -> None:
+def smoke(model_key: str, behavior: str) -> None:
+    model = MODELS[model_key]
     counts = ALQR_CALIBRATION_COUNTS[behavior]
-    setting = paper_alqr_setting(behavior, MODEL_ID)
+    setting = paper_alqr_setting(behavior, model.model_id)
     expected_counts = {
         "truthfulness": {
             "undesired": 200,
@@ -1010,23 +1036,35 @@ def smoke(behavior: str) -> None:
         },
     }
     expected_settings = {
-        "truthfulness": {"multiplier": 3.0, "q": 0.1, "r": 1.0, "q_final": 0.3},
-        "toxicity": {"multiplier": 3.5, "q": 0.1, "r": 1.0, "q_final": 0.1},
+        ("gemma2b", "truthfulness"): {
+            "multiplier": 3.0, "q": 0.1, "r": 1.0, "q_final": 0.3
+        },
+        ("llama8b", "truthfulness"): {
+            "multiplier": 3.5, "q": 0.1, "r": 10.0, "q_final": 10.0
+        },
+        ("qwen14b", "truthfulness"): {
+            "multiplier": 3.5, "q": 0.1, "r": 1.0, "q_final": 0.3
+        },
+        ("gemma2b", "toxicity"): {
+            "multiplier": 3.5, "q": 0.1, "r": 1.0, "q_final": 0.1
+        },
     }
     if counts.__dict__ != expected_counts[behavior]:
         raise ValueError(f"{behavior} calibration no longer matches the paper protocol")
-    if setting.__dict__ != expected_settings[behavior]:
-        raise ValueError(f"Gemma-2-2B {behavior} A-LQR parameters changed")
+    if (model_key, behavior) not in expected_settings:
+        raise ValueError(f"No frozen benchmark setting for {model_key}/{behavior}")
+    if setting.__dict__ != expected_settings[(model_key, behavior)]:
+        raise ValueError(f"{model_key} {behavior} A-LQR parameters changed")
     if behavior == "truthfulness":
         if truth_judge_prompt("Question?", "Answer.", "True") != "Q: Question?\nA: Answer.\nTrue:":
             raise ValueError("Truth judge rubric changed")
         if truth_judge_prompt("Question?", "Answer.", "Helpful") != "Q: Question?\nA: Answer.\nHelpful:":
             raise ValueError("Info judge rubric changed")
         _setpoint, _dynamics, artifact_hashes, calibration_selection = load_frozen_alqr_artifacts(
-            artifact_root=ALQR_ARTIFACT_ROOT,
+            artifact_root=ALQR_ARTIFACT_ROOT / model_key,
             behavior=behavior,
-            model_id=MODEL_ID,
-            revision=MODEL_REVISION,
+            model_id=model.model_id,
+            revision=model.revision,
             parameters={
                 "lambda": setting.multiplier,
                 "q": setting.q,
@@ -1055,6 +1093,7 @@ def main() -> None:
         choices=("prepare", "generate", "score", "summarize", "generate-pair", "score-pair", "smoke"),
         required=True,
     )
+    parser.add_argument("--model", choices=tuple(MODELS), required=True)
     parser.add_argument("--method", choices=("original", "alqr"))
     parser.add_argument("--behavior", choices=("truthfulness", "toxicity"), required=True)
     parser.add_argument("--device", choices=("cuda:0", "cuda:1"))
@@ -1065,16 +1104,16 @@ def main() -> None:
         if arguments.method is None or arguments.device is None:
             raise ValueError(f"{arguments.stage} requires --method and --device")
         (generate if arguments.stage == "generate" else score)(
-            arguments.method, arguments.device, arguments.behavior
+            arguments.model, arguments.method, arguments.device, arguments.behavior
         )
     elif arguments.stage == "summarize":
         if arguments.method is None:
             raise ValueError("summarize requires --method")
-        summarize(arguments.method, arguments.behavior)
+        summarize(arguments.model, arguments.method, arguments.behavior)
     elif arguments.stage in {"generate-pair", "score-pair"}:
-        launch_pair(arguments.stage.removesuffix("-pair"), arguments.behavior)
+        launch_pair(arguments.model, arguments.stage.removesuffix("-pair"), arguments.behavior)
     else:
-        smoke(arguments.behavior)
+        smoke(arguments.model, arguments.behavior)
 
 
 if __name__ == "__main__":
