@@ -19,16 +19,18 @@ CONDITIONS = (
     "long_context_start",
     "corrupting_words",
     "bos_mix",
+    "lciteeval_complexity",
 )
 METHODS = ("alqr", "hinf")
 LABELS = {
     "id": "ID",
     "spanish": "Spanish",
-    "japanese_romaji": "Japanese\n(romaji)",
-    "long_context_end": "Long context\nend",
-    "long_context_start": "Long context\nstart",
-    "corrupting_words": "Corrupting\nwords",
-    "bos_mix": "BOS\nmix",
+    "japanese_romaji": "Japanese (romaji)",
+    "long_context_end": "Long context (end)",
+    "long_context_start": "Long context (start)",
+    "corrupting_words": "Corrupting words",
+    "bos_mix": "BOS mix",
+    "lciteeval_complexity": "L-CiteEval complexity",
 }
 COLORS = {"alqr": "black", "hinf": "#d62728"}
 
@@ -58,7 +60,7 @@ def main() -> None:
         ("truth_percent", "Truthfulness", "Truth score (%)"),
         ("info_percent", "Informativeness", "Info score (%)"),
     )
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.4), sharey=False)
+    fig, axes = plt.subplots(1, 2, figsize=(16.0, 5.0), sharey=False)
     base_positions = np.arange(len(CONDITIONS), dtype=float)
     width = 0.34
 
@@ -88,7 +90,9 @@ def main() -> None:
                 )
         ax.set_title(title, fontsize=16)
         ax.set_xticks(base_positions, [LABELS[item] for item in CONDITIONS])
-        ax.tick_params(axis="x", labelsize=10)
+        ax.tick_params(axis="x", labelsize=8.5, pad=4, rotation=28)
+        for label in ax.get_xticklabels():
+            label.set_horizontalalignment("right")
         ax.set_xlim(-0.55, len(CONDITIONS) - 0.45)
         ax.set_ylim(0, 105)
         ax.set_yticks(np.arange(0, 101, 20))

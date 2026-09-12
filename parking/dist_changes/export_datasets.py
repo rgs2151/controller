@@ -24,7 +24,7 @@ SET_STATUS = {
     "long_context_start": "proposed_not_evaluated",
     "corrupting_words": "proposed_not_evaluated",
     "bos_mix": "proposed_not_evaluated",
-    "lciteeval_complexity": "candidate_requires_lciteeval_evaluator",
+    "lciteeval_complexity": "proposed_not_evaluated",
 }
 
 
@@ -61,7 +61,7 @@ def _sets() -> dict[str, list[dict[str, object]]]:
         raise ValueError("Unexpected long-context status")
     if attacks["identity"].get("status") != "proposed_not_evaluated":
         raise ValueError("Unexpected template-attack status")
-    if lciteeval["identity"].get("status") != "candidate_requires_lciteeval_evaluator":
+    if lciteeval["identity"].get("status") != "proposed_not_evaluated":
         raise ValueError("Unexpected L-CiteEval status")
     for name, records in result.items():
         if len(records) != 50:
@@ -204,7 +204,7 @@ def main() -> None:
         },
         "lciteeval_complexity": {
             "paired_with_truthfulqa": False,
-            "evaluation": "L-CiteEval correctness and citation metrics",
+            "evaluation": "pinned TruthfulQA Truth and Info judges",
         },
         "sets": manifest_sets,
     }

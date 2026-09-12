@@ -1,6 +1,6 @@
 # Distribution-change pipeline
 
-This unit owns seven matched TruthfulQA distribution changes and one separate L-CiteEval complexity set. All generated datasets, controller artifacts, completions, judge outputs, and logs stay under `parking/dist_changes/`. The unit reads the frozen A-LQR calibration artifacts from `parking/bench_artifacts/` but never writes to that unit.
+This unit owns eight 50-prompt conditions: seven matched TruthfulQA changes and one L-CiteEval complexity condition. All generated datasets, controller artifacts, completions, judge outputs, and logs stay under `parking/dist_changes/`. The unit reads the frozen A-LQR calibration artifacts from `parking/bench_artifacts/` but never writes to that unit.
 
 ## 1. Fixed question anchors
 
@@ -14,12 +14,12 @@ The matched anchor set is 50 held-out questions from the pinned TruthfulQA `gene
 | --- | ---: | --- |
 | `id.csv` | 50 | Evaluated |
 | `spanish.csv` | 50 | Evaluated, but the automatic translations require replacement or manual validation |
-| `japanese_romaji.csv` | 50 | New candidate; not yet evaluated |
-| `long_context_end.csv` | 50 | Fixed documents first and the matched TruthfulQA question last; not yet evaluated |
-| `long_context_start.csv` | 50 | The same question and documents, with the question and `A:` cue first; not yet evaluated |
-| `corrupting_words.csv` | 50 | One frozen gradient-searched text suffix appended to every matched prompt; not yet evaluated |
-| `bos_mix.csv` | 50 | Gemma BOS tokens distributed through every matched prompt in a seeded 16/64 split; not yet evaluated |
-| `lciteeval_complexity.csv` | 50 | Separate NarrativeQA/LoCoMo questions spanning easy, medium, and hard; requires L-CiteEval evaluation |
+| `japanese_romaji.csv` | 50 | Evaluated |
+| `long_context_end.csv` | 50 | Evaluated; fixed documents first and the matched TruthfulQA question last |
+| `long_context_start.csv` | 50 | Evaluated; the same question and documents, with the question and `A:` cue first |
+| `corrupting_words.csv` | 50 | Evaluated; one frozen gradient-searched text suffix appended to every matched prompt |
+| `bos_mix.csv` | 50 | Evaluated; Gemma BOS tokens distributed through every matched prompt in a seeded 16/64 split |
+| `lciteeval_complexity.csv` | 50 | NarrativeQA/LoCoMo questions spanning easy, medium, and hard; evaluated as the eighth condition |
 | `manifest.json` | — | Model revision, token lengths, statuses, and ordered prompt hashes |
 
 Each CSV contains the source question, complete model prompt, exact Gemma token count, prompt hash, construction label, and source metadata. The bundle is created once and evaluations read it directly.
@@ -68,7 +68,7 @@ When another model is added later, the 50 questions, source books, source hashes
 
 ## 4. L-CiteEval complexity set
 
-The separate set deterministically selects 25 NarrativeQA and 25 LoCoMo examples from `L-CiteEval-Hardness`, covering 17 easy, 16 medium, and 17 hard records. Only complete prompts at or below 8,000 Gemma input tokens are eligible. These questions are unrelated to the 50 TruthfulQA anchors, so this set must use L-CiteEval correctness and citation metrics and is not part of the matched TxI plot.
+The eighth condition deterministically selects 25 NarrativeQA and 25 LoCoMo examples from `L-CiteEval-Hardness`, covering 17 easy, 16 medium, and 17 hard records. Only complete prompts at or below 8,000 Gemma input tokens are eligible. These questions differ from the TruthfulQA anchors but are evaluated with the same Truth and Info judges and shown in the same plot.
 
 ## 5. Controller artifacts
 
@@ -78,9 +78,9 @@ The separate set deterministically selects 25 NarrativeQA and 25 LoCoMo examples
 
 ## 6. Paired generation
 
-For each of the seven datasets, A-LQR and H∞ receive identical ordered prompts, model revision, seed, decoding settings, and output-token limit. Only the controller changes. Model-specific batch sizes may change for memory, but they must not change the prompts or decoding parameters.
+For each of the eight datasets, A-LQR and H∞ receive identical ordered prompts, model revision, seed, decoding settings, and output-token limit. Only the controller changes. Model-specific batch sizes may change for memory, but they must not change the prompts or decoding parameters.
 
-Both matched long-context sets use batch size 1 because each input is near Gemma's context limit. Their generation caches must use new identities; previous long-context results must never be reused.
+Both matched long-context sets and L-CiteEval use batch size 1 because their inputs are long. Their generation caches must use new identities; previous long-context results must never be reused.
 
 ## 7. TruthfulQA judging
 
@@ -104,7 +104,7 @@ Each judge returns `yes` or `no`. Exact `yes` maps to 1 and exact `no` maps to 0
 
 The 1×2 figure reports Truth and Info as separate percentage bars with no confidence intervals. `plots/ood_examples/` contains one Markdown file per dataset; each file has one H1 set name, one explanation, and five complete literal prompt code blocks without IDs or example labels.
 
-The plot must not be regenerated until both controllers and both judges have completed all seven matched sets. L-CiteEval remains separate because its questions and metrics differ.
+The plot is regenerated only after both controllers and both judges complete all eight conditions.
 
 ## 9. Cache rules
 
