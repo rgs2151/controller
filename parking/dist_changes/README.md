@@ -1,24 +1,14 @@
-# distribution_shift_txi
-
-The explicit data-to-figure workflow and model-specific long-context formula are documented in `PIPELINE.md`.
+# distribution_shift_truth_info_residuals
 
 ## Method
 
 - Use the pinned `google/gemma-2-2b` checkpoint and the clean TruthfulQA A-LQR artifacts in `parking/bench_artifacts`.
 - Reuse A-LQR's averaged 35-prompt Jacobian matrix unchanged when fitting the rank-8 full-state H∞ controller. Fit both semantic targets from the same 200 false and 200 true MC2 answer prompts; fit H∞ disturbance geometry on 200 separate generation questions.
-- Select 50 evaluation questions that overlap neither the semantic-fit questions nor the disturbance questions. Apply the same question and sampling seed to A-LQR and H∞.
-- Evaluate eight 50-prompt sets: ID, Spanish, Japanese-romaji, Long Context End, Long Context Start, Corrupting Words, BOS Mix, and L-CiteEval Complexity.
-- Generate with the A-LQR paper settings and source generation protocol. Score every completion with the pinned TruthfulQA truth and informativeness judges, then compute `Truth (%) × Info (%) / 100`.
-- Write a 1×2 grouped-bar figure separating Truth and Info, aggregate scores, and five real prompt examples from every distribution.
-
-## Variables
-
-- Data/input: pinned TruthfulQA generation and multiple-choice validation splits plus 50 L-CiteEval NarrativeQA/LoCoMo questions; 50 prompts per condition.
-- Sessions/groups: A-LQR and corrected full-state H∞ on all eight conditions.
-- Labels/targets: positive-minus-negative TruthfulQA MC2 semantic target; binary `True` and `Helpful` judge decisions.
-- Signals/features/measures: generated completion, truth percentage, information percentage, and their product as a secondary aggregate.
-- Parameters/thresholds: seed 2151; 200 false plus 200 true fit prompts; 35 shared Jacobians; 200 disturbance prompts; rank 8; 50 evaluations per method and condition; 50 generated tokens.
-- Outputs: `plots/distribution_shift_truth_info.pdf`, `plots/distribution_shift_truth_info.png`, one file per dataset under `plots/ood_examples/`, `plots/distribution_scores.csv`, and `plots/summary.json`.
+- Evaluate A-LQR and H∞ on eight frozen 50-prompt sets: ID, Spanish, Japanese-romaji, Long Context End, Long Context Start, Corrupting Words, BOS Mix, and L-CiteEval Complexity.
+- Generate with the A-LQR paper protocol and score each completion with the pinned binary TruthfulQA truth and informativeness judges.
+- During evaluation, cache the last-input-token state at every decoder depth and the actual post-block hidden intervention. Compute the raw one-step residual as `h[k+1] - mean[k+1] - A[k] @ (h[k] - mean[k]) - u[k]`; divide its norm by the next-state norm and average across layers and prompts.
+- Project the observed trajectory into the shared rank-8 coordinates. Starting from zero deviation, drive each controller's closed-loop depth dynamics with its observed reduced residual sequence and measure the common Q/R/Qf performance energy. Report the pooled square root of total performance energy divided by total residual energy.
+- Write a 2×2 grouped-bar figure containing Truth, Info, full-state dynamics mismatch, and rank-8 residual-to-performance gain.
 
 The x-axis distributions are:
 
@@ -33,40 +23,49 @@ The x-axis distributions are:
 | BOS Mix | Gemma-2-2B's actual `<bos>` token is distributed through each prompt; a fixed seed assigns 16 insertions to 25 questions and 64 to the other 25. |
 | L-CiteEval Complexity | Fifty NarrativeQA and LoCoMo long-context questions spanning easy, medium, and hard examples. |
 
+## Variables
+
+- Data/input: pinned TruthfulQA generation and multiple-choice validation splits plus 50 L-CiteEval NarrativeQA/LoCoMo questions; 50 prompts per condition.
+- Sessions/groups: A-LQR and corrected full-state H∞ on all eight conditions.
+- Labels/targets: positive-minus-negative TruthfulQA MC2 semantic target; binary `True` and `Helpful` judge decisions.
+- Signals/features/measures: generated completion, Truth percentage, Info percentage, full 2304-dimensional hidden states and interventions, full-state relative residual, rank-8 residual energy, and rank-8 Q/R/Qf performance energy.
+- Parameters/thresholds: seed 2151; 200 false plus 200 true fit prompts; 35 shared Jacobians; 200 disturbance prompts; rank 8; 50 evaluations per method and condition; 50 generated tokens.
+- Outputs: `plots/distribution_shift_truth_info_residuals.pdf`, `plots/distribution_shift_truth_info_residuals.png`, `plots/distribution_scores.csv`, `plots/summary.json`, and one five-prompt inspection file per dataset under `plots/ood_examples/`.
+
 ## Statistics
 
-- Tests/models: descriptive comparison of binary judge percentages; no null-hypothesis test or confidence interval is shown.
+- Tests/models: descriptive binary judge percentages, mean layer-relative residual, and pooled residual-to-performance energy gain; no inferential test or confidence interval is shown.
 - Null hypothesis: not tested in this exploratory unit.
-- Alternative hypothesis: not tested; the practical question is whether H∞ retains higher Truth and Info than A-LQR under distribution shift.
-- Thresholds/decision rule: each prompt receives a binary `yes`/`no` decision from each judge, and each bar is `100 × mean(binary decision)` across the same 50 prompts.
-- What the statistic means: Truth measures whether the answer is factually true; Info measures whether it is helpful or informative. Both are binary per prompt and reported as percentages across the 50 prompts.
-- Why this statistic is appropriate here: separating the two paper judges reveals whether a method improves factuality, informativeness, or merely trades one against the other.
+- Alternative hypothesis: not tested; the practical comparison is whether H∞ retains benchmark quality and attenuates observed residual disturbances more than A-LQR.
+- Thresholds/decision rule: exact judge `yes` maps to 1 and exact `no` maps to 0; malformed outputs are rejected. Lower is better for both residual measures.
+- What the statistics mean: Truth and Info are fractions of positive judge decisions; dynamics mismatch is the average residual norm relative to next-state norm; residual-to-performance gain is the pooled closed-loop cost induced per unit of observed reduced residual energy.
+- Why these statistics are appropriate here: the benchmark panels test task behavior, while the two residual panels separate disturbance size from the controller's response to that disturbance.
 
 ## Legends
 
 - X axis: ID, Spanish, Japanese (romaji), Long Context End, Long Context Start, Corrupting Words, BOS Mix, and L-CiteEval Complexity.
-- Left y axis: Truth percentage; higher is better.
-- Right y axis: Info percentage on the same 0–100 scale; higher is better.
-- Color/value: black is A-LQR and red is H∞.
+- Y axes: top-left is Truth percentage; top-right is Info percentage; bottom-left is mean layer-relative residual percentage; bottom-right is residual-to-performance gain.
+- Color/value: black is A-LQR and red is H∞; bar height and the printed number give the same aggregate value.
 - Grouping: two bars per distribution, each based on the same 50 prompts; the first seven sets share TruthfulQA anchors and L-CiteEval supplies its own 50 questions.
 - Ordering/sorting: distributions use the fixed conceptual order above; methods always appear A-LQR then H∞.
-- Bars/labels: bar height gives the percentage of `yes` decisions; the integer label gives the same point estimate. No error bars or confidence intervals are displayed.
-- Panels: Truthfulness is on the left and Informativeness is on the right.
+- Lines/markers/labels: bars have no error bars or confidence intervals. Higher is better in the top row and lower is better in the bottom row.
+- Panels: Truthfulness and Informativeness are the top row; Dynamics mismatch and Residual amplification are the bottom row.
 
 ## Interpretation
 
-- In this 50-prompt run, H∞ does not outperform A-LQR on Truth in any condition.
-- H∞ has higher Info on ID, Spanish, Japanese-romaji, both long-context variants, and L-CiteEval Complexity, but lower Info on Corrupting Words and BOS Mix.
-- The result does not support the intended claim that H∞ preserves both benchmark dimensions better than A-LQR under these shifts. The 50-prompt run is exploratory and is not a final statistical comparison.
+- H∞ does not outperform A-LQR on Truth in this 50-prompt run, although it has higher Info on six of the eight conditions.
+- The two methods encounter similar full-state mismatch: H∞ is 0.15 percentage points lower on Spanish and 0.05–2.49 points higher on the other conditions.
+- H∞ has lower residual-to-performance gain in all eight conditions, with reductions of about 24–31% relative to A-LQR. The intended robustness mechanism is therefore visible even though it does not yet translate into better Truth scores.
+- These results separate two claims: H∞ attenuates the downstream cost of measured residuals more strongly, but the present controller/evaluation setup does not establish better benchmark performance under these shifts.
 
 ## Notes
 
+- `cache/residual_rollouts/{alqr,hinf}/` stores one strict manifest and one file per condition. Every condition file contains prompt IDs, input-token counts, full prompt-end states, actual hidden controls, reduced states and controls, raw and reduced residuals, and per-prompt energy/gain values.
+- The residual stage is part of `--stage all`, is resumable by complete condition, and never writes outside this unit. Once cached, plot changes and further residual summaries require no model forward pass.
 - `plots/ood_examples/` contains one inspection file per dataset, each with five complete literal prompts.
-- `cache/datasets/` contains eight 50-row CSVs: seven matched TruthfulQA sets and one L-CiteEval set included as the eighth plotted condition.
-- `lciteeval_complexity.csv` contains 25 NarrativeQA and 25 LoCoMo examples spanning easy, medium, and hard labels; the same pinned Truth and Info judges are applied to it for this analysis.
-- Evaluation reads the frozen CSVs directly and never reruns translation or dataset construction; a later full-size run must use a separate frozen bundle.
-- Every artifact produced by this analysis—the H∞ controller and diagnostics, shared-A copy, translations, generations, judge outputs, logs, CSVs, and plots—is stored under `parking/dist_changes/`. The unit only reads the frozen A-LQR inputs in `parking/bench_artifacts/`; it does not write to them.
-- Large model artifacts, controller diagnostics, translations, and judge caches remain under ignored `cache/` storage.
+- `cache/datasets/` contains eight immutable 50-row CSVs. A later full-size run must use a separate frozen bundle.
+- The automatic Spanish translations require replacement or manual validation. The romaji and BOS-mix outputs expose judge failures, and the TruthfulQA judges do not receive the source passages or references needed to validate L-CiteEval answers; those benchmark bars are diagnostic rather than final task-valid scores.
+- Every artifact produced by this analysis remains under `parking/dist_changes/`. The unit only reads frozen A-LQR inputs from `parking/bench_artifacts/`.
 
 ## References
 
@@ -76,4 +75,5 @@ The x-axis distributions are:
 - [L-CiteEval dataset](https://huggingface.co/datasets/Jonaszky123/L-CiteEval)
 - `ref/paper_benchmark_50/prepare_data.py`
 - `robust_steerability/experiments/calibration.py`
+- `robust_steerability/modeling/interventions.py`
 - `robust_steerability/source_methods/`

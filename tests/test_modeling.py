@@ -6,7 +6,10 @@ from types import SimpleNamespace
 import torch
 
 from robust_steerability.control.lqr import LQRController
-from robust_steerability.modeling.interventions import forward_with_policy
+from robust_steerability.modeling.interventions import (
+    capture_last_token_policy_rollout,
+    forward_with_policy,
+)
 from robust_steerability.runtime.policy import SemanticSetpointPolicy
 
 
@@ -81,6 +84,30 @@ class InterventionTests(unittest.TestCase):
         torch.testing.assert_close(output.logits[0, -1], torch.tensor([2.0, 1.0]))
         torch.testing.assert_close(controls, torch.zeros_like(controls))
         torch.testing.assert_close(states[-1, -1], torch.tensor([2.0, 1.0]))
+
+    def test_compact_rollout_captures_only_last_token(self) -> None:
+        model = ToyModel()
+        encoded = {
+            "input_ids": torch.tensor([[1, 2]]),
+            "attention_mask": torch.ones(1, 2, dtype=torch.long),
+        }
+        policy = SemanticSetpointPolicy(
+            controller=LQRController.from_tracking_gains(
+                torch.eye(2).repeat(2, 1, 1)
+            ),
+            feature_unit=torch.tensor([[1.0, 0.0], [1.0, 0.0]]),
+            setpoints=torch.tensor([3.0, 3.0]),
+        )
+        states, controls = capture_last_token_policy_rollout(
+            model, encoded, policy
+        )
+        self.assertEqual(states.shape, (1, 3, 2))
+        self.assertEqual(controls.shape, (1, 2, 2))
+        torch.testing.assert_close(states[0, 0], torch.tensor([2.0, 1.0]))
+        torch.testing.assert_close(states[0, 1], torch.tensor([3.0, 1.0]))
+        torch.testing.assert_close(states[0, 2], torch.tensor([3.0, 1.0]))
+        torch.testing.assert_close(controls[0, 0], torch.tensor([1.0, 0.0]))
+        torch.testing.assert_close(controls[0, 1], torch.tensor([0.0, 0.0]))
 
 
 if __name__ == "__main__":
