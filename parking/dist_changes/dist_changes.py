@@ -33,7 +33,10 @@ from robust_steerability.modeling.huggingface import (
     load_access_token,
     load_causal_model,
 )
-from robust_steerability.modeling.interventions import register_generation_policy_hooks
+from robust_steerability.modeling.interventions import (
+    capture_last_token_policy_rollout,
+    register_generation_policy_hooks,
+)
 from robust_steerability.source_methods.control import (
     SetpointCalibration,
     build_alqr_policy,
@@ -113,6 +116,13 @@ def _write_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    temporary.replace(path)
+
+
+def _write_torch(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(payload, temporary)
     temporary.replace(path)
 
 
@@ -655,6 +665,344 @@ def _load_hinf_policy():
     return build_policy("hinf", artifact, kp=0.5, ki=0.01, kd=0.01)
 
 
+def _residual_identity(
+    method: str,
+    prompt_sets: dict[str, list[dict[str, object]]],
+) -> dict[str, object]:
+    artifact_paths = (
+        (BENCH_ARTIFACTS / "setpoint.pt", BENCH_ARTIFACTS / "dynamics.pt")
+        if method == "alqr"
+        else (CACHE / "hinf_controller.pt", CACHE / "shared_A" / "dynamics.pt")
+    )
+    source_paths = (
+        Path(__file__).resolve(),
+        REPO / "robust_steerability/modeling/interventions.py",
+        REPO / "robust_steerability/runtime/policy.py",
+        REPO / "robust_steerability/control/lqr.py",
+        REPO / "robust_steerability/control/h_infinity.py",
+    )
+    return {
+        "schema_version": 1,
+        "method": method,
+        "model": [MODEL_ID, MODEL_REVISION],
+        "model_loading": asdict(
+            source_model_spec("alqr", "truthfulness", MODEL_ID, MODEL_REVISION)
+        ),
+        "conditions": {
+            name: _hash_json(records) for name, records in prompt_sets.items()
+        },
+        "artifacts": {str(path.resolve()): _sha256(path) for path in artifact_paths},
+        "capture": {
+            "position": "last input token",
+            "states": "decoder inputs plus controlled final decoder output",
+            "controls": "actual post-block hidden-space deltas",
+            "use_cache": False,
+            "dtype": "float32",
+        },
+        "metrics": {
+            "layer_relative_residual": (
+                "norm(h[k+1] - mean[k+1] - A[k] @ (h[k] - mean[k]) "
+                "- u_hidden[k]) / norm(h[k+1])"
+            ),
+            "residual_to_performance_gain": (
+                "sqrt(closed-loop rank-8 Q/R/Qf performance energy divided by "
+                "rank-8 tracking-residual energy)"
+            ),
+        },
+        "source_hashes": {
+            str(path.relative_to(REPO)): _sha256(path) for path in source_paths
+        },
+    }
+
+
+def _feedback_response(
+    method: str,
+    policy,
+    deviation: torch.Tensor,
+    layer_index: int,
+    encoders: torch.Tensor,
+    decoders: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return physical hidden control and its next-basis state effect."""
+
+    if method == "alqr":
+        feature = policy.feature_unit[layer_index].float()
+        current_hidden = deviation @ encoders[layer_index].T
+        scalar_deviation = current_hidden @ feature
+        semantic_deviation = scalar_deviation.unsqueeze(-1) * feature
+        hidden_control = semantic_deviation @ policy.controller.gains[layer_index].float().T
+    else:
+        reduced_control = deviation @ policy.controller.gains[layer_index].float().T
+        channels = policy.controller.control_channels
+        if channels is not None:
+            reduced_control = reduced_control @ channels[layer_index].float().T
+        hidden_control = reduced_control @ decoders[layer_index + 1].T
+    reduced_effect = hidden_control @ encoders[layer_index + 1]
+    return hidden_control, reduced_effect
+
+
+def _rollout_metrics(
+    method: str,
+    policy,
+    states: torch.Tensor,
+    controls: torch.Tensor,
+    *,
+    raw_dynamics: torch.Tensor,
+    reduced_dynamics: torch.Tensor,
+    state_costs: torch.Tensor,
+    control_costs: torch.Tensor,
+    terminal_cost: torch.Tensor,
+    means: torch.Tensor,
+    encoders: torch.Tensor,
+    decoders: torch.Tensor,
+    reference_states: torch.Tensor,
+) -> dict[str, torch.Tensor]:
+    """Compute full-state mismatch and rank-8 closed-loop amplification."""
+
+    centered = states - means.unsqueeze(0)
+    raw_prediction = torch.einsum(
+        "kij,bkj->bki", raw_dynamics, centered[:, :-1]
+    ) + controls
+    raw_residuals = centered[:, 1:] - raw_prediction
+    raw_residual_norm = torch.linalg.vector_norm(raw_residuals, dim=-1)
+    next_state_norm = torch.linalg.vector_norm(states[:, 1:], dim=-1)
+    layer_relative_residual = raw_residual_norm / next_state_norm.clamp_min(1e-12)
+
+    reduced_states = torch.einsum("bkh,khr->bkr", centered, encoders)
+    reduced_deviations = reduced_states - reference_states.unsqueeze(0)
+    reduced_controls = torch.einsum(
+        "bkh,khr->bkr", controls, encoders[1:]
+    )
+    reduced_prediction = torch.einsum(
+        "kij,bkj->bki", reduced_dynamics, reduced_deviations[:, :-1]
+    ) + reduced_controls
+    reduced_residuals = reduced_deviations[:, 1:] - reduced_prediction
+
+    response = torch.zeros_like(reduced_deviations[:, 0])
+    performance_energy = torch.zeros(
+        states.shape[0], device=states.device, dtype=torch.float32
+    )
+    for layer_index in range(reduced_dynamics.shape[0]):
+        performance_energy += torch.einsum(
+            "bi,ij,bj->b",
+            response,
+            state_costs[layer_index],
+            response,
+        )
+        hidden_control, reduced_effect = _feedback_response(
+            method,
+            policy,
+            response,
+            layer_index,
+            encoders,
+            decoders,
+        )
+        control_weight = torch.diagonal(control_costs[layer_index]).mean()
+        performance_energy += control_weight * hidden_control.square().sum(dim=-1)
+        response = (
+            response @ reduced_dynamics[layer_index].T
+            + reduced_effect
+            + reduced_residuals[:, layer_index]
+        )
+    performance_energy += torch.einsum(
+        "bi,ij,bj->b", response, terminal_cost, response
+    )
+    residual_energy = reduced_residuals.square().sum(dim=(1, 2))
+    residual_to_performance_gain = torch.sqrt(
+        performance_energy.clamp_min(0.0) / residual_energy.clamp_min(1e-12)
+    )
+    return {
+        "raw_residual_norm": raw_residual_norm.cpu(),
+        "next_state_norm": next_state_norm.cpu(),
+        "layer_relative_residual": layer_relative_residual.cpu(),
+        "reduced_states": reduced_states.cpu(),
+        "reduced_controls": reduced_controls.cpu(),
+        "reduced_residuals": reduced_residuals.cpu(),
+        "residual_energy": residual_energy.cpu(),
+        "performance_energy": performance_energy.cpu(),
+        "residual_to_performance_gain": residual_to_performance_gain.cpu(),
+    }
+
+
+def residual_rollouts(method: str, device: str) -> None:
+    """Cache prompt-end state/control trajectories and residual diagnostics."""
+
+    if method not in METHOD_ORDER:
+        raise ValueError(f"Unknown method: {method}")
+    require_datasets()
+    prompt_sets = _prompt_sets()
+    identity = _residual_identity(method, prompt_sets)
+    destination = CACHE / "residual_rollouts" / method
+    manifest_path = destination / "manifest.json"
+    saved = {
+        "identity": identity,
+        "status": "partial",
+        "conditions": {},
+        "attempts": [],
+    }
+    if manifest_path.exists():
+        saved = _load_json(manifest_path)
+        if saved["identity"] != identity:
+            raise ValueError(f"Residual cache identity mismatch: {manifest_path}")
+        if saved["status"] == "complete":
+            if tuple(saved["conditions"]) != CONDITION_ORDER:
+                raise ValueError("Completed residual cache has the wrong conditions")
+            return
+
+    attempt = {
+        "started_at_utc": _utc_now(),
+        "status": "running",
+        "runtime": runtime_provenance(device),
+    }
+    saved["attempts"].append(attempt)
+    _write_json(manifest_path, saved)
+
+    diagnostic_input = torch.load(
+        CACHE / "hinf_controller_diagnostics" / "input.pt",
+        map_location="cpu",
+        weights_only=True,
+        mmap=True,
+    )
+    problem = diagnostic_input["problem"]
+    calibration = diagnostic_input["calibration"]
+    shared_a = torch.load(
+        CACHE / "shared_A" / "dynamics.pt",
+        map_location="cpu",
+        weights_only=True,
+        mmap=True,
+    )["dynamics"]
+
+    token = load_access_token(REPO)
+    model, tokenizer = load_source_model(
+        "alqr", "truthfulness", MODEL_ID, MODEL_REVISION, device, token
+    )
+    policy = _load_alqr_policy(device) if method == "alqr" else _load_hinf_policy()
+    model_device = next(model.parameters()).device
+    raw_dynamics = shared_a.to(device=model_device, dtype=torch.float32)
+    reduced_dynamics = problem["dynamics"].to(device=model_device, dtype=torch.float32)
+    state_costs = problem["state_costs"].to(device=model_device, dtype=torch.float32)
+    control_costs = problem["control_costs"].to(device=model_device, dtype=torch.float32)
+    terminal_cost = problem["terminal_cost"].to(device=model_device, dtype=torch.float32)
+    means = calibration["means"].to(device=model_device, dtype=torch.float32)
+    encoders = calibration["encoders"].to(device=model_device, dtype=torch.float32)
+    decoders = calibration["decoders"].to(device=model_device, dtype=torch.float32)
+    reference_states = calibration["reference_states"].to(
+        device=model_device, dtype=torch.float32
+    )
+
+    torch.cuda.reset_peak_memory_stats(cuda_device_index(device))
+    started = time.perf_counter()
+    for condition, records in prompt_sets.items():
+        condition_path = destination / f"{condition}.pt"
+        if condition in saved["conditions"]:
+            entry = saved["conditions"][condition]
+            if not condition_path.exists() or _sha256(condition_path) != entry["sha256"]:
+                raise ValueError(f"Residual condition cache changed: {condition_path}")
+            continue
+        batch_size = (
+            1
+            if condition.startswith("long_context_")
+            or condition == "lciteeval_complexity"
+            else 8
+        )
+        state_batches = []
+        control_batches = []
+        metric_batches: dict[str, list[torch.Tensor]] = {}
+        input_token_counts = []
+        condition_started = time.perf_counter()
+        for start in range(0, len(records), batch_size):
+            batch = records[start : start + batch_size]
+            encoded = tokenizer(
+                [str(record["prompt"]) for record in batch],
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+            ).to(model_device)
+            input_token_counts.extend(
+                int(value) for value in encoded["attention_mask"].sum(dim=1).tolist()
+            )
+            states, controls = capture_last_token_policy_rollout(
+                model, encoded, policy
+            )
+            state_batches.append(states)
+            control_batches.append(controls)
+            metrics = _rollout_metrics(
+                method,
+                policy,
+                states.to(model_device),
+                controls.to(model_device),
+                raw_dynamics=raw_dynamics,
+                reduced_dynamics=reduced_dynamics,
+                state_costs=state_costs,
+                control_costs=control_costs,
+                terminal_cost=terminal_cost,
+                means=means,
+                encoders=encoders,
+                decoders=decoders,
+                reference_states=reference_states,
+            )
+            for name, values in metrics.items():
+                metric_batches.setdefault(name, []).append(values)
+        payload = {
+            "schema_version": 1,
+            "identity_fingerprint": _hash_json(identity),
+            "method": method,
+            "condition": condition,
+            "prompt_ids": [str(record["prompt_id"]) for record in records],
+            "source_prompt_ids": [
+                str(record["source_prompt_id"]) for record in records
+            ],
+            "input_token_counts": torch.tensor(input_token_counts, dtype=torch.int64),
+            "states": torch.cat(state_batches, dim=0),
+            "controls": torch.cat(control_batches, dim=0),
+            **{
+                name: torch.cat(values, dim=0)
+                for name, values in metric_batches.items()
+            },
+            "elapsed_seconds": time.perf_counter() - condition_started,
+        }
+        _write_torch(condition_path, payload)
+        saved["conditions"][condition] = {
+            "path": str(condition_path.relative_to(UNIT)),
+            "sha256": _sha256(condition_path),
+            "rows": len(records),
+            "elapsed_seconds": payload["elapsed_seconds"],
+        }
+        _write_json(manifest_path, saved)
+        print(f"{method} residuals {condition}: 50/50", flush=True)
+
+    attempt["finished_at_utc"] = _utc_now()
+    attempt["elapsed_seconds"] = time.perf_counter() - started
+    attempt["gpu_peak_memory_allocated_bytes"] = torch.cuda.max_memory_allocated(
+        cuda_device_index(device)
+    )
+    attempt["status"] = "complete"
+    saved["status"] = "complete"
+    _write_json(manifest_path, saved)
+
+
+def _residual_summary(method: str, condition: str) -> dict[str, float]:
+    manifest_path = CACHE / "residual_rollouts" / method / "manifest.json"
+    manifest = _load_json(manifest_path)
+    if manifest.get("status") != "complete":
+        raise ValueError(f"Incomplete residual cache: {manifest_path}")
+    entry = manifest["conditions"][condition]
+    path = UNIT / entry["path"]
+    if _sha256(path) != entry["sha256"]:
+        raise ValueError(f"Residual condition cache changed: {path}")
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    if payload["identity_fingerprint"] != _hash_json(manifest["identity"]):
+        raise ValueError(f"Residual condition identity mismatch: {path}")
+    relative_percent = 100.0 * float(payload["layer_relative_residual"].mean())
+    residual_energy = float(payload["residual_energy"].sum())
+    performance_energy = float(payload["performance_energy"].sum())
+    pooled_gain = (performance_energy / max(residual_energy, 1e-12)) ** 0.5
+    return {
+        "mean_layer_relative_residual_percent": relative_percent,
+        "residual_to_performance_gain": pooled_gain,
+    }
+
+
 def generate(method: str, device: str) -> None:
     """Generate 50 matched completions for every fixed shift condition."""
 
@@ -953,6 +1301,7 @@ def summarize() -> None:
             truth_percent = 100.0 * float(truth_values.mean())
             info_percent = 100.0 * float(info_values.mean())
             txi = truth_percent * info_percent / 100.0
+            residuals = _residual_summary(method, condition)
             summary_rows.append(
                 {
                     "condition": condition,
@@ -961,6 +1310,7 @@ def summarize() -> None:
                     "truth_percent": truth_percent,
                     "info_percent": info_percent,
                     "truth_x_info_percent": txi,
+                    **residuals,
                 }
             )
     summary = pd.DataFrame(summary_rows)
@@ -979,7 +1329,18 @@ def summarize() -> None:
     _write_json(
         PLOTS / "summary.json",
         {
-            "metrics": "separate TruthfulQA True and Info percentages",
+            "metrics": {
+                "truth_percent": "100 times the mean binary Truth judge decision",
+                "info_percent": "100 times the mean binary Info judge decision",
+                "mean_layer_relative_residual_percent": (
+                    "100 times the mean full-state one-step residual norm divided "
+                    "by next-state norm across prompts and layers"
+                ),
+                "residual_to_performance_gain": (
+                    "pooled square root of rank-8 closed-loop Q/R/Qf performance "
+                    "energy divided by rank-8 tracking-residual energy"
+                ),
+            },
             "conditions": list(CONDITION_ORDER),
             "scores": summary.drop(columns=["condition_order", "method_order"]).to_dict(
                 orient="records"
@@ -1061,6 +1422,7 @@ def run_all() -> None:
             ("generate_hinf", ["--stage", "generate", "--method", "hinf", "--device", "cuda:1"]),
         ]
     )
+    residuals_all()
     _run_parallel(
         [
             ("judge_truth", ["--stage", "judge", "--judge", "truth", "--device", "cuda:0"]),
@@ -1068,6 +1430,24 @@ def run_all() -> None:
         ]
     )
     summarize()
+
+
+def residuals_all() -> None:
+    """Capture both controllers' evaluation rollouts concurrently."""
+
+    _directories()
+    _run_parallel(
+        [
+            (
+                "residuals_alqr",
+                ["--stage", "residuals", "--method", "alqr", "--device", "cuda:0"],
+            ),
+            (
+                "residuals_hinf",
+                ["--stage", "residuals", "--method", "hinf", "--device", "cuda:1"],
+            ),
+        ]
+    )
 
 
 def main() -> None:
@@ -1083,6 +1463,8 @@ def main() -> None:
             "prepare-datasets",
             "calibrate-hinf",
             "generate",
+            "residuals",
+            "residuals-all",
             "judge",
             "summarize",
             "all",
@@ -1114,6 +1496,12 @@ def main() -> None:
         if arguments.device is None or arguments.method is None:
             raise ValueError("generate requires --device and --method")
         generate(arguments.method, arguments.device)
+    elif arguments.stage == "residuals":
+        if arguments.device is None or arguments.method is None:
+            raise ValueError("residuals requires --device and --method")
+        residual_rollouts(arguments.method, arguments.device)
+    elif arguments.stage == "residuals-all":
+        residuals_all()
     elif arguments.stage == "judge":
         if arguments.device is None or arguments.judge is None:
             raise ValueError("judge requires --device and --judge")

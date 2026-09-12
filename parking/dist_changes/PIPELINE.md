@@ -82,7 +82,22 @@ For each of the eight datasets, A-LQR and H∞ receive identical ordered prompts
 
 Both matched long-context sets and L-CiteEval use batch size 1 because their inputs are long. Their generation caches must use new identities; previous long-context results must never be reused.
 
-## 7. TruthfulQA judging
+## 7. Evaluation residual cache
+
+The normal `--stage all` pipeline runs a prompt-end residual stage for A-LQR on GPU 0 and H∞ on GPU 1 after generation. For every method and condition, it stores the last-input-token state at all 27 depth boundaries, all 26 actual hidden interventions, full-state and rank-8 residuals, and the sufficient energy terms for the robustness panel under `cache/residual_rollouts/`.
+
+Each condition is saved atomically and registered by hash in a strict method manifest. Completed conditions resume without another model pass. Changing the model, prompts, controller artifacts, capture definition, residual equations, or relevant implementation sources creates an identity mismatch rather than adapting an old cache.
+
+The full-state residual is:
+
+```text
+xi[k] = h[k+1] - mean[k+1] - A[k] @ (h[k] - mean[k]) - u_hidden[k]
+relative[k] = norm(xi[k]) / norm(h[k+1])
+```
+
+The residual-to-performance gain uses the observed rank-8 tracking residual to drive each controller's closed-loop depth dynamics. It reports `sqrt(sum performance_energy / sum residual_energy)` using the same rank-8 Q, physical-control R, and terminal Qf costs for both methods.
+
+## 8. TruthfulQA judging
 
 Each completion is scored independently by the pinned TruthfulQA judges:
 
@@ -100,15 +115,16 @@ Helpful:
 
 Each judge returns `yes` or `no`. Exact `yes` maps to 1 and exact `no` maps to 0. Truth and Info percentages are `100 × mean(binary decision)` over the 50 prompts. Malformed judge outputs are recorded separately and may not silently count as `no`.
 
-## 8. Plot and prompt inspection
+## 9. Plot and prompt inspection
 
-The 1×2 figure reports Truth and Info as separate percentage bars with no confidence intervals. `plots/ood_examples/` contains one Markdown file per dataset; each file has one H1 set name, one explanation, and five complete literal prompt code blocks without IDs or example labels.
+The 2×2 figure reports Truth, Info, mean layer-relative residual, and residual-to-performance gain as separate bars with no confidence intervals. `plots/ood_examples/` contains one Markdown file per dataset; each file has one H1 set name, one explanation, and five complete literal prompt code blocks without IDs or example labels.
 
-The plot is regenerated only after both controllers and both judges complete all eight conditions.
+The plot is regenerated only after both controllers, residual caches, and both judges complete all eight conditions.
 
-## 9. Cache rules
+## 10. Cache rules
 
 - All mutable or large outputs stay inside `parking/dist_changes/cache/`.
+- Prompt-end states, actual interventions, and derived residual quantities are retained under `cache/residual_rollouts/`, so later diagnostic plots do not repeat model inference.
 - The frozen 50-question dataset bundle is immutable; a changed construction or later full-size run gets a separate bundle.
 - No old cache is adapted, reconstructed, or relabeled as a new protocol.
 - `cache/datasets/manifest.json` is the first place to verify row counts, prompt identity, model revision, and evaluation status.
