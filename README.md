@@ -35,14 +35,14 @@ python parking/residual_checks/residual_checks.py all
 Prepare the paper benchmark, then run the current Original/A-LQR slice on both GPUs:
 
 ```bash
-python parking/bench_evaluations/bench_evaluations.py --stage prepare --behavior truthfulness
-python parking/bench_evaluations/bench_evaluations.py --stage generate-pair --behavior truthfulness
+python parking/bench_evaluations/bench_evaluations.py --stage prepare --model gemma2b --behavior truthfulness
+python parking/bench_evaluations/bench_evaluations.py --stage generate-pair --model gemma2b --behavior truthfulness
 ```
 
 Prepare only the reusable Gemma-2-2B TruthfulQA A-LQR setpoint and Jacobians:
 
 ```bash
-python parking/bench_artifacts/bench_artifacts.py --stage all --devices cuda:0,cuda:1
+python parking/bench_artifacts/bench_artifacts.py --stage all --model gemma2b --devices cuda:0,cuda:1
 ```
 
 Render the synchronized Markdown and TeX benchmark tables:

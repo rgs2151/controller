@@ -4,7 +4,7 @@
 
 - Load the pinned TruthfulQA multiple-choice validation split and format every candidate answer as `Q: <question> A: <answer>`.
 - Independently sample 200 false-answer prompts, 200 true-answer prompts, and 35 true-answer prompts for Jacobian identification using seeds 42, 43, and 44.
-- Load the pinned `google/gemma-2-2b` checkpoint using the frozen A-LQR TruthfulQA model-loading configuration.
+- Load one pinned benchmark checkpoint using its frozen A-LQR TruthfulQA model-loading configuration: Gemma-2-2B, Llama-3-8B, or Qwen-2.5-14B.
 - Average the last-token decoder states of the false and true calibration prompts and save the resulting positive-minus-negative semantic direction and its per-depth norm.
 - Compute the full last-token state Jacobian of every decoder block for each of the 35 Jacobian prompts, holding prefix states fixed. Split prompts deterministically across two GPUs and save every prompt-layer matrix.
 - Average the 35 raw prompt Jacobians in float64 and save the resulting controller-neutral nominal dynamics tensor in the strict artifact format shared by A-LQR and H∞.
@@ -16,8 +16,8 @@
 - Sessions/groups: 200 false prompts, 200 true prompts, and an independently sampled set of 35 true prompts.
 - Labels/targets: false answers are undesired; true answers are desired; the target direction is desired mean minus undesired mean.
 - Signals/features/measures: last-token decoder inputs, terminal decoder output, per-block full-state Jacobians, averaged dynamics, wall-clock time, and peak CUDA memory.
-- Parameters/thresholds: Gemma-2-2B revision `c5ebcd40d208330abc697524c919956e692655cf`; Jacobian maximum context length 512; VJP chunk size 32; activation batch size 16; frozen A-LQR setting λ 3, Q 0.1, R 1, Qf 0.3.
-- Outputs: ignored files `cache/data.json`, `cache/setpoint.pt`, `cache/jacobians/`, `cache/dynamics.pt`, `cache/dynamics.json`, `cache/timings.json`, `cache/manifest.json`, and `cache/runs/`.
+- Parameters/thresholds: pinned model revisions; Jacobian maximum context length 512; exact full Jacobians with memory-only VJP chunk sizes 32/16/8 and activation batch sizes 16/8/4 for Gemma/Llama/Qwen; frozen A-LQR settings Gemma λ 3, Q 0.1, R 1, Qf 0.3; Llama λ 3.5, Q 0.1, R 10, Qf 10; Qwen λ 3.5, Q 0.1, R 1, Qf 0.3.
+- Outputs: ignored files under `cache/<model>/`: `data.json`, `setpoint.pt`, `jacobians/`, `dynamics.pt`, `timings.json`, `manifest.json`, and `runs/`.
 
 ## Statistics
 
@@ -45,12 +45,12 @@
 
 ## Notes
 
-- Run the complete requested calibration with `python parking/bench_artifacts/bench_artifacts.py --stage all --devices cuda:0,cuda:1`.
-- Inspect paths and completion status with `python parking/bench_artifacts/bench_artifacts.py --stage status`.
+- Run one complete calibration with `python parking/bench_artifacts/bench_artifacts.py --stage all --model <gemma2b|llama8b|qwen14b> --devices cuda:0,cuda:1`.
+- Inspect one model with `python parking/bench_artifacts/bench_artifacts.py --stage status --model <model>`.
 - `setpoint.pt` contains `contrast` and `feature_norm`. `dynamics.pt` contains the averaged tensor under `dynamics`; `dynamics.json` records the exact model, prompt texts and identifiers, Jacobian settings, implementation hashes, timing, device provenance, and artifact checksum.
 - Per-shard run records retain the exact prompt identifiers corresponding to the raw Jacobian directories.
 - The unit intentionally has no generation or evaluation stage. The five-repeat benchmark remains unrun.
-- Gemma-2-2B has roughly 2.6B parameters and is the frozen checkpoint intended by the user's “Gemma 3B / 2.5B” description.
+- Every model owns an independent artifact tree; evaluation never substitutes one model's setpoint or dynamics for another's.
 
 ## References
 

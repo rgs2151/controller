@@ -9,7 +9,7 @@ import random
 import subprocess
 import sys
 import time
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -35,14 +35,44 @@ from robust_steerability.source_methods.protocol import (
 
 UNIT = Path(__file__).resolve().parent
 REPO = UNIT.parents[1]
-CACHE = UNIT / "cache"
-MODEL_ID = "google/gemma-2-2b"
-MODEL_REVISION = "c5ebcd40d208330abc697524c919956e692655cf"
+CACHE_ROOT = UNIT / "cache"
 DATASET_ID = "truthful_qa"
 DATASET_REVISION = "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
 BEHAVIOR = "truthfulness"
-ACTIVATION_BATCH_SIZE = 16
-JACOBIAN_VJP_CHUNK_SIZE = 32
+
+
+@dataclass(frozen=True)
+class ArtifactModel:
+    model_id: str
+    revision: str
+    activation_batch_size: int
+    jacobian_vjp_chunk_size: int
+
+
+MODELS = {
+    "gemma2b": ArtifactModel(
+        "google/gemma-2-2b",
+        "c5ebcd40d208330abc697524c919956e692655cf",
+        16,
+        32,
+    ),
+    "llama8b": ArtifactModel(
+        "meta-llama/Meta-Llama-3-8B",
+        "8cde5ca8380496c9a6cc7ef3a8b46a0372a1d920",
+        8,
+        16,
+    ),
+    "qwen14b": ArtifactModel(
+        "Qwen/Qwen2.5-14B",
+        "97e1e76335b7017d8f67c08a19d103c0504298c9",
+        4,
+        8,
+    ),
+}
+
+
+def _cache(model_key: str) -> Path:
+    return CACHE_ROOT / model_key
 
 
 def _utc_now() -> str:
@@ -156,15 +186,15 @@ def _validate_data(data: dict) -> None:
         raise ValueError(f"Calibration counts changed: expected {expected}, found {actual}")
 
 
-def _update_timings(stage: str, timing: dict) -> None:
-    destination = CACHE / "timings.json"
+def _update_timings(model_key: str, stage: str, timing: dict) -> None:
+    destination = _cache(model_key) / "timings.json"
     payload = json.loads(destination.read_text()) if destination.exists() else {"schema_version": 1}
     payload[stage] = timing
     _write_json(destination, payload)
 
 
-def prepare() -> dict:
-    destination = CACHE / "data.json"
+def prepare(model_key: str) -> dict:
+    destination = _cache(model_key) / "data.json"
     if destination.exists():
         data = json.loads(destination.read_text())
         _validate_data(data)
@@ -183,6 +213,7 @@ def prepare() -> dict:
     data = build_calibration_data(rows)
     _write_json(destination, data)
     _update_timings(
+        model_key,
         "prepare",
         {
             "started_at_utc": started_at,
@@ -208,17 +239,20 @@ def _implementation_hashes() -> dict[str, str]:
     return {str(path.relative_to(REPO)): _sha256(path) for path in paths}
 
 
-def calibration_identity(data: dict) -> dict:
+def calibration_identity(data: dict, model_key: str) -> dict:
+    model = MODELS[model_key]
     return {
         "schema_version": 1,
         "behavior": BEHAVIOR,
         "data_fingerprint": data["fingerprint"],
-        "model": {"id": MODEL_ID, "revision": MODEL_REVISION},
-        "model_loading": asdict(source_model_spec("alqr", BEHAVIOR, MODEL_ID, MODEL_REVISION)),
+        "model": {"id": model.model_id, "revision": model.revision},
+        "model_loading": asdict(
+            source_model_spec("alqr", BEHAVIOR, model.model_id, model.revision)
+        ),
         "counts": asdict(ALQR_CALIBRATION_COUNTS[BEHAVIOR]),
-        "alqr_setting": asdict(paper_alqr_setting(BEHAVIOR, MODEL_ID)),
-        "activation_batch_size": ACTIVATION_BATCH_SIZE,
-        "jacobian_vjp_chunk_size": JACOBIAN_VJP_CHUNK_SIZE,
+        "alqr_setting": asdict(paper_alqr_setting(BEHAVIOR, model.model_id)),
+        "activation_batch_size": model.activation_batch_size,
+        "jacobian_vjp_chunk_size": model.jacobian_vjp_chunk_size,
         "implementation_sha256": _implementation_hashes(),
     }
 
@@ -234,11 +268,13 @@ def _load_run(path: Path, identity: dict) -> dict:
     return payload
 
 
-def fit_setpoint(device: str) -> None:
-    data = prepare()
-    identity = calibration_identity(data)
-    run_path = CACHE / "runs/setpoint.json"
-    artifact_path = CACHE / "setpoint.pt"
+def fit_setpoint(model_key: str, device: str) -> None:
+    model_config = MODELS[model_key]
+    cache = _cache(model_key)
+    data = prepare(model_key)
+    identity = calibration_identity(data, model_key)
+    run_path = cache / "runs/setpoint.json"
+    artifact_path = cache / "setpoint.pt"
     run = _load_run(run_path, identity)
     if run["status"] == "complete":
         if not artifact_path.exists():
@@ -257,7 +293,12 @@ def fit_setpoint(device: str) -> None:
     stage_started = time.perf_counter()
     model_started = time.perf_counter()
     model, tokenizer = load_source_model(
-        "alqr", BEHAVIOR, MODEL_ID, MODEL_REVISION, device, load_access_token(REPO)
+        "alqr",
+        BEHAVIOR,
+        model_config.model_id,
+        model_config.revision,
+        device,
+        load_access_token(REPO),
     )
     attempt["model_load_elapsed_seconds"] = time.perf_counter() - model_started
     fit_started = time.perf_counter()
@@ -267,7 +308,7 @@ def fit_setpoint(device: str) -> None:
         behavior=BEHAVIOR,
         negative_records=data["calibration"]["undesired"],
         positive_records=data["calibration"]["desired"],
-        activation_batch_size=ACTIVATION_BATCH_SIZE,
+        activation_batch_size=model_config.activation_batch_size,
     )
     attempt["fit_elapsed_seconds"] = time.perf_counter() - fit_started
     _save_torch(
@@ -286,7 +327,7 @@ def fit_setpoint(device: str) -> None:
     attempt["status"] = "complete"
     run["status"] = "complete"
     _write_json(run_path, run)
-    _update_timings("setpoint", attempt)
+    _update_timings(model_key, "setpoint", attempt)
 
 
 def _partition_records(records: list[dict], shard_index: int, shard_count: int) -> list[dict]:
@@ -295,16 +336,20 @@ def _partition_records(records: list[dict], shard_index: int, shard_count: int) 
     return records[shard_index::shard_count]
 
 
-def fit_jacobian_shard(device: str, shard_index: int, shard_count: int) -> None:
-    data = prepare()
+def fit_jacobian_shard(
+    model_key: str, device: str, shard_index: int, shard_count: int
+) -> None:
+    model_config = MODELS[model_key]
+    cache = _cache(model_key)
+    data = prepare(model_key)
     identity = {
-        **calibration_identity(data),
+        **calibration_identity(data, model_key),
         "shard_index": shard_index,
         "shard_count": shard_count,
     }
     records = _partition_records(data["calibration"]["jacobian"], shard_index, shard_count)
-    run_path = CACHE / "runs" / f"jacobian_shard_{shard_index:02d}.json"
-    cache_dir = CACHE / "jacobians" / f"shard_{shard_index:02d}"
+    run_path = cache / "runs" / f"jacobian_shard_{shard_index:02d}.json"
+    cache_dir = cache / "jacobians" / f"shard_{shard_index:02d}"
     run = _load_run(run_path, identity)
     if run["status"] == "complete":
         expected_layers = int(run["layer_count"])
@@ -325,7 +370,12 @@ def fit_jacobian_shard(device: str, shard_index: int, shard_count: int) -> None:
     stage_started = time.perf_counter()
     model_started = time.perf_counter()
     model, tokenizer = load_source_model(
-        "alqr", BEHAVIOR, MODEL_ID, MODEL_REVISION, device, load_access_token(REPO)
+        "alqr",
+        BEHAVIOR,
+        model_config.model_id,
+        model_config.revision,
+        device,
+        load_access_token(REPO),
     )
     attempt["model_load_elapsed_seconds"] = time.perf_counter() - model_started
     jacobian_started = time.perf_counter()
@@ -335,8 +385,8 @@ def fit_jacobian_shard(device: str, shard_index: int, shard_count: int) -> None:
         records,
         cache_dir=cache_dir,
         max_length=ALQR_CALIBRATION_COUNTS[BEHAVIOR].jacobian_max_length,
-        vjp_chunk_size=JACOBIAN_VJP_CHUNK_SIZE,
-        model_revision=MODEL_REVISION,
+        vjp_chunk_size=model_config.jacobian_vjp_chunk_size,
+        model_revision=model_config.revision,
     )
     attempt["jacobian_elapsed_seconds"] = time.perf_counter() - jacobian_started
     attempt["finished_at_utc"] = _utc_now()
@@ -387,20 +437,26 @@ def aggregate_raw_jacobians(shard_directories: list[Path], expected_counts: list
     return torch.stack(averaged_layers)
 
 
-def fit_jacobians(devices: list[str]) -> None:
+def fit_jacobians(model_key: str, devices: list[str]) -> None:
     if len(devices) != len(set(devices)) or not devices:
         raise ValueError("Jacobian devices must be a nonempty list of distinct CUDA devices")
-    data = prepare()
-    identity = {**calibration_identity(data), "devices": devices, "shard_count": len(devices)}
-    run_path = CACHE / "runs/jacobians.json"
-    artifact_path = CACHE / "dynamics.pt"
+    model_config = MODELS[model_key]
+    cache = _cache(model_key)
+    data = prepare(model_key)
+    identity = {
+        **calibration_identity(data, model_key),
+        "devices": devices,
+        "shard_count": len(devices),
+    }
+    run_path = cache / "runs/jacobians.json"
+    artifact_path = cache / "dynamics.pt"
     nominal_identity = nominal_dynamics_identity(
         behavior=BEHAVIOR,
-        model_id=MODEL_ID,
-        model_revision=MODEL_REVISION,
+        model_id=model_config.model_id,
+        model_revision=model_config.revision,
         records=data["calibration"]["jacobian"],
         max_length=ALQR_CALIBRATION_COUNTS[BEHAVIOR].jacobian_max_length,
-        vjp_chunk_size=JACOBIAN_VJP_CHUNK_SIZE,
+        vjp_chunk_size=model_config.jacobian_vjp_chunk_size,
     )
     run = _load_run(run_path, identity)
     if run["status"] == "complete":
@@ -417,7 +473,7 @@ def fit_jacobians(devices: list[str]) -> None:
     started = time.perf_counter()
     processes = []
     for shard_index, device in enumerate(devices):
-        log_path = CACHE / "logs" / f"jacobian_shard_{shard_index:02d}.log"
+        log_path = cache / "logs" / f"jacobian_shard_{shard_index:02d}.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
         handle = log_path.open("a")
         command = [
@@ -425,6 +481,8 @@ def fit_jacobians(devices: list[str]) -> None:
             str(Path(__file__).resolve()),
             "--stage",
             "jacobian-shard",
+            "--model",
+            model_key,
             "--device",
             device,
             "--shard-index",
@@ -439,7 +497,7 @@ def fit_jacobians(devices: list[str]) -> None:
     while any(process.poll() is None for _index, _device, process, _handle, _log in processes):
         elapsed = time.perf_counter() - started
         if elapsed - last_report >= 30:
-            cached_layers = len(list((CACHE / "jacobians").glob("shard_*/*/layer_*.pt")))
+            cached_layers = len(list((cache / "jacobians").glob("shard_*/*/layer_*.pt")))
             states = [process.poll() for _index, _device, process, _handle, _log in processes]
             print(
                 f"Jacobian calibration: {elapsed / 60:.1f} min, "
@@ -476,12 +534,12 @@ def fit_jacobians(devices: list[str]) -> None:
     ]
     aggregation_started = time.perf_counter()
     dynamics = aggregate_raw_jacobians(
-        [CACHE / "jacobians" / f"shard_{index:02d}" for index in range(len(devices))],
+        [cache / "jacobians" / f"shard_{index:02d}" for index in range(len(devices))],
         expected_counts,
     )
     attempt["aggregation_elapsed_seconds"] = time.perf_counter() - aggregation_started
     shard_runs = [
-        json.loads((CACHE / "runs" / f"jacobian_shard_{index:02d}.json").read_text())
+        json.loads((cache / "runs" / f"jacobian_shard_{index:02d}.json").read_text())
         for index in range(len(devices))
     ]
     attempt["finished_at_utc"] = _utc_now()
@@ -506,14 +564,15 @@ def fit_jacobians(devices: list[str]) -> None:
         for index, shard in enumerate(shard_runs)
     ]
     _write_json(run_path, run)
-    _update_timings("jacobians", {**attempt, "shards": run["shards"]})
+    _update_timings(model_key, "jacobians", {**attempt, "shards": run["shards"]})
 
 
-def write_manifest() -> None:
-    data = prepare()
-    identity = calibration_identity(data)
-    setpoint_run = CACHE / "runs/setpoint.json"
-    jacobian_run = CACHE / "runs/jacobians.json"
+def write_manifest(model_key: str) -> None:
+    cache = _cache(model_key)
+    data = prepare(model_key)
+    identity = calibration_identity(data, model_key)
+    setpoint_run = cache / "runs/setpoint.json"
+    jacobian_run = cache / "runs/jacobians.json"
     status = {
         "setpoint": "complete"
         if setpoint_run.exists() and json.loads(setpoint_run.read_text()).get("status") == "complete"
@@ -524,16 +583,16 @@ def write_manifest() -> None:
         "full_benchmark": "not_run",
     }
     _write_json(
-        CACHE / "manifest.json",
+        cache / "manifest.json",
         {
             "identity": identity,
             "status": status,
             "artifacts": {
-                "data": str((CACHE / "data.json").resolve()),
-                "setpoint": str((CACHE / "setpoint.pt").resolve()),
-                "raw_jacobians": str((CACHE / "jacobians").resolve()),
-                "averaged_dynamics": str((CACHE / "dynamics.pt").resolve()),
-                "timings": str((CACHE / "timings.json").resolve()),
+                "data": str((cache / "data.json").resolve()),
+                "setpoint": str((cache / "setpoint.pt").resolve()),
+                "raw_jacobians": str((cache / "jacobians").resolve()),
+                "averaged_dynamics": str((cache / "dynamics.pt").resolve()),
+                "timings": str((cache / "timings.json").resolve()),
             },
         },
     )
@@ -546,6 +605,7 @@ def main() -> None:
         choices=("prepare", "setpoint", "jacobian-shard", "jacobians", "all", "status"),
         required=True,
     )
+    parser.add_argument("--model", choices=tuple(MODELS), required=True)
     parser.add_argument("--device", choices=("cuda:0", "cuda:1"))
     parser.add_argument("--devices", default="cuda:0,cuda:1")
     parser.add_argument("--shard-index", type=int)
@@ -554,28 +614,31 @@ def main() -> None:
     devices = arguments.devices.split(",")
 
     if arguments.stage == "prepare":
-        prepare()
+        prepare(arguments.model)
     elif arguments.stage == "setpoint":
         if arguments.device is None:
             raise ValueError("setpoint requires --device")
-        fit_setpoint(arguments.device)
+        fit_setpoint(arguments.model, arguments.device)
     elif arguments.stage == "jacobian-shard":
         if arguments.device is None or arguments.shard_index is None or arguments.shard_count is None:
             raise ValueError("jacobian-shard requires --device, --shard-index, and --shard-count")
-        fit_jacobian_shard(arguments.device, arguments.shard_index, arguments.shard_count)
+        fit_jacobian_shard(
+            arguments.model, arguments.device, arguments.shard_index, arguments.shard_count
+        )
     elif arguments.stage == "jacobians":
-        fit_jacobians(devices)
+        fit_jacobians(arguments.model, devices)
     elif arguments.stage == "all":
         started_at = _utc_now()
         started = time.perf_counter()
-        prepare()
-        fit_setpoint(devices[0])
-        fit_jacobians(devices)
-        write_manifest()
-        timings_path = CACHE / "timings.json"
+        prepare(arguments.model)
+        fit_setpoint(arguments.model, devices[0])
+        fit_jacobians(arguments.model, devices)
+        write_manifest(arguments.model)
+        timings_path = _cache(arguments.model) / "timings.json"
         timings = json.loads(timings_path.read_text())
         if "calibration_total" not in timings:
             _update_timings(
+                arguments.model,
                 "calibration_total",
                 {
                     "started_at_utc": started_at,
@@ -585,8 +648,8 @@ def main() -> None:
                 },
             )
     else:
-        write_manifest()
-        print((CACHE / "manifest.json").read_text())
+        write_manifest(arguments.model)
+        print((_cache(arguments.model) / "manifest.json").read_text())
 
 
 if __name__ == "__main__":
