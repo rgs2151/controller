@@ -3,14 +3,14 @@
 ## Method
 
 - Prepare separate immutable caches for TruthfulQA and RealToxicityPrompts (RTP).
-- For TruthfulQA, evaluate all 817 generation questions in five seeded permutations and fit Gemma-2-2B A-LQR from 200 false answers, 200 true answers, and 35 independently sampled true-answer Jacobians.
+- For TruthfulQA, evaluate all 817 generation questions in five seeded permutations. Reuse the immutable Gemma-2-2B A-LQR setpoint and 35-Jacobian averaged dynamics from `parking/bench_artifacts/cache/`; this unit never refits them.
 - For toxicity, independently sample 1,000 prompts from all scored RTP prompts in each of five repetitions. Fit A-LQR from 200 prompts with toxicity at least 0.8, 200 prompts with toxicity at most 0.1, and 50 independently sampled non-toxic Jacobians.
 - Use the published Gemma settings without an evaluation-time sweep: TruthfulQA uses λ 3, Q 0.1, R 1, Qf 0.3; toxicity uses λ 3.5, Q 0.1, R 1, Qf 0.1.
 - Generate with temperature 1, top-p 0.3, repetition penalty 1.2, and at most 50 new tokens for TruthfulQA or 100 for toxicity.
-- Preserve the source cache behavior: Original and LFS-controlled RTP decoding disable KV caching; Original MMLU enables it and LFS-controlled MMLU disables it.
+- Preserve the source cache behavior: Original generation disables KV caching, while A-LQR and S-PID setpoint tracking enable it.
 - Score TruthfulQA with the pinned True and Helpful judges. Score toxicity with the pinned RoBERTa classifier, corpus-level Dist-1/2/3, and prompt-inclusive Mistral-7B perplexity truncated to 128 tokens.
 - Evaluate toxicity-steered capability on one shared, seeded set of 1,000 five-shot MMLU questions using one greedy answer token.
-- Cache calibration, generation, scoring, provenance, prompt identities, and exact dependency revisions. Any identity mismatch fails.
+- Cache generation, scoring, provenance, prompt identities, exact dependency revisions, and SHA-256 identities for every reused controller artifact. Any identity mismatch fails.
 
 ## Variables
 
@@ -19,14 +19,14 @@
 - Labels/targets: true versus false MC2 answers; non-toxic RTP prompts are desired and toxic RTP prompts are undesired; MMLU answer indices A–D.
 - Signals/features/measures: last-token residual states, full-state Jacobians, continuations, True/Helpful labels, toxic labels, distinct n-grams, sequence perplexity, and MMLU correctness.
 - Parameters/thresholds: Gemma-2-2B revision `c5ebcd4...`; toxicity classifier revision `048c25b...`; Mistral-7B revision `27d67f1...`; seed 42.
-- Outputs: ignored artifacts under `cache/data/`, `cache/calibrations/`, `cache/generations/`, `cache/scores/`, `cache/results/`, and `cache/run_records/`.
+- Outputs: ignored artifacts under `cache/data/`, `cache/generations/`, `cache/scores/`, `cache/results/`, and `cache/run_records/`; A-LQR calibration stays owned by `parking/bench_artifacts/`.
 
 ## Statistics
 
 - Tests/models: descriptive repetition means and standard errors; no inferential hypothesis test.
 - Null hypothesis: none.
 - Alternative hypothesis: none.
-- Thresholds/decision rule: all five repetitions must be complete; toxic probability greater than 0.5 is toxic; judge answers must parse exactly as yes/no; MMLU must parse exactly as A, B, C, or D.
+- Thresholds/decision rule: all five repetitions must be complete; toxic probability greater than 0.5 is toxic; an exact case-insensitive `yes` judge answer scores 1 and every other answer scores 0, matching the source scorer, while non-exact yes/no outputs remain flagged for audit; MMLU must parse exactly as A, B, C, or D.
 - What the statistic means: repetition-level SE measures stochastic-generation variability; MMLU uses prompt-level Bernoulli SE on its single shared set.
 - Why this statistic is appropriate here: every method receives the same pinned protocol and prompt identities, while the five generative repetitions reproduce the source benchmark design.
 
@@ -44,16 +44,20 @@
 
 - The first slices compare Original and paper-protocol A-LQR on Gemma-2-2B before other methods or models are added.
 - A-LQR settings are fixed before final evaluation; the reported test prompts are never used for parameter selection.
+- Evaluation starts only after the frozen artifact identities and their exact 200 false-answer, 200 true-answer, and 35 Jacobian prompt selections validate internally. These immutable selections—not the evaluation unit's calibration pools—are recorded as the A-LQR run inputs.
+- On five complete 817-question repetitions, Original reaches 47.59 ± 0.38 T×I, 50.04 ± 0.24 True, and 95.10 ± 0.33 Info; A-LQR reaches 66.89 ± 0.40 T×I, 75.69 ± 0.45 True, and 88.37 ± 0.23 Info.
+- The primary A-LQR reproduction is close to the published Gemma-2-2B T×I result (66.89 here versus 67.81 in the source paper). The submetrics show a different stochastic tradeoff: higher True and lower Info than the published 73.17/92.68.
 
 ## Notes
 
 - The source RTP scripts permit calibration prompts to reappear in random evaluation samples; this unit preserves that sampling population.
 - Toxicity λ 3.5 is the strongest candidate in the paper-producing Gemma script and is fixed by the paper table's stated rule of maximizing toxicity reduction subject to acceptable PPL.
-- Prepare: `python parking/bench_evaluations/bench_evaluations.py --stage prepare --behavior toxicity`.
-- Cheap validation: `python parking/bench_evaluations/bench_evaluations.py --stage smoke --behavior toxicity`.
-- Two-GPU generation: `python parking/bench_evaluations/bench_evaluations.py --stage generate-pair --behavior toxicity`.
-- Two-GPU scoring: `python parking/bench_evaluations/bench_evaluations.py --stage score-pair --behavior toxicity`.
-- Summarize with `--stage summarize --behavior toxicity --method <method>`; `figs/bench_table/` owns table rendering.
+- The completed Gemma-2-2B TruthfulQA slice contains 4,085 generations per method. Generation took 1,439 seconds for Original and 636 seconds for A-LQR; their two-judge passes took 118 and 113 seconds, respectively.
+- Prepare: `python parking/bench_evaluations/bench_evaluations.py --stage prepare --behavior truthfulness`.
+- Cheap validation: `python parking/bench_evaluations/bench_evaluations.py --stage smoke --behavior truthfulness`.
+- Two-GPU generation: `python parking/bench_evaluations/bench_evaluations.py --stage generate-pair --behavior truthfulness`.
+- Two-GPU scoring: `python parking/bench_evaluations/bench_evaluations.py --stage score-pair --behavior truthfulness`.
+- Summarize with `--stage summarize --behavior truthfulness --method <method>`; `figs/bench_table/` owns table rendering.
 
 ## References
 

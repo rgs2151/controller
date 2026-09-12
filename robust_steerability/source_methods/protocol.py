@@ -213,8 +213,8 @@ GENERATION_CACHE = {
     "linear_act": {"evaluation": True, "capability": True},
     "pid_act": {"evaluation": True, "capability": True},
     "odesteer": {"evaluation": True, "capability": True},
-    "spid": {"evaluation": False, "capability": False},
-    "alqr": {"evaluation": False, "capability": False},
+    "spid": {"evaluation": True, "capability": True},
+    "alqr": {"evaluation": True, "capability": True},
 }
 
 SCORERS = {

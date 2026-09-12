@@ -102,6 +102,7 @@ def test_generation_cache_uses_configured_shape_and_resumes_by_repetition(tmp_pa
         "method": "original",
         "device": "cuda:0",
         "parameters": {},
+        "controller_artifacts": {},
         "register_hooks": None,
     }
     id_benchmark._generate_candidate(**arguments)
@@ -164,6 +165,7 @@ def test_generation_cache_records_shared_capability_set(tmp_path, monkeypatch):
         method="original",
         device="cuda:0",
         parameters={},
+        controller_artifacts={},
         register_hooks=None,
     )
     saved = json.loads(output.read_text())
@@ -174,9 +176,9 @@ def test_generation_cache_records_shared_capability_set(tmp_path, monkeypatch):
     assert saved["capability_evaluation"]["mmlu"]["rows"][0]["answer_index"] == 2
 
 
-def test_alqr_cache_policy_matches_source_tracking_calls():
-    assert GENERATION_CACHE["alqr"] == {"evaluation": False, "capability": False}
-    assert GENERATION_CACHE["spid"] == {"evaluation": False, "capability": False}
+def test_alqr_cache_policy_matches_source_setpoint_tracking_calls():
+    assert GENERATION_CACHE["alqr"] == {"evaluation": True, "capability": True}
+    assert GENERATION_CACHE["spid"] == {"evaluation": True, "capability": True}
 
 
 def test_unsupported_checkpoint_is_not_given_borrowed_parameters():
