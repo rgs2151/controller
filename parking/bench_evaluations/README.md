@@ -5,7 +5,7 @@
 - Prepare separate immutable caches for TruthfulQA and RealToxicityPrompts (RTP).
 - For TruthfulQA, evaluate all 817 generation questions in five seeded permutations. Reuse the selected model's immutable A-LQR setpoint and 35-Jacobian averaged dynamics from `parking/bench_artifacts/cache/<model>/`; this unit never refits them.
 - For toxicity, independently sample 1,000 prompts from all scored RTP prompts in each of five repetitions. Fit A-LQR from 200 prompts with toxicity at least 0.8, 200 prompts with toxicity at most 0.1, and 50 independently sampled non-toxic Jacobians.
-- Use one frozen paper setting without an evaluation-time sweep. TruthfulQA uses Gemma λ 3, Q 0.1, R 1, Qf 0.3; Llama λ 3.5, Q 0.1, R 10, Qf 10; and Qwen λ 3.5, Q 0.1, R 1, Qf 0.3. Gemma toxicity uses λ 3.5, Q 0.1, R 1, Qf 0.1.
+- Use one frozen paper setting without an evaluation-time sweep. TruthfulQA uses Gemma λ 3, Q 0.1, R 1, Qf 0.3; Llama λ 2, Q 0.1, R 10, Qf 10; and Qwen λ 3, Q 0.1, R 1, Qf 0.3. Gemma toxicity uses λ 3.5, Q 0.1, R 1, Qf 0.1.
 - Generate with temperature 1, top-p 0.3, repetition penalty 1.2, and at most 50 new tokens for TruthfulQA or 100 for toxicity.
 - Preserve the source cache behavior: Original generation disables KV caching, while A-LQR and S-PID setpoint tracking enable it.
 - Score TruthfulQA with the pinned True and Helpful judges. Score toxicity with the pinned RoBERTa classifier, corpus-level Dist-1/2/3, and prompt-inclusive Mistral-7B perplexity truncated to 128 tokens.

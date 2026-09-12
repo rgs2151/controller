@@ -16,7 +16,7 @@
 - Sessions/groups: 200 false prompts, 200 true prompts, and an independently sampled set of 35 true prompts.
 - Labels/targets: false answers are undesired; true answers are desired; the target direction is desired mean minus undesired mean.
 - Signals/features/measures: last-token decoder inputs, terminal decoder output, per-block full-state Jacobians, averaged dynamics, wall-clock time, and peak CUDA memory.
-- Parameters/thresholds: pinned model revisions; Jacobian maximum context length 512; exact full Jacobians with memory-only VJP chunk sizes 32/16/8 and activation batch sizes 16/8/4 for Gemma/Llama/Qwen; frozen A-LQR settings Gemma λ 3, Q 0.1, R 1, Qf 0.3; Llama λ 3.5, Q 0.1, R 10, Qf 10; Qwen λ 3.5, Q 0.1, R 1, Qf 0.3.
+- Parameters/thresholds: pinned model revisions; Jacobian maximum context length 512; exact full Jacobians with memory-only VJP chunk sizes 32/16/8 and activation batch sizes 16/8/4 for Gemma/Llama/Qwen; frozen A-LQR settings Gemma λ 3, Q 0.1, R 1, Qf 0.3; Llama λ 2, Q 0.1, R 10, Qf 10; Qwen λ 3, Q 0.1, R 1, Qf 0.3.
 - Outputs: ignored files under `cache/<model>/`: `data.json`, `setpoint.pt`, `jacobians/`, `dynamics.pt`, `timings.json`, `manifest.json`, and `runs/`.
 
 ## Statistics
