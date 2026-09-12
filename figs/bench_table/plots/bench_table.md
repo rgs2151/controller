@@ -61,7 +61,7 @@ Toxicity, Dist-2, and PPL are mean ± SE across five complete 1,000-prompt RTP r
 | Llama-3-8B | PID-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Llama-3-8B | ODESteer | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Llama-3-8B | S-PID | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| Llama-3-8B | A-LQR | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Llama-3-8B | A-LQR | 64.61 ± 0.40 | TBD | TBD | TBD | 66.22 ± 0.26 | 97.58 ± 0.27 | TBD |
 | Llama-3-8B | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | Original | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | ITI | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
