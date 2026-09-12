@@ -386,7 +386,12 @@ def load_frozen_alqr_artifacts(
     data_path = artifact_root / "data.json"
     setpoint_path = artifact_root / "setpoint.pt"
     dynamics_path = artifact_root / "dynamics.pt"
-    missing = [str(path) for path in (data_path, setpoint_path, dynamics_path) if not path.exists()]
+    dynamics_metadata_path = dynamics_path.with_suffix(".json")
+    missing = [
+        str(path)
+        for path in (data_path, setpoint_path, dynamics_path, dynamics_metadata_path)
+        if not path.exists()
+    ]
     if missing:
         raise ValueError(f"Missing frozen A-LQR artifacts: {missing}")
 
@@ -401,9 +406,16 @@ def load_frozen_alqr_artifacts(
 
     setpoint_payload = torch.load(setpoint_path, map_location="cpu", weights_only=True)
     dynamics_payload = torch.load(dynamics_path, map_location="cpu", weights_only=True)
+    dynamics_metadata = json.loads(dynamics_metadata_path.read_text())
     if setpoint_payload.get("identity") != dynamics_payload.get("identity"):
         raise ValueError("Frozen A-LQR setpoint and dynamics identities differ")
     identity = setpoint_payload["identity"]
+    if (
+        dynamics_metadata.get("identity") != identity
+        or dynamics_metadata.get("status") != "complete"
+        or dynamics_metadata.get("artifact_sha256") != _sha(dynamics_path)
+    ):
+        raise ValueError("Frozen A-LQR dynamics metadata is invalid")
     counts = calibration_counts("alqr", behavior)
     expected_setting = {
         "multiplier": float(parameters["lambda"]),
@@ -464,6 +476,7 @@ def load_frozen_alqr_artifacts(
         "calibration_data": _sha(data_path),
         "setpoint": _sha(setpoint_path),
         "dynamics": _sha(dynamics_path),
+        "dynamics_metadata": _sha(dynamics_metadata_path),
     }
     return SetpointCalibration(contrast, feature_norm), dynamics, hashes, calibration_selection
 
