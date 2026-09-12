@@ -17,11 +17,6 @@ import torch
 from datasets import load_dataset
 
 from robust_steerability.calibration.nominal import average_prompt_jacobians
-from robust_steerability.calibration.nominal_artifact import (
-    load_nominal_dynamics,
-    nominal_dynamics_identity,
-    save_nominal_dynamics,
-)
 from robust_steerability.modeling.huggingface import cuda_device_index, load_access_token
 from robust_steerability.source_methods.calibration import fit_setpoint_from_records
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
@@ -268,6 +263,28 @@ def _load_run(path: Path, identity: dict) -> dict:
     return payload
 
 
+def _load_dynamics(path: Path, identity: dict) -> torch.Tensor:
+    metadata_path = path.with_suffix(".json")
+    if not path.exists() or not metadata_path.exists():
+        raise ValueError(f"Incomplete dynamics artifact: {path}")
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    metadata = json.loads(metadata_path.read_text())
+    if set(payload) != {"identity", "dynamics"} or payload["identity"] != identity:
+        raise ValueError(f"Dynamics artifact identity mismatch: {path}")
+    if (
+        metadata.get("identity") != identity
+        or metadata.get("status") != "complete"
+        or metadata.get("artifact_sha256") != _sha256(path)
+    ):
+        raise ValueError(f"Dynamics artifact metadata mismatch: {path}")
+    dynamics = payload["dynamics"]
+    if dynamics.ndim != 3 or dynamics.shape[-1] != dynamics.shape[-2]:
+        raise ValueError(f"Dynamics artifact has an invalid shape: {path}")
+    if not torch.isfinite(dynamics).all():
+        raise ValueError(f"Dynamics artifact contains non-finite values: {path}")
+    return dynamics
+
+
 def fit_setpoint(model_key: str, device: str) -> None:
     model_config = MODELS[model_key]
     cache = _cache(model_key)
@@ -450,17 +467,9 @@ def fit_jacobians(model_key: str, devices: list[str]) -> None:
     }
     run_path = cache / "runs/jacobians.json"
     artifact_path = cache / "dynamics.pt"
-    nominal_identity = nominal_dynamics_identity(
-        behavior=BEHAVIOR,
-        model_id=model_config.model_id,
-        model_revision=model_config.revision,
-        records=data["calibration"]["jacobian"],
-        max_length=ALQR_CALIBRATION_COUNTS[BEHAVIOR].jacobian_max_length,
-        vjp_chunk_size=model_config.jacobian_vjp_chunk_size,
-    )
     run = _load_run(run_path, identity)
     if run["status"] == "complete":
-        load_nominal_dynamics(artifact_path, nominal_identity)
+        _load_dynamics(artifact_path, identity)
         return
 
     attempt = {
@@ -546,11 +555,15 @@ def fit_jacobians(model_key: str, devices: list[str]) -> None:
     attempt["elapsed_seconds"] = time.perf_counter() - started
     attempt["matrix_shape"] = list(dynamics.shape)
     attempt["status"] = "complete"
-    save_nominal_dynamics(
-        artifact_path,
-        nominal_identity,
-        dynamics,
-        attempts=run["attempts"],
+    _save_torch(artifact_path, {"identity": identity, "dynamics": dynamics.cpu()})
+    _write_json(
+        artifact_path.with_suffix(".json"),
+        {
+            "identity": identity,
+            "status": "complete",
+            "attempts": run["attempts"],
+            "artifact_sha256": _sha256(artifact_path),
+        },
     )
     attempt["artifact_sha256"] = _sha256(artifact_path)
     run["status"] = "complete"

@@ -1072,7 +1072,12 @@ def smoke(model_key: str, behavior: str) -> None:
                 "q_final": setting.q_final,
             },
         )
-        if set(artifact_hashes) != {"calibration_data", "setpoint", "dynamics"}:
+        if set(artifact_hashes) != {
+            "calibration_data",
+            "setpoint",
+            "dynamics",
+            "dynamics_metadata",
+        }:
             raise ValueError("Frozen A-LQR artifact manifest is incomplete")
         expected_selection_counts = {"undesired_prompt_ids": 200, "desired_prompt_ids": 200, "jacobian_prompt_ids": 35}
         actual_selection_counts = {
