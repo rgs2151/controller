@@ -7,14 +7,14 @@ The explicit data-to-figure workflow and model-specific long-context formula are
 - Use the pinned `google/gemma-2-2b` checkpoint and the clean TruthfulQA A-LQR artifacts in `parking/bench_artifacts`.
 - Reuse A-LQR's averaged 35-prompt Jacobian matrix unchanged when fitting the rank-8 full-state H∞ controller. Fit both semantic targets from the same 200 false and 200 true MC2 answer prompts; fit H∞ disturbance geometry on 200 separate generation questions.
 - Select 50 evaluation questions that overlap neither the semantic-fit questions nor the disturbance questions. Apply the same question and sampling seed to A-LQR and H∞.
-- Evaluate seven matched sets: ID, Spanish, Japanese-romaji, Long Context End, Long Context Start, Corrupting Words, and BOS Mix.
+- Evaluate eight 50-prompt sets: ID, Spanish, Japanese-romaji, Long Context End, Long Context Start, Corrupting Words, BOS Mix, and L-CiteEval Complexity.
 - Generate with the A-LQR paper settings and source generation protocol. Score every completion with the pinned TruthfulQA truth and informativeness judges, then compute `Truth (%) × Info (%) / 100`.
 - Write a 1×2 grouped-bar figure separating Truth and Info, aggregate scores, and five real prompt examples from every distribution.
 
 ## Variables
 
-- Data/input: pinned TruthfulQA generation and multiple-choice validation splits; 50 matched questions per evaluated condition. A separate 50-question L-CiteEval set is frozen for a later, non-TxI analysis.
-- Sessions/groups: A-LQR and corrected full-state H∞ on the seven matched TruthfulQA conditions.
+- Data/input: pinned TruthfulQA generation and multiple-choice validation splits plus 50 L-CiteEval NarrativeQA/LoCoMo questions; 50 prompts per condition.
+- Sessions/groups: A-LQR and corrected full-state H∞ on all eight conditions.
 - Labels/targets: positive-minus-negative TruthfulQA MC2 semantic target; binary `True` and `Helpful` judge decisions.
 - Signals/features/measures: generated completion, truth percentage, information percentage, and their product as a secondary aggregate.
 - Parameters/thresholds: seed 2151; 200 false plus 200 true fit prompts; 35 shared Jacobians; 200 disturbance prompts; rank 8; 50 evaluations per method and condition; 50 generated tokens.
@@ -31,6 +31,7 @@ The x-axis distributions are:
 | Long Context Start | The same documents and question are used, but the question and `A:` cue come before the documents. |
 | Corrupting Words | A frozen text-only suffix found by gradient search to maximize A-LQR overshoot on one Llama-3.2-1B prompt is appended to every TruthfulQA prompt. |
 | BOS Mix | Gemma-2-2B's actual `<bos>` token is distributed through each prompt; a fixed seed assigns 16 insertions to 25 questions and 64 to the other 25. |
+| L-CiteEval Complexity | Fifty NarrativeQA and LoCoMo long-context questions spanning easy, medium, and hard examples. |
 
 ## Statistics
 
@@ -43,25 +44,26 @@ The x-axis distributions are:
 
 ## Legends
 
-- X axis: ID, Spanish, Japanese (romaji), Long Context End, Long Context Start, Corrupting Words, and BOS Mix.
+- X axis: ID, Spanish, Japanese (romaji), Long Context End, Long Context Start, Corrupting Words, BOS Mix, and L-CiteEval Complexity.
 - Left y axis: Truth percentage; higher is better.
 - Right y axis: Info percentage on the same 0–100 scale; higher is better.
 - Color/value: black is A-LQR and red is H∞.
-- Grouping: two bars per distribution, each based on the same 50 source questions.
+- Grouping: two bars per distribution, each based on the same 50 prompts; the first seven sets share TruthfulQA anchors and L-CiteEval supplies its own 50 questions.
 - Ordering/sorting: distributions use the fixed conceptual order above; methods always appear A-LQR then H∞.
 - Bars/labels: bar height gives the percentage of `yes` decisions; the integer label gives the same point estimate. No error bars or confidence intervals are displayed.
 - Panels: Truthfulness is on the left and Informativeness is on the right.
 
 ## Interpretation
 
-- The current plotted scores predate this finalized seven-set layout and remain only as the previous iteration.
-- No claim about the renamed or replacement sets is made until reevaluation.
+- In this 50-prompt run, H∞ does not outperform A-LQR on Truth in any condition.
+- H∞ has higher Info on ID, Spanish, Japanese-romaji, both long-context variants, and L-CiteEval Complexity, but lower Info on Corrupting Words and BOS Mix.
+- The result does not support the intended claim that H∞ preserves both benchmark dimensions better than A-LQR under these shifts. The 50-prompt run is exploratory and is not a final statistical comparison.
 
 ## Notes
 
 - `plots/ood_examples/` contains one inspection file per dataset, each with five complete literal prompts.
-- `cache/datasets/` contains eight 50-row CSVs: seven matched TruthfulQA sets and one separate L-CiteEval set.
-- `lciteeval_complexity.csv` contains 25 NarrativeQA and 25 LoCoMo examples spanning easy, medium, and hard labels. It is not paired with TruthfulQA and requires L-CiteEval correctness/citation metrics, so it is excluded from the TxI plot.
+- `cache/datasets/` contains eight 50-row CSVs: seven matched TruthfulQA sets and one L-CiteEval set included as the eighth plotted condition.
+- `lciteeval_complexity.csv` contains 25 NarrativeQA and 25 LoCoMo examples spanning easy, medium, and hard labels; the same pinned Truth and Info judges are applied to it for this analysis.
 - Evaluation reads the frozen CSVs directly and never reruns translation or dataset construction; a later full-size run must use a separate frozen bundle.
 - Every artifact produced by this analysis—the H∞ controller and diagnostics, shared-A copy, translations, generations, judge outputs, logs, CSVs, and plots—is stored under `parking/dist_changes/`. The unit only reads the frozen A-LQR inputs in `parking/bench_artifacts/`; it does not write to them.
 - Large model artifacts, controller diagnostics, translations, and judge caches remain under ignored `cache/` storage.

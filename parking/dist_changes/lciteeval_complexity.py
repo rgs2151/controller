@@ -144,7 +144,7 @@ def main() -> None:
     payload = {
         "identity": {
             "schema_version": 1,
-            "status": "candidate_requires_lciteeval_evaluator",
+            "status": "proposed_not_evaluated",
             "seed": SEED,
             "model": [MODEL_ID, MODEL_REVISION],
             "dataset": [DATASET_ID, DATASET_REVISION],
@@ -158,10 +158,7 @@ def main() -> None:
                 for task, specification in SOURCES.items()
             },
             "paired_with_truthfulqa": False,
-            "evaluation": (
-                "Use L-CiteEval correctness and citation metrics; do not place this "
-                "set in the matched TruthfulQA TxI comparison"
-            ),
+            "evaluation": "pinned TruthfulQA Truth and Info judges",
         },
         "records": selected,
     }

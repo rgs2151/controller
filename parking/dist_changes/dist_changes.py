@@ -86,8 +86,8 @@ CONDITION_ORDER = (
     "long_context_start",
     "corrupting_words",
     "bos_mix",
+    "lciteeval_complexity",
 )
-DATASET_ORDER = (*CONDITION_ORDER, "lciteeval_complexity")
 METHOD_ORDER = ("alqr", "hinf")
 
 
@@ -677,7 +677,12 @@ def generate(method: str, device: str) -> None:
             **GENERATION["truthfulness"],
             "use_cache": False,
             "batch_size": {
-                name: (1 if name.startswith("long_context_") else 8)
+                name: (
+                    1
+                    if name.startswith("long_context_")
+                    or name == "lciteeval_complexity"
+                    else 8
+                )
                 for name in CONDITION_ORDER
             },
         },
@@ -720,7 +725,12 @@ def generate(method: str, device: str) -> None:
                 raise ValueError(f"Partial {condition} cache has wrong row count")
             continue
         prompts = [str(record["prompt"]) for record in records]
-        batch_size = 1 if condition.startswith("long_context_") else 8
+        batch_size = (
+            1
+            if condition.startswith("long_context_")
+            or condition == "lciteeval_complexity"
+            else 8
+        )
         completions = generate_batched(
             model,
             tokenizer,
@@ -963,8 +973,6 @@ def summarize() -> None:
     )
     summary = summary.sort_values(["condition_order", "method_order"])
 
-    frame.to_csv(PLOTS / "all_generations.csv", index=False)
-    frame.to_csv(PLOTS / "generations.csv", index=False)
     summary.drop(columns=["condition_order", "method_order"]).to_csv(
         PLOTS / "distribution_scores.csv", index=False
     )
@@ -1015,9 +1023,9 @@ def require_datasets() -> None:
     manifest = _load_json(manifest_path)
     if manifest.get("schema_version") != 4:
         raise ValueError("Frozen dataset manifest has the wrong schema")
-    if tuple(manifest.get("sets", {})) != DATASET_ORDER:
+    if tuple(manifest.get("sets", {})) != CONDITION_ORDER:
         raise ValueError("Frozen dataset manifest has the wrong condition order")
-    for condition in DATASET_ORDER:
+    for condition in CONDITION_ORDER:
         entry = manifest["sets"][condition]
         path = UNIT / entry["path"]
         if not path.exists() or int(entry["rows"]) != EVALUATION_COUNT:
