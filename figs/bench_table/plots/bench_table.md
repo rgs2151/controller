@@ -53,7 +53,7 @@ Toxicity, Dist-2, and PPL are mean ± SE across five complete 1,000-prompt RTP r
 | Gemma-2-2B | S-PID | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Gemma-2-2B | A-LQR | 66.89 ± 0.40 | TBD | TBD | TBD | 75.69 ± 0.45 | 88.37 ± 0.23 | TBD |
 | Gemma-2-2B | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| Llama-3-8B | Original | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Llama-3-8B | Original | 46.26 ± 1.20 | TBD | TBD | TBD | 47.54 ± 1.27 | 97.31 ± 0.21 | TBD |
 | Llama-3-8B | ITI | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Llama-3-8B | ActAdd | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Llama-3-8B | Mean-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |

@@ -93,8 +93,8 @@ ALQR_PAPER_SELECTIONS = {
     },
     "truthfulness": {
         "gemma2b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
-        "llama8b": LQRSetting(multiplier=3.5, q=0.1, r=10.0, q_final=10.0),
-        "qwen14b": LQRSetting(multiplier=3.5, q=0.1, r=1.0, q_final=0.3),
+        "llama8b": LQRSetting(multiplier=2.0, q=0.1, r=10.0, q_final=10.0),
+        "qwen14b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
     },
 }
 

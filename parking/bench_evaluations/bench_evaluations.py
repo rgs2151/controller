@@ -1040,10 +1040,10 @@ def smoke(model_key: str, behavior: str) -> None:
             "multiplier": 3.0, "q": 0.1, "r": 1.0, "q_final": 0.3
         },
         ("llama8b", "truthfulness"): {
-            "multiplier": 3.5, "q": 0.1, "r": 10.0, "q_final": 10.0
+            "multiplier": 2.0, "q": 0.1, "r": 10.0, "q_final": 10.0
         },
         ("qwen14b", "truthfulness"): {
-            "multiplier": 3.5, "q": 0.1, "r": 1.0, "q_final": 0.3
+            "multiplier": 3.0, "q": 0.1, "r": 1.0, "q_final": 0.3
         },
         ("gemma2b", "toxicity"): {
             "multiplier": 3.5, "q": 0.1, "r": 1.0, "q_final": 0.1
