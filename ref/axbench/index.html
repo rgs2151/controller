@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AxBench</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #fff;
+      color: #1a1a1a;
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 3.5rem 1rem 2rem;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    header img.logo {
+      width: 72px;
+      height: 72px;
+      margin-bottom: 0.75rem;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    header h1 sub {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #555;
+      letter-spacing: 0;
+    }
+
+    .authors {
+      margin: 0.55rem auto 0;
+      max-width: 640px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    .authors .equal {
+      font-size: 0.75rem;
+      vertical-align: super;
+      color: #888;
+    }
+
+    .authors .note {
+      display: block;
+      font-size: 0.78rem;
+      color: #999;
+      margin-top: 0.15rem;
+    }
+
+    header p.tagline {
+      margin: 0.7rem auto 0;
+      max-width: 560px;
+      color: #444;
+      font-size: 1.05rem;
+    }
+
+    /* ── Link buttons ── */
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-top: 1.4rem;
+    }
+
+    .links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 1rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+
+    .links a:hover { opacity: 0.75; }
+
+    .btn-paper   { background: #1a1a1a; color: #fff; }
+    .btn-hf      { background: #ff9d00; color: #fff; }
+    .btn-colab   { background: #f9ab00; color: #fff; }
+    .btn-gh      { background: #24292e; color: #fff; }
+
+    .links a svg { flex-shrink: 0; }
+
+    /* ── Main content ── */
+    main {
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* ── Section card ── */
+    section {
+      background: #f8f8f8;
+      border: 1px solid #e4e4e4;
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem 1.25rem;
+    }
+
+    section + section {
+      margin-top: 1.75rem;
+    }
+
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+
+    .section-sub {
+      font-size: 0.82rem;
+      color: #777;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Scrollable table wrapper ── */
+    .table-wrap {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 380px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    /* Sticky header inside scroll */
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #fff;
+      text-align: right;
+      padding: 0.6rem 0.85rem;
+      border-bottom: 2px solid #d0d0d0;
+      white-space: nowrap;
+      font-size: 0.75rem;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    thead th:first-child  { text-align: center; width: 2.5rem; }
+    thead th:nth-child(2) { text-align: left; }
+
+    tbody tr:hover { background: #fafafa; }
+
+    tbody tr + tr { border-top: 1px solid #efefef; }
+
+    tbody td {
+      padding: 0.55rem 0.85rem;
+      text-align: right;
+      white-space: nowrap;
+      background: #fff;
+    }
+
+    /* rank number column */
+    tbody td:first-child {
+      text-align: center;
+      color: #aaa;
+      font-size: 0.78rem;
+      font-weight: 500;
+      width: 2.5rem;
+    }
+
+    /* method name column */
+    tbody td:nth-child(2) {
+      text-align: left;
+      font-weight: 500;
+    }
+
+    strong { font-weight: 700; }
+    .dash  { color: #ccc; }
+
+    .notice {
+      margin-top: 0.7rem;
+      font-size: 0.8rem;
+      color: #999;
+    }
+
+    .notice a { color: #555; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      color: #aaa;
+      border-top: 1px solid #e8e8e8;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img class="logo"
+       src="https://github.com/user-attachments/assets/661f78cf-4044-4c46-9a71-1316bb2c69a5"
+       alt="AxBench logo" />
+  <h1>AxBench <sub>by <a href="https://github.com/stanfordnlp/pyvene" style="color:inherit;text-decoration:none;">pyvene</a></sub></h1>
+
+  <p class="authors">
+    Zhengxuan Wu<span class="equal">*</span>,
+    Aryaman Arora<span class="equal">*</span>,
+    Atticus Geiger,
+    Zheng Wang,
+    Jing Huang,
+    Dan Jurafsky,
+    Christopher D. Manning,
+    Christopher Potts
+    <span class="note">* equal contribution</span>
+  </p>
+
+  <p class="tagline">
+    A scalable benchmark for evaluating interpretability techniques on
+    <em>concept detection</em> and <em>model steering</em>.
+  </p>
+
+  <div class="links">
+    <a class="btn-paper" href="https://arxiv.org/abs/2501.17148" target="_blank" rel="noopener">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Paper
+    </a>
+    <a class="btn-hf" href="https://huggingface.co/collections/pyvene/axbench-release-6787576a14657bb1fc7a5117" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="9" r="2"/><circle cx="15" cy="9" r="2"/><path d="M12 17c-2.8 0-5-1.8-5-4h10c0 2.2-2.2 4-5 4z"/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      HuggingFace
+    </a>
+    <a class="btn-colab" href="https://colab.research.google.com/github/stanfordnlp/axbench/blob/main/axbench/examples/tutorial.ipynb" target="_blank" rel="noopener">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Colab Tutorial
+    </a>
+    <a class="btn-gh" href="https://github.com/stanfordnlp/axbench" target="_blank" rel="noopener">
+      <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.031 1.531 1.031.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.026 2.747-1.026.546 1.378.202 2.397.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.2 22 16.447 22 12.021 22 6.484 17.523 2 12 2z"/></svg>
+      GitHub
+    </a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Concept Detection Leaderboard ── -->
+  <section>
+    <div class="section-title">🔍 Concept detection leaderboard</div>
+    <div class="section-sub">Metric: AUC-ROC (higher is better) &nbsp;·&nbsp; Evaluated on 500 concepts</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Method</th>
+            <th>2B L10</th>
+            <th>2B L20</th>
+            <th>9B L20</th>
+            <th>9B L31</th>
+            <th>Avg</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>DiffMean</td>
+            <td>0.948</td><td>0.946</td><td>0.955</td><td>0.921</td><td><strong>0.942</strong></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Probe</td>
+            <td>0.940</td><td>0.946</td><td>0.933</td><td>0.942</td><td>0.940</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>ReFT-r1</td>
+            <td><strong>0.952</strong></td><td><strong>0.965</strong></td><td><strong>0.966</strong></td><td>0.869</td><td>0.938</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Prompt</td>
+            <td>0.910</td><td>0.921</td><td>0.940</td><td><strong>0.943</strong></td><td>0.929</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>SAE-A</td>
+            <td>0.924</td><td>0.911</td><td>0.924</td><td>0.907</td><td>0.917</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>BoW</td>
+            <td>0.909</td><td>0.931</td><td>0.904</td><td>0.912</td><td>0.914</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>SSV</td>
+            <td>0.934</td><td>0.950</td><td>0.910</td><td>0.854</td><td>0.912</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>LAT</td>
+            <td>0.742</td><td>0.809</td><td>0.572</td><td>0.725</td><td>0.712</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>SAE</td>
+            <td>0.735</td><td>0.755</td><td>0.631</td><td>0.659</td><td>0.695</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>PCA</td>
+            <td>0.714</td><td>0.712</td><td>0.559</td><td>0.622</td><td>0.652</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>IG</td>
+            <td>0.440</td><td>0.375</td><td>0.508</td><td>0.383</td><td>0.426</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>IxG</td>
+            <td>0.243</td><td>0.217</td><td>0.193</td><td>0.330</td><td>0.246</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="notice">📢 Open a <a href="https://github.com/stanfordnlp/axbench/pulls" target="_blank" rel="noopener">pull request</a> to enter the leaderboard.</p>
+  </section>
+
+  <!-- ── Rank-1 Steering Leaderboard ── -->
+  <section>
+    <div class="section-title">🏆 Rank-1 steering leaderboard</div>
+    <div class="section-sub">Metric: win rate vs. baseline (higher is better) &nbsp;·&nbsp; Evaluated on 500 concepts</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Method</th>
+            <th>2B L10</th>
+            <th>2B L20</th>
+            <th>9B L20</th>
+            <th>9B L31</th>
+            <th>Avg</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>HyperSteer <a href="https://www.arxiv.org/abs/2506.03292" target="_blank" rel="noopener">[Sun et al., 2025]</a></td>
+            <td class="dash">—</td>
+            <td><strong>0.742</strong></td>
+            <td><strong>1.091</strong></td>
+            <td class="dash">—</td>
+            <td><strong>0.917</strong></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Prompt</td>
+            <td>0.698</td>
+            <td>0.731</td>
+            <td>1.075</td>
+            <td><strong>1.072</strong></td>
+            <td>0.894</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>RePS <a href="https://arxiv.org/pdf/2505.20809" target="_blank" rel="noopener">[Wu et al., 2025]</a></td>
+            <td><strong>0.756</strong></td>
+            <td>0.606</td>
+            <td>0.892</td>
+            <td>0.624</td>
+            <td>0.720</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>ReFT-r1</td>
+            <td>0.633</td>
+            <td>0.509</td>
+            <td>0.630</td>
+            <td>0.401</td>
+            <td>0.543</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>SAE (filtered) <a href="https://arxiv.org/abs/2505.20063" target="_blank" rel="noopener">[Arad et al., 2025]</a></td>
+            <td class="dash">—</td>
+            <td class="dash">—</td>
+            <td>0.546</td>
+            <td>0.470</td>
+            <td>0.508</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>SAELogits <a href="https://lukagerlach.github.io/SAELogits/" target="_blank" rel="noopener">[Gerlach, 2026]</a></td>
+            <td class="dash">—</td>
+            <td class="dash">—</td>
+            <td class="dash">—</td>
+            <td>0.351</td>
+            <td>0.351</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>DiffMean</td>
+            <td>0.297</td>
+            <td>0.178</td>
+            <td>0.322</td>
+            <td>0.158</td>
+            <td>0.239</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>SAE</td>
+            <td>0.177</td>
+            <td>0.151</td>
+            <td>0.191</td>
+            <td>0.140</td>
+            <td>0.165</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>SAE-A</td>
+            <td>0.166</td>
+            <td>0.132</td>
+            <td>0.186</td>
+            <td>0.143</td>
+            <td>0.157</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>LAT</td>
+            <td>0.117</td>
+            <td>0.130</td>
+            <td>0.127</td>
+            <td>0.134</td>
+            <td>0.127</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>PCA</td>
+            <td>0.107</td>
+            <td>0.083</td>
+            <td>0.128</td>
+            <td>0.104</td>
+            <td>0.105</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>Probe</td>
+            <td>0.095</td>
+            <td>0.091</td>
+            <td>0.108</td>
+            <td>0.099</td>
+            <td>0.098</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="notice">📢 Open a <a href="https://github.com/stanfordnlp/axbench/pulls" target="_blank" rel="noopener">pull request</a> to enter the leaderboard.</p>
+  </section>
+
+</main>
+
+<footer>
+  AxBench · <a href="https://github.com/stanfordnlp/pyvene" style="color:inherit;">pyvene</a> · Stanford NLP
+</footer>
+
+</body>
+</html>
