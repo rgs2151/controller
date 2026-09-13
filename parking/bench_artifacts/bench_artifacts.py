@@ -460,11 +460,7 @@ def fit_jacobians(model_key: str, devices: list[str]) -> None:
     model_config = MODELS[model_key]
     cache = _cache(model_key)
     data = prepare(model_key)
-    identity = {
-        **calibration_identity(data, model_key),
-        "devices": devices,
-        "shard_count": len(devices),
-    }
+    identity = calibration_identity(data, model_key)
     run_path = cache / "runs/jacobians.json"
     artifact_path = cache / "dynamics.pt"
     run = _load_run(run_path, identity)
@@ -476,6 +472,8 @@ def fit_jacobians(model_key: str, devices: list[str]) -> None:
         "started_at_utc": _utc_now(),
         "status": "running",
         "runtime": runtime_provenance("cpu"),
+        "devices": devices,
+        "shard_count": len(devices),
     }
     run["attempts"].append(attempt)
     _write_json(run_path, run)
