@@ -63,7 +63,7 @@ Toxicity, Dist-2, and PPL are mean ± SE across five complete 1,000-prompt RTP r
 | Llama-3-8B | S-PID | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Llama-3-8B | A-LQR | 64.61 ± 0.40 | TBD | TBD | TBD | 66.22 ± 0.26 | 97.58 ± 0.27 | TBD |
 | Llama-3-8B | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | Original | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-14B | Original | 49.35 ± 0.55 | TBD | TBD | TBD | 51.26 ± 0.54 | 96.28 ± 0.22 | TBD |
 | Qwen-2.5-14B | ITI | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | ActAdd | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | Mean-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
@@ -71,7 +71,7 @@ Toxicity, Dist-2, and PPL are mean ± SE across five complete 1,000-prompt RTP r
 | Qwen-2.5-14B | PID-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | ODESteer | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | S-PID | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | A-LQR | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-14B | A-LQR | 77.38 ± 0.44 | TBD | TBD | TBD | 80.27 ± 0.42 | 96.40 ± 0.22 | TBD |
 | Qwen-2.5-14B | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
 Truthfulness values are mean ± SE across five complete 817-question repetitions. TBD cells have not been run.
