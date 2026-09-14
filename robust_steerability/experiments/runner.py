@@ -38,6 +38,7 @@ from robust_steerability.experiments.diagnostics import (
 from robust_steerability.experiments.generation import generate_completions
 from robust_steerability.experiments.manifest import ExperimentManifest, load_manifest
 from robust_steerability.experiments.methods import METHOD_LABELS, build_policy
+from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.modeling.huggingface import (
     CausalModelLoadSpec,
     load_access_token,
@@ -730,7 +731,7 @@ def parse_args() -> argparse.Namespace:
     subparsers = parser.add_subparsers(dest="command", required=True)
     run = subparsers.add_parser("run")
     run.add_argument("--manifest", type=Path, required=True)
-    run.add_argument("--devices", default="cuda:0,cuda:1")
+    run.add_argument("--devices", default="auto")
     job = subparsers.add_parser("run-job")
     job.add_argument("--manifest", type=Path, required=True)
     job.add_argument("--job-index", type=int, required=True)
@@ -745,7 +746,7 @@ def main() -> None:
     if args.command == "run":
         run_manifest(
             args.manifest,
-            [value.strip() for value in args.devices.split(",") if value.strip()],
+            resolve_cuda_devices(args.devices),
         )
     elif args.command == "run-job":
         run_job(args.manifest, args.job_index, args.device)
