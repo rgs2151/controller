@@ -5,7 +5,8 @@
       "machine_id": "machine_1",
       "ssh_host": "robust-steering-1",
       "repo": "/teamspace/studios/this_studio/controller",
-      "job_root": "/teamspace/studios/this_studio/.robust_steering_jobs"
+      "job_root": "/teamspace/studios/this_studio/.robust_steering_jobs",
+      "environment_file": "/teamspace/studios/this_studio/.robust_steering_env"
     }
   ]
 }

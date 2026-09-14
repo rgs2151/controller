@@ -1,0 +1,110 @@
+{
+  "schema_version": 2,
+  "plan_id": "toxicity_generation_wave",
+  "jobs": [
+    {
+      "job_id": "gemma2b_original",
+      "machine_id": "machine_1",
+      "gpu_ids": [0],
+      "command": "python parking/bench_evaluations/toxicity_kv_cache_off.py --stage generate-final --device cuda:0 --method original",
+      "inputs": [
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/data",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/data"
+        }
+      ],
+      "outputs": [
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/generations/toxicity/gemma2b/original",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/generations/toxicity/gemma2b/original"
+        },
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/generations/toxicity_jigsaw/gemma2b/original",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/generations/toxicity_jigsaw/gemma2b/original"
+        }
+      ]
+    },
+    {
+      "job_id": "gemma2b_spid",
+      "machine_id": "machine_1",
+      "gpu_ids": [1],
+      "command": "python parking/bench_evaluations/toxicity_kv_cache_off.py --stage generate-final --device cuda:0 --method spid",
+      "inputs": [
+        {
+          "local_path": "parking/bench_artifacts/cache/shared/toxicity/gemma2b",
+          "s3_prefix": "controller/bench_artifacts/shared/toxicity/gemma2b"
+        },
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/data",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/data"
+        }
+      ],
+      "outputs": [
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/generations/toxicity/gemma2b/spid",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/generations/toxicity/gemma2b/spid"
+        },
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/generations/toxicity_jigsaw/gemma2b/spid",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/generations/toxicity_jigsaw/gemma2b/spid"
+        }
+      ]
+    },
+    {
+      "job_id": "gemma2b_alqr",
+      "machine_id": "machine_1",
+      "gpu_ids": [2],
+      "command": "python parking/bench_evaluations/toxicity_kv_cache_off.py --stage generate-final --device cuda:0 --method alqr",
+      "inputs": [
+        {
+          "local_path": "parking/bench_artifacts/cache/shared/toxicity/gemma2b",
+          "s3_prefix": "controller/bench_artifacts/shared/toxicity/gemma2b"
+        },
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/data",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/data"
+        }
+      ],
+      "outputs": [
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/generations/toxicity/gemma2b/alqr",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/generations/toxicity/gemma2b/alqr"
+        },
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/generations/toxicity_jigsaw/gemma2b/alqr",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/generations/toxicity_jigsaw/gemma2b/alqr"
+        }
+      ]
+    },
+    {
+      "job_id": "gemma2b_h_infinity",
+      "machine_id": "machine_1",
+      "gpu_ids": [3],
+      "command": "python parking/bench_evaluations/toxicity_kv_cache_off.py --stage generate-final --device cuda:0 --method h_infinity",
+      "inputs": [
+        {
+          "local_path": "parking/bench_artifacts/cache/shared/toxicity/gemma2b",
+          "s3_prefix": "controller/bench_artifacts/shared/toxicity/gemma2b"
+        },
+        {
+          "local_path": "parking/bench_artifacts/cache/kv_cache_off/toxicity/gemma2b",
+          "s3_prefix": "controller/bench_artifacts/kv_cache_off/toxicity/gemma2b"
+        },
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/data",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/data"
+        }
+      ],
+      "outputs": [
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/generations/toxicity/gemma2b/h_infinity",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/generations/toxicity/gemma2b/h_infinity"
+        },
+        {
+          "local_path": "parking/bench_evaluations/cache/kv_cache_off/generations/toxicity_jigsaw/gemma2b/h_infinity",
+          "s3_prefix": "controller/bench_evaluations/kv_cache_off/generations/toxicity_jigsaw/gemma2b/h_infinity"
+        }
+      ]
+    }
+  ]
+}
