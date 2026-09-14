@@ -1,54 +1,99 @@
-# bench_table
+# bench_table_kv_cache_on
 
 ## Method
 
-- Read completed toxicity and truthfulness summary JSON files from the active benchmark evaluation unit.
-- Align results by the fixed model and method ordering used in the manuscript.
-- Insert each available mean and standard error into its named metric column; leave unrun cells as `TBD`.
-- Render the same row objects to Markdown and TeX so the two formats cannot contain different values.
-- Write one Markdown document and one TeX fragment containing the toxicity and truthfulness tables.
+- Read only completed summaries under `benchmarks/*/results/kv_cache_on/`.
+- Align values by the fixed model and method order and render identical Markdown and TeX cells.
+- Preserve the earlier full-run results as a historical cache-on condition; missing cells remain `TBD`.
 
 ## Variables
 
-- Data/input: `parking/bench_evaluations/cache/results/<behavior>/<model>/<method>.json`.
-- Sessions/groups: Gemma-2-2B, Llama-3-8B, and Qwen-2.5-14B; Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer, S-PID, A-LQR, and H∞.
-- Labels/targets: toxicity, Dist-2, MMLU, PPL, truthful-times-informative, True, Info, Spanish, adversarial, and long-context performance.
-- Signals/features/measures: metric means and standard errors from completed benchmark summaries.
-- Parameters/thresholds: five 1,000-prompt RTP repetitions, five complete 817-question TruthfulQA repetitions, and one shared 1,000-question five-shot MMLU set.
-- Outputs: `plots/bench_table.md` and `plots/bench_table.tex`.
+- Data/input: cache-on RTP, Jigsaw, TruthfulQA-ID, and Spanish summary JSON files.
+- Sessions/groups: model-method pairs; five benchmark repetitions where complete.
+- Labels/targets: RTP and Jigsaw toxicity, Dist-2, and PPL; TruthfulQA T×I, True, Info, and MMLU.
+- Signals/features/measures: summary means and standard errors.
+- Parameters/thresholds: evaluated-model KV cache on; evaluator cache state is separate.
+- Outputs: `plots/bench_table_kv_cache_on.md` and `plots/bench_table_kv_cache_on.tex`.
 
 ## Statistics
 
-- Tests/models: descriptive means and standard errors supplied by the benchmark summaries; no inferential test is performed here.
+- Tests/models: descriptive means and standard errors supplied by the evaluation unit.
 - Null hypothesis: none.
 - Alternative hypothesis: none.
-- Thresholds/decision rule: a missing result or optional metric is displayed as `TBD`; a completed result missing a required metric is an error.
-- What the statistic means: each cell reports the estimated benchmark metric and its recorded sampling uncertainty.
-- Why this statistic is appropriate here: the unit preserves the evaluation unit's summaries without recomputing or combining incompatible observations.
+- Thresholds/decision rule: absent summaries or uncomputed expanded Jigsaw metrics render as `TBD`.
+- What the statistic means: each cell is one cache-on model-method benchmark estimate.
+- Why this statistic is appropriate here: the renderer does not combine incompatible cache conditions.
 
 ## Legends
 
-- X axis: table columns name the benchmark metrics and preferred direction.
-- Y axis: table rows are model-method pairs.
-- Color/value: no color encoding; cells contain mean ± SE or `TBD`.
-- Grouping: methods are grouped within model blocks.
-- Ordering/sorting: fixed model order, then Original through H∞.
-- Lines/markers/labels: arrows indicate whether larger or smaller values are preferred.
-- Panels: the TeX and Markdown documents contain toxicity first and truthfulness second.
+- X axis: table columns name metrics and preferred direction.
+- Y axis: model-method rows.
+- Color/value: none.
+- Grouping: model, then method.
+- Ordering/sorting: fixed manuscript order.
+- Lines/markers/labels: `TBD` means unrun.
+- Panels: toxicity first, truthfulness second.
 
 ## Interpretation
 
-- Compare steering methods only within the same model and metric.
-- `TBD` denotes missing computation, not zero performance.
+- These are preserved historical cache-on results and are not the active controlled-decoding results.
 
 ## Notes
 
-- Run `python figs/bench_table/bench_table.py` after new benchmark summaries are completed.
-- Edit neither output by hand; both formats are regenerated together from the same values.
-- Historical 50-prompt tables are retained under `ref/paper_benchmark_50/` and are not inputs.
+- The manuscript currently points explicitly to this historical TeX file until the cache-off table is populated and reviewed.
 
 ## References
 
-- `parking/bench_evaluations/`.
-- `ref/2604.19018v1.pdf`.
-- `/home/dev/controller/paper/iclr2026_conference.tex`.
+- `benchmarks/truthfulness/` and `benchmarks/toxicity/`.
+
+# bench_table_kv_cache_off
+
+## Method
+
+- Read only completed summaries under `benchmarks/*/results/kv_cache_off/`.
+- Render RTP ID and Jigsaw OOD toxicity, Dist-2, and PPL beside the truthfulness benchmark without importing cache-on values.
+- Keep all unexecuted cells as `TBD`; the prepared toxicity run targets only Original, S-PID, A-LQR, and H∞ on Gemma-2-2B.
+
+## Variables
+
+- Data/input: cache-off RTP, Jigsaw, TruthfulQA-ID, and Spanish summary JSON files.
+- Sessions/groups: five × 1,000 RTP prompts, five × 1,000 Jigsaw prompts, and five × 817 TruthfulQA prompts when run.
+- Labels/targets: classifier toxicity on generated continuations in both toxicity distributions; Dist-2 and PPL output-quality measurements; truthfulness metrics.
+- Signals/features/measures: mean ± SE toxicity, Dist-2, and PPL for both RTP and Jigsaw, plus T×I, True, Info, and truthfulness-table MMLU accuracy.
+- Parameters/thresholds: evaluated-model KV cache off; Jigsaw receives the RTP-selected controller with no recalibration.
+- Outputs: `plots/bench_table_kv_cache_off.md` and `plots/bench_table_kv_cache_off.tex`.
+
+## Statistics
+
+- Tests/models: descriptive repetition means and standard errors; truthfulness-table MMLU uses prompt-level Bernoulli standard error.
+- Null hypothesis: none.
+- Alternative hypothesis: none.
+- Thresholds/decision rule: toxic probability greater than 0.5 is toxic; incomplete or absent result files render as `TBD`.
+- What the statistic means: RTP is ID toxicity control and output quality; Jigsaw is cross-dataset toxicity transfer and output quality under the same frozen controller.
+- Why this statistic is appropriate here: toxicity, Dist-2, and PPL are computed identically across the two toxicity prompt populations.
+
+## Legends
+
+- X axis: table columns name metrics and preferred direction.
+- Y axis: model-method rows.
+- Color/value: none.
+- Grouping: model, then method.
+- Ordering/sorting: fixed manuscript order; the requested toxicity methods are Original, S-PID, A-LQR, and H∞.
+- Lines/markers/labels: `TBD` means unrun.
+- Panels: toxicity first, truthfulness second.
+
+## Interpretation
+
+- This is the active controlled-decoding table. It contains the completed
+  Gemma-2-2B RTP and Jigsaw results for Original, S-PID, A-LQR, and H∞; other
+  model-method cells remain `TBD`.
+
+## Notes
+
+- Regenerate both condition files with `python figs/bench_table/bench_table.py` after summaries change.
+- Markdown and TeX are always written from the same row objects.
+
+## References
+
+- `robust_steerability/benchmarks/toxicity.py`.
+- `DECISIONS.md`.

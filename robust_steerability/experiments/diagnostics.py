@@ -174,6 +174,82 @@ def score(bundle_path: Path, device: str, *, cache_root: Path,
     expected = (len(cal_ids), problem.horizon, problem.state_dimension)
     if residuals.shape != expected or not torch.isfinite(residuals).all() or len(cal_ids) < 2:
         raise ValueError(f"Calibration residuals must be finite and have shape {expected}, N>=2")
+    centered = residuals.double() - residuals.double().mean(dim=0, keepdim=True)
+    covariance = torch.einsum("nti,ntj->tij", centered, centered) / (len(cal_ids) - 1)
+    d = problem.disturbance_channels.double()
+    covariance_error = torch.linalg.matrix_norm(
+        covariance - d @ d.transpose(-1, -2), dim=(-2, -1)
+    )
+    covariance_norm = torch.linalg.matrix_norm(covariance, dim=(-2, -1))
+    covariance_relative_error = torch.where(
+        covariance_norm > 0,
+        covariance_error / covariance_norm,
+        covariance_error,
+    )
+    if normalization["protocol_id"] == "kaz-raw-reduced-covariance-v1":
+        construction = calibration["disturbance_construction"]
+        settings = calibration.get("settings")
+        if normalization["coordinates"] != "raw":
+            raise ValueError("Kaz-aligned calibration requires raw reduced coordinates")
+        if normalization["stage_costs_depth_weighted"] is not False:
+            raise ValueError("Kaz-aligned calibration must not depth-weight Q, R, or Qf")
+        whitening = normalization["state_whitening"]
+        expected_whitening = torch.eye(
+            problem.state_dimension,
+            dtype=whitening.dtype,
+            device=whitening.device,
+        ).expand(problem.horizon + 1, -1, -1)
+        if not torch.equal(whitening, expected_whitening):
+            raise ValueError("Kaz-aligned calibration must not whiten the reduced state")
+        for key in ("control_std", "semantic_output_std", "depth_increment"):
+            values = normalization[key]
+            if not isinstance(values, torch.Tensor) or not torch.equal(
+                values, torch.ones_like(values)
+            ):
+                raise ValueError(f"Kaz-aligned calibration requires identity {key}")
+        if not isinstance(settings, dict) or not all(
+            key in settings for key in ("q", "r", "q_final")
+        ):
+            raise ValueError("Kaz-aligned calibration must record q, r, and q_final")
+        state_identity = torch.eye(
+            problem.state_dimension,
+            dtype=problem.state_costs.dtype,
+            device=problem.state_costs.device,
+        )
+        control_identity = torch.eye(
+            problem.control_dimension,
+            dtype=problem.control_costs.dtype,
+            device=problem.control_costs.device,
+        )
+        expected_costs = {
+            "state_costs": (
+                float(settings["q"]) * state_identity
+            ).expand(problem.horizon, -1, -1),
+            "control_costs": (
+                float(settings["r"]) * control_identity
+            ).expand(problem.horizon, -1, -1),
+            "terminal_cost": float(settings["q_final"]) * state_identity,
+        }
+        for key, expected_cost in expected_costs.items():
+            if not torch.allclose(
+                getattr(problem, key), expected_cost, rtol=0, atol=0
+            ):
+                raise ValueError(f"Kaz-aligned calibration requires raw identity {key}")
+        if not isinstance(construction, dict) or construction.get("method") != (
+            "calibration-residual covariance factor, ddof=1"
+        ):
+            raise ValueError("Kaz-aligned calibration requires the canonical D construction")
+        channels = construction.get("channels")
+        if not isinstance(channels, torch.Tensor) or not torch.equal(
+            channels, problem.disturbance_channels
+        ):
+            raise ValueError("Saved disturbance channels differ from controller D")
+        if not torch.isfinite(covariance_relative_error).all() or (
+            covariance_relative_error.max() > 1e-4
+        ):
+            raise ValueError(
+                "Kaz-aligned D @ D.T does not match the calibration residual covariance"
+            )
     # Baselines are provided by their owning fit/calibration analyses with definitions.
     predictors = {name: None for name in PREDICTORS}
     predictors["log_parameter_count"] = math.log(float(record["parameter_count"]))
@@ -218,12 +294,6 @@ def score(bundle_path: Path, device: str, *, cache_root: Path,
     if valid_score:
         predictors["s_rob"] = 1.0 / gamma
         predictors["negative_log_gamma_star"] = -math.log(gamma)
-    centered = residuals.double() - residuals.double().mean(dim=0, keepdim=True)
-    covariance = torch.einsum("nti,ntj->tij", centered, centered) / (len(cal_ids) - 1)
-    d = problem.disturbance_channels.double()
-    covariance_error = torch.linalg.matrix_norm(covariance - d @ d.transpose(-1, -2), dim=(-2, -1))
-    covariance_norm = torch.linalg.matrix_norm(covariance, dim=(-2, -1))
-    covariance_relative_error = torch.where(covariance_norm > 0, covariance_error / covariance_norm, torch.full_like(covariance_norm, float("nan")))
     metadata = {**record, "gamma_star": gamma, "gamma_used": solution.diagnostics.get("gamma_used"),
                 "s_rob": predictors["s_rob"], "negative_log_gamma_star": predictors["negative_log_gamma_star"],
                 "feasible": solution.feasible, "bisection_converged": converged,

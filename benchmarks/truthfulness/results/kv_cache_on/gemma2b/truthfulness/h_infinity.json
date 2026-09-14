@@ -1,0 +1,66 @@
+{
+  "identity": {
+    "generation_sha256": "e49d9276ae09f79a3dc6f72d72915b67e3b46b6ad5b53f06a084ba5df47e86b9",
+    "scores_sha256": "fdc66933ed7d9ca0c230834790a0d0f1f35e4241e274534518cab222ce7635cb",
+    "model_id": "google/gemma-2-2b",
+    "model_revision": "c5ebcd40d208330abc697524c919956e692655cf",
+    "method": "h_infinity",
+    "dataset": [
+      "truthful_qa",
+      "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
+    ]
+  },
+  "evaluation_samples_per_repetition": 817,
+  "evaluation_repetitions": 5,
+  "created_at_utc": "2026-09-13T18:18:32.228674+00:00",
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "truth": 80.17135862913096,
+      "info": 73.43941248470011,
+      "truth_x_info": 58.87737475823571
+    },
+    {
+      "repetition": 1,
+      "truth": 80.6609547123623,
+      "info": 72.46022031823746,
+      "truth_x_info": 58.44710549537146
+    },
+    {
+      "repetition": 2,
+      "truth": 78.70257037943696,
+      "info": 74.78580171358628,
+      "truth_x_info": 58.85834822746142
+    },
+    {
+      "repetition": 3,
+      "truth": 81.27294981640148,
+      "info": 73.19461444308446,
+      "truth_x_info": 59.48742226463658
+    },
+    {
+      "repetition": 4,
+      "truth": 79.5593635250918,
+      "info": 75.5201958384333,
+      "truth_x_info": 60.083387141960394
+    }
+  ],
+  "metrics": {
+    "truth_x_info": {
+      "mean": 59.15072757753311,
+      "standard_error": 0.2862261918582111
+    },
+    "truth": {
+      "mean": 80.0734394124847,
+      "standard_error": 0.44368589866320474
+    },
+    "info": {
+      "mean": 73.88004895960833,
+      "standard_error": 0.5563436072148584
+    }
+  },
+  "invalid_judge_outputs": {
+    "true": [],
+    "helpful": []
+  }
+}

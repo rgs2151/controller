@@ -98,15 +98,24 @@ class CalibrationTests(unittest.TestCase):
             expected["layer_relative_residual"],
         )
 
-    def test_disturbance_geometry_has_common_padded_rank(self) -> None:
+    def test_disturbance_geometry_reconstructs_full_covariance(self) -> None:
         generator = torch.Generator().manual_seed(2)
         coefficients = torch.randn(20, 2, 1, generator=generator)
         directions = torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
         residuals = coefficients * directions.unsqueeze(0)
-        geometry = fit_disturbance_geometry(residuals, 0.95)
-        self.assertEqual(geometry.channels.shape, (2, 3, 1))
-        torch.testing.assert_close(geometry.retained_ranks, torch.ones(2, dtype=torch.long))
-        self.assertTrue(torch.all(geometry.explained_variance >= 0.95))
+        geometry = fit_disturbance_geometry(residuals)
+        self.assertEqual(geometry.channels.shape, (2, 3, 3))
+        torch.testing.assert_close(
+            geometry.retained_ranks,
+            torch.full((2,), 3, dtype=torch.long),
+        )
+        centered = residuals - residuals.mean(dim=0, keepdim=True)
+        covariance = torch.einsum("nli,nlj->lij", centered, centered) / 19
+        torch.testing.assert_close(
+            geometry.channels @ geometry.channels.transpose(-1, -2),
+            covariance,
+        )
+        torch.testing.assert_close(geometry.explained_variance, torch.ones(2))
 
     def test_whitening_uses_calibration_statistics(self) -> None:
         values = torch.tensor(

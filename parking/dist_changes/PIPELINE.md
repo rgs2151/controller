@@ -1,6 +1,6 @@
 # Distribution-change pipeline
 
-This unit owns eight 50-prompt conditions: seven matched TruthfulQA changes and one L-CiteEval complexity condition. All generated datasets, controller artifacts, completions, judge outputs, and logs stay under `parking/dist_changes/`. The unit reads the frozen A-LQR calibration artifacts from `parking/bench_artifacts/` but never writes to that unit.
+This unit owns eight 50-prompt conditions: seven matched TruthfulQA changes and one L-CiteEval complexity condition. All generated datasets, controller artifacts, completions, judge outputs, and logs stay under `parking/dist_changes/`. The unit reads the frozen A-LQR calibration artifacts from `benchmarks/truthfulness/` but never writes to that unit.
 
 ## 1. Fixed question anchors
 
@@ -72,8 +72,8 @@ The eighth condition deterministically selects 25 NarrativeQA and 25 LoCoMo exam
 
 ## 5. Controller artifacts
 
-- A-LQR reads the frozen truthfulness setpoint and 35-Jacobian nominal dynamics from `parking/bench_artifacts/`.
-- H∞ copies that same nominal A matrix into this unit, fits its rank-8 disturbance geometry, synthesizes full-state feedback, and saves all diagnostics under `cache/`.
+- A-LQR reads the frozen truthfulness setpoint and 35-Jacobian nominal dynamics from `benchmarks/truthfulness/`.
+- H∞ copies that same nominal A matrix into this unit. On the 200 separate calibration trajectories it computes `xi[k] = x[k+1] - A[k]x[k] - B[k]u[k]`, centers those residuals, and sets `D[k]D[k]ᵀ` equal to their empirical covariance with `ddof=1`. It then uses raw `Q=qI`, `R=rI`, and `Qf=qfI`, synthesizes full-state feedback, and saves all diagnostics under `cache/`.
 - Neither controller is recalibrated separately for an OOD set. Distribution changes affect evaluation prompts only.
 
 ## 6. Paired generation
@@ -127,4 +127,5 @@ The plot is regenerated only after both controllers, residual caches, and both j
 - Prompt-end states, actual interventions, and derived residual quantities are retained under `cache/residual_rollouts/`, so later diagnostic plots do not repeat model inference.
 - The frozen 50-question dataset bundle is immutable; a changed construction or later full-size run gets a separate bundle.
 - No old cache is adapted, reconstructed, or relabeled as a new protocol.
+- Any controller or plot produced by the superseded PCA/coverage-scaled disturbance fit is stale and must be regenerated under the canonical covariance identity.
 - `cache/datasets/manifest.json` is the first place to verify row counts, prompt identity, model revision, and evaluation status.

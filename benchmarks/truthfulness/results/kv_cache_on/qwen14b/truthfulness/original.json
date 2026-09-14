@@ -1,0 +1,66 @@
+{
+  "identity": {
+    "generation_sha256": "e6420ba824f41e7fde257eb9fd19fb0978d3ba00f349adb3b63696b518bb33f1",
+    "scores_sha256": "5367423674909c011f84bd1ab87324f0e1d34963d032ea97660ac411f081b178",
+    "model_id": "Qwen/Qwen2.5-14B",
+    "model_revision": "97e1e76335b7017d8f67c08a19d103c0504298c9",
+    "method": "original",
+    "dataset": [
+      "truthful_qa",
+      "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
+    ]
+  },
+  "evaluation_samples_per_repetition": 817,
+  "evaluation_repetitions": 5,
+  "created_at_utc": "2026-09-13T04:52:12.127668+00:00",
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "truth": 50.55079559363526,
+      "info": 95.71603427172583,
+      "truth_x_info": 48.385216835034
+    },
+    {
+      "repetition": 1,
+      "truth": 50.18359853121175,
+      "info": 96.6952264381885,
+      "truth_x_info": 48.52514423458664
+    },
+    {
+      "repetition": 2,
+      "truth": 52.998776009791925,
+      "info": 96.81762545899633,
+      "truth_x_info": 51.31215645501275
+    },
+    {
+      "repetition": 3,
+      "truth": 50.55079559363526,
+      "info": 96.32802937576498,
+      "truth_x_info": 48.69458522911989
+    },
+    {
+      "repetition": 4,
+      "truth": 52.01958384332925,
+      "info": 95.83843329253367,
+      "truth_x_info": 49.85475416074272
+    }
+  ],
+  "metrics": {
+    "truth_x_info": {
+      "mean": 49.3543713828992,
+      "standard_error": 0.5543239703827683
+    },
+    "truth": {
+      "mean": 51.260709914320685,
+      "standard_error": 0.5368840195706558
+    },
+    "info": {
+      "mean": 96.27906976744187,
+      "standard_error": 0.22099718586619035
+    }
+  },
+  "invalid_judge_outputs": {
+    "true": [],
+    "helpful": []
+  }
+}

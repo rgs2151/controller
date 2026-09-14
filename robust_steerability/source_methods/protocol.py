@@ -208,15 +208,15 @@ FINAL_EVALUATION_SAMPLES = {"toxicity": 1000, "truthfulness": 817}
 EVALUATION_REPETITIONS = 5
 SOURCE_RANDOM_SEED = 42
 GENERATION_CACHE = {
-    "original": {"evaluation": False, "capability": True},
-    "iti": {"evaluation": True, "capability": True},
-    "actadd": {"evaluation": True, "capability": True},
-    "mean_act": {"evaluation": True, "capability": True},
-    "linear_act": {"evaluation": True, "capability": True},
-    "pid_act": {"evaluation": True, "capability": True},
-    "odesteer": {"evaluation": True, "capability": True},
-    "spid": {"evaluation": True, "capability": True},
-    "alqr": {"evaluation": True, "capability": True},
+    "original": {"evaluation": False, "capability": False},
+    "iti": {"evaluation": False, "capability": False},
+    "actadd": {"evaluation": False, "capability": False},
+    "mean_act": {"evaluation": False, "capability": False},
+    "linear_act": {"evaluation": False, "capability": False},
+    "pid_act": {"evaluation": False, "capability": False},
+    "odesteer": {"evaluation": False, "capability": False},
+    "spid": {"evaluation": False, "capability": False},
+    "alqr": {"evaluation": False, "capability": False},
 }
 
 SCORERS = {
@@ -400,6 +400,7 @@ def protocol_manifest(
     checkpoint_revision: str,
     evaluation_samples: int,
     *,
+    generation_cache: dict[str, bool],
     requested_parameters: dict | None = None,
 ) -> dict:
     """Create a method-specific, auditable final-run manifest."""
@@ -408,6 +409,12 @@ def protocol_manifest(
         raise ValueError(f"Unsupported method {method!r}")
     if not checkpoint_revision:
         raise ValueError("A concrete Hugging Face checkpoint revision is required")
+    if set(generation_cache) != {"evaluation", "capability"} or not all(
+        isinstance(value, bool) for value in generation_cache.values()
+    ):
+        raise ValueError(
+            "generation_cache must explicitly define boolean evaluation and capability policies"
+        )
     expected_samples = FINAL_EVALUATION_SAMPLES.get(behavior)
     if evaluation_samples != expected_samples:
         raise ValueError(
@@ -457,7 +464,7 @@ def protocol_manifest(
         "evaluation_is_parameter_blind": True,
         "random_seed": SOURCE_RANDOM_SEED,
         "generation": GENERATION[behavior],
-        "generation_cache": GENERATION_CACHE[method],
+        "generation_cache": dict(generation_cache),
         "scorers": SCORERS,
         "model_loading": loading,
         "source_revisions": {

@@ -19,7 +19,7 @@ from transformers import (
 )
 
 from robust_steerability.artifacts import configuration_hash
-from robust_steerability.benchmarks.toxicity import (
+from robust_steerability.datasets.toxicity import (
     load_jigsaw_toxicity_prompts,
     load_real_toxicity_prompt_pools,
     toxicity_probabilities,

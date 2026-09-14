@@ -3,7 +3,7 @@ import pytest
 from robust_steerability.benchmarks.metrics import (
     distinct_ngrams, judge_label, toxicity_frequency, truth_judge_prompt,
 )
-from robust_steerability.benchmarks.truthfulness import parse_mmlu_letter, _format_mmlu_question
+from robust_steerability.datasets.truthfulqa import parse_mmlu_letter, _format_mmlu_question
 
 
 def test_toxicity_is_label_frequency_not_confidence():

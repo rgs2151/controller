@@ -44,13 +44,19 @@ from robust_steerability.source_methods.transport import (
 
 def test_final_manifest_rejects_pilot_counts_and_contains_only_one_method():
     with pytest.raises(ValueError, match="requires exactly 1000"):
-        protocol_manifest("actadd", "toxicity", "Qwen/Qwen2.5-14B", "revision", 50)
-    full = protocol_manifest("actadd", "toxicity", "Qwen/Qwen2.5-14B", "revision", 1000)
+        protocol_manifest(
+            "actadd", "toxicity", "Qwen/Qwen2.5-14B", "revision", 50,
+            generation_cache={"evaluation": False, "capability": False},
+        )
+    full = protocol_manifest(
+        "actadd", "toxicity", "Qwen/Qwen2.5-14B", "revision", 1000,
+        generation_cache={"evaluation": False, "capability": False},
+    )
     assert full["evaluation_samples"] == 1000
     assert full["evaluation_repetitions"] == 5
     assert full["random_seed"] == 42
     assert full["method"] == "actadd"
-    assert full["generation_cache"] == {"evaluation": True, "capability": True}
+    assert full["generation_cache"] == {"evaluation": False, "capability": False}
     assert full["calibration"]["desired"] == 100
     assert full["selected_parameters"] == {"layer": 21, "strength": 4.0}
     assert "top_k" not in full["generation"]
@@ -97,12 +103,15 @@ def test_generation_cache_uses_configured_shape_and_resumes_by_repetition(tmp_pa
         "tokenizer": object(),
         "data": data,
         "behavior": "truthfulness",
+        "evaluation_key": "truthfulness",
         "model_id": "google/gemma-2-2b",
         "revision": "revision",
         "method": "original",
         "device": "cuda:0",
         "parameters": {},
         "controller_artifacts": {},
+        "generation_cache": {"evaluation": False, "capability": False},
+        "batch_size": 2,
         "register_hooks": None,
     }
     id_benchmark._generate_candidate(**arguments)
@@ -160,12 +169,15 @@ def test_generation_cache_records_shared_capability_set(tmp_path, monkeypatch):
         tokenizer=object(),
         data=data,
         behavior="toxicity",
+        evaluation_key="toxicity",
         model_id="google/gemma-2-2b",
         revision="revision",
         method="original",
         device="cuda:0",
         parameters={},
         controller_artifacts={},
+        generation_cache={"evaluation": False, "capability": True},
+        batch_size=2,
         register_hooks=None,
     )
     saved = json.loads(output.read_text())
@@ -177,16 +189,22 @@ def test_generation_cache_records_shared_capability_set(tmp_path, monkeypatch):
 
 
 def test_alqr_cache_policy_matches_source_setpoint_tracking_calls():
-    assert GENERATION_CACHE["alqr"] == {"evaluation": True, "capability": True}
-    assert GENERATION_CACHE["spid"] == {"evaluation": True, "capability": True}
+    assert GENERATION_CACHE["alqr"] == {"evaluation": False, "capability": False}
+    assert GENERATION_CACHE["spid"] == {"evaluation": False, "capability": False}
 
 
 def test_unsupported_checkpoint_is_not_given_borrowed_parameters():
     with pytest.raises(ValueError, match="No source-defined protocol"):
-        protocol_manifest("original", "toxicity", "Qwen/Qwen2.5-0.5B", "revision", 1000)
+        protocol_manifest(
+            "original", "toxicity", "Qwen/Qwen2.5-0.5B", "revision", 1000,
+            generation_cache={"evaluation": False, "capability": False},
+        )
 
     with pytest.raises(ValueError, match="No source-defined AcT module protocol"):
-        protocol_manifest("linear_act", "toxicity", "Qwen/Qwen2.5-32B", "revision", 1000)
+        protocol_manifest(
+            "linear_act", "toxicity", "Qwen/Qwen2.5-32B", "revision", 1000,
+            generation_cache={"evaluation": False, "capability": False},
+        )
 
 
 def test_source_calibration_sizes_are_enforced_before_model_execution():

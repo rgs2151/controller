@@ -66,7 +66,7 @@ def calculate_panel_predictors(bundle: dict) -> dict[str, dict[str, object]]:
         "linearization_error": {
             "value": linearization_error,
             "split": "calibration",
-            "definition": "Root mean squared Euclidean norm of one-step residuals in normalized reduced coordinates.",
+            "definition": "Root mean squared Euclidean norm of one-step residuals in the raw target-preserving reduced coordinates.",
         },
         "nominal_lqr_objective": {
             "value": nominal_lqr_objective,
@@ -171,8 +171,8 @@ def prepare_panels(analysis_id: str, controller: str, shift: str, protocol: str,
             reason = "infeasible or unconverged synthesis"
         elif record["synthetic"] != include_synthetic:
             reason = "synthetic/empirical cohort mismatch"
-        elif record["coordinates"] != "normalized" or record["stage_costs_depth_weighted"] is not True:
-            reason = "cross-model normalized coordinates required"
+        elif record["coordinates"] != "raw" or record["stage_costs_depth_weighted"] is not False:
+            reason = "Kaz-aligned raw reduced coordinates required"
         evaluations = []
         for candidate in sorted((path.parent / "evaluations").glob("*/summary.json")):
             result = read_json(candidate)

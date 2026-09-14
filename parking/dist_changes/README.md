@@ -2,8 +2,8 @@
 
 ## Method
 
-- Use the pinned `google/gemma-2-2b` checkpoint and the clean TruthfulQA A-LQR artifacts in `parking/bench_artifacts`.
-- Reuse A-LQR's averaged 35-prompt Jacobian matrix unchanged when fitting the rank-8 full-state H∞ controller. Fit both semantic targets from the same 200 false and 200 true MC2 answer prompts; fit H∞ disturbance geometry on 200 separate generation questions.
+- Use the pinned `google/gemma-2-2b` checkpoint and the clean TruthfulQA A-LQR artifacts in `benchmarks/truthfulness/`.
+- Reuse A-LQR's averaged 35-prompt Jacobian matrix unchanged when fitting the rank-8 full-state H∞ controller. Fit both semantic targets from the same 200 false and 200 true MC2 answer prompts. On 200 separate generation questions, fit `D[k]` directly so `D[k]D[k]ᵀ` equals the centered empirical residual covariance; do not truncate or rescale it.
 - Evaluate A-LQR and H∞ on eight frozen 50-prompt sets: ID, Spanish, Japanese-romaji, Long Context End, Long Context Start, Corrupting Words, BOS Mix, and L-CiteEval Complexity.
 - Generate with the A-LQR paper protocol and score each completion with the pinned binary TruthfulQA truth and informativeness judges.
 - During evaluation, cache the last-input-token state at every decoder depth and the actual post-block hidden intervention. Compute the raw one-step residual as `h[k+1] - mean[k+1] - A[k] @ (h[k] - mean[k]) - u[k]`; divide its norm by the next-state norm and average across layers and prompts.
@@ -53,10 +53,8 @@ The x-axis distributions are:
 
 ## Interpretation
 
-- H∞ does not outperform A-LQR on Truth in this 50-prompt run, although it has higher Info on six of the eight conditions.
-- The two methods encounter similar full-state mismatch: H∞ is 0.15 percentage points lower on Spanish and 0.05–2.49 points higher on the other conditions.
-- H∞ has lower residual-to-performance gain in all eight conditions, with reductions of about 24–31% relative to A-LQR. The intended robustness mechanism is therefore visible even though it does not yet translate into better Truth scores.
-- These results separate two claims: H∞ attenuates the downstream cost of measured residuals more strongly, but the present controller/evaluation setup does not establish better benchmark performance under these shifts.
+- The checked-in plot was produced with a superseded PCA/coverage-scaled disturbance fit and is not evidence for or against H∞.
+- No corrected behavioral or residual conclusion is recorded until this unit is rerun with the canonical covariance-factor controller.
 
 ## Notes
 
@@ -65,11 +63,12 @@ The x-axis distributions are:
 - `plots/ood_examples/` contains one inspection file per dataset, each with five complete literal prompts.
 - `cache/datasets/` contains eight immutable 50-row CSVs. A later full-size run must use a separate frozen bundle.
 - The automatic Spanish translations require replacement or manual validation. The romaji and BOS-mix outputs expose judge failures, and the TruthfulQA judges do not receive the source passages or references needed to validate L-CiteEval answers; those benchmark bars are diagnostic rather than final task-valid scores.
-- Every artifact produced by this analysis remains under `parking/dist_changes/`. The unit only reads frozen A-LQR inputs from `parking/bench_artifacts/`.
+- Every artifact produced by this analysis remains under `parking/dist_changes/`. The unit only reads frozen A-LQR inputs from `benchmarks/truthfulness/`.
+- Existing H∞ caches fail the new implementation identity and cannot be silently reused; the frozen datasets and A-LQR inputs remain reusable.
 
 ## References
 
-- `parking/bench_artifacts/`
+- `benchmarks/truthfulness/`
 - `parking/ood_explore/`
 - `parking/ood_adversarial/`
 - [L-CiteEval dataset](https://huggingface.co/datasets/Jonaszky123/L-CiteEval)
