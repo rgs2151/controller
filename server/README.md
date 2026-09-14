@@ -19,8 +19,14 @@ git status --short
 git pull --ff-only
 screen -S <run-name>
 conda activate robust-steerability
-python <owning-unit-or-package-entrypoint> --devices auto
+python -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
+python -m robust_steerability.benchmarks.truthfulness calibrate --model llama8b --devices auto
+python -m robust_steerability.benchmarks.truthfulness evaluate --model llama8b --devices auto
 ```
+
+If the remote GPU has been checked with a smoke run and supports a larger
+generation batch, pass `--generation-batch-size <n>` to the calibration or
+evaluation command. This is a run parameter, not a machine configuration.
 
 Detach with `Ctrl-a d`. Later, SSH into the same machine and inspect the actual
 process and files there:
@@ -34,14 +40,23 @@ git status --short
 
 The benchmark entry point—not the server folder—owns models, datasets, methods,
 GPU discovery, sharding, checkpointing, cache paths, logs, tables, and plots.
+Use `python -m robust_steerability.benchmarks.toxicity ...` for the RTP-to-Jigsaw
+pipeline. Use the same commands on every machine; no host name is encoded in code.
 
 ## Storage boundary
 
 - Git carries code, run logs, result tables, and plots.
 - A Studio's persistent disk carries its checkout and active working cache.
 - The remote S3 connection carries only large reusable artifacts needed across
-  remote machines, such as Jacobians and `.pt` controller caches.
+  remote machines: averaged dynamics, setpoints, and calibrated controller bundles.
 - The local workstation never connects to S3.
 
 After a run finishes, inspect its outputs on the owning machine, commit only its
 logs/results/plots, and push them. Cache directories stay out of Git.
+
+Publish or fetch large objects explicitly after the run is verified:
+
+```bash
+python -m robust_steerability.storage.s3 push --benchmark truthfulness --model llama8b --stage artifacts
+python -m robust_steerability.storage.s3 pull --benchmark truthfulness --model llama8b --stage artifacts
+```

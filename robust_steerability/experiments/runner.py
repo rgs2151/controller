@@ -18,11 +18,11 @@ import torch
 
 from robust_steerability.artifacts import configuration_hash, implementation_hash
 from robust_steerability.calibration.nominal_artifact import nominal_dynamics_cache_path
-from robust_steerability.benchmarks.calibration import calibration_records
-from robust_steerability.benchmarks.toxicity import (
+from robust_steerability.datasets.calibration import calibration_records
+from robust_steerability.datasets.toxicity import (
     toxicity_probabilities,
 )
-from robust_steerability.benchmarks.truthfulness import (
+from robust_steerability.datasets.truthfulqa import (
     bernoulli_percent,
     parse_mmlu_letter,
 )

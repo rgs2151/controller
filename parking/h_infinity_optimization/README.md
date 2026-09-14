@@ -67,7 +67,7 @@
 - Use the supplied finite-horizon matrices and disjoint fit/calibration prompt IDs to compute H∞ feasibility, the numerical gamma boundary, and `S_rob = 1 / gamma_star`. Reuse the deployed solution when exporting a benchmark calibration.
 - Preserve the reduced fit/calibration states, residuals, PCA basis, target-preserving bases, semantic targets, references, and disturbance construction. Compare empirical residual covariance with `D Dᵀ` using relative Frobenius error.
 - Attach held-out prompt/seed observations only after the score was frozen. Retain raw evaluator scores and an explicit binary-success definition; average seeds within each prompt, then prompts within a run.
-- For prospective, fully normalized model–behavior pairs, prepare predictor/reliability rows, Spearman correlations, descriptive regression lines, and grouped held-out predictions. Missing baseline predictors remain missing; they are not replaced with invented values.
+- For prospective model–behavior pairs using the same Kaz-aligned raw-coordinate protocol, prepare predictor/reliability rows, Spearman correlations, descriptive regression lines, and grouped held-out predictions. Missing baseline predictors remain missing; they are not replaced with invented values.
 - Export numerical panel inputs only; this script does not redraw or modify the frozen figure sketch.
 
 ## Variables
@@ -76,7 +76,7 @@
 - A frozen run contains `calibration_input.pt`, `controller.pt`, `score.json`, `manifest.json`, and controller/exporter source snapshots. Benchmark copies additionally contain `benchmark.json`, runtime source snapshots, `online/<subset>/` prompt checkpoints/traces, and `evaluations/<subset>/` observations, summaries, and checksums.
 - Offline tensors: `A/B/D/Q/R/Q_final`, gains, reduced states, residuals, full layer-wise encoders/decoders/means, PCA bases, fit labels, semantic readouts, setpoints, residual covariance, and retained disturbance ranks. Raw fit/calibration hidden states and attention-head outputs are retained, along with exact fit/calibration records and source snapshots.
 - Online tensors: call-ordered layer index, reduced state `x`, full-state feedback `x - reference`, total control `u`, deviation control, reduced intervention `Bu`, and hidden-delta squared norm. A trace covers one prompt's prefill and decoding; it is not a collection of independent depth trajectories. `control_energy` is the unweighted sum of `u²` over recorded calls/layers/channels. Hidden-delta energy is measured after dtype casting, before addition rounding.
-- Current benchmark state coordinates use a target-preserving orthonormal reduced basis and are not whitened. Control channels are orthonormal, performance readouts use measured calibration scales, and running state and control costs are depth-weighted. The reduced basis is fit-only, and nominal dynamics are averaged full transformer Jacobians shared with A-LQR. Protected readouts span the orthogonal complement of the target in the reduced representation; they are not independently trained behavioral probes.
+- Current benchmark state coordinates use a target-preserving orthonormal reduced basis and are not whitened. Control channels are orthonormal; controller costs are raw `Q=qI`, `R=rI`, and `Qf=qfI` without output scaling or depth weighting. Each `D[k]` directly factors the centered empirical calibration-residual covariance. The reduced basis is fit-only, and nominal dynamics are averaged full transformer Jacobians shared with A-LQR. Protected readouts span the orthogonal complement of the target in the reduced representation; they are not independently trained behavioral probes.
 - Runtime subtracts a fixed reduced reference whose semantic coordinate is the fitted setpoint and whose other coordinates are zero. The synthesized H∞ gain therefore receives all reduced-state coordinates. Nominal feedforward is zero, so the applied intervention is controller feedback decoded through the next-layer basis. Toxicity and truthfulness use separately fitted targets and disjoint behavior-specific calibration records.
 - Toxicity success: classifier probability `< 0.5`. TruthfulQA success: both judges say yes for a completion. MMLU success: parsed answer equals the answer index. These diagnostics do not change the existing aggregate table metrics.
 - Predictors: log parameter count, probe accuracy, semantic SNR, linearization error, Jacobian-subspace similarity, Gramian metric, nominal LQR objective, minimum nominal control energy, `S_rob`, and `-log(gamma_star)`. Only the parameter-count and gamma-derived predictors are automatically populated.
@@ -88,14 +88,14 @@
 - Validation: leave-model, leave-family, leave-behavior, and leave-scale out. At least three training pairs are needed per fold; incomplete coverage produces no aggregate predictive metric.
 - Correlations: Spearman rho with 500 model-cluster bootstrap samples, seed 2151; report percentile 95% intervals only with at least 100 nondegenerate resamples.
 - Null/alternative: no hypothesis test or p-value is computed. Correlation zero means no monotonic association; positive held-out `R²` means improvement over the pooled observed-response mean, not a significance claim.
-- Eligibility: require a converged, feasible, finite positive gamma and nonzero disturbance channel; exactly one matching evaluation per pair; the same declared calibration/normalization protocols and controller-matching rules; fully normalized coordinates; and evaluation timestamps later than the frozen score.
+- Eligibility: require a converged, feasible, finite positive gamma and nonzero disturbance channel; exactly one matching evaluation per pair; the same declared calibration protocol and controller-matching rules; Kaz-aligned raw reduced coordinates; and evaluation timestamps later than the frozen score.
 - Interpretation: higher `S_rob` predicts greater robustness under the declared coordinates. The descriptive line is in-sample; grouped predictions test transfer to unseen groups. These exports implement Hannah's univariate analysis, not the paper's full mixed-effects model.
 
 ## Legends
 
 - No rendered figure, axes, colors, or markers are produced by this script.
 - Panel A inputs describe the frozen calibration; B contains predictor versus held-out reliability; C contains leave-model-out metrics; D contains leave-family-out predictions. These are Hannah's export-panel labels, not a remapping of the frozen sketch.
-- Rows are sorted by run/evaluation paths. `excluded_runs` gives the reason a run is not in the prospective normalized cohort.
+- Rows are sorted by run/evaluation paths. `excluded_runs` gives the reason a run is not in the selected Kaz-aligned cohort.
 
 ## Interpretation
 
@@ -106,7 +106,7 @@
 
 - Reference retained unchanged: `ref/h_infinity_optimization.py`, SHA-256 `6d75d6c734e647322493d69a59798c3c98fd2213bf929dbfc8c50e1c2ce55ce4`. Its numerical exporter and panel preparation were copied into the package/this unit; the optimized H∞ solver equations were not changed.
 - Targeted tests cover schema validation, exact exported numerical values, leakage/timestamp checks, corrupted-file rejection, independent CPU reading after ZIP transfer, recording parity, prompt resume, and all ten methods. GPU recording parity was checked separately. Do not run the whole test suite merely to inspect a bundle.
-- The superseded 50-prompt runner is retained at `ref/paper_benchmark_50/`; active source-protocol evaluation lives in `parking/bench_evaluations/`.
+- The superseded 50-prompt runner is retained at `ref/paper_benchmark_50/`; active source-protocol evaluation lives in `benchmarks/`.
 - Historical pilot calibration bundles, when produced by that reference runner, live under `ref/paper_benchmark_50/cache/controllers/<toxicity|truthfulness>/<model>_diagnostics/runs/<run_id>/`.
 - Hannah can set `RUN_DIR` to a received run folder and read it without an LLM:
 
@@ -126,7 +126,7 @@
 
 - CLI inspection: `python parking/h_infinity_optimization/diagnostic_analysis.py inspect --run "$RUN_DIR"`. Packing: `python parking/h_infinity_optimization/diagnostic_analysis.py pack --run "$RUN_DIR" --output tmp/hannah_diagnostics.zip`. ZIP creation never uploads anything or overwrites an existing archive.
 - Git-friendly reports are written to each benchmark's `plots/diagnostics/<toxicity|truthfulness>_<model>.json`: score, provenance, evaluation summaries, per-file byte counts, and hashes; no prompts or tensor contents. Full tensor/trace bundles remain ignored and can be shared privately through Drive. Sharing a full bundle includes benchmark prompt/completion text; review that before publishing.
-- To use Hannah's panel command, unpack selected model bundles under a chosen `cache_root/runs/`, then call `prepare-panels --cache-root <cache_root> --analysis-id <id> --controller hinf --shift <subset> --protocol-id <protocol> --normalization-id <normalization>`. Run IDs are calibration-specific; keep different benchmark exports with the same run ID in separate roots unless deliberately combining their disjoint evaluation folders. Existing analysis IDs are immutable. Raw-coordinate runs are not included in normalized comparisons.
+- To use Hannah's panel command, unpack selected model bundles under a chosen `cache_root/runs/`, then call `prepare-panels --cache-root <cache_root> --analysis-id <id> --controller hinf --shift <subset> --protocol-id <protocol> --normalization-id kaz-raw-reduced-covariance-v1`. Run IDs are calibration-specific; keep different benchmark exports with the same run ID in separate roots unless deliberately combining their disjoint evaluation folders. Existing analysis IDs are immutable.
 
 ## References
 

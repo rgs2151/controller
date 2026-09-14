@@ -1,0 +1,18 @@
+schema_version = 1
+benchmark = "truthfulness"
+fit_dataset = "truthfulqa"
+transfer_datasets = ["truthfulqa_spanish"]
+models = ["gemma2b", "llama8b", "qwen14b"]
+default_methods = ["original", "alqr", "h_infinity"]
+evaluation_repetitions = 5
+evaluation_samples_per_repetition = 817
+jacobian_prompts = 35
+evaluated_model_kv_cache = false
+
+[stages]
+order = ["artifacts", "calibrate", "evaluate"]
+evaluation_requires_selected_calibration = true
+
+[storage]
+large_s3_stages = ["artifacts", "calibration"]
+tracked_outputs = ["results", "logs"]

@@ -265,7 +265,7 @@ def load_or_fit_nominal_dynamics(
         model,
         tokenizer,
         records,
-        cache_dir=artifact_path.parent / "jacobians",
+        cache_dir=artifact_path.parent / "jacobian_partials" / "single_worker",
         max_length=max_length,
         vjp_chunk_size=vjp_chunk_size,
         model_revision=model_revision,

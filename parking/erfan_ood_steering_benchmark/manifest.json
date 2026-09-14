@@ -30,7 +30,6 @@
     "state_rank": 8,
     "whitening_floor": 0.0001,
     "ridge": 0.001,
-    "disturbance_variance": 0.95,
     "setpoint_multiplier": 2.0,
     "q": 0.1,
     "r": 1.0,

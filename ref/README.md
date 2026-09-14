@@ -33,5 +33,8 @@ Keep reference material read-only. Move active implementation into the installab
   runner, result tables, logs, and six summary figures. Its H-infinity rows use
   the superseded controller and identity disturbance placeholder, so this
   folder is provenance only and must not be imported by active analyses.
+- `pre_portable_benchmark_units/`: superseded README and empty cache skeletons
+  from the former parked artifact/evaluation runners; active benchmark code now
+  lives under `robust_steerability/benchmarks/` and `benchmarks/`.
 
 The pinned upstream checkout does not currently contain a license file. Treat its source as a behavioral and mathematical reference unless reuse permission or an explicit license is confirmed. Independently implemented project code should retain paper and repository attribution where appropriate.

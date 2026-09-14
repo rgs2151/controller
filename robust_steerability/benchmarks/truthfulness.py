@@ -1,137 +1,265 @@
-"""TruthfulQA and MMLU prompt preparation and descriptive metrics."""
+"""Portable three-stage TruthfulQA benchmark pipeline."""
 
 from __future__ import annotations
 
-import random
+import argparse
+import json
+import sys
 
-import numpy as np
-from datasets import load_dataset
+from robust_steerability.benchmarks import artifacts
+from robust_steerability.benchmarks import truthfulness_calibration
+from robust_steerability.benchmarks.execution import default_run_id, tracked_stage
+from robust_steerability.benchmarks.launcher import run_jobs
+from robust_steerability.benchmarks.layout import calibration_root
+from robust_steerability.benchmarks.specs import METHODS, MODELS
+from robust_steerability.benchmarks import truthfulness_runtime as runtime
+from robust_steerability.experiments.resources import resolve_cuda_devices
+from robust_steerability.modeling.huggingface import load_access_token
+from robust_steerability.source_methods.id_benchmark import (
+    fit_source_method_calibration,
+)
+from robust_steerability.source_methods.protocol import paper_alqr_setting
 
 
-LETTERS = "ABCD"
-TRUTHFULQA_ID = "truthful_qa"
-TRUTHFULQA_REVISION = "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
-MMLU_ID = "cais/mmlu"
-MMLU_REVISION = "c30699e8356da336a370243923dbaf21066bb9fe"
+DATASETS = ("id", "spanish")
+DEFAULT_METHODS = ("original", "alqr", "h_infinity")
 
 
-def load_truthfulqa_prompts(seed: int, count: int, excluded_prompt_ids: set[str]) -> list[dict[str, object]]:
-    """Sample TruthfulQA generation questions with the paper prompt format."""
+def _names(value: str, allowed: tuple[str, ...]) -> list[str]:
+    names = list(allowed) if value == "all" else [item.strip() for item in value.split(",")]
+    unknown = set(names) - set(allowed)
+    if unknown or not names:
+        raise ValueError(f"Unsupported names: {sorted(unknown)}")
+    return names
 
-    dataset = load_dataset(
-        TRUTHFULQA_ID,
-        "generation",
-        split="validation",
-        revision=TRUTHFULQA_REVISION,
+
+def _write_alqr_selection(model_key: str, calibration_id: str) -> None:
+    model = MODELS[model_key]
+    setting = paper_alqr_setting("truthfulness", model.model_id)
+    destination = calibration_root(
+        "truthfulness", model_key, "alqr", calibration_id
+    ) / "selection.json"
+    payload = {
+        "schema_version": 1,
+        "model": [model.model_id, model.revision],
+        "behavior": "truthfulness",
+        "method": "alqr",
+        "calibration_id": calibration_id,
+        "source": "published A-LQR configuration",
+        "parameters": {
+            "lambda": setting.multiplier,
+            "q": setting.q,
+            "r": setting.r,
+            "q_final": setting.q_final,
+        },
+    }
+    if destination.exists() and json.loads(destination.read_text()) != payload:
+        raise ValueError(f"A-LQR selection changed: {destination}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def artifact_stage(model_key: str, devices: list[str], log_root) -> None:
+    artifacts.prepare(model_key, "truthfulness")
+    artifacts.fit_setpoint(model_key, "truthfulness", devices[0])
+    artifacts.fit_jacobians(
+        model_key, "truthfulness", devices, log_root=log_root / "jacobians"
     )
-    rows = [
-        {
-            "prompt_id": f"truthfulqa:{index}",
-            "question": str(row["question"]).strip(),
-            "prompt": f"Q: {str(row['question']).strip()} A:",
-        }
-        for index, row in enumerate(dataset)
-        if str(row.get("question", "")).strip() and f"truthfulqa:{index}" not in excluded_prompt_ids
-    ]
-    rng = random.Random(seed)
-    if count < 1 or len(rows) < count:
-        raise ValueError(f"Requested {count} TruthfulQA prompts; available: {len(rows)}")
-    return [rows[i] for i in rng.sample(range(len(rows)), count)]
+    artifacts.write_manifest(model_key, "truthfulness")
 
 
-def _format_mmlu_question(row: dict[str, object], include_answer: bool) -> str:
-    lines = ["Question: " + str(row["question"]).strip()]
-    for index, choice in enumerate(row["choices"][: len(LETTERS)]):
-        lines.append(f"{LETTERS[index]}. {str(choice).strip()}")
-    lines.append(
-        f"Answer: {LETTERS[int(row['answer'])]}" if include_answer else "Answer:"
-    )
-    return "\n".join(lines)
+def calibration_stage(
+    model_key: str,
+    methods: list[str],
+    devices: list[str],
+    log_root,
+    calibration_id: str,
+    generation_batch_size: int | None,
+) -> None:
+    """Materialize only explicitly selected, benchmark-owned calibrations."""
 
-
-def load_mmlu_five_shot_prompts(
-    seed: int,
-    count: int,
-    shots: int = 5,
-) -> list[dict[str, object]]:
-    """Sample MMLU test questions with same-subject dev demonstrations."""
-
-    test = load_dataset(MMLU_ID, "all", split="test", revision=MMLU_REVISION)
-    dev = load_dataset(MMLU_ID, "all", split="dev", revision=MMLU_REVISION)
-    dev_by_subject: dict[str, list[dict[str, object]]] = {}
-    for row in dev:
-        dev_by_subject.setdefault(str(row["subject"]), []).append(dict(row))
-    rng = random.Random(seed + 17)
-    if count < 1 or len(test) < count:
-        raise ValueError(f"Requested {count} MMLU prompts; available: {len(test)}")
-    test_by_subject = {}
-    for row_index, row in enumerate(test):
-        test_by_subject.setdefault(str(row["subject"]), []).append(row_index)
-    subjects = sorted(test_by_subject)
-    indices = []
-    while len(indices) < count:
-        row_index = rng.choice(test_by_subject[rng.choice(subjects)])
-        if row_index not in indices:
-            indices.append(row_index)
-    output = []
-    for row_index in indices:
-        row = dict(test[row_index])
-        answer = int(row["answer"])
-        if answer < 0 or answer >= len(LETTERS):
-            raise ValueError(f"Invalid MMLU answer for test row {row_index}")
-        subject = str(row["subject"])
-        examples = rng.sample(dev_by_subject[subject], shots)
-        if len(examples) != shots:
-            raise ValueError(f"Missing {shots}-shot demonstrations for {subject}")
-        demonstrations = "\n\n".join(
-            _format_mmlu_question(example, True) for example in examples
+    if "alqr" in methods:
+        _write_alqr_selection(model_key, calibration_id)
+    if "h_infinity" in methods:
+        truthfulness_calibration.calibrate(
+            model_key,
+            devices,
+            log_root,
+            calibration_id,
+            generation_batch_size,
         )
-        prompt = demonstrations + "\n\n" if demonstrations else ""
-        prompt += _format_mmlu_question(row, False)
-        output.append(
-            {
-                "prompt_id": f"mmlu:{subject}:{row_index}",
-                "prompt": prompt,
-                "answer_index": answer,
-                "subject": subject,
-                "demonstrations": examples,
-            }
+    model = MODELS[model_key]
+    runtime._configure_runtime("off", model_key, calibration_id)
+    runtime.prepare("truthfulness", "id")
+    data_path = runtime._data_path("truthfulness")
+    for method in methods:
+        if method in {"original", "alqr", "h_infinity"}:
+            continue
+        root = calibration_root(
+            "truthfulness", model_key, method, calibration_id
         )
-    return output
+        selected_parameters = None
+        if method in {"iti", "spid"}:
+            selection_path = root / "selection.json"
+            if not selection_path.exists():
+                raise FileNotFoundError(
+                    f"Record the preserved development-grid selection before "
+                    f"calibrating {method}: {selection_path}"
+                )
+            selection = json.loads(selection_path.read_text())
+            selected_parameters = selection["parameters"]
+        fit_source_method_calibration(
+            behavior="truthfulness",
+            model_id=model.model_id,
+            revision=model.revision,
+            method=method,
+            device=devices[0],
+            token=load_access_token(runtime.REPO),
+            calibration_root=root,
+            calibration_data_path=data_path,
+            selected_parameters=selected_parameters,
+        )
 
 
-def completion_after_prompt(text: str, prompt: str) -> str:
-    completion = text[len(prompt) :] if text.startswith(prompt) else text
-    new_question = completion.find("Q:")
-    if new_question > 0:
-        completion = completion[:new_question]
-    return completion.strip()
-
-
-def parse_mmlu_letter(text: str) -> int | None:
-    """Accept one answer letter, never a letter embedded in a word or sentence."""
-    answer = text.strip().upper()
-    return LETTERS.index(answer) if answer in tuple(LETTERS) else None
-
-
-def bernoulli_percent(scores: list[float]) -> tuple[float, float]:
-    values = np.asarray(scores, dtype=float)
-    if values.size == 0:
-        return 0.0, 0.0
-    probability = float(values.mean())
-    standard_error = (probability * (1.0 - probability) / values.size) ** 0.5
-    return 100.0 * probability, 100.0 * standard_error
-
-
-def product_percent(
-    first_mean: float,
-    first_standard_error: float,
-    second_mean: float,
-    second_standard_error: float,
-) -> tuple[float, float]:
-    mean = first_mean * second_mean / 100.0
-    variance = (
-        (second_mean / 100.0) ** 2 * first_standard_error**2
-        + (first_mean / 100.0) ** 2 * second_standard_error**2
+def evaluation_stage(
+    model_key: str,
+    methods: list[str],
+    datasets: list[str],
+    devices: list[str],
+    use_cache: bool,
+    log_root,
+    calibration_id: str,
+    generation_batch_size: int | None,
+) -> None:
+    cache_value = "on" if use_cache else "off"
+    runtime._configure_runtime(
+        cache_value, model_key, calibration_id, generation_batch_size
     )
-    return mean, variance**0.5
+    for dataset in datasets:
+        runtime.prepare("truthfulness", dataset)
+    source_methods = [method for method in methods if method != "h_infinity"]
+    generation_jobs = []
+    for dataset in datasets:
+        for method in source_methods:
+            generation_jobs.append((
+                f"generate-{dataset}-{method}",
+                [
+                    sys.executable, "-m",
+                    "robust_steerability.benchmarks.truthfulness_runtime",
+                    "--stage", "generate", "--model", model_key,
+                    "--method", method, "--behavior", "truthfulness",
+                    "--distribution", dataset, "--kv-cache", cache_value,
+                    "--calibration-id", calibration_id,
+                    "--device", "{device}",
+                    *(
+                        ["--generation-batch-size", str(generation_batch_size)]
+                        if generation_batch_size is not None
+                        else []
+                    ),
+                ],
+            ))
+    if generation_jobs:
+        run_jobs(generation_jobs, devices, log_root / "generation")
+    if "h_infinity" in methods:
+        hinf_devices = devices[: runtime.EVALUATION_REPETITIONS]
+        for dataset in datasets:
+            runtime.launch_hinf_generation(
+                model_key,
+                "truthfulness",
+                dataset,
+                hinf_devices,
+                log_root / "generation",
+            )
+    score_jobs = []
+    for dataset in datasets:
+        for method in methods:
+            if method == "h_infinity":
+                for judge in ("true", "helpful"):
+                    score_jobs.append((
+                        f"score-{dataset}-{method}-{judge}",
+                        [
+                            sys.executable, "-m",
+                            "robust_steerability.benchmarks.truthfulness_runtime",
+                            "--stage", "score-judge", "--model", model_key,
+                            "--method", method, "--behavior", "truthfulness",
+                            "--distribution", dataset, "--kv-cache", cache_value,
+                            "--calibration-id", calibration_id,
+                            "--judge", judge, "--device", "{device}",
+                        ],
+                    ))
+                continue
+            score_jobs.append((
+                f"score-{dataset}-{method}",
+                [
+                    sys.executable, "-m",
+                    "robust_steerability.benchmarks.truthfulness_runtime",
+                    "--stage", "score", "--model", model_key,
+                    "--method", method, "--behavior", "truthfulness",
+                    "--distribution", dataset, "--kv-cache", cache_value,
+                    "--calibration-id", calibration_id,
+                    "--device", "{device}",
+                ],
+            ))
+    run_jobs(score_jobs, devices, log_root / "scoring")
+    if "h_infinity" in methods:
+        for dataset in datasets:
+            files = runtime._generation_files(
+                model_key, "h_infinity", "truthfulness", dataset
+            )
+            if len(files) != 1:
+                raise ValueError(
+                    f"Expected one H-infinity generation cache; found {len(files)}"
+                )
+            runtime._merge_truth_judge_shards(files[0])
+    for dataset in datasets:
+        for method in methods:
+            runtime.summarize(model_key, method, "truthfulness", dataset)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("stage", choices=("artifacts", "calibrate", "evaluate", "all"))
+    parser.add_argument("--model", choices=tuple(MODELS), required=True)
+    parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
+    parser.add_argument("--datasets", default=",".join(DATASETS))
+    parser.add_argument("--devices", default="auto")
+    parser.add_argument("--kv-cache", choices=("on", "off"), default="off")
+    parser.add_argument("--calibration-id", default="selected")
+    parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument("--run-id")
+    arguments = parser.parse_args()
+    methods = _names(arguments.methods, METHODS)
+    datasets = _names(arguments.datasets, DATASETS)
+    devices = resolve_cuda_devices(arguments.devices)
+    run_id = arguments.run_id or default_run_id(
+        "truthfulness", arguments.model, arguments.stage
+    )
+    with tracked_stage(
+        run_id=run_id, benchmark="truthfulness", model=arguments.model,
+        stage=arguments.stage, methods=methods, datasets=datasets,
+        devices=arguments.devices, use_cache=arguments.kv_cache == "on",
+        calibration_id=arguments.calibration_id,
+        parameters={"generation_batch_size": arguments.generation_batch_size},
+    ) as log_root:
+        if arguments.stage in {"artifacts", "all"}:
+            artifact_stage(arguments.model, devices, log_root)
+        if arguments.stage in {"calibrate", "all"}:
+            calibration_stage(
+                arguments.model,
+                methods,
+                devices,
+                log_root,
+                arguments.calibration_id,
+                arguments.generation_batch_size,
+            )
+        if arguments.stage in {"evaluate", "all"}:
+            evaluation_stage(
+                arguments.model, methods, datasets, devices,
+                arguments.kv_cache == "on", log_root,
+                arguments.calibration_id,
+                arguments.generation_batch_size,
+            )
+
+
+if __name__ == "__main__":
+    main()

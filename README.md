@@ -32,18 +32,17 @@ Run the cache-first A-LQR residual and generated-toxicity smoke test from the re
 python parking/residual_checks/residual_checks.py all
 ```
 
-Prepare the paper benchmark, then run the current Original/A-LQR slice on both GPUs:
+Run the benchmark as three explicit stages on any visible GPU set:
 
 ```bash
-python parking/bench_evaluations/bench_evaluations.py --stage prepare --model gemma2b --behavior truthfulness
-python parking/bench_evaluations/bench_evaluations.py --stage generate-pair --model gemma2b --behavior truthfulness
+python -m robust_steerability.benchmarks.truthfulness artifacts --model gemma2b --devices auto
+python -m robust_steerability.benchmarks.truthfulness calibrate --model gemma2b --devices auto
+python -m robust_steerability.benchmarks.truthfulness evaluate --model gemma2b --devices auto
 ```
 
-Prepare only the reusable Gemma-2-2B TruthfulQA A-LQR setpoint and Jacobians:
-
-```bash
-python parking/bench_artifacts/bench_artifacts.py --stage all --model gemma2b --devices cuda:0,cuda:1
-```
+Use `--generation-batch-size <n>` only when a larger remote GPU has been
+validated for that batch. The chosen value is recorded and becomes part of the
+generation cache identity.
 
 Render the synchronized Markdown and TeX benchmark tables:
 
@@ -66,9 +65,9 @@ Each unit owns its own `cache/` and `plots/` folders. Existing caches are reused
 - `modeling/`: Hugging Face loading, activation capture, Jacobians, and transformer intervention hooks.
 - `calibration/`: semantic targets, nominal dynamics, residual measurements, disturbance geometry, and calibration-only normalization.
 - `runtime/`: policies that translate controller outputs into activation interventions.
-- `benchmarks/`: reusable behavior records and evaluators.
-- `experiments/`: validated manifests, shared controller calibration, canonical
-  method dispatch, two-GPU scheduling, checkpointing, and result collection.
+- `datasets/`: pinned dataset loaders and prompt construction.
+- `benchmarks/`: portable artifact, calibration, evaluation, and scoring pipelines.
+- `experiments/`: reusable controller-calibration and diagnostic internals.
 
 Controller implementations consume only finite-horizon tensors and expose a
 common `control`/`intervention` interface. They do not import Transformers or
@@ -93,7 +92,8 @@ code discovers and uses the visible GPUs; `server/` contains no machine names or
 scientific run plans.
 
 Git carries code, logs, tables, and plots. Remote S3 carries only large reusable
-artifacts such as Jacobians and `.pt` caches, and the local workstation never
+artifacts such as averaged dynamics and controller `.pt` caches; raw per-prompt
+Jacobians are not retained. The local workstation never
 connects to S3. See `server/README.md` for the exact operating workflow.
 
 ## Project Docs

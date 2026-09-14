@@ -13,13 +13,13 @@ import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-from robust_steerability.benchmarks.toxicity import (
+from robust_steerability.datasets.toxicity import (
     load_civil_comments_prompts,
     load_jigsaw_toxicity_prompts,
     load_real_toxicity_prompt_pools,
     load_toxic_chat_prompts,
 )
-from robust_steerability.benchmarks.mmlu import load_mmlu_concept_shift_sets
+from robust_steerability.datasets.mmlu import load_mmlu_concept_shift_sets
 
 
 UNIT_DIR = Path(__file__).resolve().parent

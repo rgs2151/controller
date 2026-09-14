@@ -271,46 +271,31 @@ def _fit_controller_inputs(
 
     fit_deviations = state_deviation(fit_reduced)
     calibration_deviations = state_deviation(calibration_reduced)
+    fit_residuals = fit_deviations[:, 1:] - torch.einsum(
+        "lij,nlj->nli", dynamics, fit_deviations[:, :-1]
+    )
     residuals = calibration_deviations[:, 1:] - torch.einsum(
         "lij,nlj->nli", dynamics, calibration_deviations[:, :-1])
-    fit_residuals = fit_deviations[:, 1:] - torch.einsum(
-        "lij,nlj->nli", dynamics, fit_deviations[:, :-1])
-    disturbance = fit_disturbance_geometry(
-        fit_residuals,
-        variance_threshold=float(settings["disturbance_variance"]),
-    )
+    disturbance = fit_disturbance_geometry(residuals)
 
     horizon, state_dimension, _ = dynamics.shape
     identity = torch.eye(state_dimension, device=device)
     control_channels = identity.unsqueeze(0).repeat(horizon, 1, 1)
-    depth_weight = 1.0 / horizon
     reference_controls = torch.zeros(horizon, state_dimension, device=device)
     readout_bases = torch.linalg.qr(torch.cat([
         feature_unit_all.unsqueeze(-1), identity.expand(horizon + 1, -1, -1)], dim=-1)).Q
     readouts = readout_bases.transpose(-1, -2)
-    output_std = torch.einsum("lpr,nlr->nlp", readouts, calibration_reduced).std(dim=0, correction=1)
-    output_std = output_std.clamp_min(float(settings["numerical_floor"]))
-    normalized_readouts = readouts / output_std.unsqueeze(-1)
-    cost_metric = normalized_readouts.transpose(-1, -2) @ normalized_readouts
-    state_costs = float(settings["q"]) * depth_weight * cost_metric[:-1]
-    coordinates = torch.einsum(
-        "lri,nli->nlr", torch.linalg.pinv(disturbance.channels), residuals - disturbance.means)
-    energies = coordinates.square().sum(dim=(1, 2)).sqrt()
-    coverage_scale = torch.quantile(
-        energies, float(settings["disturbance_coverage"]), interpolation="higher")
-    if not torch.isfinite(coverage_scale) or coverage_scale <= 0:
-        raise ValueError("Disturbance scaling energy must be positive")
-    scaled_channels = coverage_scale * disturbance.channels
-    remainder = residuals - disturbance.means - torch.einsum("lir,nlr->nli", disturbance.channels, coordinates)
-    control_costs = (float(settings["r"]) * depth_weight * identity).unsqueeze(0).repeat(
+    state_costs = (float(settings["q"]) * identity).unsqueeze(0).repeat(
         horizon, 1, 1
     )
-    terminal_cost = float(settings["q_final"]) * cost_metric[-1]
-
+    control_costs = (float(settings["r"]) * identity).unsqueeze(0).repeat(
+        horizon, 1, 1
+    )
+    terminal_cost = float(settings["q_final"]) * identity
 
     problem = FiniteHorizonControlProblem(
         dynamics=dynamics, control_channels=control_channels,
-        disturbance_channels=scaled_channels, state_costs=state_costs,
+        disturbance_channels=disturbance.channels, state_costs=state_costs,
         control_costs=control_costs, terminal_cost=terminal_cost,
     )
     return {
@@ -324,18 +309,19 @@ def _fit_controller_inputs(
         "splits": {"fit": [str(row["prompt_id"]) for row in fit_records],
                    "calibration": [str(row["prompt_id"]) for row in calibration_records_list]},
         "normalization": {
-            "protocol_id": "orthonormal-reduced-readout-depth-v1", "coordinates": "raw",
+            "protocol_id": "kaz-raw-reduced-covariance-v1", "coordinates": "raw",
             "state_whitening": identity.unsqueeze(0).repeat(horizon + 1, 1, 1),
             "control_std": torch.ones(horizon, state_dimension, device=device),
-            "semantic_output_std": output_std[:, :1],
-            "depth_increment": torch.full((horizon,), depth_weight),
-            "stage_costs_depth_weighted": True,
-            "description": "Fit-only target-preserving orthonormal basis; no state whitening; "
-                           "standardized performance readouts; orthonormal intervention channels; Q and R divided by T.",
+            "semantic_output_std": torch.ones(horizon + 1, 1, device=device),
+            "depth_increment": torch.ones(horizon, device=device),
+            "stage_costs_depth_weighted": False,
+            "description": "Target-preserving orthonormal reduced coordinates with no "
+                           "state, output, control, disturbance, or depth normalization.",
         },
         "calibration": {
             "source_snapshots": {name: Path(inspect.getfile(obj)).read_text() for name, obj in
                                  (("calibration.py", calibrate_controller),
+                                  ("disturbances.py", fit_disturbance_geometry),
                                   ("nominal.py", project_dynamics),
                                   ("nominal_artifact.py", reuse_or_fit_nominal_dynamics))},
             "dynamics_estimator": "averaged last-token transformer Jacobians, with prefix states fixed; projected using next-layer encoders and current-layer decoders",
@@ -356,9 +342,8 @@ def _fit_controller_inputs(
             "fit_hidden_states": fit_states, "calibration_hidden_states": calibration_states,
             "fit_attention_heads": fit_heads, "calibration_attention_heads": calibration_heads,
             "attention_head_count": int(model.config.num_attention_heads),
-            "target_readouts": normalized_readouts[:, :1],
-            "protected_readouts": normalized_readouts[:, 1:],
-            "protected_output_std": output_std[:, 1:],
+            "target_readouts": readouts[:, :1],
+            "protected_readouts": readouts[:, 1:],
             "reference_states": reference_states,
             "reference_controls": reference_controls,
             "setpoints": setpoints_all,
@@ -366,17 +351,16 @@ def _fit_controller_inputs(
             "protected_readouts_definition": "Orthogonal complement of the target within the reduced basis; representation preservation, not an independent behavior probe.",
             "reference_controls_definition": "zero nominal feedforward; feedback alone supplies the intervention",
             "disturbance_construction": {
-                "method": "fit-only centered PCA covariance factor, ddof=1, scaled by calibration trajectory-energy quantile",
-                "unscaled_channels": disturbance.channels,
-                "coverage_scale": coverage_scale,
-                "coverage_quantile": settings["disturbance_coverage"],
-                "calibration_energy": energies,
-                "calibration_coordinates": coordinates,
-                "out_of_subspace_residuals": remainder,
-                "variance_threshold": float(settings["disturbance_variance"]),
+                "method": "calibration-residual covariance factor, ddof=1",
+                "channels": disturbance.channels,
                 "means": disturbance.means,
                 "retained_ranks": disturbance.retained_ranks,
                 "explained_variance": disturbance.explained_variance,
+                "empirical_covariance": disturbance.empirical_covariance,
+                "covariance_relative_error_by_layer": (
+                    disturbance.covariance_relative_error
+                ),
+                "identity": "D[k] @ D[k].T equals the empirical centered residual covariance at layer k",
             },
             "dataset": dataset,
             "settings": settings,
@@ -508,6 +492,9 @@ def calibrate_controller(
         "state_rank": problem.state_dimension, "horizon": problem.horizon,
         "disturbance_ranks": disturbance["retained_ranks"].tolist(),
         "disturbance_explained_variance": disturbance["explained_variance"].tolist(),
+        "disturbance_covariance_relative_error_by_layer": disturbance[
+            "covariance_relative_error_by_layer"
+        ].tolist(),
         "gamma_star": hinf.gamma_star,
         "robust_steerability": None if hinf.gamma_star is None else 1.0 / hinf.gamma_star,
         "hinf_feasible": hinf.feasible,

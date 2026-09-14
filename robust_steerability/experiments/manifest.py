@@ -15,14 +15,19 @@ REQUIRED_CONTROLLER_FIELDS = {
     "seed", "fit_prompts_per_class", "disturbance_prompts", "calibration_max_length",
     "activation_batch_size", "jacobian_prompts", "jacobian_max_length",
     "jacobian_vjp_chunk_size", "state_rank", "numerical_floor",
-    "disturbance_variance", "disturbance_coverage", "alqr_setpoint_multiplier",
+    "alqr_setpoint_multiplier",
     "spid_setpoint_multiplier", "hinf_setpoint_multiplier",
     "q", "r", "q_final", "alqr_q", "alqr_r", "alqr_q_final", "kp", "ki", "kd",
     "gamma_lower", "gamma_upper", "gamma_tolerance", "gamma_max_iterations",
     "gamma_deployment_margin", "behavior",
     "baseline_strengths",
 }
-OBSOLETE_CONTROLLER_FIELDS = {"ridge", "whitening_floor"}
+OBSOLETE_CONTROLLER_FIELDS = {
+    "ridge",
+    "whitening_floor",
+    "disturbance_variance",
+    "disturbance_coverage",
+}
 
 
 @dataclass(frozen=True)

@@ -3,6 +3,7 @@
 ## Root Folders
 
 - `data/`: organized analysis-ready data and its inventory.
+- `benchmarks/`: benchmark-owning units with tracked specifications/results and ignored machine-local caches.
 - `robust_steerability/`: installable project package for shared helpers.
 - `logs/`: Git-versioned manifests, stdout, timing, and resource records produced by remote runs.
 - `parking/`: compact units that are still being explored or iterated.
@@ -43,7 +44,8 @@
 - `modeling/` owns Hugging Face model loading, transformer state capture, Jacobians, and intervention hooks.
 - `calibration/` owns reusable semantic-target, nominal-dynamics, residual, disturbance, and normalization calculations.
 - `runtime/` owns policies that connect synthesized controllers to model-independent activation deltas.
-- `benchmarks/` owns behavior records and reusable dataset/evaluator integrations.
+- `datasets/` owns pinned dataset loading and prompt construction.
+- `benchmarks/` owns portable artifact, calibration, evaluation, and scoring pipelines.
 - Controller modules must not import Hugging Face Transformers or benchmark code.
 - Model adapters must consume the shared runtime-policy interface rather than branching on controller names.
 - Do not package `data/`, caches, plots, notebooks, or historical references as package data.

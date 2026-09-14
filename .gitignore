@@ -32,6 +32,12 @@ data/*
 
 parking/*/cache/*
 !parking/*/cache/.gitkeep
+!parking/*/cache/*/
+parking/*/cache/*/*
+!parking/*/cache/*/.gitkeep
+benchmarks/*/cache/*
+!benchmarks/*/cache/.gitkeep
+ref/pre_portable_benchmark_units/*/cache/*
 debug/*/cache/*
 !debug/*/cache/.gitkeep
 

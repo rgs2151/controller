@@ -58,7 +58,9 @@ UNIT = Path(__file__).resolve().parent
 REPO = UNIT.parents[1]
 CACHE = UNIT / "cache"
 PLOTS = UNIT / "plots"
-BENCH_ARTIFACTS = REPO / "parking" / "bench_artifacts" / "cache"
+BENCH_ARTIFACTS = (
+    REPO / "benchmarks" / "truthfulness" / "cache/gemma2b/artifacts"
+)
 
 MODEL_ID = "google/gemma-2-2b"
 MODEL_REVISION = "c5ebcd40d208330abc697524c919956e692655cf"
@@ -178,15 +180,27 @@ def prepare() -> None:
 
     _directories()
     output_path = CACHE / "prepared.json"
-    if output_path.exists():
-        saved = _load_json(output_path)
-        if saved.get("identity", {}).get("source_hashes") != _source_hashes():
-            raise ValueError("Prepared cache was made by different implementation sources")
-        return
-
     bench_data_path = BENCH_ARTIFACTS / "data.json"
     if not bench_data_path.exists():
         raise FileNotFoundError(f"Missing clean A-LQR calibration data: {bench_data_path}")
+    prepared_identity = {
+        "schema_version": 3,
+        "seed": SEED,
+        "calibration_seed": CALIBRATION_SEED,
+        "model": [MODEL_ID, MODEL_REVISION],
+        "dataset": [DATASET_ID, DATASET_REVISION],
+        "evaluation_count_per_condition": EVALUATION_COUNT,
+        "disturbance_count": DISTURBANCE_COUNT,
+        "bench_data_sha256": _sha256(bench_data_path),
+    }
+    if output_path.exists():
+        saved = _load_json(output_path)
+        saved_identity = dict(saved.get("identity", {}))
+        saved_identity.pop("fingerprint", None)
+        if saved_identity != prepared_identity:
+            raise ValueError("Prepared dataset identity mismatch")
+        return
+
     bench_data = _load_json(bench_data_path)
     calibration = bench_data["calibration"]
     counts = ALQR_CALIBRATION_COUNTS["truthfulness"]
@@ -225,17 +239,7 @@ def prepare() -> None:
 
     prompt_sets = {"id": evaluation}
     payload = {
-        "identity": {
-            "schema_version": 2,
-            "seed": SEED,
-            "calibration_seed": CALIBRATION_SEED,
-            "model": [MODEL_ID, MODEL_REVISION],
-            "dataset": [DATASET_ID, DATASET_REVISION],
-            "evaluation_count_per_condition": EVALUATION_COUNT,
-            "disturbance_count": DISTURBANCE_COUNT,
-            "bench_data_sha256": _sha256(bench_data_path),
-            "source_hashes": _source_hashes(),
-        },
+        "identity": prepared_identity,
         "calibration_data": {
             "negative": calibration["undesired"],
             "positive": calibration["desired"],
@@ -541,8 +545,6 @@ def _hinf_settings() -> dict[str, object]:
         "jacobian_vjp_chunk_size": 32,
         "state_rank": 8,
         "numerical_floor": 1e-4,
-        "disturbance_variance": 0.95,
-        "disturbance_coverage": 0.95,
         "alqr_setpoint_multiplier": 3.0,
         "spid_setpoint_multiplier": 2.0,
         "hinf_setpoint_multiplier": 3.0,

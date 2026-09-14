@@ -210,9 +210,9 @@ def calibrated(tmp_path, monkeypatch, request):
         },
     )
     behavior = "toxicity_mitigation" if getattr(request.node, "callspec", None) is not None and request.node.callspec.params.get("kind") in {"id_toxicity", "ood_toxicity"} else "truthfulness"
-    settings = {"behavior": behavior, "disturbance_coverage": 0.95, "seed": 4, "fit_prompts_per_class": 4, "disturbance_prompts": 4,
+    settings = {"behavior": behavior, "seed": 4, "fit_prompts_per_class": 4, "disturbance_prompts": 4,
                 "calibration_max_length": 12, "activation_batch_size": 2, "state_rank": 2,
-                "numerical_floor": 1e-4, "disturbance_variance": 0.95,
+                "numerical_floor": 1e-4,
                 "jacobian_prompts": 4, "jacobian_max_length": 24, "jacobian_vjp_chunk_size": 4,
                 "alqr_q": 0.1, "alqr_r": 1.0, "alqr_q_final": 1.0,
                 "alqr_setpoint_multiplier": 2.0, "spid_setpoint_multiplier": 1.0,
@@ -239,7 +239,8 @@ def test_calibration_bundle_and_missing_cache_rejection(calibrated, monkeypatch,
     source = cal.diagnostic_run(arguments["cache_path"], metadata["fingerprint"])
     loaded = diag.load_run(source)
     assert loaded["score"]["coordinates"] == "raw"
-    assert loaded["score"]["stage_costs_depth_weighted"] is True
+    assert loaded["score"]["stage_costs_depth_weighted"] is False
+    assert max(loaded["score"]["covariance_relative_error_by_layer"]) < 1e-4
     assert loaded["calibration"]["calibration"]["encoders"].shape == (3, 8, 2)
     assert loaded["calibration"]["calibration"]["protected_readouts"].shape == (3, 1, 2)
     cal_data = loaded["calibration"]["calibration"]

@@ -20,6 +20,9 @@ from typing import Callable
 import numpy as np
 import torch
 
+from robust_steerability.calibration.nominal_artifact import (
+    load_shared_nominal_dynamics,
+)
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.source_methods.actadd import ActAddSteerer
 from robust_steerability.source_methods.calibration import (
@@ -40,7 +43,6 @@ from robust_steerability.source_methods.modeling import load_source_model
 from robust_steerability.source_methods.odesteer import register_odesteer_hook
 from robust_steerability.source_methods.protocol import (
     ACT_FIT_SAMPLES_PER_CLASS,
-    GENERATION_CACHE,
     ITI_FIT_SAMPLES_PER_CLASS,
     ITI_MAX_LENGTH,
     METHODS,
@@ -175,8 +177,8 @@ def _seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-def _records(data: dict, behavior: str, repetition: int) -> list[dict]:
-    return data["evaluation"][behavior][str(repetition)]
+def _records(data: dict, evaluation_key: str, repetition: int) -> list[dict]:
+    return data["evaluation"][evaluation_key][str(repetition)]
 
 
 def _texts(records: list[dict]) -> list[str]:
@@ -227,25 +229,32 @@ def _generate_candidate(
     tokenizer,
     data: dict,
     behavior: str,
+    evaluation_key: str,
     model_id: str,
     revision: str,
     method: str,
     device: str,
     parameters: dict,
+    generation_cache: dict[str, bool],
     controller_artifacts: dict[str, str],
+    batch_size: int,
     register_hooks: Callable[[], list[torch.utils.hooks.RemovableHandle]] | None,
     reset: Callable[[], None] | None = None,
 ) -> None:
-    repetitions_expected = int(data["evaluation_repetitions"])
-    evaluation_samples = len(_records(data, behavior, 0))
+    repetitions_expected = len(data["evaluation"][evaluation_key])
+    if set(data["evaluation"][evaluation_key]) != {
+        str(index) for index in range(repetitions_expected)
+    }:
+        raise ValueError("Evaluation repetitions must be consecutively numbered from zero")
+    evaluation_samples = len(_records(data, evaluation_key, 0))
     auxiliary_expected = data.get("capability_evaluation", {})
-    cache_policy = GENERATION_CACHE[method]
     manifest = protocol_manifest(
         method,
         behavior,
         model_id,
         revision,
         evaluation_samples,
+        generation_cache=generation_cache,
         requested_parameters=parameters if method in {"iti", "spid"} else None,
     )
     identity = _json_identity({
@@ -254,10 +263,11 @@ def _generate_candidate(
         "implementation_files_sha256": _implementation_files(),
         "protocol": manifest,
         "method": method,
+        "evaluation_key": evaluation_key,
         "parameters": parameters,
         "controller_artifacts_sha256": controller_artifacts,
         "execution": {
-            "batch_size": _batch_size(model_id, method),
+            "batch_size": batch_size,
             "seed": SOURCE_RANDOM_SEED,
             "repetition_seed_stride": 100_000,
             "batch_seed_rule": "repetition_seed_plus_batch_start",
@@ -305,7 +315,7 @@ def _generate_candidate(
 
 
     for repetition in range(len(repetitions), repetitions_expected):
-        records = _records(data, behavior, repetition)
+        records = _records(data, evaluation_key, repetition)
         if len(records) != evaluation_samples:
             raise ValueError("Every evaluation repetition must contain the same number of prompts")
         repetition_started = time.perf_counter()
@@ -316,9 +326,9 @@ def _generate_candidate(
             tokenizer,
             _texts(records),
             behavior=behavior,
-            batch_size=_batch_size(model_id, method),
+            batch_size=batch_size,
             seed=repetition_seed,
-            use_cache=cache_policy["evaluation"],
+            use_cache=generation_cache["evaluation"],
             register_hooks=register_hooks,
             reset=reset,
         )
@@ -349,9 +359,9 @@ def _generate_candidate(
             tokenizer,
             _texts(records),
             behavior=name,
-            batch_size=_batch_size(model_id, method),
+            batch_size=batch_size,
             seed=auxiliary_seed,
-            use_cache=cache_policy["capability"],
+            use_cache=generation_cache["capability"],
             register_hooks=register_hooks,
             reset=reset,
         )
@@ -405,17 +415,13 @@ def load_frozen_alqr_artifacts(
         raise ValueError("Frozen A-LQR behavior does not match the evaluation")
 
     setpoint_payload = torch.load(setpoint_path, map_location="cpu", weights_only=True)
-    dynamics_payload = torch.load(dynamics_path, map_location="cpu", weights_only=True)
-    dynamics_metadata = json.loads(dynamics_metadata_path.read_text())
-    if setpoint_payload.get("identity") != dynamics_payload.get("identity"):
-        raise ValueError("Frozen A-LQR setpoint and dynamics identities differ")
+    dynamics = load_shared_nominal_dynamics(
+        dynamics_path,
+        behavior=behavior,
+        model_id=model_id,
+        model_revision=revision,
+    )
     identity = setpoint_payload["identity"]
-    if (
-        dynamics_metadata.get("identity") != identity
-        or dynamics_metadata.get("status") != "complete"
-        or dynamics_metadata.get("artifact_sha256") != _sha(dynamics_path)
-    ):
-        raise ValueError("Frozen A-LQR dynamics metadata is invalid")
     counts = calibration_counts("alqr", behavior)
     expected_setting = {
         "multiplier": float(parameters["lambda"]),
@@ -452,7 +458,6 @@ def load_frozen_alqr_artifacts(
 
     contrast = setpoint_payload["contrast"]
     feature_norm = setpoint_payload["feature_norm"]
-    dynamics = dynamics_payload["dynamics"]
     if contrast.ndim != 2 or feature_norm.shape != contrast.shape[:1]:
         raise ValueError("Frozen A-LQR setpoint tensors have invalid shapes")
     if (
@@ -522,9 +527,231 @@ def _artifact(
     return fitted
 
 
+def _load_artifact(path: Path, identity: dict) -> object:
+    """Load one completed calibration artifact without fitting during evaluation."""
+
+    metadata = path.with_suffix(".json")
+    if not path.exists() or not metadata.exists():
+        raise FileNotFoundError(
+            f"Missing selected calibration artifact; run calibrate first: {path}"
+        )
+    record = json.loads(metadata.read_text())
+    if (
+        record.get("identity") != _json_identity(identity)
+        or record.get("status") != "complete"
+        or record.get("artifact_sha256") != _sha(path)
+    ):
+        raise ValueError(f"Invalid selected calibration artifact: {path}")
+    return torch.load(path, map_location="cpu", weights_only=False)
+
+
+def _calibration_records(data: dict, behavior: str, method: str) -> tuple[
+    object, list[dict], list[dict], list[dict]
+]:
+    counts = calibration_counts(method, behavior)
+    calibration = data.get("calibration", {}).get(behavior, {})
+    undesired = calibration.get("undesired", [])
+    desired = calibration.get("desired", [])
+    jacobian = calibration.get("jacobian", [])
+    if len(undesired) < counts.undesired or len(desired) < counts.desired:
+        raise ValueError(
+            f"Calibration cache has {len(undesired)}/{len(desired)} class prompts; "
+            f"{method} requires {counts.undesired}/{counts.desired}"
+        )
+    if len(jacobian) < counts.jacobian:
+        raise ValueError(
+            f"Calibration cache has {len(jacobian)} Jacobian prompts; "
+            f"{method} requires {counts.jacobian}"
+        )
+    return counts, undesired, desired, jacobian
+
+
+def _common_calibration_identity(
+    data: dict, behavior: str, model_id: str, revision: str
+) -> dict:
+    return {
+        "schema_version": 1,
+        "data_fingerprint": data["fingerprint"],
+        "implementation_files_sha256": _implementation_files(),
+        "model_id": model_id,
+        "revision": revision,
+        "behavior": behavior,
+    }
+
+
+def fit_source_method_calibration(
+    *,
+    behavior: str,
+    model_id: str,
+    revision: str,
+    method: str,
+    device: str,
+    token: str,
+    calibration_root: Path,
+    calibration_data_path: Path,
+    selected_parameters: dict | None = None,
+) -> dict:
+    """Fit one non-A-LQR source method before final evaluation."""
+
+    if method in {"original", "alqr"} or method not in METHODS:
+        raise ValueError(f"{method!r} has no source-method calibration fit")
+    if not device.startswith("cuda:"):
+        raise ValueError("Source calibration requires an explicit CUDA device")
+    data = json.loads(calibration_data_path.read_text())
+    parameters = resolve_selected_parameters(
+        method, behavior, model_id, selected_parameters
+    )
+    counts, undesired, desired, _jacobian = _calibration_records(
+        data, behavior, method
+    )
+    common_identity = _common_calibration_identity(
+        data, behavior, model_id, revision
+    )
+    model_method = "alqr" if method == "spid" else method
+    model, tokenizer = load_source_model(
+        model_method, behavior, model_id, revision, device, token
+    )
+
+    if method == "spid":
+        path = calibration_root / "setpoint.pt"
+        identity = {
+            **common_identity,
+            "artifact": "shared_alqr_spid_setpoint",
+            "undesired_count": counts.undesired,
+            "desired_count": counts.desired,
+            "undesired_prompt_ids": [
+                row["prompt_id"] for row in undesired[: counts.undesired]
+            ],
+            "desired_prompt_ids": [
+                row["prompt_id"] for row in desired[: counts.desired]
+            ],
+            "activation_batch_size": _activation_batch_size(model_id, method),
+        }
+        _artifact(
+            path,
+            identity,
+            lambda: fit_setpoint_from_records(
+                model,
+                tokenizer,
+                behavior=behavior,
+                negative_records=undesired[: counts.undesired],
+                positive_records=desired[: counts.desired],
+                activation_batch_size=_activation_batch_size(model_id, method),
+            ),
+            device,
+        )
+    elif method == "actadd":
+        path = calibration_root / "actadd.pt"
+        identity = {
+            **common_identity,
+            "fit_samples_per_class": counts.undesired,
+        }
+        _artifact(
+            path,
+            identity,
+            lambda: fit_actadd_calibration(
+                model,
+                tokenizer,
+                undesired_texts=_texts(undesired[: counts.undesired]),
+                desired_texts=_texts(desired[: counts.desired]),
+                batch_size=_activation_batch_size(model_id, method),
+            ),
+            device,
+        )
+    elif method == "iti":
+        path = calibration_root / "iti.pt"
+        identity = {
+            **common_identity,
+            "fit_samples_per_class": ITI_FIT_SAMPLES_PER_CLASS,
+            "max_length": ITI_MAX_LENGTH,
+        }
+        _artifact(
+            path,
+            identity,
+            lambda: fit_iti_calibration(
+                model,
+                tokenizer,
+                undesired_texts=_texts(undesired[:ITI_FIT_SAMPLES_PER_CLASS]),
+                desired_texts=_texts(desired[:ITI_FIT_SAMPLES_PER_CLASS]),
+                batch_size=_activation_batch_size(model_id, method),
+                max_length=ITI_MAX_LENGTH,
+                seed=SOURCE_RANDOM_SEED,
+            ),
+            device,
+        )
+    elif method in {"mean_act", "linear_act", "pid_act"}:
+        path = calibration_root / f"{method}.pt"
+        identity = {
+            **common_identity,
+            "fit_samples_per_class": counts.undesired,
+        }
+        _artifact(
+            path,
+            identity,
+            lambda: fit_transport_stack(
+                model,
+                tokenizer,
+                source_texts=_texts(undesired[: counts.undesired]),
+                target_texts=_texts(desired[: counts.desired]),
+                module_patterns=act_module_patterns(model_id),
+                behavior=behavior,
+                method=method,
+                batch_size=_activation_batch_size(model_id, method),
+                seed=SOURCE_RANDOM_SEED,
+            ),
+            device,
+        )
+    else:
+        path = calibration_root / "odesteer.pt"
+        identity = {
+            **common_identity,
+            "fit_samples_per_class": counts.undesired,
+            "layer": parameters["layer"],
+        }
+        _artifact(
+            path,
+            identity,
+            lambda: fit_odesteer_calibration(
+                model,
+                tokenizer,
+                behavior=behavior,
+                layer_index=parameters["layer"],
+                undesired_texts=_texts(undesired[: counts.undesired]),
+                desired_texts=_texts(desired[: counts.desired]),
+                batch_size=_activation_batch_size(model_id, method),
+            ),
+            device,
+        )
+
+    artifact_hashes = {
+        file.name: _sha(file)
+        for file in sorted(calibration_root.glob("*.pt"))
+    }
+    selection = {
+        "schema_version": 1,
+        "model": [model_id, revision],
+        "behavior": behavior,
+        "method": method,
+        "calibration_id": calibration_root.name,
+        "parameters": parameters,
+        "source": (
+            "recorded development-set selection from the preserved source grid"
+            if method in {"iti", "spid"}
+            else "fixed source setting"
+        ),
+        "calibration_data_sha256": _sha(calibration_data_path),
+        "artifacts_sha256": artifact_hashes,
+    }
+    _write_json(calibration_root / "selection.json", selection)
+    del model, tokenizer
+    gc.collect()
+    torch.cuda.empty_cache()
+    return selection
+
+
 def run_generation_job(
     *,
-    unit: Path,
+    cache_root: Path,
     behavior: str,
     model_id: str,
     revision: str,
@@ -532,53 +759,48 @@ def run_generation_job(
     device: str,
     token: str,
     alqr_artifact_root: Path,
+    method_calibration_root: Path,
+    calibration_data_path: Path,
+    data_path: Path,
+    evaluation_key: str,
+    cache_namespace: str,
+    generation_cache: dict[str, bool],
     selected_parameters: dict | None = None,
+    generation_batch_size: int | None = None,
 ) -> None:
-    """Fit one source method and cache every configured ID repetition."""
+    """Run one source method on an explicit frozen evaluation dataset."""
 
     if method not in METHODS:
         raise ValueError(f"Unsupported method {method!r}")
     if not device.startswith("cuda:"):
         raise ValueError("Source benchmark jobs require an explicit CUDA device")
-    data_path = unit / "cache/data" / f"{behavior}.json"
     data = json.loads(data_path.read_text())
-    key = model_key(model_id)
-    evaluation_samples = len(_records(data, behavior, 0))
+    evaluation_samples = len(_records(data, evaluation_key, 0))
     parameters = resolve_selected_parameters(
         method, behavior, model_id, selected_parameters
     )
+    batch_size = generation_batch_size or _batch_size(model_id, method)
+    if batch_size < 1:
+        raise ValueError("generation_batch_size must be positive")
     manifest = protocol_manifest(
         method,
         behavior,
         model_id,
         revision,
         evaluation_samples,
+        generation_cache=generation_cache,
         requested_parameters=selected_parameters,
     )
-    counts = calibration_counts(method, behavior)
-    undesired = data["calibration"][behavior]["undesired"]
-    desired = data["calibration"][behavior]["desired"]
-    jacobian = data["calibration"][behavior].get("jacobian", [])
-    if method != "alqr" and (
-        len(undesired) < counts.undesired or len(desired) < counts.desired
-    ):
-        raise ValueError(
-            f"Calibration cache has {len(undesired)}/{len(desired)} class prompts; "
-            f"{method} requires {counts.undesired}/{counts.desired}"
-        )
-    if method != "alqr" and len(jacobian) < counts.jacobian:
-        raise ValueError(
-            f"Calibration cache has {len(jacobian)} Jacobian prompts; "
-            f"{method} requires {counts.jacobian}"
-        )
+    calibration_data = json.loads(calibration_data_path.read_text())
+    counts, undesired, desired, _jacobian = _calibration_records(
+        calibration_data, behavior, method
+    ) if method not in {"original", "alqr"} else (
+        calibration_counts(method, behavior), [], [], []
+    )
     frozen_setpoint = None
     frozen_dynamics = None
     frozen_artifact_hashes: dict[str, str] = {}
-    calibration_selection = {
-        "undesired_prompt_ids": [row["prompt_id"] for row in undesired[:counts.undesired]],
-        "desired_prompt_ids": [row["prompt_id"] for row in desired[:counts.desired]],
-        "jacobian_prompt_ids": [row["prompt_id"] for row in jacobian[:counts.jacobian]],
-    }
+    calibration_selection: dict[str, list[str]] = {}
     if method == "alqr":
         (
             frozen_setpoint,
@@ -594,15 +816,19 @@ def run_generation_job(
                 parameters=parameters,
             )
         )
-    job_root = unit / "cache/generations" / behavior / key / method
+    job_root = cache_root / "generations" / cache_namespace / method
     job_root.mkdir(parents=True, exist_ok=True)
     run_identity = _json_identity({
         "schema_version": 1,
         "data_sha256": _sha(data_path),
         "data_fingerprint": data["fingerprint"],
+        "calibration_data_sha256": _sha(calibration_data_path),
+        "calibration_data_fingerprint": calibration_data["fingerprint"],
         "model_id": model_id,
         "checkpoint_revision": revision,
         "behavior": behavior,
+        "evaluation_key": evaluation_key,
+        "cache_namespace": cache_namespace,
         "method": method,
         "requested_device": device,
         "implementation_files_sha256": _implementation_files(),
@@ -610,7 +836,7 @@ def run_generation_job(
         "frozen_alqr_artifacts_sha256": frozen_artifact_hashes,
         "calibration_selection": calibration_selection,
     })
-    run_path = unit / "cache/run_records" / behavior / key / f"{method}.json"
+    run_path = cache_root / "run_records" / cache_namespace / f"{method}.json"
     run_record = {"identity": run_identity, "attempts": []}
     if run_path.exists():
         run_record = json.loads(run_path.read_text())
@@ -634,15 +860,10 @@ def run_generation_job(
     run_attempt["model_loaded_at_utc"] = _utc_now()
     run_attempt["model_load_elapsed_seconds"] = time.perf_counter() - model_load_started
     _write_json(run_path, run_record)
-    common_identity = {
-        "schema_version": 1,
-        "data_fingerprint": data["fingerprint"],
-        "implementation_files_sha256": _implementation_files(),
-        "model_id": model_id,
-        "revision": revision,
-        "behavior": behavior,
-    }
-    artifact_root = unit / "cache/calibrations" / behavior / key
+    common_identity = _common_calibration_identity(
+        calibration_data, behavior, model_id, revision
+    )
+    artifact_root = method_calibration_root
 
     if method == "original":
         _generate_candidate(
@@ -651,12 +872,15 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters={},
+            generation_cache=generation_cache,
             controller_artifacts={},
+            batch_size=batch_size,
             register_hooks=None,
         )
     elif method in {"alqr", "spid"}:
@@ -678,19 +902,22 @@ def run_generation_job(
                 tokenizer=tokenizer,
                 data=data,
                 behavior=behavior,
+                evaluation_key=evaluation_key,
                 model_id=model_id,
                 revision=revision,
                 method=method,
                 device=device,
                 parameters=parameters,
+                generation_cache=generation_cache,
                 controller_artifacts=frozen_artifact_hashes,
+                batch_size=batch_size,
                 register_hooks=lambda: register_generation_policy_hooks(model, policy),
             )
             del policy
             torch.cuda.empty_cache()
         else:
             setpoint_path = artifact_root / "setpoint.pt"
-            setpoint = _artifact(
+            setpoint = _load_artifact(
                 setpoint_path,
                 {
                     **common_identity,
@@ -705,15 +932,6 @@ def run_generation_job(
                     ],
                     "activation_batch_size": _activation_batch_size(model_id, method),
                 },
-                lambda: fit_setpoint_from_records(
-                    model,
-                    tokenizer,
-                    behavior=behavior,
-                    negative_records=undesired[:counts.undesired],
-                    positive_records=desired[:counts.desired],
-                    activation_batch_size=_activation_batch_size(model_id, method),
-                ),
-                device,
             )
             policy = build_spid_policy(
                 setpoint,
@@ -728,12 +946,15 @@ def run_generation_job(
                 tokenizer=tokenizer,
                 data=data,
                 behavior=behavior,
+                evaluation_key=evaluation_key,
                 model_id=model_id,
                 revision=revision,
                 method=method,
                 device=device,
                 parameters=parameters,
+                generation_cache=generation_cache,
                 controller_artifacts={"setpoint": _sha(setpoint_path)},
+                batch_size=batch_size,
                 register_hooks=lambda: register_generation_policy_hooks(model, policy),
             )
             del policy
@@ -741,17 +962,9 @@ def run_generation_job(
     elif method == "actadd":
         required = counts.undesired
         direction_path = artifact_root / "actadd.pt"
-        direction = _artifact(
+        direction = _load_artifact(
             direction_path,
             {**common_identity, "fit_samples_per_class": required},
-            lambda: fit_actadd_calibration(
-                model,
-                tokenizer,
-                undesired_texts=_texts(undesired[:required]),
-                desired_texts=_texts(desired[:required]),
-                batch_size=_activation_batch_size(model_id, method),
-            ),
-            device,
         )
         steerer = ActAddSteerer(direction, parameters["layer"], parameters["strength"])
         _generate_candidate(
@@ -760,31 +973,24 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters=parameters,
+            generation_cache=generation_cache,
             controller_artifacts={"actadd": _sha(direction_path)},
+            batch_size=batch_size,
             register_hooks=lambda: steerer.register(model),
             reset=steerer.reset,
         )
     elif method == "iti":
         required = ITI_FIT_SAMPLES_PER_CLASS
         fitted_path = artifact_root / "iti.pt"
-        fitted = _artifact(
+        fitted = _load_artifact(
             fitted_path,
             {**common_identity, "fit_samples_per_class": required, "max_length": ITI_MAX_LENGTH},
-            lambda: fit_iti_calibration(
-                model,
-                tokenizer,
-                undesired_texts=_texts(undesired[:required]),
-                desired_texts=_texts(desired[:required]),
-                batch_size=_activation_batch_size(model_id, method),
-                max_length=ITI_MAX_LENGTH,
-                seed=SOURCE_RANDOM_SEED,
-            ),
-            device,
         )
         _generate_candidate(
             output=job_root / f"{_candidate_name(parameters)}.json",
@@ -792,12 +998,15 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters=parameters,
+            generation_cache=generation_cache,
             controller_artifacts={"iti": _sha(fitted_path)},
+            batch_size=batch_size,
             register_hooks=lambda: register_iti_hooks(
                 model,
                 fitted,
@@ -808,21 +1017,9 @@ def run_generation_job(
     elif method in {"mean_act", "linear_act", "pid_act"}:
         required = ACT_FIT_SAMPLES_PER_CLASS[behavior]
         fitted_path = artifact_root / f"{method}.pt"
-        fitted = _artifact(
+        fitted = _load_artifact(
             fitted_path,
             {**common_identity, "fit_samples_per_class": required},
-            lambda: fit_transport_stack(
-                model,
-                tokenizer,
-                source_texts=_texts(undesired[:required]),
-                target_texts=_texts(desired[:required]),
-                module_patterns=act_module_patterns(model_id),
-                behavior=behavior,
-                method=method,
-                batch_size=_activation_batch_size(model_id, method),
-                seed=SOURCE_RANDOM_SEED,
-            ),
-            device,
         )
         _generate_candidate(
             output=job_root / f"{_candidate_name(parameters)}.json",
@@ -830,12 +1027,15 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters=parameters,
+            generation_cache=generation_cache,
             controller_artifacts={method: _sha(fitted_path)},
+            batch_size=batch_size,
             register_hooks=lambda: register_transport_hooks(
                 model, fitted, strength=parameters["strength"]
             ),
@@ -843,19 +1043,9 @@ def run_generation_job(
     else:
         required = ODESTEER_FIT_SAMPLES_PER_CLASS[behavior]
         fitted_path = artifact_root / "odesteer.pt"
-        fitted = _artifact(
+        fitted = _load_artifact(
             fitted_path,
             {**common_identity, "fit_samples_per_class": required, "layer": parameters["layer"]},
-            lambda: fit_odesteer_calibration(
-                model,
-                tokenizer,
-                behavior=behavior,
-                layer_index=parameters["layer"],
-                undesired_texts=_texts(undesired[:required]),
-                desired_texts=_texts(desired[:required]),
-                batch_size=_activation_batch_size(model_id, method),
-            ),
-            device,
         )
         _generate_candidate(
             output=job_root / f"{_candidate_name(parameters)}.json",
@@ -863,12 +1053,15 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters=parameters,
+            generation_cache=generation_cache,
             controller_artifacts={"odesteer": _sha(fitted_path)},
+            batch_size=batch_size,
             register_hooks=lambda: register_odesteer_hook(
                 model,
                 fitted,
@@ -882,12 +1075,13 @@ def run_generation_job(
     run_attempt["finished_at_utc"] = _utc_now()
     run_attempt["elapsed_seconds"] = time.perf_counter() - run_started
     run_attempt["outputs"] = [
-        {"path": str(path.relative_to(unit)), "sha256": _sha(path)} for path in output_files
+        {"path": str(path.relative_to(cache_root)), "sha256": _sha(path)}
+        for path in output_files
     ]
     calibration_metadata = sorted(artifact_root.glob("*.json"))
     run_attempt["calibration_records"] = [
         {
-            "path": str(path.relative_to(unit)),
+            "path": str(path.relative_to(Path(__file__).resolve().parents[2])),
             "metadata_sha256": _sha(path),
             "artifact_sha256": json.loads(path.read_text()).get("artifact_sha256"),
         }
