@@ -85,6 +85,20 @@ data/representation_dynamics/
 
 See `data/README.md` for the required arrays, record hierarchy, variable meanings, split rules, alignment rules, and current inventory.
 
+## Multi-machine Runs
+
+`server/` coordinates SSH-accessible compute while all machines exchange datasets,
+reusable artifacts, checkpoints, and results through one shared S3 root. Inspect
+machine readiness and validate a job wave from the repo root:
+
+```bash
+python server/manage_jobs.py inventory
+python server/manage_jobs.py validate --plan server/plans/toxicity_generation.example.json
+```
+
+See `server/README.md` for machine setup, the S3 contract, job-plan ownership,
+launching, status, and logs.
+
 ## Project Docs
 
 - `AGENTS.md`: working rules for Codex agents.

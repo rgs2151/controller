@@ -8,6 +8,7 @@
 - `figs/`: graduated compact units that are final figure panels or final outputs.
 - `debug/`: investigations, diagnostics, and scratch analyses. One investigation per folder.
 - `ref/`: historical notebooks, old pipelines, copied external code, and reference material.
+- `server/`: remote-machine registry, shared object-store contract, distributed job plans, dispatch, status, and logs.
 - `skills/`: repo-local workflow skills.
 - `tests/`: small CPU-only package contract and numerical parity tests.
 - `tmp/`: disposable junk such as archives, zip files, temporary exports, and local leftovers.
