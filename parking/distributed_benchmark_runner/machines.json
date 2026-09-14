@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "machines": [
+    {
+      "machine_id": "machine_1",
+      "ssh_host": "robust-steering-1",
+      "repo": "/teamspace/studios/this_studio/controller",
+      "job_root": "/teamspace/studios/this_studio/.robust_steering_jobs"
+    }
+  ]
+}
