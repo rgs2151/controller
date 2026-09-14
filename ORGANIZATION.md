@@ -4,11 +4,12 @@
 
 - `data/`: organized analysis-ready data and its inventory.
 - `robust_steerability/`: installable project package for shared helpers.
+- `logs/`: Git-versioned manifests, stdout, timing, and resource records produced by remote runs.
 - `parking/`: compact units that are still being explored or iterated.
 - `figs/`: graduated compact units that are final figure panels or final outputs.
 - `debug/`: investigations, diagnostics, and scratch analyses. One investigation per folder.
 - `ref/`: historical notebooks, old pipelines, copied external code, and reference material.
-- `server/`: remote-machine registry, shared object-store contract, distributed job plans, dispatch, status, and logs.
+- `server/`: direct SSH/Screen operating instructions; machine names and benchmark definitions stay out of this folder.
 - `skills/`: repo-local workflow skills.
 - `tests/`: small CPU-only package contract and numerical parity tests.
 - `tmp/`: disposable junk such as archives, zip files, temporary exports, and local leftovers.

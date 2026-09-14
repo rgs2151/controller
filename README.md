@@ -87,17 +87,14 @@ See `data/README.md` for the required arrays, record hierarchy, variable meaning
 
 ## Multi-machine Runs
 
-`server/` coordinates SSH-accessible compute while all machines exchange datasets,
-reusable artifacts, checkpoints, and results through one shared S3 root. Inspect
-machine readiness and validate a job wave from the repo root:
+Enter each remote machine directly with SSH, pull the desired Git commit, open a
+named GNU Screen, and invoke the owning benchmark entry point there. Benchmark
+code discovers and uses the visible GPUs; `server/` contains no machine names or
+scientific run plans.
 
-```bash
-python server/manage_jobs.py inventory
-python server/manage_jobs.py validate --plan server/plans/toxicity_generation.example.json
-```
-
-See `server/README.md` for machine setup, the S3 contract, job-plan ownership,
-launching, status, and logs.
+Git carries code, logs, tables, and plots. Remote S3 carries only large reusable
+artifacts such as Jacobians and `.pt` caches, and the local workstation never
+connects to S3. See `server/README.md` for the exact operating workflow.
 
 ## Project Docs
 
