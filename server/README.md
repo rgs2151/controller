@@ -18,11 +18,23 @@ cd ~/controller
 git status --short
 git pull --ff-only
 screen -S <run-name>
-conda activate robust-steerability
+source .venv/bin/activate
 python -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
 python -m robust_steerability.benchmarks.truthfulness calibrate --model llama8b --devices auto
 python -m robust_steerability.benchmarks.truthfulness evaluate --model llama8b --devices auto
 ```
+
+Create the persistent Studio environment once per checkout before starting a
+run:
+
+```bash
+cd ~/controller
+uv venv --python /usr/bin/python3 .venv
+uv pip install --python .venv/bin/python -e .
+```
+
+The local workstation continues to use the `robust-steerability` Conda
+environment; Lightning Studios use the checkout-local `.venv` above.
 
 If the remote GPU has been checked with a smoke run and supports a larger
 generation batch, pass `--generation-batch-size <n>` to the calibration or
