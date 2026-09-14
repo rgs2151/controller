@@ -69,6 +69,6 @@ logs/results/plots, and push them. Cache directories stay out of Git.
 Publish or fetch large objects explicitly after the run is verified:
 
 ```bash
-python -m robust_steerability.storage.s3 push --benchmark truthfulness --model llama8b --stage artifacts
-python -m robust_steerability.storage.s3 pull --benchmark truthfulness --model llama8b --stage artifacts
+python -m robust_steerability.storage.s3 push --bucket robust-steering --benchmark truthfulness --model llama8b --stage artifacts
+python -m robust_steerability.storage.s3 pull --bucket robust-steering --benchmark truthfulness --model llama8b --stage artifacts
 ```
