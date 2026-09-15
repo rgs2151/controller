@@ -97,7 +97,6 @@ def _response_format(count: int) -> dict[str, object]:
                             "type": "object",
                             "properties": {
                                 "item_index": {"type": "integer"},
-                                "prompt_id": {"type": "string"},
                                 "instruction_relevance": {
                                     "type": "integer",
                                     "enum": [0, 1, 2],
@@ -113,7 +112,6 @@ def _response_format(count: int) -> dict[str, object]:
                             },
                             "required": [
                                 "item_index",
-                                "prompt_id",
                                 "instruction_relevance",
                                 "instruction_relevance_explanation",
                                 "fluency",
@@ -177,18 +175,15 @@ def _request_batch(
                 )
             raw_response = str(choice["message"]["content"]).strip()
             results = json.loads(raw_response)["results"]
-            expected = [
-                (row["item_index"], row["prompt_id"])
-                for row in request_rows
-            ]
-            returned = [
-                (row["item_index"], row["prompt_id"])
-                for row in results
-            ]
-            if returned != expected:
+            expected_indices = [row["item_index"] for row in request_rows]
+            by_index = {row["item_index"]: row for row in results}
+            if sorted(by_index) != expected_indices or len(by_index) != len(results):
                 raise ValueError(
-                    f"OpenAI batch {batch_index} changed item order or identifiers"
+                    f"OpenAI batch {batch_index} changed item indices"
                 )
+            results = [by_index[item_index] for item_index in expected_indices]
+            for result, request_row in zip(results, request_rows, strict=True):
+                result["prompt_id"] = request_row["prompt_id"]
             return {
                 "batch_index": batch_index,
                 "starting_row": indexed_rows[0][0],
@@ -211,6 +206,11 @@ def _request_batch(
             if attempt == 7:
                 raise RuntimeError(
                     f"OpenAI API request failed in batch {batch_index}: {error}"
+                ) from error
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
+            if attempt == 7:
+                raise RuntimeError(
+                    f"OpenAI API returned an invalid batch {batch_index}: {error}"
                 ) from error
         time.sleep(min(2**attempt, 30))
     raise RuntimeError("OpenAI API retry loop terminated unexpectedly")
