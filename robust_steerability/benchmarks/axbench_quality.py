@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import socket
 import time
 import urllib.error
@@ -117,7 +118,10 @@ def _parse_rating(completion: str) -> float:
         .strip("*")
         .strip()
     )
-    rating = float(rating_text)
+    match = re.match(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)", rating_text)
+    if match is None:
+        raise ValueError(f"AXBench judge response has no numeric rating: {completion!r}")
+    rating = float(match.group(0))
     if rating < 0.0 or rating > 2.0:
         raise ValueError(f"AXBench judge rating is outside [0, 2]: {rating}")
     return rating
@@ -181,6 +185,7 @@ def _identity(generation_path: Path) -> dict[str, object]:
         "instruction_relevance_prompt": INSTRUCTION_RELEVANCE_TEMPLATE,
         "fluency_prompt": FLUENCY_TEMPLATE,
         "rating_range": [0, 2],
+        "answer_parser": "first numeric value after the final Rating marker",
     }
 
 
