@@ -24,18 +24,18 @@ Fifty prompts was a pilot size and is not part of this protocol.
 |---|---|---|---|
 | Original | none | none | frozen |
 | A-LQR | 200/200 setpoint; 50 toxicity or 35 truthfulness Jacobians | Gemma-2-2B toxicity is λ=3.5, Q=.1, R=1, Qf=.1; truthfulness is λ=3, Q=.1, R=1, Qf=.3 | frozen for recorded rows |
-| S-PID | same 200/200 setpoint; no Jacobians | fixed PID gains plus λ from the preserved source grid | explicit development selection still required where the grid has multiple λ values |
+| S-PID | same 200/200 setpoint; no Jacobians | fixed PID gains plus λ from the preserved source grid | Gemma truthfulness project guess: λ=1, Kp=.7, Ki=.01, Kd=.1; no sweep |
 | ActAdd | 100/100 position-wise means | preserved model-specific layer and strength | frozen |
-| ITI | 80/80, 80/20 stratified probe split, max length 50 | top-head count and α from preserved source grid | explicit development selection still required; final Gemma choice is not preserved |
+| ITI | 80/80, 80/20 stratified probe split, max length 50 | top-head count and α from preserved source grid | Gemma truthfulness project guess: 32 heads, α=10; no sweep |
 | Mean-AcT | 200/200 toxicity or 400/400 truthfulness | first four matched modules, strength 1 | frozen |
 | Linear-AcT | 200/200 toxicity or 400/400 truthfulness | first four matched modules, q_0_100 mask, strength 1 | frozen |
 | PID-AcT | 200/200 toxicity or 400/400 truthfulness | first four matched modules, source 0.7 and 0.005 terms, strength 1 | frozen, including the source's scalar history reduction |
 | ODESteer | 5000/5000 toxicity or 1800/1800 truthfulness | preserved model-specific layer/time; Euler, 10 steps, 8000 components, degree 2, γ=.1, c0=1 | frozen only where a final selection is preserved |
 
 The final runner accepts exactly one selected configuration. It does not tune
-on the final benchmark. ITI and S-PID cannot run a final row until an explicit
-development-set selection from the preserved grids has been recorded; this
-prevents an undocumented guess or an accidental full-evaluation sweep.
+on the final benchmark. The Gemma truthfulness ITI and S-PID choices above are
+explicit project guesses because the final source selections are unavailable;
+the pipeline records and enforces them without sweeping.
 
 For toxicity, λ=3.5 is the strongest candidate in the paper-producing Gemma
 evaluation script and is fixed according to the paper table's stated selection

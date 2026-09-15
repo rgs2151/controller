@@ -38,12 +38,14 @@ on the final benchmark.
 - A-LQR, ActAdd, Mean/Linear/PID-AcT, and supported ODESteer rows use fixed
   settings preserved by the paper-producing repository.
 - The preserved A-LQR repository contains ITI and S-PID candidate grids but not
-  the final selected Gemma settings. These two methods therefore require an
-  explicit, recorded development-set selection from those exact grids. The
-  runner fails if that selection is absent or outside the grid.
+  the final selected Gemma settings. For Gemma-2-2B truthfulness, this project
+  freezes conservative midpoint guesses from those grids: ITI uses 32 heads
+  and alpha 10; S-PID uses lambda 1 with Kp=.7, Ki=.01, and Kd=.1.
+- ITI and S-PID are never swept by this pipeline. Their saved selection files
+  must equal the centralized project choices.
 
-This is deliberate: the package neither invents missing values nor repeats a
-full grid over the final evaluation set.
+These two choices are project assumptions, not values claimed by the source
+paper. All other fixed settings retain their source provenance.
 
 ## Provenance
 

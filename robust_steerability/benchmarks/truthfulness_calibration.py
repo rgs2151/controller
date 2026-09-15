@@ -650,9 +650,33 @@ def calibrate(
 ) -> None:
     evaluation._configure_runtime(model_key, calibration_id)
     selection = _root(model_key, calibration_id) / "selection.json"
-    if selection.exists() and (_root(model_key, calibration_id) / "controller.pt").exists():
-        return
     if fixed_parameters is not None:
+        controller = _root(model_key, calibration_id) / "controller.pt"
+        if selection.exists() or controller.exists():
+            if not selection.exists() or not controller.exists():
+                raise ValueError(
+                    f"Incomplete H-infinity calibration directory: {_root(model_key, calibration_id)}"
+                )
+            saved = json.loads(selection.read_text())
+            expected = {
+                "q_over_r": float(fixed_parameters["q_over_r"]),
+                "q_final_over_r": float(fixed_parameters["q_final_over_r"]),
+                "r": float(fixed_parameters["r"]),
+            }
+            actual_parameters = saved["selected"]["parameters"]
+            actual = {
+                "q_over_r": float(actual_parameters["q"] / actual_parameters["r"]),
+                "q_final_over_r": float(
+                    actual_parameters["q_final"] / actual_parameters["r"]
+                ),
+                "r": float(actual_parameters["r"]),
+            }
+            if actual != expected:
+                raise ValueError(
+                    f"Calibration ID {calibration_id!r} already contains {actual}, "
+                    f"not requested {expected}; use a new calibration ID"
+                )
+            return
         select_fixed(
             model_key,
             devices[0],
@@ -661,6 +685,8 @@ def calibrate(
             q_final_over_r=float(fixed_parameters["q_final_over_r"]),
             r=float(fixed_parameters["r"]),
         )
+        return
+    if selection.exists() and (_root(model_key, calibration_id) / "controller.pt").exists():
         return
     prepare(model_key, calibration_id)
     fit_base(model_key, devices[0], calibration_id)

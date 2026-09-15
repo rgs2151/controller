@@ -27,3 +27,11 @@ Do not put unit-specific file paths, temporary subsets, cache names, panel mappi
 - Use this when: Generating behavior, capability, ID, or distribution-shift evaluations with the shared steering pipeline.
 - Do not use this for: Uncontrolled evaluator and judge models, which may use KV caching because no activation feedback policy is attached.
 - Notes: Record the evaluated-model cache state in every stage log. Scorer-model cache behavior is separate and does not define the evaluated-model condition.
+
+## Non-H-infinity Hyperparameters
+
+- Decision: Never sweep Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer, S-PID, or A-LQR. Use source-preserved fixed values where available. For Gemma-2-2B truthfulness, use the project best guesses ITI=(32 heads, alpha 10) and S-PID=(lambda 1, Kp=.7, Ki=.01, Kd=.1), both drawn from the preserved source grids.
+- Why: Only H-infinity is calibrated by a hyperparameter sweep in this project. The paper-producing source does not preserve final Gemma ITI or S-PID selections, so these values must be explicit assumptions rather than silently tuned on the benchmark.
+- Use this when: Fitting, evaluating, or reporting any non-H-infinity comparison method.
+- Do not use this for: H-infinity calibration, which owns its separate candidate-selection stage.
+- Notes: If another model/task lacks a source-preserved or project-frozen selection, add and document one before running it; do not introduce a sweep.
