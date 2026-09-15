@@ -1,13 +1,16 @@
 # Benchmark dataset report structure
 
-Create one Markdown report and one synchronized TeX table for every evaluated dataset:
+Create one Markdown report, one synchronized TeX table, and one standalone PDF for every evaluated dataset:
 
 ```text
 figs/bench_table/
   <benchmark>/
     <dataset>.md
     <dataset>.tex
+    <dataset>.pdf
 ```
+
+The PDF is the primary review artifact. It uses grouped model blocks, rotated model labels, a separated Original row, a low-opacity dark-red primary-metric column, and bold best observed values within each model block. The TeX remains a manuscript-compatible table fragment.
 
 Every Markdown report must use exactly this order.
 
