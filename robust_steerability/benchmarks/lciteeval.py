@@ -25,6 +25,7 @@ from robust_steerability.judges.specs import scorer_spec
 
 COMPOSITION = load_composition("lciteeval")
 DATASETS = COMPOSITION.dataset_keys
+DEFAULT_DATASETS = COMPOSITION.default_datasets
 METHODS = COMPOSITION.available_methods
 DEFAULT_METHODS = COMPOSITION.default_methods
 
@@ -247,7 +248,7 @@ def main() -> None:
     parser.add_argument("stage", choices=("artifacts", "calibrate", "evaluate", "score"))
     parser.add_argument("--model", choices=COMPOSITION.models, required=True)
     parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
-    parser.add_argument("--datasets", default=",".join(DATASETS))
+    parser.add_argument("--datasets", default=",".join(DEFAULT_DATASETS))
     parser.add_argument("--scorers", default="default")
     parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     parser.add_argument("--devices", default="auto")

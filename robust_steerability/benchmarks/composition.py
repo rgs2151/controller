@@ -34,6 +34,7 @@ class BenchmarkComposition:
     models: tuple[str, ...]
     available_methods: tuple[str, ...]
     default_methods: tuple[str, ...]
+    default_datasets: tuple[str, ...]
     datasets: tuple[EvaluationDataset, ...]
 
     def dataset(self, key: str) -> EvaluationDataset:
@@ -79,6 +80,11 @@ def load_composition(benchmark: str) -> BenchmarkComposition:
     namespaces = [dataset.cache_namespace for dataset in datasets]
     if len(keys) != len(set(keys)) or len(namespaces) != len(set(namespaces)):
         raise ValueError(f"{path} contains duplicate dataset keys or cache namespaces")
+    default_datasets = tuple(str(value) for value in payload["default_datasets"])
+    if not default_datasets or set(default_datasets) - set(keys):
+        raise ValueError(
+            f"{path} default_datasets must be a non-empty subset of evaluation datasets"
+        )
     if any(dataset.role not in ROLES for dataset in datasets):
         raise ValueError(f"{path} contains an unsupported evaluation role")
     if any(dataset.generation_profile not in GENERATION for dataset in datasets):
@@ -97,6 +103,7 @@ def load_composition(benchmark: str) -> BenchmarkComposition:
         models=models,
         available_methods=available_methods,
         default_methods=default_methods,
+        default_datasets=default_datasets,
         datasets=datasets,
     )
 

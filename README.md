@@ -56,8 +56,8 @@ MGSM language transfer uses the same interface for Qwen3-4B and Qwen3-8B:
 ```bash
 python -m robust_steerability.benchmarks.mgsm artifacts --model qwen3_4b --devices auto
 python -m robust_steerability.benchmarks.mgsm calibrate --model qwen3_4b --devices auto
-python -m robust_steerability.benchmarks.mgsm evaluate --model qwen3_4b --datasets all --devices auto
-python -m robust_steerability.benchmarks.mgsm score --model qwen3_4b --datasets all --scorers default --devices auto
+python -m robust_steerability.benchmarks.mgsm evaluate --model qwen3_4b --devices auto
+python -m robust_steerability.benchmarks.mgsm score --model qwen3_4b --scorers default --devices auto
 ```
 
 Use `--generation-batch-size <n>` only when a larger remote GPU has been
