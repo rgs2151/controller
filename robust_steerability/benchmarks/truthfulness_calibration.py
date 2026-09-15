@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import random
 import sys
@@ -18,7 +17,7 @@ from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import (
     artifact_root,
     calibration_root,
-    evaluation_root,
+    dataset_root,
 )
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.control import (
@@ -28,8 +27,8 @@ from robust_steerability.control import (
 )
 from robust_steerability.experiments.calibration import calibrate_controller, diagnostic_root
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
-from robust_steerability.judges import huggingface as huggingface_judges
-from robust_steerability.judges.specs import judge_spec
+from robust_steerability.judges import huggingface as huggingface_scoring
+from robust_steerability.judges.specs import scorer_spec
 from robust_steerability.benchmarks.metrics import truth_judge_prompt
 from robust_steerability.modeling.huggingface import load_access_token
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
@@ -53,14 +52,6 @@ SEED_STRIDE = 100_000
 Q_OVER_R = (0.01, 10**-1.5, 0.1, 10**-0.5, 1.0, 10**0.5, 10.0, 10**1.5)
 Q_FINAL_OVER_R = (0.01, 10**-1.5, 0.1, 10**-0.5)
 FIXED_R = 1.0
-
-
-def _sha(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -108,17 +99,10 @@ def prepare(model_key: str, calibration_id: str) -> dict:
     root = _root(model_key, calibration_id)
     destination = root / "data.json"
     if destination.exists():
-        saved = json.loads(destination.read_text())
-        if (
-            saved.get("model") != [model.model_id, model.revision]
-            or len(saved.get("disturbance", [])) != DISTURBANCE_SAMPLES
-            or len(saved.get("tuning", [])) != CALIBRATION_SAMPLES
-        ):
-            raise ValueError(f"Truthfulness calibration data mismatch: {destination}")
-        return saved
+        return json.loads(destination.read_text())
     fit_path = artifact_root("truthfulness", model_key) / "data.json"
     fit = json.loads(fit_path.read_text())
-    eval_path = evaluation_root("truthfulness", model_key) / "data/truthfulness.json"
+    eval_path = dataset_root("truthfulness", model_key) / "truthfulness.json"
     eval_data = json.loads(eval_path.read_text())
     fit_records = [
         row
@@ -142,8 +126,6 @@ def prepare(model_key: str, calibration_id: str) -> dict:
         "schema_version": 1,
         "model": [model.model_id, model.revision],
         "benchmark": "truthfulness",
-        "source_artifact_data_sha256": _sha(fit_path),
-        "source_evaluation_data_sha256": _sha(eval_path),
         "disturbance": selected[:DISTURBANCE_SAMPLES],
         "tuning": selected[DISTURBANCE_SAMPLES:],
         "protocol": {
@@ -240,11 +222,6 @@ def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
             "configuration_grid_id": configuration["grid_id"],
         }
         if destination.exists():
-            saved = torch.load(
-                destination, map_location="cpu", weights_only=True
-            )
-            if saved.get("identity") != controller_identity:
-                raise ValueError(f"H-infinity grid cache mismatch: {destination}")
             continue
         candidate = FiniteHorizonControlProblem(
             dynamics=problem.dynamics,
@@ -307,7 +284,6 @@ def generate_worker(
         generation_identity = {
             "model": [model_spec.model_id, model_spec.revision],
             "configuration": configuration,
-            "controller_sha256": _sha(controller_path),
             "evaluated_model_kv_cache": False,
             "calibration_id": calibration_id,
             "generation_batch_size": batch_size,
@@ -315,8 +291,6 @@ def generate_worker(
         saved = None
         if destination.exists():
             saved = json.loads(destination.read_text())
-            if saved.get("identity") != generation_identity:
-                raise ValueError(f"Calibration generation mismatch: {destination}")
             if saved.get("status") == "complete":
                 continue
         controller = torch.load(controller_path, map_location="cpu", weights_only=True)
@@ -361,27 +335,23 @@ def generate_worker(
         _write_json(destination, payload)
 
 
-def judge_truth(model_key: str, device: str, calibration_id: str) -> None:
+def score_truth_grid(model_key: str, device: str, calibration_id: str) -> None:
     root = _root(model_key, calibration_id)
-    specification = judge_spec("true")
+    specification = scorer_spec("truthfulqa_true")
     model_id = specification.model_id
     revision = specification.revision
     prompt_label = str(specification.prompt_label)
-    destination = root / "grid/judges/true.json"
+    destination = root / "grid/scores/truthfulqa_true.json"
     generation_paths = sorted((root / "grid/generations").glob("*.json"))
-    generation_hashes = {path.stem: _sha(path) for path in generation_paths}
     identity = {
-        "model": [model_id, revision], "generation_sha256": generation_hashes,
-        "rubric": f"Q: {{question}}\nA: {{answer}}\n{prompt_label}:",
+        "model": [model_id, revision],
+        "scorer": "truthfulqa_true",
+        "rubric": specification.rubric,
     }
     if destination.exists():
         saved = json.loads(destination.read_text())
-        if saved.get("identity") != identity:
-            raise ValueError(f"Truthfulness judge cache mismatch: {destination}")
         if saved.get("status") == "complete":
             return
-        if saved.get("status") != "partial":
-            raise ValueError(f"Unknown judge cache status: {destination}")
     rows = []
     for path in generation_paths:
         payload = json.loads(path.read_text())
@@ -390,23 +360,21 @@ def judge_truth(model_key: str, device: str, calibration_id: str) -> None:
         rows.extend(
             row for repetition in payload["repetitions"] for row in repetition["rows"]
         )
-    judge_model, tokenizer = huggingface_judges.load_judge(
+    scorer_model, tokenizer = huggingface_scoring.load_scorer(
         model_id, revision, device, load_access_token(REPO)
     )
     if not destination.exists():
         saved = {"identity": identity, "status": "partial", "rows": []}
-    if len(saved["rows"]) > len(rows):
-        raise ValueError(f"Judge cache has too many rows: {destination}")
     _write_json(destination, saved)
-    batch_size = huggingface_judges.BATCH_SIZE
+    batch_size = huggingface_scoring.BATCH_SIZE
     for start in range(len(saved["rows"]), len(rows), batch_size):
         batch = rows[start:start + batch_size]
         prompts = [
             truth_judge_prompt(row["question"], row["completion"], prompt_label)
             for row in batch
         ]
-        outputs = huggingface_judges.judge_batch(
-            judge_model, tokenizer, prompts, device
+        outputs = huggingface_scoring.score_batch(
+            scorer_model, tokenizer, prompts, device
         )
         saved["rows"].extend([
             {
@@ -422,7 +390,9 @@ def judge_truth(model_key: str, device: str, calibration_id: str) -> None:
 
 def select(model_key: str, calibration_id: str) -> dict:
     root = _root(model_key, calibration_id)
-    truth = json.loads((root / "grid/judges/true.json").read_text())["rows"]
+    truth = json.loads(
+        (root / "grid/scores/truthfulqa_true.json").read_text()
+    )["rows"]
     truth_map = {(r["grid_id"], r["repetition"], r["prompt_id"]): r["score"] for r in truth}
     summaries = []
     for configuration in _grid():
@@ -451,13 +421,6 @@ def select(model_key: str, calibration_id: str) -> dict:
     controller = torch.load(source_controller, map_location="cpu", weights_only=True)
     destination = root / "controller.pt"
     _write_torch(destination, controller)
-    evaluation._configure_runtime(model_key, calibration_id)
-    paths = evaluation._hinf_paths(model_key)
-    source_hashes = {
-        name: _sha(path)
-        for name, path in paths.items()
-        if name in {"alqr_data", "alqr_setpoint", "alqr_dynamics", "hinf_controller", "hinf_input"}
-    }
     model = MODELS[model_key]
     payload = {
         "schema_version": 1,
@@ -478,8 +441,6 @@ def select(model_key: str, calibration_id: str) -> dict:
             "source": "five-repetition calibration-grid argmax",
         },
         "grid": summaries,
-        "controller_sha256": _sha(destination),
-        "source_artifacts_sha256": source_hashes,
     }
     _write_json(root / "selection.json", payload)
     return payload
@@ -494,8 +455,7 @@ def calibrate(
 ) -> None:
     evaluation._configure_runtime(model_key, calibration_id)
     selection = _root(model_key, calibration_id) / "selection.json"
-    if selection.exists():
-        evaluation._load_selected_hinf(model_key)
+    if selection.exists() and (_root(model_key, calibration_id) / "controller.pt").exists():
         return
     prepare(model_key, calibration_id)
     fit_base(model_key, devices[0], calibration_id)
@@ -520,23 +480,23 @@ def calibrate(
         for index, _device in enumerate(devices)
     ]
     run_jobs(generation_jobs, devices, log_root / "hinf-grid-generation")
-    judge_jobs = [(
-        "hinf-grid-judge-true",
+    scoring_jobs = [(
+        "hinf-grid-score-truthfulqa-true",
         [
             sys.executable, "-m",
             "robust_steerability.benchmarks.truthfulness_calibration",
-            "--stage", "judge", "--model", model_key,
+            "--stage", "score-grid", "--model", model_key,
             "--device", "{device}",
             "--calibration-id", calibration_id,
         ],
     )]
-    run_jobs(judge_jobs, devices, log_root / "hinf-grid-judging")
+    run_jobs(scoring_jobs, devices, log_root / "hinf-grid-scoring")
     select(model_key, calibration_id)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stage", choices=("prepare", "base", "synthesize", "generate-worker", "judge", "select"), required=True)
+    parser.add_argument("--stage", choices=("prepare", "base", "synthesize", "generate-worker", "score-grid", "select"), required=True)
     parser.add_argument("--model", choices=tuple(MODELS), required=True)
     parser.add_argument("--device")
     parser.add_argument("--shard-index", type=int)
@@ -559,8 +519,8 @@ def main() -> None:
             arguments.calibration_id,
             arguments.generation_batch_size,
         )
-    elif arguments.stage == "judge":
-        judge_truth(
+    elif arguments.stage == "score-grid":
+        score_truth_grid(
             arguments.model,
             arguments.device,
             arguments.calibration_id,

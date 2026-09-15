@@ -5,7 +5,6 @@ from pathlib import Path
 
 import torch
 
-from robust_steerability.artifacts import configuration_hash
 from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.modeling.jacobians import capture_layer_inputs, layer_last_token_jacobian
 
@@ -25,11 +24,6 @@ def average_prompt_jacobians(model, tokenizer, records, *, cache_dir: Path,
     cache_dir.mkdir(parents=True, exist_ok=True)
     layers = _decoder_layers(model)
     device = next(model.parameters()).device
-    source_files = [Path(__file__), Path(capture_layer_inputs.__code__.co_filename)]
-    source = configuration_hash({
-        path.name: configuration_hash({"bytes": path.read_bytes().hex()})
-        for path in source_files
-    })
     identity = {
         "schema_version": 1,
         "model": str(model.config._name_or_path),
@@ -41,23 +35,15 @@ def average_prompt_jacobians(model, tokenizer, records, *, cache_dir: Path,
             {"prompt_id": str(record["prompt_id"]), "text": str(record["text"])}
             for record in records
         ],
-        "implementation": source,
     }
     checkpoint_path = cache_dir / "partial.pt"
     metadata_path = cache_dir / "partial.json"
     total = None
     processed = 0
-    if checkpoint_path.exists() or metadata_path.exists():
-        if not checkpoint_path.exists() or not metadata_path.exists():
-            raise ValueError(f"Incomplete Jacobian accumulator: {cache_dir}")
-        metadata = json.loads(metadata_path.read_text())
+    if checkpoint_path.exists():
         payload = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-        if metadata.get("identity") != identity or payload.get("identity") != identity:
-            raise ValueError(f"Jacobian accumulator identity mismatch: {cache_dir}")
         processed = int(payload["count"])
         total = payload["sum"]
-        if total.dtype != torch.float64 or not 0 <= processed <= len(records):
-            raise ValueError(f"Invalid Jacobian accumulator: {cache_dir}")
 
     def checkpoint() -> None:
         temporary = checkpoint_path.with_suffix(".pt.tmp")

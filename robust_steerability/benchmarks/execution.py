@@ -9,6 +9,7 @@ import platform
 import socket
 import subprocess
 import sys
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,16 @@ def machine_provenance() -> dict[str, object]:
             packages[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
             packages[name] = None
+    cuda_devices = []
+    if torch.cuda.is_available():
+        cuda_devices = [
+            {
+                "index": index,
+                "name": torch.cuda.get_device_name(index),
+                "total_memory_bytes": torch.cuda.get_device_properties(index).total_memory,
+            }
+            for index in range(torch.cuda.device_count())
+        ]
     return {
         "hostname": socket.gethostname(),
         "lightning_cloudspace_id": os.environ.get("LIGHTNING_CLOUDSPACE_ID"),
@@ -50,6 +61,7 @@ def machine_provenance() -> dict[str, object]:
         "torch": str(torch.__version__),
         "cuda_runtime": torch.version.cuda,
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+        "cuda_devices": cuda_devices,
         "packages": packages,
     }
 
@@ -85,16 +97,22 @@ def tracked_stage(
         },
         "machine": machine_provenance(), "published_s3_objects": [],
     }
+    started = time.perf_counter()
     _write_json(record_path, record)
     try:
         yield run_root
     except BaseException as error:
         record.update({
             "status": "failed", "finished_at_utc": utc_now(),
+            "elapsed_seconds": time.perf_counter() - started,
             "error": {"type": type(error).__name__, "message": str(error)},
         })
         _write_json(record_path, record)
         raise
     else:
-        record.update({"status": "complete", "finished_at_utc": utc_now()})
+        record.update({
+            "status": "complete",
+            "finished_at_utc": utc_now(),
+            "elapsed_seconds": time.perf_counter() - started,
+        })
         _write_json(record_path, record)

@@ -1,17 +1,17 @@
-"""Independent, reusable response judges."""
+"""Independent, reusable response scorers."""
 
 from robust_steerability.judges.specs import (
-    ALL_JUDGES,
-    TRUTHFULNESS_JUDGES,
-    JudgeSpec,
-    judge_cache_path,
-    judge_spec,
+    ALL_SCORERS,
+    TRUTHFULNESS_SCORERS,
+    ScorerSpec,
+    scorer_cache_path,
+    scorer_spec,
 )
 
 __all__ = [
-    "ALL_JUDGES",
-    "TRUTHFULNESS_JUDGES",
-    "JudgeSpec",
-    "judge_cache_path",
-    "judge_spec",
+    "ALL_SCORERS",
+    "TRUTHFULNESS_SCORERS",
+    "ScorerSpec",
+    "scorer_cache_path",
+    "scorer_spec",
 ]

@@ -8,10 +8,11 @@ evaluation_repetitions = 5
 evaluation_samples_per_repetition = 817
 jacobian_prompts = 35
 evaluated_model_kv_cache = false
-score_judges = ["true", "informative", "instruction_relevance", "fluency"]
-api_judge_model = "gpt-4o-mini"
-api_judge_batch_size = 20
-api_judge_concurrency = 500
+available_evaluated_model_kv_cache = [false, true]
+score_scorers = ["truthfulqa_true", "truthfulqa_informative", "axbench_instruction_relevance", "axbench_fluency"]
+api_scorer_model = "gpt-4o-mini"
+api_scorer_batch_size = 20
+api_scorer_concurrency = 500
 
 [stages]
 order = ["artifacts", "calibrate", "evaluate", "score"]
@@ -20,7 +21,7 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "mean_true_percentage"
+selection_metric = "truthfulqa_true_mean_percentage"
 
 [storage]
 large_s3_stages = ["artifacts", "calibration"]

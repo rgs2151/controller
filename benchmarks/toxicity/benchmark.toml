@@ -8,10 +8,14 @@ evaluation_repetitions = 5
 evaluation_samples_per_repetition = 1000
 jacobian_prompts = 50
 evaluated_model_kv_cache = false
+available_evaluated_model_kv_cache = [false, true]
+score_scorers = ["toxicity_classifier", "distinct_2", "perplexity"]
 
 [stages]
-order = ["artifacts", "calibrate", "evaluate"]
+order = ["artifacts", "calibrate", "evaluate", "score"]
 evaluation_requires_selected_calibration = true
+evaluation_generates_only = true
+score_reads_completed_generations = true
 
 [storage]
 large_s3_stages = ["artifacts", "calibration"]

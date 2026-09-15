@@ -4,7 +4,7 @@
 
 - Load completed controlled-decoding summaries for RTP, Jigsaw, TruthfulQA ID, and Spanish TruthfulQA.
 - Align summaries by the fixed model and method order.
-- Render one Markdown table and one TeX table from the same row objects; absent judge or benchmark metrics remain `TBD`.
+- Render one Markdown table and one TeX table from the same row objects; absent scorer outputs remain `TBD`.
 
 ## Variables
 
@@ -20,9 +20,9 @@
 - Tests/models: descriptive means and standard errors across five repetitions.
 - Null hypothesis: none.
 - Alternative hypothesis: none.
-- Thresholds/decision rule: missing summaries or unrun judges render as `TBD`.
+- Thresholds/decision rule: missing summaries or unrun scorers render as `TBD`.
 - What the statistic means: each populated cell estimates one model-method metric under one prompt distribution.
-- Why this statistic is appropriate here: every metric is summarized over the benchmark's repeated evaluation protocol without combining independent judges.
+- Why this statistic is appropriate here: every metric is summarized over the benchmark's repeated evaluation protocol without combining independent scorers.
 
 ## Legends
 

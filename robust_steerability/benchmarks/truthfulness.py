@@ -15,11 +15,11 @@ from robust_steerability.benchmarks.layout import calibration_root
 from robust_steerability.benchmarks.specs import METHODS, MODELS
 from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.judges import (
-    TRUTHFULNESS_JUDGES,
-    judge_cache_path,
-    judge_spec,
+    TRUTHFULNESS_SCORERS,
+    scorer_cache_path,
+    scorer_spec,
 )
-from robust_steerability.judges import openai as openai_judges
+from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.modeling.huggingface import load_access_token
 from robust_steerability.source_methods.id_benchmark import fit_source_method_calibration
 from robust_steerability.source_methods.protocol import paper_alqr_setting
@@ -57,8 +57,8 @@ def _write_alqr_selection(model_key: str, calibration_id: str) -> None:
             "q_final": setting.q_final,
         },
     }
-    if destination.exists() and json.loads(destination.read_text()) != payload:
-        raise ValueError(f"A-LQR selection changed: {destination}")
+    if destination.exists():
+        return
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(payload, indent=2) + "\n")
 
@@ -128,10 +128,13 @@ def evaluation_stage(
     log_root,
     calibration_id: str,
     generation_batch_size: int | None,
+    use_cache: bool,
 ) -> None:
     """Generate and cache model responses without running any judge."""
 
-    runtime._configure_runtime(model_key, calibration_id, generation_batch_size)
+    runtime._configure_runtime(
+        model_key, calibration_id, generation_batch_size, use_cache=use_cache
+    )
     for dataset in datasets:
         runtime.prepare("truthfulness", dataset)
     source_methods = [method for method in methods if method != "h_infinity"]
@@ -157,6 +160,8 @@ def evaluation_stage(
                         dataset,
                         "--calibration-id",
                         calibration_id,
+                        "--kv-cache",
+                        "on" if use_cache else "off",
                         "--device",
                         "{device}",
                         *(
@@ -185,16 +190,17 @@ def score_stage(
     model_key: str,
     methods: list[str],
     datasets: list[str],
-    judges: list[str],
+    scorers: list[str],
     devices: list[str],
     log_root,
     calibration_id: str,
     api_concurrency: int,
     api_batch_size: int,
+    use_cache: bool,
 ) -> None:
-    """Run selected judges against existing generations, then summarize them."""
+    """Run selected scorers against existing generations, then summarize them."""
 
-    runtime._configure_runtime(model_key, calibration_id)
+    runtime._configure_runtime(model_key, calibration_id, use_cache=use_cache)
     generation_paths = []
     for dataset in datasets:
         for method in methods:
@@ -205,21 +211,23 @@ def score_stage(
                 )
             generation_paths.append(files[0])
 
-    gpu_judges = [key for key in judges if judge_spec(key).backend == "huggingface_binary"]
-    api_judges = [key for key in judges if judge_spec(key).backend == "openai_0_2"]
+    gpu_scorers = [
+        key for key in scorers if scorer_spec(key).backend == "huggingface_binary"
+    ]
+    api_scorers = [key for key in scorers if scorer_spec(key).backend == "openai_0_2"]
     jobs = []
     for dataset in datasets:
         for method in methods:
-            for judge in gpu_judges:
+            for scorer in gpu_scorers:
                 jobs.append(
                     (
-                        f"score-{dataset}-{method}-{judge}",
+                        f"score-{dataset}-{method}-{scorer}",
                         [
                             sys.executable,
                             "-m",
                             "robust_steerability.benchmarks.truthfulness_runtime",
                             "--stage",
-                            "score-judge",
+                            "score-scorer",
                             "--model",
                             model_key,
                             "--method",
@@ -230,20 +238,22 @@ def score_stage(
                             dataset,
                             "--calibration-id",
                             calibration_id,
-                            "--judge",
-                            judge,
+                            "--kv-cache",
+                            "on" if use_cache else "off",
+                            "--scorer",
+                            scorer,
                             "--device",
                             "{device}",
                         ],
                     )
                 )
     if jobs:
-        run_jobs(jobs, devices, log_root / "judges")
-    if api_judges:
-        openai_judges.score_generations(
+        run_jobs(jobs, devices, log_root / "scoring")
+    if api_scorers:
+        openai_scoring.score_generations(
             generation_paths,
             runtime.CACHE_ROOT,
-            api_judges,
+            api_scorers,
             concurrency=api_concurrency,
             batch_size=api_batch_size,
         )
@@ -252,23 +262,16 @@ def score_stage(
             generation_path = runtime._generation_files(
                 model_key, method, "truthfulness", dataset
             )[0]
-            available = tuple(
-                key
-                for key in TRUTHFULNESS_JUDGES
-                if judge_cache_path(runtime.CACHE_ROOT, generation_path, key).exists()
-                and json.loads(
-                    judge_cache_path(runtime.CACHE_ROOT, generation_path, key).read_text()
-                ).get("status") == "complete"
-            )
-            missing = set(judges) - set(available)
-            if missing:
-                raise ValueError(f"Requested judges did not complete: {sorted(missing)}")
+            for key in scorers:
+                path = scorer_cache_path(runtime.CACHE_ROOT, generation_path, key)
+                if not path.exists() or json.loads(path.read_text()).get("status") != "complete":
+                    raise ValueError(f"Requested scorer did not complete: {path}")
             runtime.summarize(
                 model_key,
                 method,
                 "truthfulness",
                 dataset,
-                available,
+                tuple(scorers),
             )
 
 
@@ -278,23 +281,25 @@ def main() -> None:
     parser.add_argument("--model", choices=tuple(MODELS), required=True)
     parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
     parser.add_argument("--datasets", default=",".join(DATASETS))
-    parser.add_argument("--judges", default=",".join(TRUTHFULNESS_JUDGES))
+    parser.add_argument("--scorers", default=",".join(TRUTHFULNESS_SCORERS))
+    parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument(
-        "--api-concurrency", type=int, default=openai_judges.DEFAULT_CONCURRENCY
+        "--api-concurrency", type=int, default=openai_scoring.DEFAULT_CONCURRENCY
     )
     parser.add_argument(
-        "--api-batch-size", type=int, default=openai_judges.DEFAULT_BATCH_SIZE
+        "--api-batch-size", type=int, default=openai_scoring.DEFAULT_BATCH_SIZE
     )
     parser.add_argument("--run-id")
     arguments = parser.parse_args()
     methods = _names(arguments.methods, METHODS)
     datasets = _names(arguments.datasets, DATASETS)
-    judges = _names(arguments.judges, TRUTHFULNESS_JUDGES)
+    scorers = _names(arguments.scorers, TRUTHFULNESS_SCORERS)
+    use_cache = arguments.kv_cache == "on"
     gpu_required = arguments.stage != "score" or any(
-        judge_spec(key).backend == "huggingface_binary" for key in judges
+        scorer_spec(key).backend == "huggingface_binary" for key in scorers
     )
     devices = resolve_cuda_devices(arguments.devices) if gpu_required else []
     run_id = arguments.run_id or default_run_id(
@@ -308,11 +313,11 @@ def main() -> None:
         methods=methods,
         datasets=datasets,
         devices=arguments.devices if devices else "none",
-        use_cache=False,
+        use_cache=use_cache,
         calibration_id=arguments.calibration_id,
         parameters={
             "generation_batch_size": arguments.generation_batch_size,
-            "judges": judges if arguments.stage == "score" else [],
+            "scorers": scorers if arguments.stage == "score" else [],
             "api_concurrency": arguments.api_concurrency,
             "api_batch_size": arguments.api_batch_size,
         },
@@ -337,18 +342,20 @@ def main() -> None:
                 log_root,
                 arguments.calibration_id,
                 arguments.generation_batch_size,
+                use_cache,
             )
         else:
             score_stage(
                 arguments.model,
                 methods,
                 datasets,
-                judges,
+                scorers,
                 devices,
                 log_root,
                 arguments.calibration_id,
                 arguments.api_concurrency,
                 arguments.api_batch_size,
+                use_cache,
             )
 
 

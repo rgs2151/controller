@@ -22,7 +22,7 @@ source .venv/bin/activate
 python -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
 python -m robust_steerability.benchmarks.truthfulness calibrate --model llama8b --devices auto
 python -m robust_steerability.benchmarks.truthfulness evaluate --model llama8b --devices auto
-python -m robust_steerability.benchmarks.truthfulness score --model llama8b --judges true,informative,instruction_relevance,fluency --devices auto
+python -m robust_steerability.benchmarks.truthfulness score --model llama8b --scorers truthfulqa_true,truthfulqa_informative,axbench_instruction_relevance,axbench_fluency --devices auto
 ```
 
 Create the persistent Studio environment once per checkout before starting a
@@ -52,7 +52,9 @@ git status --short
 ```
 
 The benchmark entry point—not the server folder—owns models, datasets, methods,
-GPU discovery, sharding, checkpointing, cache paths, logs, tables, and plots.
+GPU discovery, sharding, cache paths, logs, tables, and plots. Every stage log
+records UTC start/end, elapsed time, requested devices, visible GPUs, host,
+command, Git state, methods, datasets, cache condition, and stage parameters.
 Use `python -m robust_steerability.benchmarks.toxicity ...` for the RTP-to-Jigsaw
 pipeline. Use the same commands on every machine; no host name is encoded in code.
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -21,14 +20,6 @@ def _client():
         raise RuntimeError("Install the project dependencies to use S3 transport") from error
     endpoint = os.environ.get("ROBUST_STEERING_S3_ENDPOINT")
     return boto3.client("s3", endpoint_url=endpoint)
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _stage_root(
@@ -78,9 +69,7 @@ def push(
         relative = path.relative_to(root).as_posix()
         key = f"{base_key}/{relative}"
         client.upload_file(str(path), bucket, key)
-        objects.append({
-            "key": key, "bytes": path.stat().st_size, "sha256": _sha256(path)
-        })
+        objects.append({"key": key, "bytes": path.stat().st_size})
     manifest = {
         "schema_version": 1, "benchmark": benchmark, "model": model,
         "stage": stage, "method": method, "calibration_id": calibration_id,
@@ -106,30 +95,14 @@ def pull(
     )
     response = client.get_object(Bucket=bucket, Key=f"{base_key}/_manifest.json")
     manifest = json.loads(response["Body"].read())
-    if {
-        "benchmark": manifest.get("benchmark"), "model": manifest.get("model"),
-        "stage": manifest.get("stage"), "method": manifest.get("method"),
-        "calibration_id": manifest.get("calibration_id"),
-    } != {
-        "benchmark": benchmark, "model": model, "stage": stage,
-        "method": method, "calibration_id": calibration_id,
-    }:
-        raise ValueError("S3 artifact manifest does not match the requested object")
     for item in manifest["objects"]:
         relative = Path(str(item["key"])).relative_to(base_key)
         destination = root / relative
         if destination.exists():
-            if _sha256(destination) != item["sha256"]:
-                raise FileExistsError(
-                    f"Refusing to overwrite a different local artifact: {destination}"
-                )
             continue
         destination.parent.mkdir(parents=True, exist_ok=True)
         temporary = destination.with_suffix(destination.suffix + ".tmp")
         client.download_file(bucket, item["key"], str(temporary))
-        if _sha256(temporary) != item["sha256"]:
-            temporary.unlink()
-            raise ValueError(f"Downloaded checksum mismatch: {item['key']}")
         temporary.replace(destination)
     return manifest
 

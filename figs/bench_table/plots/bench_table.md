@@ -74,4 +74,4 @@ Toxicity values are mean ± SE across five 1,000-prompt repetitions.
 | Qwen-2.5-14B | A-LQR | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
-Truthfulness values are mean ± SE across five complete 817-question repetitions. Judges are scored independently; TBD means the requested judge has not been run.
+Truthfulness values are mean ± SE across five complete 817-question repetitions. Scorers run independently; TBD means that scorer has not been run.

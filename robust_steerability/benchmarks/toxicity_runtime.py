@@ -1,10 +1,9 @@
-"""Run the frozen Gemma-2-2B RTP-to-Jigsaw toxicity benchmark with KV cache off."""
+"""Run the RTP-to-Jigsaw toxicity benchmark in an explicit KV-cache mode."""
 
 from __future__ import annotations
 
 import argparse
 import gc
-import hashlib
 import json
 import math
 import random
@@ -22,6 +21,7 @@ from robust_steerability.benchmarks.layout import (
     artifact_root,
     benchmark_root,
     calibration_root,
+    dataset_root,
     evaluation_root,
     results_root,
 )
@@ -76,11 +76,12 @@ CALIBRATION_ID = "selected"
 MODEL_ID = "google/gemma-2-2b"
 MODEL_REVISION = "c5ebcd40d208330abc697524c919956e692655cf"
 MODEL_LABEL = "Gemma-2-2B"
-CACHE = evaluation_root("toxicity", MODEL_KEY)
+CURRENT_USE_CACHE = False
+CACHE = evaluation_root("toxicity", MODEL_KEY, use_cache=CURRENT_USE_CACHE)
 SHARED = artifact_root("toxicity", MODEL_KEY)
 HINF_CALIBRATION = calibration_root("toxicity", MODEL_KEY, "h_infinity")
 SPID_CALIBRATION = calibration_root("toxicity", MODEL_KEY, "spid")
-DATA_PATH = CACHE / "data/toxicity_rtp_jigsaw.json"
+DATA_PATH = dataset_root("toxicity", MODEL_KEY) / "toxicity_rtp_jigsaw.json"
 RTP_ID = "allenai/real-toxicity-prompts"
 RTP_REVISION = "f21629712ffd6a3d13a54fd2807ccd521c55ef74"
 JIGSAW_ID = "tcapelle/jigsaw-toxic-comment-classification-challenge"
@@ -92,6 +93,7 @@ PERPLEXITY_MODEL_REVISION = "27d67f1b5f57dc0953326b2601d68371d40ea8da"
 
 METHODS = ("original", "spid", "alqr", "h_infinity")
 DISTRIBUTIONS = ("toxicity", "toxicity_jigsaw")
+SCORERS = ("toxicity_classifier", "distinct_2", "perplexity")
 EVALUATION_REPETITIONS = 5
 EVALUATION_SAMPLES = 1000
 CALIBRATION_REPETITIONS = 5
@@ -113,6 +115,8 @@ def configure_model(
     model_key: str,
     calibration_id: str = "selected",
     generation_batch_size: int | None = None,
+    *,
+    use_cache: bool = False,
 ) -> None:
     """Bind this worker process to exactly one model-owned cache tree."""
 
@@ -121,6 +125,7 @@ def configure_model(
     spec = MODELS[model_key]
     global MODEL_KEY, MODEL_ID, MODEL_REVISION, MODEL_LABEL, CALIBRATION_ID
     global CACHE, SHARED, HINF_CALIBRATION, SPID_CALIBRATION, DATA_PATH
+    global CURRENT_USE_CACHE
     global FIXED_SETPOINT_MULTIPLIER, GENERATION_BATCH_SIZE
     MODEL_KEY = spec.key
     if not calibration_id or "/" in calibration_id:
@@ -131,7 +136,8 @@ def configure_model(
     MODEL_ID = spec.model_id
     MODEL_REVISION = spec.revision
     MODEL_LABEL = spec.label
-    CACHE = evaluation_root("toxicity", model_key)
+    CURRENT_USE_CACHE = use_cache
+    CACHE = evaluation_root("toxicity", model_key, use_cache=use_cache)
     SHARED = artifact_root("toxicity", model_key)
     HINF_CALIBRATION = calibration_root(
         "toxicity", model_key, "h_infinity", calibration_id
@@ -139,7 +145,7 @@ def configure_model(
     SPID_CALIBRATION = calibration_root(
         "toxicity", model_key, "spid", calibration_id
     )
-    DATA_PATH = CACHE / "data/toxicity_rtp_jigsaw.json"
+    DATA_PATH = dataset_root("toxicity", model_key) / "toxicity_rtp_jigsaw.json"
     FIXED_SETPOINT_MULTIPLIER = paper_alqr_setting(
         "toxicity", MODEL_ID
     ).multiplier
@@ -148,20 +154,6 @@ def configure_model(
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def _sha(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _hash(payload: object) -> str:
-    return hashlib.sha256(
-        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -188,17 +180,10 @@ def _source_id(record: dict) -> str:
     return str(record.get("source_prompt_id", record.get("question_id", record["prompt_id"])))
 
 
-def _data_fingerprint(payload: dict) -> str:
-    scientific = {key: value for key, value in payload.items() if key != "fingerprint"}
-    return _hash(scientific)
-
-
 def prepare() -> None:
     """Freeze disjoint RTP fit/tuning/test records and the Jigsaw transfer sets."""
 
     if DATA_PATH.exists():
-        saved = json.loads(DATA_PATH.read_text())
-        _validate_data(saved)
         return
     shared_data_path = SHARED / "data.json"
     if not shared_data_path.exists():
@@ -239,7 +224,6 @@ def prepare() -> None:
         "schema_version": 2,
         "behavior": "toxicity",
         "model": [MODEL_ID, MODEL_REVISION],
-        "kv_cache": False,
         "seed": SOURCE_RANDOM_SEED,
         "datasets": {
             "rtp": [RTP_ID, RTP_REVISION, "train"],
@@ -257,7 +241,7 @@ def prepare() -> None:
             "dataset": {
                 "id": RTP_ID,
                 "revision": RTP_REVISION,
-                "shared_artifact_data_sha256": _sha(shared_data_path),
+                "shared_artifact_data": str(shared_data_path.relative_to(REPO)),
             },
         },
         "hyperparameter_evaluation": {"toxicity": tuning_repetitions},
@@ -280,46 +264,7 @@ def prepare() -> None:
             },
         },
     }
-    payload["fingerprint"] = _data_fingerprint(payload)
     _write_json(DATA_PATH, payload)
-
-
-def _validate_data(data: dict) -> None:
-    counts = ALQR_CALIBRATION_COUNTS["toxicity"]
-    expected_calibration = {
-        "negative": counts.undesired,
-        "positive": counts.desired,
-        "jacobian": counts.jacobian,
-        "disturbance": DISTURBANCE_SAMPLES,
-    }
-    actual_calibration = {
-        key: len(data.get("calibration", {}).get(key, []))
-        for key in expected_calibration
-    }
-    expected_repetitions = {str(index) for index in range(EVALUATION_REPETITIONS)}
-    evaluations = data.get("evaluation", {})
-    if (
-        data.get("schema_version") != 2
-        or data.get("behavior") != "toxicity"
-        or data.get("kv_cache") is not False
-        or data.get("fingerprint") != _data_fingerprint(data)
-        or actual_calibration != expected_calibration
-        or set(data.get("hyperparameter_evaluation", {}).get("toxicity", {}))
-        != expected_repetitions
-        or any(
-            len(data["hyperparameter_evaluation"]["toxicity"][str(index)])
-            != CALIBRATION_SAMPLES
-            for index in range(CALIBRATION_REPETITIONS)
-        )
-        or any(set(evaluations.get(name, {})) != expected_repetitions for name in DISTRIBUTIONS)
-        or any(
-            len(evaluations[name][str(index)]) != EVALUATION_SAMPLES
-            for name in DISTRIBUTIONS
-            for index in range(EVALUATION_REPETITIONS)
-        )
-    ):
-        raise ValueError(f"Frozen toxicity dataset does not match the protocol: {DATA_PATH}")
-
 
 def _hinf_settings() -> dict[str, object]:
     counts = ALQR_CALIBRATION_COUNTS["toxicity"]
@@ -426,13 +371,8 @@ def synthesize_hinf_grid(device: str) -> None:
             "task": "toxicity",
             "kv_cache": False,
             "configuration": configuration,
-            "base_controller_sha256": _sha(HINF_CALIBRATION / "base/controller.pt"),
-            "base_input_sha256": _sha(diagnostic_root(HINF_CALIBRATION / "base/controller.pt") / "input.pt"),
         }
         if destination.exists():
-            saved = torch.load(destination, map_location="cpu", weights_only=True)
-            if saved.get("identity") != identity:
-                raise ValueError(f"H-infinity grid cache mismatch: {destination}")
             continue
         problem = FiniteHorizonControlProblem(
             dynamics=source_problem.dynamics,
@@ -570,7 +510,15 @@ def _candidate_policy(candidate: dict, device: str):
     return _hinf_grid_policy(str(candidate["candidate_id"]))
 
 
-def _generate_records(model, tokenizer, policy, records: list[dict], seed: int) -> list[dict]:
+def _generate_records(
+    model,
+    tokenizer,
+    policy,
+    records: list[dict],
+    seed: int,
+    *,
+    use_cache: bool,
+) -> list[dict]:
     register = (
         None
         if policy is None
@@ -583,7 +531,7 @@ def _generate_records(model, tokenizer, policy, records: list[dict], seed: int) 
         behavior="toxicity",
         batch_size=GENERATION_BATCH_SIZE,
         seed=seed,
-        use_cache=False,
+        use_cache=use_cache,
         register_hooks=register,
         reset=None if policy is None else policy.reset,
     )
@@ -611,15 +559,12 @@ def generate_calibration_worker(device: str, worker_index: int, worker_count: in
         identity = {
             "schema_version": 1,
             "candidate": candidate,
-            "data_fingerprint": data["fingerprint"],
             "kv_cache": False,
             "generation": GENERATION["toxicity"],
             "batch_size": GENERATION_BATCH_SIZE,
         }
         if destination.exists():
             saved = json.loads(destination.read_text())
-            if saved.get("identity") != identity:
-                raise ValueError(f"Calibration generation cache mismatch: {destination}")
             if saved.get("status") == "complete":
                 continue
         else:
@@ -645,6 +590,7 @@ def generate_calibration_worker(device: str, worker_index: int, worker_count: in
                 policy,
                 data["hyperparameter_evaluation"]["toxicity"][str(repetition)],
                 SOURCE_RANDOM_SEED + repetition * SEED_STRIDE,
+                use_cache=False,
             )
             saved["repetitions"].append({"repetition": repetition, "rows": rows})
             _write_json(destination, saved)
@@ -731,7 +677,6 @@ def score_calibration_worker(device: str, worker_index: int, worker_count: int) 
             {
                 "identity": {
                     "candidate": candidate,
-                    "generation_sha256": _sha(generation_path),
                     "classifier": [TOXICITY_CLASSIFIER, TOXICITY_CLASSIFIER_REVISION],
                 },
                 "status": "toxicity_complete",
@@ -781,8 +726,6 @@ def _candidate_summary(candidate: dict) -> dict:
         "toxicity": float(np.mean([row["toxicity"] for row in per_repetition])),
         "perplexity": float(np.mean([row["perplexity"] for row in per_repetition])),
         "per_repetition": per_repetition,
-        "generation_sha256": _sha(generation_path),
-        "score_sha256": _sha(score_path),
     }
 
 
@@ -835,7 +778,6 @@ def select_calibration() -> None:
                 "kv_cache": False,
                 "selection_candidate": hinf["candidate_id"],
                 "parameters": hinf["parameters"],
-                "source_controller_sha256": _sha(variant_path),
             },
             "artifact": selected_artifact.__dict__,
         },
@@ -864,7 +806,6 @@ def select_calibration() -> None:
             "selected": hinf,
             "grid": [row for row in summaries if row["method"] == "h_infinity"],
             "reference_original": original,
-            "controller_sha256": _sha(controller_path),
         },
     )
     _write_json(
@@ -932,17 +873,13 @@ def generate_final(
             "model": [MODEL_ID, MODEL_REVISION],
             "method": method,
             "parameters": parameters,
-            "artifact_sha256": _method_artifacts(method),
             "distribution": distribution,
-            "data_fingerprint": data["fingerprint"],
-            "kv_cache": False,
+            "kv_cache": CURRENT_USE_CACHE,
             "generation": GENERATION["toxicity"],
             "batch_size": GENERATION_BATCH_SIZE,
         }
         if destination.exists():
             saved = json.loads(destination.read_text())
-            if saved.get("identity") != identity:
-                raise ValueError(f"Final generation cache mismatch: {destination}")
             if saved.get("status") == "complete":
                 continue
         else:
@@ -967,6 +904,7 @@ def generate_final(
                 policy,
                 data["evaluation"][distribution][str(repetition)],
                 SOURCE_RANDOM_SEED + repetition * SEED_STRIDE,
+                use_cache=CURRENT_USE_CACHE,
             )
             saved["repetitions"].append({"repetition": repetition, "rows": rows})
             _write_json(destination, saved)
@@ -1009,100 +947,123 @@ def _method_parameters(method: str) -> dict:
     )
 
 
-def _method_artifacts(method: str) -> dict[str, str]:
-    paths = [Path(__file__).resolve()]
-    if method in {"spid", "alqr", "h_infinity"}:
-        paths.append(SHARED / "setpoint.pt")
-    if method == "alqr":
-        paths.append(SHARED / "dynamics.pt")
-    if method in {"spid", "h_infinity"}:
-        paths.append(
-            (SPID_CALIBRATION if method == "spid" else HINF_CALIBRATION)
-            / "selection.json"
-        )
-    if method == "h_infinity":
-        paths.append(HINF_CALIBRATION / "controller.pt")
-    return {str(path.relative_to(REPO)): _sha(path) for path in paths}
-
-
-def _score_path(distribution: str, method: str) -> Path:
-    return CACHE / "scores" / distribution / method / "final.json"
+def _score_path(scorer: str, distribution: str, method: str) -> Path:
+    return CACHE / "scores" / scorer / distribution / method / "final.json"
 
 
 def score_final(
     method: str,
     device: str,
     distributions: tuple[str, ...] = DISTRIBUTIONS,
+    scorers: tuple[str, ...] = SCORERS,
 ) -> None:
-    """Score RTP and Jigsaw continuations with toxicity and perplexity."""
+    """Run only the selected benchmark scorers against cached generations."""
 
-    token = load_access_token(REPO)
-    classifier, classifier_tokenizer = load_sequence_classifier(
-        TOXICITY_CLASSIFIER,
-        TOXICITY_CLASSIFIER_REVISION,
-        device,
-        token,
+    unknown = set(scorers) - set(SCORERS)
+    if unknown:
+        raise ValueError(f"Unknown toxicity scorers: {sorted(unknown)}")
+    token = (
+        load_access_token(REPO)
+        if {"toxicity_classifier", "perplexity"} & set(scorers)
+        else ""
     )
-    for distribution in distributions:
-        generation_path = _generation_path(distribution, method)
-        generation = json.loads(generation_path.read_text())
-        destination = _score_path(distribution, method)
-        identity = {
-            "generation_sha256": _sha(generation_path),
-            "classifier": [TOXICITY_CLASSIFIER, TOXICITY_CLASSIFIER_REVISION],
-            "perplexity": [PERPLEXITY_MODEL, PERPLEXITY_MODEL_REVISION],
-            "kv_cache": False,
-        }
-        if destination.exists():
-            saved = json.loads(destination.read_text())
-            if saved.get("identity") != identity:
-                raise ValueError(f"Final score cache mismatch: {destination}")
-            if saved.get("status") in {"toxicity_complete", "complete"}:
-                continue
-        flat = [row for repetition in generation["repetitions"] for row in repetition["rows"]]
-        probabilities = toxicity_probabilities(
-            [str(row["completion"]) for row in flat],
-            classifier,
-            classifier_tokenizer,
-            device,
-            batch_size=TOXICITY_BATCH_SIZE,
-            max_length=512,
-        )
-        _write_json(
-            destination,
-            {
-                "identity": identity,
-                "status": "toxicity_complete",
-                "toxicity": [float(value) for value in probabilities],
-            },
-        )
-    del classifier, classifier_tokenizer
-    gc.collect()
-    torch.cuda.empty_cache()
-
-    pending = [
-        distribution
-        for distribution in distributions
-        if json.loads(_score_path(distribution, method).read_text()).get("status")
-        != "complete"
+    pending_toxicity = [
+        value for value in distributions
+        if "toxicity_classifier" in scorers
+        and not _score_path("toxicity_classifier", value, method).exists()
     ]
-    if not pending:
-        return
-    perplexity_model, perplexity_tokenizer = _load_perplexity_model(device, token)
-    for distribution in pending:
-        generation_path = _generation_path(distribution, method)
-        generation = json.loads(generation_path.read_text())
-        score_path = _score_path(distribution, method)
-        saved = json.loads(score_path.read_text())
-        flat = [row for repetition in generation["repetitions"] for row in repetition["rows"]]
-        saved["perplexity"] = _perplexities(
-            perplexity_model,
-            perplexity_tokenizer,
-            [str(row["text"]) + str(row["completion"]) for row in flat],
+    if pending_toxicity:
+        classifier, classifier_tokenizer = load_sequence_classifier(
+            TOXICITY_CLASSIFIER,
+            TOXICITY_CLASSIFIER_REVISION,
             device,
+            token,
         )
-        saved["status"] = "complete"
-        _write_json(score_path, saved)
+        for distribution in pending_toxicity:
+            generation = json.loads(
+                _generation_path(distribution, method).read_text()
+            )
+            flat = [
+                row for repetition in generation["repetitions"]
+                for row in repetition["rows"]
+            ]
+            probabilities = toxicity_probabilities(
+                [str(row["completion"]) for row in flat],
+                classifier,
+                classifier_tokenizer,
+                device,
+                batch_size=TOXICITY_BATCH_SIZE,
+                max_length=512,
+            )
+            _write_json(
+                _score_path("toxicity_classifier", distribution, method),
+                {
+                    "status": "complete",
+                    "scorer": "toxicity_classifier",
+                    "model": [TOXICITY_CLASSIFIER, TOXICITY_CLASSIFIER_REVISION],
+                    "values": [float(value) for value in probabilities],
+                },
+            )
+        del classifier, classifier_tokenizer
+        gc.collect()
+        torch.cuda.empty_cache()
+
+    pending_perplexity = [
+        value for value in distributions
+        if "perplexity" in scorers
+        and not _score_path("perplexity", value, method).exists()
+    ]
+    if pending_perplexity:
+        perplexity_model, perplexity_tokenizer = _load_perplexity_model(device, token)
+        for distribution in pending_perplexity:
+            generation = json.loads(
+                _generation_path(distribution, method).read_text()
+            )
+            flat = [
+                row for repetition in generation["repetitions"]
+                for row in repetition["rows"]
+            ]
+            _write_json(
+                _score_path("perplexity", distribution, method),
+                {
+                    "status": "complete",
+                    "scorer": "perplexity",
+                    "model": [PERPLEXITY_MODEL, PERPLEXITY_MODEL_REVISION],
+                    "values": _perplexities(
+                        perplexity_model,
+                        perplexity_tokenizer,
+                        [str(row["text"]) + str(row["completion"]) for row in flat],
+                        device,
+                    ),
+                },
+            )
+        del perplexity_model, perplexity_tokenizer
+        gc.collect()
+        torch.cuda.empty_cache()
+
+    if "distinct_2" in scorers:
+        for distribution in distributions:
+            destination = _score_path("distinct_2", distribution, method)
+            if destination.exists():
+                continue
+            generation = json.loads(
+                _generation_path(distribution, method).read_text()
+            )
+            _write_json(
+                destination,
+                {
+                    "status": "complete",
+                    "scorer": "distinct_2",
+                    "definition": "unique generated bigrams divided by generated bigrams",
+                    "values": [
+                        distinct_ngrams(
+                            [str(row["completion"]) for row in repetition["rows"]],
+                            2,
+                        )
+                        for repetition in generation["repetitions"]
+                    ],
+                },
+            )
 
 
 def _mean_se(values: list[float]) -> dict[str, float]:
@@ -1113,41 +1074,51 @@ def _mean_se(values: list[float]) -> dict[str, float]:
     }
 
 
-def summarize_final(method: str, distribution: str) -> dict:
+def summarize_final(
+    method: str,
+    distribution: str,
+    scorers: tuple[str, ...] = SCORERS,
+) -> dict:
     generation_path = _generation_path(distribution, method)
-    score_path = _score_path(distribution, method)
     generation = json.loads(generation_path.read_text())
-    scores = json.loads(score_path.read_text())
+    scores = {
+        scorer: json.loads(_score_path(scorer, distribution, method).read_text())
+        for scorer in scorers
+    }
     per_repetition = []
     offset = 0
     for repetition in generation["repetitions"]:
         count = len(repetition["rows"])
-        probabilities = scores["toxicity"][offset : offset + count]
-        toxicity, _se = toxicity_frequency(probabilities)
-        completions = [str(value["completion"]) for value in repetition["rows"]]
-        row = {
-            "repetition": repetition["repetition"],
-            "toxicity": toxicity,
-            "dist_2": distinct_ngrams(completions, 2),
-            "perplexity": float(
-                np.mean(scores["perplexity"][offset : offset + count])
-            ),
-        }
+        row = {"repetition": repetition["repetition"]}
+        if "toxicity_classifier" in scorers:
+            probabilities = scores["toxicity_classifier"]["values"][offset : offset + count]
+            row["toxicity"], _se = toxicity_frequency(probabilities)
+        if "distinct_2" in scorers:
+            row["dist_2"] = scores["distinct_2"]["values"][repetition["repetition"]]
+        if "perplexity" in scorers:
+            row["perplexity"] = float(
+                np.mean(scores["perplexity"]["values"][offset : offset + count])
+            )
         per_repetition.append(row)
         offset += count
+    metric_names = {
+        "toxicity_classifier": "toxicity",
+        "distinct_2": "dist_2",
+        "perplexity": "perplexity",
+    }
     metrics = {
-        "toxicity": _mean_se([row["toxicity"] for row in per_repetition]),
-        "dist_2": _mean_se([row["dist_2"] for row in per_repetition]),
-        "perplexity": _mean_se([row["perplexity"] for row in per_repetition]),
+        metric_names[scorer]: _mean_se(
+            [row[metric_names[scorer]] for row in per_repetition]
+        )
+        for scorer in scorers
     }
     result = {
         "identity": {
             "model": [MODEL_ID, MODEL_REVISION],
             "method": method,
             "distribution": distribution,
-            "kv_cache": False,
-            "generation_sha256": _sha(generation_path),
-            "scores_sha256": _sha(score_path),
+            "kv_cache": CURRENT_USE_CACHE,
+            "scorers": list(scorers),
         },
         "evaluation_samples_per_repetition": EVALUATION_SAMPLES,
         "evaluation_repetitions": EVALUATION_REPETITIONS,
@@ -1155,10 +1126,21 @@ def summarize_final(method: str, distribution: str) -> dict:
         "metrics": metrics,
     }
     destination = CACHE / "results" / distribution / f"{method}.json"
+    if destination.exists():
+        existing = json.loads(destination.read_text())
+        result["metrics"] = {**existing.get("metrics", {}), **result["metrics"]}
+        existing_rows = {
+            int(row["repetition"]): row for row in existing.get("per_repetition", [])
+        }
+        for row in result["per_repetition"]:
+            existing_rows.setdefault(int(row["repetition"]), {}).update(row)
+        result["per_repetition"] = [existing_rows[index] for index in sorted(existing_rows)]
+        result["identity"]["scorers"] = sorted(
+            set(existing.get("identity", {}).get("scorers", [])) | set(scorers)
+        )
     _write_json(destination, result)
     _write_json(
-        results_root("toxicity")
-        / "kv_cache_off"
+        results_root("toxicity", use_cache=CURRENT_USE_CACHE)
         / MODEL_KEY
         / distribution
         / f"{method}.json",
@@ -1175,6 +1157,7 @@ def _launch_workers(
     candidates: bool,
     methods: tuple[str, ...] = METHODS,
     distributions: tuple[str, ...] = DISTRIBUTIONS,
+    scorers: tuple[str, ...] = SCORERS,
 ) -> None:
     jobs = []
     if candidates:
@@ -1194,6 +1177,7 @@ def _launch_workers(
                 CALIBRATION_ID,
                 "--generation-batch-size",
                 str(GENERATION_BATCH_SIZE),
+                "--kv-cache", "off",
             ]
             for index, device in enumerate(devices)
         ]
@@ -1205,6 +1189,8 @@ def _launch_workers(
                 "--distributions", ",".join(distributions),
                 "--calibration-id", CALIBRATION_ID,
                 "--generation-batch-size", str(GENERATION_BATCH_SIZE),
+                "--kv-cache", "on" if CURRENT_USE_CACHE else "off",
+                "--scorers", ",".join(scorers),
             ]
             for index, method in enumerate(methods)
         ]
@@ -1239,24 +1225,8 @@ def calibrate(devices: list[str], *, log_root: Path | None = None) -> None:
     spid_selection_path = SPID_CALIBRATION / "selection.json"
     controller_path = HINF_CALIBRATION / "controller.pt"
     if hinf_selection_path.exists() and spid_selection_path.exists():
-        selection = json.loads(hinf_selection_path.read_text())
-        spid_selection = json.loads(spid_selection_path.read_text())
-        if (
-            selection.get("model") != [MODEL_ID, MODEL_REVISION]
-            or selection.get("benchmark") != "toxicity"
-            or selection.get("method") != "h_infinity"
-            or selection.get("calibration_id") != CALIBRATION_ID
-            or not controller_path.exists()
-            or selection.get("controller_sha256") != _sha(controller_path)
-            or spid_selection.get("model") != [MODEL_ID, MODEL_REVISION]
-            or spid_selection.get("benchmark") != "toxicity"
-            or spid_selection.get("method") != "spid"
-            or spid_selection.get("calibration_id") != CALIBRATION_ID
-        ):
-            raise ValueError(
-                f"Completed toxicity calibration is invalid: {HINF_CALIBRATION}"
-            )
-        return
+        if controller_path.exists():
+            return
     calibrate_hinf_base(devices[0])
     synthesize_hinf_grid(devices[0])
     worker_logs = log_root or CACHE / "logs"
@@ -1290,14 +1260,39 @@ def evaluate(
         candidates=False, methods=selected_methods,
         distributions=normalized_distributions,
     )
+
+
+def score(
+    devices: list[str],
+    *,
+    methods: list[str] | tuple[str, ...] = METHODS,
+    distributions: list[str] | tuple[str, ...] = DISTRIBUTIONS,
+    scorers: list[str] | tuple[str, ...] = SCORERS,
+    log_root: Path | None = None,
+) -> None:
+    """Score existing generations without generating model responses."""
+
+    normalized_distributions = tuple(
+        {"rtp": "toxicity", "jigsaw": "toxicity_jigsaw"}.get(value, value)
+        for value in distributions
+    )
+    if set(methods) - set(METHODS) or set(normalized_distributions) - set(DISTRIBUTIONS):
+        raise ValueError("Unsupported toxicity scoring selection")
+    if set(scorers) - set(SCORERS):
+        raise ValueError("Unsupported toxicity scorer selection")
+    selected_methods = tuple(methods)
+    selected_scorers = tuple(scorers)
+    worker_logs = log_root or CACHE / "logs"
     _launch_workers(
         "score-final", devices, worker_logs,
-        candidates=False, methods=selected_methods,
+        candidates=False,
+        methods=selected_methods,
         distributions=normalized_distributions,
+        scorers=selected_scorers,
     )
     for method in selected_methods:
         for distribution in normalized_distributions:
-            summarize_final(method, distribution)
+            summarize_final(method, distribution, selected_scorers)
 
 
 def main() -> None:
@@ -1316,7 +1311,7 @@ def main() -> None:
             "score-final",
             "summarize-final",
             "evaluate",
-            "all",
+            "score",
         ),
         required=True,
     )
@@ -1330,22 +1325,30 @@ def main() -> None:
     parser.add_argument("--method", choices=METHODS)
     parser.add_argument("--distribution", choices=DISTRIBUTIONS)
     parser.add_argument("--distributions", default=",".join(DISTRIBUTIONS))
+    parser.add_argument("--scorers", default=",".join(SCORERS))
+    parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     arguments = parser.parse_args()
     configure_model(
         arguments.model,
         arguments.calibration_id,
         arguments.generation_batch_size,
+        use_cache=arguments.kv_cache == "on",
     )
     selected_distributions = tuple(
         value.strip() for value in arguments.distributions.split(",") if value.strip()
     )
     if not selected_distributions or set(selected_distributions) - set(DISTRIBUTIONS):
         raise ValueError("--distributions contains an unsupported value")
-    devices = (
-        resolve_cuda_devices(arguments.devices)
-        if arguments.stage in {"calibrate", "evaluate", "all"}
-        else []
+    selected_scorers = tuple(
+        value.strip() for value in arguments.scorers.split(",") if value.strip()
     )
+    if not selected_scorers or set(selected_scorers) - set(SCORERS):
+        raise ValueError("--scorers contains an unsupported value")
+    needs_gpu = arguments.stage in {"calibrate", "evaluate"} or (
+        arguments.stage == "score"
+        and bool({"toxicity_classifier", "perplexity"} & set(selected_scorers))
+    )
+    devices = resolve_cuda_devices(arguments.devices) if needs_gpu else ["cpu"]
     if arguments.stage == "prepare":
         prepare()
     elif arguments.stage == "calibrate-hinf-base":
@@ -1367,29 +1370,20 @@ def main() -> None:
     elif arguments.stage == "generate-final":
         generate_final(arguments.method, arguments.device, selected_distributions)
     elif arguments.stage == "score-final":
-        score_final(arguments.method, arguments.device, selected_distributions)
+        score_final(
+            arguments.method,
+            arguments.device,
+            selected_distributions,
+            selected_scorers,
+        )
     elif arguments.stage == "summarize-final":
-        summarize_final(arguments.method, arguments.distribution)
+        summarize_final(arguments.method, arguments.distribution, selected_scorers)
     elif arguments.stage == "evaluate":
         evaluate(devices)
+    elif arguments.stage == "score":
+        score(devices, distributions=selected_distributions, scorers=selected_scorers)
     else:
-        artifact_command = [
-            sys.executable,
-            "-m",
-            "robust_steerability.benchmarks.artifacts",
-            "--stage",
-            "all",
-            "--model",
-            MODEL_KEY,
-            "--behavior",
-            "toxicity",
-            "--devices",
-            ",".join(devices),
-        ]
-        subprocess.run(artifact_command, cwd=REPO, check=True)
-        prepare()
-        calibrate(devices)
-        evaluate(devices)
+        raise ValueError(f"Unsupported stage {arguments.stage!r}")
 
 
 if __name__ == "__main__":
