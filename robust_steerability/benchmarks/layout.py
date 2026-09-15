@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 BENCHMARKS = ("truthfulness", "toxicity")
+KV_CACHE_MODES = ("off", "on")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -31,6 +32,12 @@ def artifact_root(benchmark: str, model_key: str) -> Path:
     return model_root(benchmark, model_key) / "artifacts"
 
 
+def dataset_root(benchmark: str, model_key: str) -> Path:
+    """Return materialized benchmark inputs shared by both KV-cache modes."""
+
+    return model_root(benchmark, model_key) / "datasets"
+
+
 def calibration_root(
     benchmark: str,
     model_key: str,
@@ -47,13 +54,17 @@ def calibration_root(
 def evaluation_root(
     benchmark: str,
     model_key: str,
+    *,
+    use_cache: bool,
 ) -> Path:
-    """Return controlled-decoding evaluations for one benchmark and model."""
+    """Return evaluations for one explicit model-decoding cache condition."""
 
-    return model_root(benchmark, model_key) / "evaluations" / "kv_cache_off"
+    condition = "kv_cache_on" if use_cache else "kv_cache_off"
+    return model_root(benchmark, model_key) / "evaluations" / condition
 
 
-def results_root(benchmark: str) -> Path:
-    """Return small, Git-tracked benchmark summaries."""
+def results_root(benchmark: str, *, use_cache: bool) -> Path:
+    """Return small, Git-tracked summaries for one cache condition."""
 
-    return benchmark_root(benchmark) / "results"
+    condition = "kv_cache_on" if use_cache else "kv_cache_off"
+    return benchmark_root(benchmark) / "results" / condition

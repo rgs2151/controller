@@ -1,41 +1,43 @@
 # Truthfulness benchmark
 
-The benchmark has four explicit stages. Each stage can run independently on the machine that owns the model's local cache.
+This benchmark uses the same four-stage interface as every benchmark:
 
-1. `artifacts` freezes the 200 false examples, 200 true examples, semantic setpoint, and average of 35 desired-prompt Jacobians.
-2. `calibrate` records method parameters. A-LQR adopts its published values; H∞ selects its Q/R and Qf/R grid point by mean True percentage on five repetitions of the fixed tuning set.
-3. `evaluate` generates five complete 817-question repetitions for TruthfulQA ID and/or matched Spanish questions. Evaluated-model KV cache is always disabled. No judge runs here.
-4. `score` applies any requested subset of independent judges to cached responses and writes a summary from every completed judge cache.
+1. `artifacts` freezes the fit data, semantic setpoint, and average of 35 Jacobians.
+2. `calibrate` records published A-LQR parameters and selects H∞ parameters on the fixed development set.
+3. `evaluate` generates responses only; it never runs a scorer.
+4. `score` applies any requested subset of independent scorers to existing responses.
 
-The truthfulness score stage supports:
+The benchmark's default scorers are:
 
-- `true`: pinned TruthfulQA True judge, binary score reported as a percentage.
-- `informative`: pinned TruthfulQA Helpful judge, binary score reported as a percentage.
-- `instruction_relevance`: AXBench 0–2 instruction-relevance rubric through `gpt-4o-mini`.
-- `fluency`: AXBench 0–2 fluency rubric through `gpt-4o-mini`.
+- `truthfulqa_true`: pinned TruthfulQA True judge and rubric; binary percentage.
+- `truthfulqa_informative`: pinned TruthfulQA Helpful judge and rubric; binary percentage.
+- `axbench_instruction_relevance`: AXBench 0–2 rubric through `gpt-4o-mini`.
+- `axbench_fluency`: AXBench 0–2 rubric through `gpt-4o-mini`.
 
-Concept relevance remains available in the shared `robust_steerability.judges` package for benchmarks that supply an explicit target concept. It is not a TruthfulQA metric.
-
-## Commands
+`axbench_concept_relevance` is available to benchmarks whose generation rows
+contain an explicit target concept. It is not a TruthfulQA metric.
 
 ```bash
 python -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
 python -m robust_steerability.benchmarks.truthfulness calibrate --model llama8b --methods alqr,h_infinity --devices auto
 python -m robust_steerability.benchmarks.truthfulness evaluate --model llama8b --methods original,alqr,h_infinity --datasets id,spanish --devices auto
-python -m robust_steerability.benchmarks.truthfulness score --model llama8b --methods original,alqr,h_infinity --datasets id,spanish --judges true,informative,instruction_relevance,fluency --devices auto
+python -m robust_steerability.benchmarks.truthfulness score --model llama8b --methods original,alqr,h_infinity --datasets id,spanish --scorers truthfulqa_true,truthfulqa_informative,axbench_instruction_relevance,axbench_fluency --devices auto
 ```
 
-`--generation-batch-size` changes only evaluated-model throughput. `--api-concurrency` defaults to 500 and `--api-batch-size` defaults to 20 for the API judges. OpenAI scoring reads `OPENAI_API_KEY` from the environment or the checkout's ignored `.env` file.
-
-## Ownership
+Evaluated-model KV cache defaults to off. `--kv-cache on` remains available for
+an explicit appendix comparison and writes to a different directory. API scoring
+defaults to concurrency 500 and batch size 20.
 
 ```text
 cache/<model>/artifacts/
+cache/<model>/datasets/
 cache/<model>/calibrations/<method>/<calibration-id>/
-cache/<model>/evaluations/kv_cache_off/generations/
-cache/<model>/evaluations/kv_cache_off/judges/<judge>/
-cache/<model>/evaluations/kv_cache_off/results/
-results/kv_cache_off/<model>/<dataset>/<method>.json
+cache/<model>/evaluations/<kv-cache-condition>/generations/<dataset>/<method>/
+cache/<model>/evaluations/<kv-cache-condition>/scores/<scorer>/<dataset>/<method>/
+cache/<model>/evaluations/<kv-cache-condition>/results/<dataset>/<method>.json
+results/<kv-cache-condition>/<model>/<dataset>/<method>.json
 ```
 
-Large artifacts and calibrations may be published to S3. Generations, independent judge caches, summaries, and run logs remain owned by the machine that ran them until the tracked summaries and logs are committed.
+Large artifacts and calibrations may be published to the equivalent S3 prefix.
+Generations and score outputs remain on the machine that ran them; small summaries
+and stage logs are committed to Git.

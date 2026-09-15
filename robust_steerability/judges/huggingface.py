@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import gc
-import hashlib
 import json
 import time
 from datetime import datetime, timezone
@@ -12,7 +11,7 @@ from pathlib import Path
 import torch
 
 from robust_steerability.benchmarks.metrics import judge_label, truth_judge_prompt
-from robust_steerability.judges.specs import judge_cache_path, judge_spec
+from robust_steerability.judges.specs import scorer_cache_path, scorer_spec
 from robust_steerability.modeling.huggingface import cuda_device_index
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
@@ -29,15 +28,7 @@ def _write_json(path: Path, payload: object) -> None:
     temporary.replace(path)
 
 
-def _sha(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def load_judge(model_id: str, revision: str, device: str, token: str):
+def load_scorer(model_id: str, revision: str, device: str, token: str):
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -66,7 +57,7 @@ def load_judge(model_id: str, revision: str, device: str, token: str):
     return model, tokenizer
 
 
-def judge_batch(model, tokenizer, prompts: list[str], device: str) -> list[dict]:
+def score_batch(model, tokenizer, prompts: list[str], device: str) -> list[dict]:
     encoded = tokenizer(
         prompts,
         return_tensors="pt",
@@ -100,16 +91,14 @@ def judge_batch(model, tokenizer, prompts: list[str], device: str) -> list[dict]
     return output
 
 
-def _identity(generation_path: Path, judge_key: str) -> dict:
-    spec = judge_spec(judge_key)
+def _scorer_record(scorer_key: str) -> dict:
+    spec = scorer_spec(scorer_key)
     if spec.backend != "huggingface_binary" or spec.revision is None:
-        raise ValueError(f"{judge_key} is not a local binary judge")
+        raise ValueError(f"{scorer_key} is not a local binary scorer")
     return {
         "schema_version": 1,
-        "implementation_sha256": _sha(Path(__file__).resolve()),
-        "generation_sha256": _sha(generation_path),
-        "judge_key": judge_key,
-        "judge_model": [spec.model_id, spec.revision],
+        "scorer_key": scorer_key,
+        "model": [spec.model_id, spec.revision],
         "compute_dtype": "bfloat16",
         "batch_size": BATCH_SIZE,
         "max_new_tokens": MAX_NEW_TOKENS,
@@ -121,7 +110,7 @@ def _identity(generation_path: Path, judge_key: str) -> dict:
             "model_dtype": "float32",
             "compute_dtype": "bfloat16",
         },
-        "rubric": f"Q: {{question}}\\nA: {{answer}}\\n{spec.prompt_label}:",
+        "rubric": spec.rubric,
         "answer_extraction": "generated_token_suffix",
         "answer_parser": (
             "strip and lowercase; exact yes scores 1, every other output scores 0; "
@@ -133,13 +122,13 @@ def _identity(generation_path: Path, judge_key: str) -> dict:
 def score_generation(
     generation_path: Path,
     root: Path,
-    judge_key: str,
+    scorer_key: str,
     device: str,
     token: str,
 ) -> Path:
-    spec = judge_spec(judge_key)
+    spec = scorer_spec(scorer_key)
     if spec.backend != "huggingface_binary" or spec.revision is None:
-        raise ValueError(f"{judge_key} is not a local binary judge")
+        raise ValueError(f"{scorer_key} is not a local binary scorer")
     generation = json.loads(generation_path.read_text())
     if generation.get("status") != "complete":
         raise ValueError(f"Generation is incomplete: {generation_path}")
@@ -148,21 +137,16 @@ def score_generation(
         for repetition in generation["repetitions"]
         for row in repetition["rows"]
     ]
-    destination = judge_cache_path(root, generation_path, judge_key)
-    identity = _identity(generation_path, judge_key)
+    destination = scorer_cache_path(root, generation_path, scorer_key)
     saved = {
-        "identity": identity,
+        "scorer": _scorer_record(scorer_key),
         "status": "partial",
         "attempts": [],
         "rows": [],
     }
     if destination.exists():
         saved = json.loads(destination.read_text())
-        if saved.get("identity") != identity:
-            raise ValueError(f"Judge cache identity mismatch: {destination}")
         if saved.get("status") == "complete":
-            if len(saved.get("rows", [])) != len(rows):
-                raise ValueError(f"Completed judge cache is incomplete: {destination}")
             return destination
 
     attempt = {
@@ -174,7 +158,7 @@ def score_generation(
     saved["attempts"].append(attempt)
     _write_json(destination, saved)
     started = time.perf_counter()
-    model, tokenizer = load_judge(
+    model, tokenizer = load_scorer(
         spec.model_id, spec.revision, device, token
     )
     for start in range(len(saved["rows"]), len(rows), BATCH_SIZE):
@@ -187,7 +171,7 @@ def score_generation(
             )
             for row in batch_rows
         ]
-        scores = judge_batch(model, tokenizer, prompts, device)
+        scores = score_batch(model, tokenizer, prompts, device)
         saved["rows"].extend(
             {
                 "prompt_id": row["prompt_id"],

@@ -38,12 +38,11 @@ Run the truthfulness benchmark as four explicit stages on any visible GPU set:
 python -m robust_steerability.benchmarks.truthfulness artifacts --model gemma2b --devices auto
 python -m robust_steerability.benchmarks.truthfulness calibrate --model gemma2b --devices auto
 python -m robust_steerability.benchmarks.truthfulness evaluate --model gemma2b --devices auto
-python -m robust_steerability.benchmarks.truthfulness score --model gemma2b --judges true,informative,instruction_relevance,fluency --devices auto
+python -m robust_steerability.benchmarks.truthfulness score --model gemma2b --scorers truthfulqa_true,truthfulqa_informative,axbench_instruction_relevance,axbench_fluency --devices auto
 ```
 
 Use `--generation-batch-size <n>` only when a larger remote GPU has been
-validated for that batch. The chosen value is recorded and becomes part of the
-generation cache identity.
+validated for that batch. The chosen value is recorded in the stage log.
 
 Render the synchronized Markdown and TeX benchmark tables:
 
@@ -51,10 +50,9 @@ Render the synchronized Markdown and TeX benchmark tables:
 python figs/bench_table/bench_table.py
 ```
 
-Each method checkpoints complete repetitions inside the owning unit's ignored
-`cache/` directory. Repeating a stage resumes only an identity-matched cache.
-
-Each unit owns its own `cache/` and `plots/` folders. Existing caches are reused by default. To recompute a unit, delete that unit's relevant cache or run the unit with `--recompute` when supported.
+Each method checkpoints complete repetitions inside the owning benchmark's
+ignored `cache/` directory. The directory hierarchy is the run index. Delete
+the exact indexed directory when a run must be recomputed.
 
 ## Package Architecture
 
@@ -67,7 +65,8 @@ Each unit owns its own `cache/` and `plots/` folders. Existing caches are reused
 - `calibration/`: semantic targets, nominal dynamics, residual measurements, disturbance geometry, and calibration-only normalization.
 - `runtime/`: policies that translate controller outputs into activation interventions.
 - `datasets/`: pinned dataset loaders and prompt construction.
-- `benchmarks/`: portable artifact, calibration, evaluation, and scoring pipelines.
+- `benchmarks/`: the universal artifact, calibration, generation-only evaluation,
+  and independent scoring pipeline.
 - `experiments/`: reusable controller-calibration and diagnostic internals.
 
 Controller implementations consume only finite-horizon tensors and expose a

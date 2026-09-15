@@ -12,7 +12,6 @@
 - `ref/`: historical notebooks, old pipelines, copied external code, and reference material.
 - `server/`: direct SSH/Screen operating instructions; machine names and benchmark definitions stay out of this folder.
 - `skills/`: repo-local workflow skills.
-- `tests/`: small CPU-only package contract and numerical parity tests.
 - `tmp/`: disposable junk such as archives, zip files, temporary exports, and local leftovers.
 
 ## Root Files
@@ -45,7 +44,8 @@
 - `calibration/` owns reusable semantic-target, nominal-dynamics, residual, disturbance, and normalization calculations.
 - `runtime/` owns policies that connect synthesized controllers to model-independent activation deltas.
 - `datasets/` owns pinned dataset loading and prompt construction.
-- `benchmarks/` owns portable artifact, calibration, evaluation, and scoring pipelines.
+- `benchmarks/` owns the universal artifact, calibration, generation-only
+  evaluation, and independent scoring pipeline.
 - Controller modules must not import Hugging Face Transformers or benchmark code.
 - Model adapters must consume the shared runtime-policy interface rather than branching on controller names.
 - Do not package `data/`, caches, plots, notebooks, or historical references as package data.

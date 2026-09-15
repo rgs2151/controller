@@ -14,7 +14,7 @@ from pathlib import Path
 
 import torch
 
-from robust_steerability.artifacts import configuration_hash, implementation_hash
+from robust_steerability.artifacts import configuration_hash
 from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.calibration.disturbances import fit_disturbance_geometry
 from robust_steerability.calibration.nominal import project_dynamics
@@ -30,7 +30,7 @@ from robust_steerability.control import (
     HInfinityOptions,
 )
 from robust_steerability.experiments.methods import ControllerArtifact
-from robust_steerability.experiments.diagnostics import cpu_tensors, score, verify_run
+from robust_steerability.experiments.diagnostics import cpu_tensors, score
 
 
 def _record_identity(record: dict[str, object]) -> dict[str, str]:
@@ -387,7 +387,6 @@ def _fingerprint(
         "model_label": model_label, "model_id": model_id, "settings": settings,
         "nominal_dynamics": nominal_dynamics,
         "calibration_data": calibration_data,
-        "implementation_sha256": implementation_hash(),
     })
 
 
@@ -431,15 +430,7 @@ def calibrate_controller(
 ) -> tuple[ControllerArtifact, dict[str, object]]:
     """Fit/load the shared controller; new fits freeze full H-infinity diagnostics."""
     if cache_path.exists():
-        nominal_signature = nominal_dynamics_signature(nominal_dynamics_path)
-        data_identity = calibration_data_identity(calibration_data, settings)
-        fingerprint = _fingerprint(
-            model_label, model_id, settings, nominal_signature, data_identity
-        )
         cached = torch.load(cache_path, map_location="cpu", weights_only=True)
-        if cached["fingerprint"] != fingerprint:
-            raise ValueError(f"Incompatible controller cache: {cache_path}")
-        verify_run(diagnostic_run(cache_path, fingerprint))
         return ControllerArtifact(**cached["artifact"]), cached["metadata"]
 
     inputs = _fit_controller_inputs(

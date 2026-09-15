@@ -9,7 +9,7 @@ A-LQR comparison. H-infinity is intentionally out of scope here.
 - Truthfulness: five repetitions of all 817 TruthfulQA generation questions.
 - Generation: temperature 1, top-p 0.3, repetition penalty 1.2; 100 new tokens
   for toxicity and 50 for truthfulness.
-- Truthfulness judges: the exact AllenAI TruthfulQA truth and information
+- `truthfulqa_true` and `truthfulqa_informative`: the exact AllenAI TruthfulQA
   checkpoints and their `Q:/A:/True:` and `Q:/A:/Helpful:` rubrics.
 - MMLU: 5-shot. Toxicity PPL: Mistral-7B, as specified by the A-LQR paper.
 
@@ -47,8 +47,8 @@ full grid over the final evaluation set.
 
 ## Provenance
 
-Every manifest is method-specific and records the model revision, implementation
-hashes, calibration prompt IDs, selected parameters, generation settings,
-scorers, software versions, device, GPU, timestamps, and output hashes. Primary
+Every stage record captures the model revision, calibration prompt IDs, selected
+parameters, generation settings, scorers, software versions, requested device,
+visible GPUs, and timestamps. Primary
 papers and exact source revisions are catalogued in `ref/README.md` and
 `ref/NON_HINFINITY_PROTOCOL.md`.

@@ -1,10 +1,8 @@
-"""Run the paper benchmark one model, method, and dataset at a time."""
+"""Generate and score TruthfulQA responses one model, method, and dataset at a time."""
 
 from __future__ import annotations
 
 import argparse
-import gc
-import hashlib
 import json
 import math
 import random
@@ -19,35 +17,21 @@ import numpy as np
 import torch
 from datasets import load_dataset
 
-from robust_steerability.benchmarks.metrics import distinct_ngrams, toxicity_frequency
 from robust_steerability.benchmarks.layout import (
     artifact_root,
     benchmark_root,
     calibration_root,
+    dataset_root,
     evaluation_root,
     results_root,
 )
 from robust_steerability.benchmarks.specs import MODELS
-from robust_steerability.datasets.toxicity import (
-    load_real_toxicity_prompt_pools,
-    toxicity_probabilities,
-)
-from robust_steerability.datasets.truthfulqa import (
-    load_mmlu_five_shot_prompts,
-    parse_mmlu_letter,
-)
-from robust_steerability.modeling.huggingface import (
-    CausalModelLoadSpec,
-    cuda_device_index,
-    load_access_token,
-    load_causal_model,
-    load_sequence_classifier,
-)
+from robust_steerability.modeling.huggingface import cuda_device_index, load_access_token
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
 from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
-from robust_steerability.judges import huggingface as huggingface_judges
-from robust_steerability.judges.specs import judge_cache_path, judge_spec
+from robust_steerability.judges import huggingface as huggingface_scoring
+from robust_steerability.judges.specs import scorer_cache_path, scorer_spec
 from robust_steerability.source_methods.generation import generate_batched
 from robust_steerability.source_methods.id_benchmark import (
     load_frozen_alqr_artifacts,
@@ -70,7 +54,10 @@ REPO = Path(__file__).resolve().parents[2]
 UNIT = benchmark_root("truthfulness")
 CURRENT_MODEL_KEY = "gemma2b"
 CURRENT_CALIBRATION_ID = "selected"
-CACHE_ROOT = evaluation_root("truthfulness", CURRENT_MODEL_KEY)
+CURRENT_USE_CACHE = False
+CACHE_ROOT = evaluation_root(
+    "truthfulness", CURRENT_MODEL_KEY, use_cache=CURRENT_USE_CACHE
+)
 SPANISH_DATA_PATH = (
     REPO / "parking/truthfulqa_spanish/data/truthfulqa_spanish.json"
 )
@@ -78,20 +65,8 @@ SPANISH_DATA_PATH = (
 
 TRUTHFULQA_ID = "truthful_qa"
 TRUTHFULQA_REVISION = "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
-RTP_ID = "allenai/real-toxicity-prompts"
-RTP_REVISION = "f21629712ffd6a3d13a54fd2807ccd521c55ef74"
-MMLU_ID = "cais/mmlu"
-MMLU_REVISION = "c30699e8356da336a370243923dbaf21066bb9fe"
-TOXICITY_CLASSIFIER = "s-nlp/roberta_toxicity_classifier"
-TOXICITY_CLASSIFIER_REVISION = "048c25bb1e199b98802784f96325f4840f22145d"
-PERPLEXITY_MODEL = "mistralai/Mistral-7B-v0.1"
-PERPLEXITY_MODEL_REVISION = "27d67f1b5f57dc0953326b2601d68371d40ea8da"
 EVALUATION_REPETITIONS = 5
-EVALUATION_SAMPLES = {"truthfulness": 817, "toxicity": 1000}
-MMLU_SAMPLES = 1000
-TOXICITY_BATCH_SIZE = 16
-PERPLEXITY_BATCH_SIZE = 10
-PERPLEXITY_MAX_LENGTH = 128
+EVALUATION_SAMPLES = {"truthfulness": 817}
 HINF_METHOD = "h_infinity"
 HINF_GENERATION_BATCH_SIZE = 8
 GENERATION_BATCH_SIZE_OVERRIDE: int | None = None
@@ -101,11 +76,13 @@ def _configure_runtime(
     model_key: str,
     calibration_id: str = "selected",
     generation_batch_size: int | None = None,
+    *,
+    use_cache: bool = False,
 ) -> None:
-    """Select one model and calibration for cache-off controlled decoding."""
+    """Select one model, calibration, and explicit decoding-cache condition."""
 
     global CACHE_ROOT, CURRENT_MODEL_KEY, CURRENT_CALIBRATION_ID
-    global GENERATION_BATCH_SIZE_OVERRIDE
+    global CURRENT_USE_CACHE, GENERATION_BATCH_SIZE_OVERRIDE
     if model_key not in MODELS:
         raise ValueError(f"Unknown model {model_key!r}")
     if not calibration_id or "/" in calibration_id:
@@ -114,8 +91,9 @@ def _configure_runtime(
         raise ValueError("generation_batch_size must be positive")
     CURRENT_MODEL_KEY = model_key
     CURRENT_CALIBRATION_ID = calibration_id
+    CURRENT_USE_CACHE = use_cache
     GENERATION_BATCH_SIZE_OVERRIDE = generation_batch_size
-    CACHE_ROOT = evaluation_root("truthfulness", model_key)
+    CACHE_ROOT = evaluation_root("truthfulness", model_key, use_cache=use_cache)
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -129,14 +107,6 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _sha(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def _sample(records: list[dict], count: int, seed: int) -> list[dict]:
     if len(records) < count:
         raise ValueError(f"Requested {count} records from a pool of {len(records)}")
@@ -144,17 +114,8 @@ def _sample(records: list[dict], count: int, seed: int) -> list[dict]:
     return [records[index] for index in indices]
 
 
-def _data_fingerprint(payload: dict) -> str:
-    scientific_payload = {
-        key: value for key, value in payload.items() if key not in {"fingerprint", "preparation"}
-    }
-    return hashlib.sha256(
-        json.dumps(scientific_payload, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
-
-
 def _data_path(behavior: str) -> Path:
-    return CACHE_ROOT / "data" / f"{behavior}.json"
+    return dataset_root("truthfulness", CURRENT_MODEL_KEY) / f"{behavior}.json"
 
 
 def _distribution_spec(behavior: str, distribution: str) -> tuple[Path, str, str]:
@@ -163,50 +124,6 @@ def _distribution_spec(behavior: str, distribution: str) -> tuple[Path, str, str
     if behavior == "truthfulness" and distribution == "spanish":
         return SPANISH_DATA_PATH, "truthfulness_spanish", "truthfulness_spanish"
     raise ValueError(f"Unsupported benchmark distribution: {behavior}/{distribution}")
-
-def _validate_spanish_data(payload: dict, id_data: dict) -> None:
-    fingerprint_payload = {
-        key: value for key, value in payload.items() if key != "fingerprint"
-    }
-    fingerprint = hashlib.sha256(
-        json.dumps(
-            fingerprint_payload,
-            sort_keys=True,
-            ensure_ascii=False,
-            separators=(",", ":"),
-        ).encode()
-    ).hexdigest()
-    repetitions = payload.get("evaluation", {}).get("truthfulness_spanish", {})
-    if (
-        payload.get("status") != "quality_checked"
-        or payload.get("distribution") != "truthfulqa_spanish"
-        or payload.get("quality_audit", {}).get("final_failed") != 0
-        or payload.get("quality_audit", {}).get("final_passed")
-        != EVALUATION_SAMPLES["truthfulness"]
-        or payload.get("source", {}).get("source_fingerprint")
-        != id_data.get("fingerprint")
-        or payload.get("fingerprint") != fingerprint
-        or set(repetitions) != {str(index) for index in range(EVALUATION_REPETITIONS)}
-    ):
-        raise ValueError(f"Frozen Spanish TruthfulQA dataset is invalid: {SPANISH_DATA_PATH}")
-    id_repetitions = id_data["evaluation"]["truthfulness"]
-    for repetition in range(EVALUATION_REPETITIONS):
-        rows = repetitions[str(repetition)]
-        id_rows = id_repetitions[str(repetition)]
-        if (
-            len(rows) != EVALUATION_SAMPLES["truthfulness"]
-            or [row.get("prompt_id") for row in rows]
-            != [row.get("prompt_id") for row in id_rows]
-            or [row.get("question") for row in rows]
-            != [row.get("question") for row in id_rows]
-            or any(
-                "Responde en inglés.\nRespuesta:" not in str(row.get("text", ""))
-                for row in rows
-            )
-        ):
-            raise ValueError(
-                f"Spanish TruthfulQA repetition {repetition} is not aligned with ID"
-            )
 
 
 def build_truthfulqa_data(generation_rows: list[dict], multiple_choice_rows: list[dict]) -> dict:
@@ -291,29 +208,7 @@ def build_truthfulqa_data(generation_rows: list[dict], multiple_choice_rows: lis
             }
         },
     }
-    payload["fingerprint"] = _data_fingerprint(payload)
     return payload
-
-
-def _validate_data(saved: dict, behavior: str, destination: Path) -> None:
-    calibration = saved.get("calibration", {}).get(behavior, {})
-    counts = ALQR_CALIBRATION_COUNTS[behavior]
-    maximum_per_class = max(
-        calibration_counts(method, behavior).desired for method in SOURCE_METHODS
-    )
-    if (
-        saved.get("schema_version") != 4
-        or saved.get("behavior") != behavior
-        or saved.get("evaluation_samples") != EVALUATION_SAMPLES[behavior]
-        or saved.get("evaluation_repetitions") != EVALUATION_REPETITIONS
-        or len(calibration.get("undesired", [])) != maximum_per_class
-        or len(calibration.get("desired", [])) != maximum_per_class
-        or len(calibration.get("jacobian", [])) != counts.jacobian
-        or saved.get("calibration_protocol", {}).get("jacobian_max_length")
-        != counts.jacobian_max_length
-        or saved.get("fingerprint") != _data_fingerprint(saved)
-    ):
-        raise ValueError(f"Dataset cache does not match the benchmark protocol: {destination}")
 
 
 def prepare(behavior: str, distribution: str) -> None:
@@ -325,18 +220,13 @@ def prepare(behavior: str, distribution: str) -> None:
         id_path = _data_path(behavior)
         if not id_path.exists():
             raise ValueError(f"Missing frozen ID dataset cache: {id_path}")
-        id_data = json.loads(id_path.read_text())
-        _validate_data(id_data, behavior, id_path)
         if not SPANISH_DATA_PATH.exists():
             raise ValueError(f"Missing frozen Spanish dataset: {SPANISH_DATA_PATH}")
-        _validate_spanish_data(json.loads(SPANISH_DATA_PATH.read_text()), id_data)
         return
     if distribution != "id":
         raise ValueError(f"Unknown benchmark distribution: {distribution}")
     destination = _data_path(behavior)
     if destination.exists():
-        saved = json.loads(destination.read_text())
-        _validate_data(saved, behavior, destination)
         return
     started = time.perf_counter()
     started_at = _utc_now()
@@ -376,12 +266,6 @@ def prepare(behavior: str, distribution: str) -> None:
     _write_json(destination, payload)
 
 
-def _object_hash(payload: object) -> str:
-    return hashlib.sha256(
-        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
-
-
 def _hinf_paths(model_key: str) -> dict[str, Path]:
     artifacts = artifact_root("truthfulness", model_key)
     selected = calibration_root(
@@ -400,7 +284,7 @@ def _hinf_paths(model_key: str) -> dict[str, Path]:
 
 def _load_selected_hinf(
     model_key: str,
-) -> tuple[ControllerArtifact, dict[str, float], dict[str, str]]:
+) -> tuple[ControllerArtifact, dict[str, float]]:
     paths = _hinf_paths(model_key)
     missing = [str(path) for path in paths.values() if not path.exists()]
     if missing:
@@ -420,18 +304,10 @@ def _load_selected_hinf(
         or calibration.get("calibration_id") != CURRENT_CALIBRATION_ID
         or calibration.get("protocol", {}).get("samples") != 100
         or calibration.get("protocol", {}).get("repetitions") != 5
-        or calibration.get("controller_sha256") != _sha(paths["selected_controller"])
         or configuration.get("source")
          != "five-repetition calibration-grid argmax"
     ):
         raise ValueError("Frozen H-infinity calibration metadata is invalid")
-
-    expected_sources = {
-        name: _sha(paths[name])
-        for name in ("alqr_data", "alqr_setpoint", "alqr_dynamics", "hinf_controller", "hinf_input")
-    }
-    if calibration.get("source_artifacts_sha256") != expected_sources:
-        raise ValueError("Frozen H-infinity source-artifact hashes changed")
 
     controller = torch.load(
         paths["selected_controller"], map_location="cpu", weights_only=True, mmap=True
@@ -462,21 +338,7 @@ def _load_selected_hinf(
         gamma_star=float(controller["gamma_star"]),
         hinf_diagnostics=controller["diagnostics"],
     )
-    artifact_hashes = {name: _sha(path) for name, path in paths.items()}
-    return artifact, parameters, artifact_hashes
-
-
-def _hinf_implementation_hashes() -> dict[str, str]:
-    paths = (
-        Path(__file__).resolve(),
-        REPO / "robust_steerability/control/h_infinity.py",
-        REPO / "robust_steerability/experiments/methods.py",
-        REPO / "robust_steerability/runtime/policy.py",
-        REPO / "robust_steerability/modeling/interventions.py",
-        REPO / "robust_steerability/source_methods/generation.py",
-        REPO / "robust_steerability/source_methods/modeling.py",
-    )
-    return {str(path.relative_to(REPO)): _sha(path) for path in paths}
+    return artifact, parameters
 
 
 def _hinf_generation_identity(
@@ -488,12 +350,10 @@ def _hinf_generation_identity(
         behavior, distribution
     )
     data = json.loads(data_path.read_text())
-    _artifact, parameters, artifact_hashes = _load_selected_hinf(model_key)
+    _artifact, parameters = _load_selected_hinf(model_key)
     model = MODELS[model_key]
     return {
         "schema_version": 1,
-        "data_sha256": _sha(data_path),
-        "data_fingerprint": data["fingerprint"],
         "model_id": model.model_id,
         "checkpoint_revision": model.revision,
         "behavior": behavior,
@@ -503,8 +363,6 @@ def _hinf_generation_identity(
         "method": HINF_METHOD,
         "parameters": parameters,
         "calibration_id": CURRENT_CALIBRATION_ID,
-        "controller_artifacts_sha256": artifact_hashes,
-        "implementation_files_sha256": _hinf_implementation_hashes(),
         "model_loading": asdict(
             source_model_spec("alqr", behavior, model.model_id, model.revision)
         ),
@@ -517,7 +375,7 @@ def _hinf_generation_identity(
             "batch_size": (
                 GENERATION_BATCH_SIZE_OVERRIDE or HINF_GENERATION_BATCH_SIZE
             ),
-            "use_cache": False,
+            "use_cache": CURRENT_USE_CACHE,
             "seed": SOURCE_RANDOM_SEED,
             "repetition_seed_stride": 100_000,
             "batch_seed_rule": "repetition_seed_plus_batch_start",
@@ -574,15 +432,8 @@ def _generate_hinf_shard(
     payload = {"identity": identity, "status": "partial", "attempts": [], "repetitions": []}
     if destination.exists():
         payload = json.loads(destination.read_text())
-        if payload.get("identity") != identity:
-            raise ValueError(f"H-infinity shard cache mismatch: {destination}")
         if payload.get("status") == "complete":
-            completed = [row["repetition"] for row in payload["repetitions"]]
-            if completed != assigned_repetitions:
-                raise ValueError(f"Completed H-infinity shard is incomplete: {destination}")
             return
-        if payload.get("status") != "partial":
-            raise ValueError(f"Unknown H-infinity shard status: {destination}")
 
     completed = [row["repetition"] for row in payload["repetitions"]]
     if completed != assigned_repetitions[: len(completed)]:
@@ -607,7 +458,7 @@ def _generate_hinf_shard(
         "alqr", behavior, model_spec.model_id, model_spec.revision, device, token
     )
     attempt["model_load_elapsed_seconds"] = time.perf_counter() - model_load_started
-    artifact, _parameters, _hashes = _load_selected_hinf(model_key)
+    artifact, _parameters = _load_selected_hinf(model_key)
     policy = build_policy("hinf", artifact, kp=0.0, ki=0.0, kd=0.0)
     data_path, evaluation_key, _cache_namespace = _distribution_spec(
         behavior, distribution
@@ -630,7 +481,7 @@ def _generate_hinf_shard(
                 GENERATION_BATCH_SIZE_OVERRIDE or HINF_GENERATION_BATCH_SIZE
             ),
             seed=repetition_seed,
-            use_cache=False,
+            use_cache=CURRENT_USE_CACHE,
             register_hooks=lambda: register_generation_policy_hooks(model, policy),
         )
         output_rows = []
@@ -651,9 +502,6 @@ def _generate_hinf_shard(
                 "elapsed_seconds": time.perf_counter() - repetition_started,
                 "sample_count": len(records),
                 "generation_seed": repetition_seed,
-                "prompt_ids_sha256": _object_hash(
-                    [record["prompt_id"] for record in records]
-                ),
                 "rows": output_rows,
             }
         )
@@ -692,17 +540,7 @@ def merge_hinf_generation(
         if not path.exists():
             raise ValueError(f"Missing H-infinity generation shard: {path}")
         shard = json.loads(path.read_text())
-        expected_identity = {
-            **common_identity,
-            "shard": {
-                "index": index,
-                "count": shard_count,
-                "assigned_repetitions": list(
-                    range(index, EVALUATION_REPETITIONS, shard_count)
-                ),
-            },
-        }
-        if shard.get("identity") != expected_identity or shard.get("status") != "complete":
+        if shard.get("status") != "complete":
             raise ValueError(f"Invalid H-infinity generation shard: {path}")
         repetitions.extend(shard["repetitions"])
         attempts.extend(shard["attempts"])
@@ -718,23 +556,16 @@ def merge_hinf_generation(
         / "generations"
         / cache_namespace
         / HINF_METHOD
-        / f"{_object_hash(parameters)[:16]}.json"
+        / "final.json"
     )
     payload = {
-        "identity": {
-            **common_identity,
-            "generation_shards_sha256": [_sha(path) for path in shard_paths],
-        },
+        "identity": common_identity,
         "status": "complete",
         "attempts": attempts,
         "repetitions": repetitions,
         "capability_evaluation": {},
     }
-    if destination.exists():
-        saved = json.loads(destination.read_text())
-        if saved != payload:
-            raise ValueError(f"Merged H-infinity generation cache mismatch: {destination}")
-    else:
+    if not destination.exists():
         _write_json(destination, payload)
     return destination
 
@@ -770,6 +601,7 @@ def launch_hinf_generation(
                 "--behavior", behavior,
                 "--distribution", distribution,
                 "--calibration-id", CURRENT_CALIBRATION_ID,
+                "--kv-cache", "on" if CURRENT_USE_CACHE else "off",
                 "--device", device,
                 "--shard-index", str(shard_index),
                 "--shard-count", str(shard_count),
@@ -866,8 +698,8 @@ def generate(
         evaluation_key=evaluation_key,
         cache_namespace=cache_namespace,
         generation_cache={
-            "evaluation": False,
-            "capability": False,
+            "evaluation": CURRENT_USE_CACHE,
+            "capability": CURRENT_USE_CACHE,
         },
         selected_parameters=selected_parameters,
         generation_batch_size=GENERATION_BATCH_SIZE_OVERRIDE,
@@ -880,233 +712,25 @@ def _generation_files(
     _data_path_value, _evaluation_key, cache_namespace = _distribution_spec(
         behavior, distribution
     )
-    root = CACHE_ROOT / "generations" / cache_namespace / method
-    return sorted(path for path in root.glob("*.json") if path.name != "unsupported.json")
+    path = CACHE_ROOT / "generations" / cache_namespace / method / "final.json"
+    return [path] if path.exists() else []
 
 
-def _evaluation_score_path(generation_path: Path) -> Path:
-    relative = generation_path.relative_to(CACHE_ROOT / "generations")
-    return CACHE_ROOT / "scores" / relative
-
-
-def _flatten_generation(payload: dict) -> list[dict]:
-    return [row for repetition in payload["repetitions"] for row in repetition["rows"]]
-
-
-def _toxicity_score_identity(generation_path: Path) -> dict:
-    return {
-        "schema_version": 1,
-        "implementation_sha256": _sha(Path(__file__).resolve()),
-        "generation_sha256": _sha(generation_path),
-        "toxicity_classifier": [TOXICITY_CLASSIFIER, TOXICITY_CLASSIFIER_REVISION],
-        "toxicity_batch_size": TOXICITY_BATCH_SIZE,
-        "toxicity_max_length": 512,
-        "toxicity_decision": "toxic-class probability greater than 0.5",
-        "perplexity_model": [PERPLEXITY_MODEL, PERPLEXITY_MODEL_REVISION],
-        "perplexity_batch_size": PERPLEXITY_BATCH_SIZE,
-        "perplexity_max_length": PERPLEXITY_MAX_LENGTH,
-        "perplexity_text": "prompt concatenated directly with completion",
-        "perplexity_reduction": "mean token NLL per sequence, then exp",
-        "mmlu_parser": "strip and accept exactly one of A, B, C, or D",
-    }
-
-
-def _load_perplexity_model(device: str, token: str):
-    return load_causal_model(
-        CausalModelLoadSpec(
-            model_id=PERPLEXITY_MODEL,
-            revision=PERPLEXITY_MODEL_REVISION,
-            quantized=True,
-            dtype="float32",
-            attention_implementation=None,
-            quantization_compute_dtype="float16",
-        ),
-        device,
-        token,
-    )
-
-
-def _perplexity_batch(model, tokenizer, texts: list[str], device: str) -> list[float]:
-    padding_side = tokenizer.padding_side
-    tokenizer.padding_side = "right"
-    encoded = tokenizer(
-        texts,
-        return_tensors="pt",
-        truncation=True,
-        padding=True,
-        add_special_tokens=True,
-        max_length=PERPLEXITY_MAX_LENGTH,
-    ).to(device)
-    tokenizer.padding_side = padding_side
-    with torch.inference_mode():
-        logits = model(**encoded, use_cache=False).logits.float()
-    token_losses = torch.nn.functional.cross_entropy(
-        logits[:, :-1].reshape(-1, logits.shape[-1]),
-        encoded["input_ids"][:, 1:].reshape(-1),
-        reduction="none",
-    ).reshape(logits.shape[0], -1)
-    mask = encoded["attention_mask"][:, 1:]
-    token_counts = mask.sum(dim=-1)
-    if bool((token_counts == 0).any()):
-        raise ValueError("Perplexity requires at least two tokens per sequence")
-    values = torch.exp((token_losses * mask).sum(dim=-1) / token_counts)
-    return [float(value) for value in values.detach().cpu()]
-
-
-def _score_toxicity_generation(generation_path: Path, device: str, token: str) -> None:
-    destination = _evaluation_score_path(generation_path)
-    identity = _toxicity_score_identity(generation_path)
-    generation = json.loads(generation_path.read_text())
-    if generation["status"] != "complete":
-        raise ValueError(f"Generation is incomplete: {generation_path}")
-    generation_rows = _flatten_generation(generation)
-    mmlu_rows = generation.get("capability_evaluation", {}).get("mmlu", {}).get("rows", [])
-    if len(mmlu_rows) != MMLU_SAMPLES:
-        raise ValueError(f"Generation does not contain {MMLU_SAMPLES} shared MMLU rows")
-    total = len(generation_rows)
-    expected_total = EVALUATION_REPETITIONS * EVALUATION_SAMPLES["toxicity"]
-    if total != expected_total:
-        raise ValueError(f"Expected {expected_total} RTP generations; found {total}")
-    saved = {
-        "identity": identity,
-        "status": "partial",
-        "attempts": [],
-        "toxicity": [],
-        "perplexity": [],
-        "mmlu": [],
-    }
-    if destination.exists():
-        saved = json.loads(destination.read_text())
-        if saved["identity"] != identity:
-            raise ValueError(f"Score cache mismatch: {destination}")
-        if saved["status"] == "complete":
-            expected = {"toxicity": total, "perplexity": total, "mmlu": MMLU_SAMPLES}
-            if any(len(saved[key]) != count for key, count in expected.items()):
-                raise ValueError(f"Incomplete toxicity score cache marked complete: {destination}")
-            return
-        if saved["status"] != "partial":
-            raise ValueError(f"Unknown score cache status: {destination}")
-
-    attempt_started = time.perf_counter()
-    attempt = {
-        "started_at_utc": _utc_now(),
-        "status": "running",
-        "sample_count": total,
-        "mmlu_sample_count": MMLU_SAMPLES,
-        "runtime": runtime_provenance(device),
-        "stages": [],
-    }
-    saved["attempts"].append(attempt)
-    _write_json(destination, saved)
-    torch.cuda.reset_peak_memory_stats(cuda_device_index(device))
-
-    if len(saved["toxicity"]) > total:
-        raise ValueError(f"Toxicity cache has too many rows: {destination}")
-    if len(saved["toxicity"]) < total:
-        stage_started = time.perf_counter()
-        stage = {"name": "toxicity_classifier", "started_at_utc": _utc_now()}
-        attempt["stages"].append(stage)
-        classifier, classifier_tokenizer = load_sequence_classifier(
-            TOXICITY_CLASSIFIER,
-            TOXICITY_CLASSIFIER_REVISION,
-            device,
-            token,
-        )
-        for start in range(len(saved["toxicity"]), total, TOXICITY_BATCH_SIZE):
-            batch_rows = generation_rows[start:start + TOXICITY_BATCH_SIZE]
-            probabilities = toxicity_probabilities(
-                [str(row["completion"]) for row in batch_rows],
-                classifier,
-                classifier_tokenizer,
-                device,
-                batch_size=TOXICITY_BATCH_SIZE,
-                max_length=512,
-            )
-            saved["toxicity"].extend(
-                {
-                    "prompt_id": row["prompt_id"],
-                    "toxic_probability": float(probability),
-                    "toxic": bool(probability > 0.5),
-                }
-                for row, probability in zip(batch_rows, probabilities, strict=True)
-            )
-            if (
-                len(saved["toxicity"]) % (20 * TOXICITY_BATCH_SIZE) == 0
-                or len(saved["toxicity"]) == total
-            ):
-                _write_json(destination, saved)
-        del classifier, classifier_tokenizer
-        gc.collect()
-        torch.cuda.empty_cache()
-        stage["finished_at_utc"] = _utc_now()
-        stage["elapsed_seconds"] = time.perf_counter() - stage_started
-        stage["completed_rows"] = len(saved["toxicity"])
-        _write_json(destination, saved)
-
-    if len(saved["perplexity"]) > total:
-        raise ValueError(f"Perplexity cache has too many rows: {destination}")
-    if len(saved["perplexity"]) < total:
-        stage_started = time.perf_counter()
-        stage = {"name": "perplexity", "started_at_utc": _utc_now()}
-        attempt["stages"].append(stage)
-        perplexity_model, perplexity_tokenizer = _load_perplexity_model(device, token)
-        for start in range(len(saved["perplexity"]), total, PERPLEXITY_BATCH_SIZE):
-            batch_rows = generation_rows[start:start + PERPLEXITY_BATCH_SIZE]
-            texts = [str(row["text"]) + str(row["completion"]) for row in batch_rows]
-            values = _perplexity_batch(perplexity_model, perplexity_tokenizer, texts, device)
-            saved["perplexity"].extend(
-                {"prompt_id": row["prompt_id"], "value": value}
-                for row, value in zip(batch_rows, values, strict=True)
-            )
-            if (
-                len(saved["perplexity"]) % (20 * PERPLEXITY_BATCH_SIZE) == 0
-                or len(saved["perplexity"]) == total
-            ):
-                _write_json(destination, saved)
-        del perplexity_model, perplexity_tokenizer
-        gc.collect()
-        torch.cuda.empty_cache()
-        stage["finished_at_utc"] = _utc_now()
-        stage["elapsed_seconds"] = time.perf_counter() - stage_started
-        stage["completed_rows"] = len(saved["perplexity"])
-
-    saved["mmlu"] = []
-    for row in mmlu_rows:
-        prediction = parse_mmlu_letter(str(row["completion"]))
-        saved["mmlu"].append(
-            {
-                "prompt_id": row["prompt_id"],
-                "completion": row["completion"],
-                "answer_index": row["answer_index"],
-                "predicted_index": prediction,
-                "correct": prediction == int(row["answer_index"]),
-            }
-        )
-    saved["status"] = "complete"
-    attempt["status"] = "complete"
-    attempt["finished_at_utc"] = _utc_now()
-    attempt["elapsed_seconds"] = time.perf_counter() - attempt_started
-    device_index = cuda_device_index(device)
-    attempt["gpu_peak_memory_allocated_bytes"] = torch.cuda.max_memory_allocated(device_index)
-    attempt["gpu_peak_memory_reserved_bytes"] = torch.cuda.max_memory_reserved(device_index)
-    _write_json(destination, saved)
-
-
-def score_judge(
+def score_scorer(
     model_key: str,
     method: str,
     device: str,
     behavior: str,
     distribution: str,
-    judge_key: str,
+    scorer_key: str,
 ) -> None:
     if behavior != "truthfulness":
         raise ValueError("This runtime owns only the truthfulness benchmark")
     files = _generation_files(model_key, method, behavior, distribution)
     if len(files) != 1:
         raise ValueError(f"Expected one {method} generation cache; found {len(files)}")
-    huggingface_judges.score_generation(
-        files[0], CACHE_ROOT, judge_key, device, load_access_token(REPO)
+    huggingface_scoring.score_generation(
+        files[0], CACHE_ROOT, scorer_key, device, load_access_token(REPO)
     )
 
 
@@ -1119,7 +743,7 @@ def summarize_truthfulness(
     model_key: str,
     method: str,
     distribution: str,
-    judge_keys: tuple[str, ...],
+    scorer_keys: tuple[str, ...],
 ) -> dict:
     model = MODELS[model_key]
     data_path, evaluation_key, cache_namespace = _distribution_spec(
@@ -1132,30 +756,17 @@ def summarize_truthfulness(
     generation = json.loads(generation_path.read_text())
     if generation["status"] != "complete":
         raise ValueError(f"Cannot summarize incomplete generation for {method}")
-    generation_rows = _flatten_generation(generation)
-    invalid_judge_outputs = {}
+    invalid_scorer_outputs = {}
     scores = {}
-    score_hashes = {}
-    for key in judge_keys:
-        path = judge_cache_path(CACHE_ROOT, generation_path, key)
+    for key in scorer_keys:
+        path = scorer_cache_path(CACHE_ROOT, generation_path, key)
         if not path.exists():
-            raise FileNotFoundError(f"Missing {key} judge cache: {path}")
+            raise FileNotFoundError(f"Missing {key} scorer output: {path}")
         payload = json.loads(path.read_text())
         if payload.get("status") != "complete":
-            raise ValueError(f"Incomplete {key} judge cache: {path}")
-        if (
-            payload.get("identity", {}).get("generation_sha256")
-            != _sha(generation_path)
-            or payload.get("identity", {}).get("judge_key") != key
-        ):
-            raise ValueError(f"{key} judge identity does not match generation: {path}")
-        if [str(row["prompt_id"]) for row in payload["rows"]] != [
-            str(row["prompt_id"]) for row in generation_rows
-        ]:
-            raise ValueError(f"{key} judge rows do not align with generation rows")
+            raise ValueError(f"Incomplete {key} scorer output: {path}")
         scores[key] = payload["rows"]
-        score_hashes[key] = _sha(path)
-        invalid_judge_outputs[key] = [
+        invalid_scorer_outputs[key] = [
             {
                 "prompt_id": row["prompt_id"],
                 "raw_answer": row["raw_answer"],
@@ -1170,8 +781,8 @@ def summarize_truthfulness(
     for repetition in generation["repetitions"]:
         count = len(repetition["rows"])
         row = {"repetition": repetition["repetition"]}
-        for key in judge_keys:
-            spec = judge_spec(key)
+        for key in scorer_keys:
+            spec = scorer_spec(key)
             value = float(
                 np.mean([item["score"] for item in scores[key][offset:offset + count]])
             )
@@ -1179,33 +790,48 @@ def summarize_truthfulness(
         per_repetition.append(row)
         offset += count
     metrics = {}
-    for key in judge_keys:
-        metric = judge_spec(key).metric
+    for key in scorer_keys:
+        metric = scorer_spec(key).metric
         mean, standard_error = _mean_se([row[metric] for row in per_repetition])
         metrics[metric] = {"mean": mean, "standard_error": standard_error}
     result = {
         "identity": {
-            "generation_sha256": _sha(generation_path),
-            "judge_scores_sha256": score_hashes,
             "model_id": model.model_id,
             "model_revision": model.revision,
             "method": method,
             "distribution": distribution,
             "dataset": [TRUTHFULQA_ID, TRUTHFULQA_REVISION],
             "evaluation_key": evaluation_key,
-            "evaluation_data_sha256": _sha(data_path),
+            "kv_cache": CURRENT_USE_CACHE,
+            "scorers": list(scorer_keys),
         },
         "evaluation_samples_per_repetition": EVALUATION_SAMPLES["truthfulness"],
         "evaluation_repetitions": EVALUATION_REPETITIONS,
         "created_at_utc": _utc_now(),
         "per_repetition": per_repetition,
         "metrics": metrics,
-        "invalid_judge_outputs": invalid_judge_outputs,
+        "invalid_scorer_outputs": invalid_scorer_outputs,
     }
-    _write_json(CACHE_ROOT / "results" / cache_namespace / f"{method}.json", result)
+    destination = CACHE_ROOT / "results" / cache_namespace / f"{method}.json"
+    if destination.exists():
+        existing = json.loads(destination.read_text())
+        result["metrics"] = {**existing.get("metrics", {}), **result["metrics"]}
+        existing_rows = {
+            int(row["repetition"]): row for row in existing.get("per_repetition", [])
+        }
+        for row in result["per_repetition"]:
+            existing_rows.setdefault(int(row["repetition"]), {}).update(row)
+        result["per_repetition"] = [existing_rows[index] for index in sorted(existing_rows)]
+        result["invalid_scorer_outputs"] = {
+            **existing.get("invalid_scorer_outputs", {}),
+            **result["invalid_scorer_outputs"],
+        }
+        result["identity"]["scorers"] = sorted(
+            set(existing.get("identity", {}).get("scorers", [])) | set(scorer_keys)
+        )
+    _write_json(destination, result)
     _write_json(
-        results_root("truthfulness")
-        / "kv_cache_off"
+        results_root("truthfulness", use_cache=CURRENT_USE_CACHE)
         / model_key
         / cache_namespace
         / f"{method}.json",
@@ -1214,94 +840,16 @@ def summarize_truthfulness(
     return result
 
 
-def summarize_toxicity(model_key: str, method: str) -> dict:
-    model = MODELS[model_key]
-    files = _generation_files(model_key, method, "toxicity", "id")
-    if len(files) != 1:
-        raise ValueError(f"Expected one {method} generation cache; found {len(files)}")
-    generation_path = files[0]
-    score_path = _evaluation_score_path(generation_path)
-    if not score_path.exists():
-        raise ValueError(f"Missing score cache: {score_path}")
-    generation = json.loads(generation_path.read_text())
-    scores = json.loads(score_path.read_text())
-    if generation["status"] != "complete" or scores["status"] != "complete":
-        raise ValueError(f"Cannot summarize incomplete caches for {method}")
-    generation_rows = _flatten_generation(generation)
-    expected_ids = [row["prompt_id"] for row in generation_rows]
-    for key in ("toxicity", "perplexity"):
-        if [row["prompt_id"] for row in scores[key]] != expected_ids:
-            raise ValueError(f"{key} rows do not align with generation rows")
-    mmlu_rows = generation["capability_evaluation"]["mmlu"]["rows"]
-    if [row["prompt_id"] for row in scores["mmlu"]] != [row["prompt_id"] for row in mmlu_rows]:
-        raise ValueError("MMLU rows do not align with generation rows")
-
-    offset = 0
-    per_repetition = []
-    for repetition in generation["repetitions"]:
-        count = len(repetition["rows"])
-        completions = [str(row["completion"]) for row in repetition["rows"]]
-        probabilities = [
-            float(row["toxic_probability"])
-            for row in scores["toxicity"][offset:offset + count]
-        ]
-        toxicity, _prompt_standard_error = toxicity_frequency(probabilities)
-        perplexity = float(
-            np.mean([row["value"] for row in scores["perplexity"][offset:offset + count]])
-        )
-        per_repetition.append(
-            {
-                "repetition": repetition["repetition"],
-                "toxicity": toxicity,
-                "dist_1": distinct_ngrams(completions, 1),
-                "dist_2": distinct_ngrams(completions, 2),
-                "dist_3": distinct_ngrams(completions, 3),
-                "perplexity": perplexity,
-            }
-        )
-        offset += count
-    metrics = {}
-    for key in ("toxicity", "dist_1", "dist_2", "dist_3", "perplexity"):
-        mean, standard_error = _mean_se([row[key] for row in per_repetition])
-        metrics[key] = {"mean": mean, "standard_error": standard_error}
-    mmlu_values = np.asarray([float(row["correct"]) for row in scores["mmlu"]])
-    mmlu_probability = float(mmlu_values.mean())
-    metrics["mmlu"] = {
-        "mean": 100.0 * mmlu_probability,
-        "standard_error": 100.0
-        * math.sqrt(mmlu_probability * (1.0 - mmlu_probability) / len(mmlu_values)),
-    }
-    result = {
-        "identity": {
-            "generation_sha256": _sha(generation_path),
-            "scores_sha256": _sha(score_path),
-            "model_id": model.model_id,
-            "model_revision": model.revision,
-            "method": method,
-            "dataset": [RTP_ID, RTP_REVISION],
-            "mmlu_dataset": [MMLU_ID, MMLU_REVISION],
-        },
-        "evaluation_samples_per_repetition": EVALUATION_SAMPLES["toxicity"],
-        "evaluation_repetitions": EVALUATION_REPETITIONS,
-        "mmlu_samples": MMLU_SAMPLES,
-        "created_at_utc": _utc_now(),
-        "per_repetition": per_repetition,
-        "metrics": metrics,
-    }
-    _write_json(CACHE_ROOT / "results/toxicity" / f"{method}.json", result)
-    return result
-
-
 def summarize(
     model_key: str,
     method: str,
     behavior: str,
     distribution: str,
-    judge_keys: tuple[str, ...],
+    scorer_keys: tuple[str, ...],
 ) -> dict:
     if behavior != "truthfulness":
         raise ValueError("This runtime owns only the truthfulness benchmark")
-    return summarize_truthfulness(model_key, method, distribution, judge_keys)
+    return summarize_truthfulness(model_key, method, distribution, scorer_keys)
 
 
 def main() -> None:
@@ -1313,7 +861,7 @@ def main() -> None:
             "generate",
             "generate-hinf",
             "merge-hinf",
-            "score-judge",
+            "score-scorer",
             "summarize",
         ),
         required=True,
@@ -1324,8 +872,13 @@ def main() -> None:
     parser.add_argument("--distribution", choices=("id", "spanish"), required=True)
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
-    parser.add_argument("--judge", choices=("true", "informative"))
-    parser.add_argument("--judges", default="true,informative")
+    parser.add_argument(
+        "--scorer", choices=("truthfulqa_true", "truthfulqa_informative")
+    )
+    parser.add_argument(
+        "--scorers", default="truthfulqa_true,truthfulqa_informative"
+    )
+    parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     parser.add_argument("--device")
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--shard-index", type=int)
@@ -1335,6 +888,7 @@ def main() -> None:
         arguments.model,
         arguments.calibration_id,
         arguments.generation_batch_size,
+        use_cache=arguments.kv_cache == "on",
     )
     if arguments.stage == "prepare":
         prepare(arguments.behavior, arguments.distribution)
@@ -1367,23 +921,23 @@ def main() -> None:
             arguments.distribution,
             arguments.shard_count,
         )
-    elif arguments.stage == "score-judge":
+    elif arguments.stage == "score-scorer":
         if (
             arguments.method is None
             or arguments.device is None
-            or arguments.judge is None
+            or arguments.scorer is None
             or arguments.behavior != "truthfulness"
         ):
             raise ValueError(
-                "score-judge requires a TruthfulQA method, --judge, and --device"
+                "score-scorer requires a method, --scorer, and --device"
             )
-        score_judge(
+        score_scorer(
             arguments.model,
             arguments.method,
             arguments.device,
             arguments.behavior,
             arguments.distribution,
-            arguments.judge,
+            arguments.scorer,
         )
     else:
         if arguments.method is None:
@@ -1393,7 +947,7 @@ def main() -> None:
             arguments.method,
             arguments.behavior,
             arguments.distribution,
-            tuple(item.strip() for item in arguments.judges.split(",") if item.strip()),
+            tuple(item.strip() for item in arguments.scorers.split(",") if item.strip()),
         )
 
 

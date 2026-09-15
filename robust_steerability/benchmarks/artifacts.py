@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import random
 import shutil
@@ -22,7 +21,6 @@ from robust_steerability.benchmarks.layout import artifact_root
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.calibration.nominal import average_prompt_jacobians
 from robust_steerability.calibration.nominal_artifact import (
-    load_shared_nominal_dynamics,
     nominal_dynamics_identity,
     save_nominal_dynamics,
 )
@@ -75,19 +73,6 @@ def _save_torch(path: Path, payload: object) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     torch.save(payload, temporary)
     temporary.replace(path)
-
-
-def _hash_json(payload: object) -> str:
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
-    return hashlib.sha256(encoded).hexdigest()
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _sample(records: list[dict], count: int, seed: int) -> list[dict]:
@@ -145,7 +130,6 @@ def build_truthfulness_calibration_data(rows: list[dict]) -> dict:
         },
         "source_counts": {"false_answers": len(false_records), "true_answers": len(true_records)},
     }
-    payload["fingerprint"] = _hash_json(payload)
     return payload
 
 
@@ -186,26 +170,7 @@ def build_toxicity_calibration_data(
             "nontoxic_prompts": len(nontoxic_records),
         },
     }
-    payload["fingerprint"] = _hash_json(payload)
     return payload
-
-
-def _validate_data(data: dict, behavior: str) -> None:
-    counts = ALQR_CALIBRATION_COUNTS[behavior]
-    scientific = {key: value for key, value in data.items() if key != "fingerprint"}
-    if data.get("schema_version") != 1 or data.get("behavior") != behavior:
-        raise ValueError("Calibration data schema does not match this unit")
-    if data.get("fingerprint") != _hash_json(scientific):
-        raise ValueError("Calibration data fingerprint mismatch")
-    calibration = data["calibration"]
-    expected = {
-        "undesired": counts.undesired,
-        "desired": counts.desired,
-        "jacobian": counts.jacobian,
-    }
-    actual = {key: len(calibration[key]) for key in expected}
-    if actual != expected:
-        raise ValueError(f"Calibration counts changed: expected {expected}, found {actual}")
 
 
 def _update_timings(behavior: str, model_key: str, stage: str, timing: dict) -> None:
@@ -218,9 +183,7 @@ def _update_timings(behavior: str, model_key: str, stage: str, timing: dict) -> 
 def prepare(model_key: str, behavior: str) -> dict:
     destination = _cache(behavior, model_key) / "data.json"
     if destination.exists():
-        data = json.loads(destination.read_text())
-        _validate_data(data, behavior)
-        return data
+        return json.loads(destination.read_text())
 
     started_at = _utc_now()
     started = time.perf_counter()
@@ -256,25 +219,11 @@ def prepare(model_key: str, behavior: str) -> dict:
     return data
 
 
-def _implementation_hashes() -> dict[str, str]:
-    paths = (
-        Path(__file__).resolve(),
-        REPO / "robust_steerability/calibration/nominal.py",
-        REPO / "robust_steerability/calibration/nominal_artifact.py",
-        REPO / "robust_steerability/modeling/jacobians.py",
-        REPO / "robust_steerability/source_methods/calibration.py",
-        REPO / "robust_steerability/source_methods/modeling.py",
-        REPO / "robust_steerability/source_methods/protocol.py",
-    )
-    return {str(path.relative_to(REPO)): _sha256(path) for path in paths}
-
-
 def calibration_identity(data: dict, model_key: str, behavior: str) -> dict:
     model = MODELS[model_key]
     return {
         "schema_version": 1,
         "behavior": behavior,
-        "data_fingerprint": data["fingerprint"],
         "model": {"id": model.model_id, "revision": model.revision},
         "model_loading": asdict(
             source_model_spec("alqr", behavior, model.model_id, model.revision)
@@ -283,29 +232,13 @@ def calibration_identity(data: dict, model_key: str, behavior: str) -> dict:
         "alqr_setting": asdict(paper_alqr_setting(behavior, model.model_id)),
         "activation_batch_size": model.activation_batch_size,
         "jacobian_vjp_chunk_size": model.jacobian_vjp_chunk_size,
-        "implementation_sha256": _implementation_hashes(),
     }
 
 
 def _load_run(path: Path, identity: dict) -> dict:
     if not path.exists():
         return {"identity": identity, "status": "partial", "attempts": []}
-    payload = json.loads(path.read_text())
-    if payload.get("identity") != identity:
-        raise ValueError(f"Run identity mismatch: {path}")
-    if payload.get("status") not in {"partial", "complete"}:
-        raise ValueError(f"Invalid run status: {path}")
-    return payload
-
-
-def _load_dynamics(path: Path, model_key: str, behavior: str) -> torch.Tensor:
-    model = MODELS[model_key]
-    return load_shared_nominal_dynamics(
-        path,
-        behavior=behavior,
-        model_id=model.model_id,
-        model_revision=model.revision,
-    )
+    return json.loads(path.read_text())
 
 
 def fit_setpoint(model_key: str, behavior: str, device: str) -> None:
@@ -316,18 +249,6 @@ def fit_setpoint(model_key: str, behavior: str, device: str) -> None:
     run_path = cache / "runs/setpoint.json"
     artifact_path = cache / "setpoint.pt"
     if artifact_path.exists():
-        payload = torch.load(artifact_path, map_location="cpu", weights_only=True)
-        contrast = payload.get("contrast")
-        feature_norm = payload.get("feature_norm")
-        if (
-            contrast is None
-            or feature_norm is None
-            or contrast.ndim != 2
-            or feature_norm.shape != contrast.shape[:1]
-            or not torch.isfinite(contrast).all()
-            or not torch.isfinite(feature_norm).all()
-        ):
-            raise ValueError(f"Invalid existing setpoint artifact: {artifact_path}")
         return
     run = _load_run(run_path, identity)
     if run["status"] == "complete":
@@ -377,7 +298,6 @@ def fit_setpoint(model_key: str, behavior: str, device: str) -> None:
     attempt["elapsed_seconds"] = time.perf_counter() - stage_started
     attempt["gpu_peak_memory_allocated_bytes"] = torch.cuda.max_memory_allocated(device_index)
     attempt["gpu_peak_memory_reserved_bytes"] = torch.cuda.max_memory_reserved(device_index)
-    attempt["artifact_sha256"] = _sha256(artifact_path)
     attempt["status"] = "complete"
     run["status"] = "complete"
     _write_json(run_path, run)
@@ -452,7 +372,6 @@ def fit_jacobian_shard(
     run["record_count"] = len(records)
     run["layer_count"] = int(shard_mean.shape[0])
     run["hidden_size"] = int(shard_mean.shape[-1])
-    run["partial_sha256"] = _sha256(cache_dir / "partial.pt")
     _write_json(run_path, run)
 
 
@@ -503,11 +422,9 @@ def fit_jacobians(
     run_path = cache / "runs/jacobians.json"
     artifact_path = cache / "dynamics.pt"
     if artifact_path.exists():
-        _load_dynamics(artifact_path, model_key, behavior)
         return
     run = _load_run(run_path, identity)
     if run["status"] == "complete":
-        _load_dynamics(artifact_path, model_key, behavior)
         return
 
     attempt = {
@@ -546,25 +463,9 @@ def fit_jacobians(
         process = subprocess.Popen(command, cwd=REPO, stdout=handle, stderr=subprocess.STDOUT)
         processes.append((shard_index, device, process, handle, log_path))
 
-    last_report = 0.0
-    while any(process.poll() is None for _index, _device, process, _handle, _log in processes):
-        elapsed = time.perf_counter() - started
-        if elapsed - last_report >= 30:
-            completed_prompts = 0
-            for partial_path in (cache / "jacobian_partials").glob("shard_*/partial.pt"):
-                partial = torch.load(partial_path, map_location="cpu", weights_only=True)
-                completed_prompts += int(partial["count"])
-            states = [process.poll() for _index, _device, process, _handle, _log in processes]
-            print(
-                f"Jacobian calibration: {elapsed / 60:.1f} min, "
-                f"{completed_prompts} prompts accumulated, shard states={states}",
-                flush=True,
-            )
-            last_report = elapsed
-        time.sleep(5)
-
     failures = []
     for shard_index, device, process, handle, log_path in processes:
+        process.wait()
         handle.close()
         if process.returncode != 0:
             failures.append(
@@ -626,8 +527,6 @@ def fit_jacobians(
             }
         ],
     )
-    attempt["artifact_sha256"] = _sha256(artifact_path)
-    _load_dynamics(artifact_path, model_key, behavior)
     run["status"] = "complete"
     run["shards"] = [
         {

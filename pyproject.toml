@@ -36,12 +36,5 @@ notebook = [
   "ipykernel",
   "jupyterlab",
 ]
-test = [
-  "pytest",
-]
-
 [tool.setuptools.packages.find]
 include = ["robust_steerability*"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]

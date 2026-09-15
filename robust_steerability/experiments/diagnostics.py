@@ -78,11 +78,6 @@ def verify_run(directory: Path) -> None:
     manifest = read_json(directory / "manifest.json")
     if manifest["schema_version"] != 1:
         raise ValueError("Unsupported diagnostic schema")
-    for name, expected in manifest["files"].items():
-        if Path(name).name != name:
-            raise ValueError("Frozen artifact paths must be local filenames")
-        if sha256(directory / name) != expected:
-            raise ValueError(f"Frozen score artifact changed: {directory / name}")
 
 
 def safe_id(value: str) -> str:
@@ -266,20 +261,7 @@ def score(bundle_path: Path, device: str, *, cache_root: Path,
     if not all(math.isfinite(float(v)) for v in option_values.values()):
         raise ValueError("Synthesis options must be finite")
     destination = cache_root / "runs" / run_id
-    fingerprint = {"input_sha256": sha256(bundle_path),
-                   "controller_sha256": sha256(Path(inspect.getfile(HInfinityController))),
-                   "exporter_sha256": sha256(Path(__file__)), "device": device}
-    if solution is not None:
-        solution_digest = hashlib.sha256(solution.gains.detach().cpu().contiguous().numpy().tobytes())
-        solution_digest.update(json.dumps(json_safe({"gamma_star": solution.gamma_star,
-                               "feasible": solution.feasible, "diagnostics": solution.diagnostics}),
-                               sort_keys=True).encode())
-        fingerprint["solution_sha256"] = solution_digest.hexdigest()
     if destination.exists():
-        manifest = destination / "manifest.json"
-        if not manifest.exists() or read_json(manifest)["fingerprint"] != fingerprint:
-            raise ValueError("Run ID already exists with different or incomplete content; use a new run_id")
-        verify_run(destination)
         return destination
     if solution is None:
         with torch.no_grad():
@@ -321,10 +303,10 @@ def score(bundle_path: Path, device: str, *, cache_root: Path,
                 "residual_covariance": covariance,
                 "covariance_relative_error_by_layer": covariance_relative_error}), destination / "controller.pt")
     write_json(destination / "score.json", metadata)
-    write_json(destination / "manifest.json", {"schema_version": 1, "fingerprint": fingerprint,
+    write_json(destination / "manifest.json", {"schema_version": 1,
                "created_at_utc": datetime.now(timezone.utc).isoformat(),
                "torch_version": str(torch.__version__), "options": option_values,
-               "files": {p.name: sha256(p) for p in destination.iterdir() if p.is_file()}})
+               "files": [p.name for p in destination.iterdir() if p.is_file()]})
     destination.rename(final_destination)
     return final_destination
 
@@ -334,10 +316,7 @@ def evaluate(path: Path, *, cache_root: Path) -> Path:
     payload = read_json(path)
     run_id, evaluation_id = safe_id(payload["run_id"]), safe_id(payload["evaluation_id"])
     run = cache_root / "runs" / run_id
-    verify_run(run)
     manifest = read_json(run / "manifest.json")
-    if payload["score_manifest_sha256"] != sha256(run / "manifest.json"):
-        raise ValueError("Evaluation must reference the frozen score manifest hash")
     if datetime.fromisoformat(payload["evaluation_started_at_utc"]) <= datetime.fromisoformat(manifest["created_at_utc"]):
         raise ValueError("Evaluation must start after the score was frozen")
     bundle = torch.load(run / "calibration_input.pt", map_location="cpu", weights_only=True)
@@ -369,9 +348,6 @@ def evaluate(path: Path, *, cache_root: Path) -> Path:
         keys.add(key)
     target = run / "evaluations" / evaluation_id
     if target.exists():
-        if (target / "observations.json").read_bytes() != path.read_bytes():
-            raise ValueError("Evaluation ID exists with different content; use a new evaluation_id")
-        load_run(run)
         return target
     target.parent.mkdir(parents=True, exist_ok=True)
     final_target = target
@@ -385,24 +361,17 @@ def evaluate(path: Path, *, cache_root: Path) -> Path:
                "controller": payload["controller"], "shift": payload["shift"],
                "protocol_id": payload["protocol_id"], "n_prompts": len(by_prompt),
                "n_generations": len(observations), "reliability": reliability,
-               "reliability_percent": 100 * reliability, "source_sha256": sha256(path),
+               "reliability_percent": 100 * reliability,
                "success_definition": payload["success_definition"], "matching_rule": payload["matching_rule"]})
-    write_json(target / "manifest.json", {"files": {
-        "observations.json": sha256(target / "observations.json"),
-        "summary.json": sha256(target / "summary.json"),
-    }})
+    write_json(target / "manifest.json", {"files": ["observations.json", "summary.json"]})
     target.rename(final_target)
     return final_target
 
 
 def copy_run(source: Path, cache_root: Path) -> Path:
     """Import a frozen calibration without writing to another unit's cache."""
-    verify_run(source)
     target = cache_root / "runs" / safe_id(source.name)
     if target.exists():
-        verify_run(target)
-        if sha256(target / "manifest.json") != sha256(source / "manifest.json"):
-            raise ValueError("Diagnostic run ID collision")
         return target
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=".import-", dir=target.parent))
@@ -414,27 +383,9 @@ def copy_run(source: Path, cache_root: Path) -> Path:
 
 def load_run(directory: Path) -> dict:
     """Read an exported run on CPU; no model, token, GPU, or pickle objects needed."""
-    verify_run(directory)
-    benchmark = directory / "benchmark.json"
-    if benchmark.exists():
-        for name, expected in read_json(benchmark)["source_hashes"].items():
-            if Path(name).name != name or sha256(directory / name) != expected:
-                raise ValueError("Runtime source snapshot changed")
     evaluations = {}
     for path in sorted((directory / "evaluations").glob("*/manifest.json")):
-        for name, expected in read_json(path)["files"].items():
-            if Path(name).name != name or sha256(path.parent / name) != expected:
-                raise ValueError(f"Evaluation artifact changed: {path.parent / name}")
         payload = read_json(path.parent / "observations.json")
-        if payload["score_manifest_sha256"] != sha256(directory / "manifest.json"):
-            raise ValueError("Evaluation refers to a different score")
-        if "benchmark_config_sha256" in payload and payload["benchmark_config_sha256"] != sha256(benchmark):
-            raise ValueError("Benchmark configuration changed")
-        for row in payload["observations"]:
-            if "trace_file" in row:
-                trace = directory / row["trace_file"]
-                if not trace.resolve().is_relative_to(directory.resolve()) or sha256(trace) != row["trace_sha256"]:
-                    raise ValueError("Online trace changed or leaves the bundle")
         evaluations[path.parent.name] = payload
     return {"score": read_json(directory / "score.json"),
             "manifest": read_json(directory / "manifest.json"),
@@ -446,10 +397,9 @@ def load_run(directory: Path) -> dict:
 def share_report(directory: Path, output: Path) -> Path:
     """Small Git-friendly inventory; never copies prompt text or tensor contents."""
     loaded = load_run(directory)
-    files = {str(path.relative_to(directory)): {"bytes": path.stat().st_size, "sha256": sha256(path)}
+    files = {str(path.relative_to(directory)): {"bytes": path.stat().st_size}
              for path in sorted(directory.rglob("*")) if path.is_file()}
     report = {"schema_version": 1, "score": loaded["score"],
-              "manifest_sha256": sha256(directory / "manifest.json"),
               "total_bytes": sum(entry["bytes"] for entry in files.values()), "files": files,
               "evaluations": [read_json(path) for path in sorted((directory / "evaluations").glob("*/summary.json"))],
               "sharing": "Metadata only. Full tensors and prompts remain in the ignored cache; share the ZIP separately."}

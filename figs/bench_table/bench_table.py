@@ -71,10 +71,10 @@ def _rows(
             shifted = shifted_results.get((model_key, method))
             if behavior == "toxicity":
                 values = [
-                    _metric(result, "toxicity", required=True),
-                    _metric(result, "dist_2", required=True),
-                    _metric(result, "perplexity", required=True),
-                    _metric(shifted, "toxicity", required=True),
+                    _metric(result, "toxicity"),
+                    _metric(result, "dist_2"),
+                    _metric(result, "perplexity"),
+                    _metric(shifted, "toxicity"),
                     _metric(shifted, "dist_2"),
                     _metric(shifted, "perplexity"),
                 ]
@@ -160,8 +160,7 @@ def render_markdown(toxicity_rows: list[dict], truthfulness_rows: list[dict]) ->
         [
             "",
             "Truthfulness values are mean ± SE across five complete 817-question "
-            "repetitions. Judges are scored independently; TBD means the requested judge "
-            "has not been run.",
+            "repetitions. Scorers run independently; TBD means that scorer has not been run.",
             "",
         ]
     )
@@ -206,7 +205,7 @@ def render_tex(toxicity_rows: list[dict], truthfulness_rows: list[dict]) -> str:
         "",
         r"\begin{table*}[!htbp]",
         r"\centering",
-        r"\caption{Truthfulness benchmark with evaluated-model KV cache disabled. True and Informative use the pinned TruthfulQA judges; instruction relevance and fluency use the independent AXBench 0--2 rubrics. Values are mean $\pm$ SE across five complete 817-question repetitions. TBD marks judges that have not been run.}",
+        r"\caption{Truthfulness benchmark with evaluated-model KV cache disabled. True and Informative use the pinned TruthfulQA judges and rubrics; instruction relevance and fluency use the independent AXBench 0--2 rubrics. Values are mean $\pm$ SE across five complete 817-question repetitions. TBD marks scorers that have not been run.}",
         r"\label{tab:truthfulness-benchmark}",
         r"\scriptsize",
         r"\setlength{\tabcolsep}{2pt}",

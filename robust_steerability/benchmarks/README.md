@@ -1,12 +1,15 @@
 # Benchmarks
 
-Benchmark modules own reusable prompt records, dataset loading, generation scoring, and task-level metrics. They do not synthesize controllers or register transformer hooks.
+Every benchmark exposes `artifacts`, `calibrate`, `evaluate`, and `score`.
+Evaluation only generates responses. Score consumes those responses through
+benchmark-selected scorer definitions and never reruns the evaluated model.
 
 ## Current Coverage
 
 - `toxicity.py`: RealToxicityPrompts, Jigsaw, Civil Comments, and ToxicChat prompt pools plus generated-continuation toxicity probabilities.
 - `truthfulness.py`: separate artifact, calibration, generation-only evaluation, and independent scoring stages for TruthfulQA ID and Spanish.
-- `robust_steerability.judges`: reusable pinned judge definitions and independent local/API judge caches.
+- `robust_steerability.judges`: reusable scorer definitions with explicit model,
+  rubric, score range, and backend provenance.
 
 ## A-LQR Parity Roadmap
 

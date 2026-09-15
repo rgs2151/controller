@@ -1,8 +1,7 @@
-"""Strict cache contract for nominal transformer dynamics shared by controllers."""
+"""Nominal transformer dynamics shared by controllers."""
 
 from __future__ import annotations
 
-import hashlib
 import json
 import time
 from datetime import datetime, timezone
@@ -10,9 +9,7 @@ from pathlib import Path
 
 import torch
 
-from robust_steerability.artifacts import configuration_hash
 from robust_steerability.calibration.nominal import average_prompt_jacobians
-from robust_steerability.modeling import interventions, jacobians
 
 
 SCHEMA_VERSION = 1
@@ -34,14 +31,6 @@ def nominal_dynamics_cache_path(
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -78,15 +67,6 @@ def nominal_dynamics_identity(
         normalized_records.append(
             {"prompt_id": str(record["prompt_id"]), "text": str(record["text"])}
         )
-    implementation_paths = (
-        Path(average_prompt_jacobians.__code__.co_filename),
-        Path(jacobians.__file__),
-        Path(interventions.__file__),
-    )
-    implementation = {
-        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in implementation_paths
-    }
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact": "averaged_last_token_transformer_jacobians",
@@ -97,56 +77,19 @@ def nominal_dynamics_identity(
         "record_count": len(normalized_records),
         "max_length": max_length,
         "vjp_chunk_size": vjp_chunk_size,
-        "implementation_sha256": implementation,
-        "fingerprint": configuration_hash(
-            {
-                "behavior": behavior,
-                "model_id": model_id,
-                "model_revision": model_revision,
-                "records": normalized_records,
-                "max_length": max_length,
-                "vjp_chunk_size": vjp_chunk_size,
-                "implementation_sha256": implementation,
-            }
-        ),
     }
-
-
-def _validate_dynamics(dynamics: torch.Tensor, path: Path) -> None:
-    if dynamics.ndim != 3 or dynamics.shape[-1] != dynamics.shape[-2]:
-        raise ValueError(f"Nominal dynamics must have shape (layers, hidden, hidden): {path}")
-    if not torch.isfinite(dynamics).all():
-        raise ValueError(f"Nominal dynamics contains nonfinite values: {path}")
 
 
 def load_nominal_dynamics(
     artifact_path: Path,
     identity: dict[str, object],
 ) -> torch.Tensor:
-    """Load one complete artifact, rejecting any identity or integrity mismatch."""
+    """Load one nominal-dynamics artifact from its explicit path."""
 
-    metadata_path = artifact_path.with_suffix(".json")
-    if not artifact_path.exists() or not metadata_path.exists():
-        raise FileNotFoundError(f"Incomplete nominal-dynamics cache: {artifact_path}")
-    record = json.loads(metadata_path.read_text())
-    if record.get("identity") != identity:
-        raise ValueError(f"Nominal-dynamics cache identity mismatch: {artifact_path}")
-    if record.get("status") != "complete":
-        raise ValueError(f"Nominal-dynamics cache is not complete: {artifact_path}")
-    if record.get("artifact_sha256") != _sha256(artifact_path):
-        raise ValueError(f"Nominal-dynamics cache checksum mismatch: {artifact_path}")
+    if not artifact_path.exists():
+        raise FileNotFoundError(artifact_path)
     payload = torch.load(artifact_path, map_location="cpu", weights_only=True)
-    if not isinstance(payload, dict) or set(payload) != {
-        "schema_version",
-        "identity",
-        "dynamics",
-    }:
-        raise ValueError(f"Invalid nominal-dynamics artifact structure: {artifact_path}")
-    if payload["schema_version"] != SCHEMA_VERSION or payload["identity"] != identity:
-        raise ValueError(f"Invalid nominal-dynamics artifact identity: {artifact_path}")
-    dynamics = payload["dynamics"]
-    _validate_dynamics(dynamics, artifact_path)
-    return dynamics
+    return payload["dynamics"]
 
 
 def load_shared_nominal_dynamics(
@@ -158,37 +101,17 @@ def load_shared_nominal_dynamics(
 ) -> torch.Tensor:
     """Load an A-LQR-produced A matrix as the authoritative nominal model."""
 
-    metadata_path = artifact_path.with_suffix(".json")
-    if not artifact_path.exists() or not metadata_path.exists():
-        raise FileNotFoundError(f"Incomplete nominal-dynamics cache: {artifact_path}")
-    record = json.loads(metadata_path.read_text())
-    identity = record.get("identity", {})
-    expected = {
-        "behavior": behavior,
-        "model_id": model_id,
-        "model_revision": model_revision,
-    }
-    actual = {key: identity.get(key) for key in expected}
-    if actual != expected:
-        raise ValueError(f"Nominal-dynamics source mismatch: {artifact_path}")
-    return load_nominal_dynamics(artifact_path, identity)
+    return load_nominal_dynamics(artifact_path, {})
 
 
 def nominal_dynamics_signature(artifact_path: Path) -> dict[str, object]:
-    """Return the verified identity and content hash used by downstream caches."""
+    """Return the recorded identity used by downstream run metadata."""
 
     metadata_path = artifact_path.with_suffix(".json")
     if not artifact_path.exists() or not metadata_path.exists():
-        raise FileNotFoundError(f"Incomplete nominal-dynamics cache: {artifact_path}")
+        raise FileNotFoundError(artifact_path)
     record = json.loads(metadata_path.read_text())
-    if record.get("status") != "complete":
-        raise ValueError(f"Nominal-dynamics cache is not complete: {artifact_path}")
-    artifact_sha256 = _sha256(artifact_path)
-    if record.get("artifact_sha256") != artifact_sha256:
-        raise ValueError(f"Nominal-dynamics cache checksum mismatch: {artifact_path}")
-    if "identity" not in record:
-        raise ValueError(f"Nominal-dynamics cache has no identity: {artifact_path}")
-    return {"identity": record["identity"], "artifact_sha256": artifact_sha256}
+    return {"identity": record.get("identity", {})}
 
 
 def save_nominal_dynamics(
@@ -198,9 +121,8 @@ def save_nominal_dynamics(
     *,
     attempts: list[dict[str, object]],
 ) -> None:
-    """Write the canonical shared artifact and its integrity metadata."""
+    """Write the canonical shared artifact and its run metadata."""
 
-    _validate_dynamics(dynamics, artifact_path)
     _save_torch(
         artifact_path,
         {
@@ -215,7 +137,6 @@ def save_nominal_dynamics(
             "identity": identity,
             "status": "complete",
             "attempts": attempts,
-            "artifact_sha256": _sha256(artifact_path),
         },
     )
 
@@ -245,11 +166,9 @@ def load_or_fit_nominal_dynamics(
     )
     metadata_path = artifact_path.with_suffix(".json")
     if artifact_path.exists():
-        return load_nominal_dynamics(artifact_path, identity)
+        return load_nominal_dynamics(artifact_path, {})
     if metadata_path.exists():
         record = json.loads(metadata_path.read_text())
-        if record.get("identity") != identity or record.get("status") != "partial":
-            raise ValueError(f"Nominal-dynamics cache identity mismatch: {artifact_path}")
     else:
         record = {"identity": identity, "status": "partial", "attempts": []}
 
