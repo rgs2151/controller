@@ -7,19 +7,18 @@ Test whether feedback control preserves a fixed steering concept as irrelevant c
 This experiment uses one controlled slice rather than the full L-CiteEval suite:
 
 - **Dataset:** L-CiteEval-Length, HotpotQA.
-- **Lengths:** approximately 8K, 16K, and 32K tokens.
-- **Matched cases:** 40 underlying questions, each represented at all three lengths.
+- **Primary lengths:** approximately 8K and 16K tokens; 32K is registered but deferred.
+- **Matched cases:** 40 underlying questions represented at both primary lengths.
 - **Models:** Qwen2.5-3B-Instruct and Llama-3.1-8B-Instruct.
 - **Methods:** Original, S-PID, A-LQR, and H∞.
 - **Decoding:** one deterministic generation per case; no repeated seeds.
 - **Steering concept:** `positive sentiments and descriptions of enjoyable experiences`, concept 499 in the released AXBench Gemma-2-9B layer-20 data.
 
-The complete evaluation is therefore `40 questions × 3 lengths × 4 methods × 2 models = 960` generations.
+The primary evaluation is therefore `40 questions × 2 lengths × 4 methods × 2 models = 640` generations.
 Each model–method–length result cell contains the same 40 question identities. The
-three length columns therefore compare 40 answers at approximately 8K, the same
-40 questions at approximately 16K, and the same 40 questions at approximately
-32K. The 120 rows are 40 matched questions under three context conditions, not
-120 different questions per condition.
+two primary length columns compare 40 answers at approximately 8K with the same
+40 questions at approximately 16K. The matched 32K rows remain available as a
+separate composable evaluation condition.
 
 ## What the task is
 
@@ -41,7 +40,9 @@ HotpotQA is the selected task because it has short outputs, exact automatic answ
 - **Configuration/file:** `L-CiteEval-Length/hotpotqa.json`.
 - **Rows:** 120: 40 rows below 8K, 40 rows from 8K to 16K, and 40 rows from 16K to 32K.
 - **Pairing:** the same 40 questions and gold answers appear in each length condition; the irrelevant padding passages change.
-- **Use:** all 120 rows are the untouched test set. They are not used to fit a direction, estimate dynamics, fit H∞ disturbance geometry, or choose hyperparameters.
+- **Use:** the 80 matched 8K/16K rows are the primary untouched test set. The 40
+  matched 32K rows are deferred. None are used to fit a direction, estimate
+  dynamics, fit H∞ disturbance geometry, or choose hyperparameters.
 
 The current Hugging Face release is the implementation source of truth. It differs from the earlier paper description: the paper describes four Length tasks with 200 rows each, while the current release contains five tasks and 570 rows. This experiment uses all 120 released HotpotQA rows, not a further subsample.
 
@@ -179,7 +180,8 @@ evaluation outcomes rather than H∞ selection criteria. Save all three judge
 scores, their explanations, the per-response harmonic means, and the selected
 candidate record.
 
-After selection, freeze the complete H∞ artifact and apply it unchanged at all three L-CiteEval lengths.
+After selection, freeze the complete H∞ artifact and apply it unchanged at 8K
+and 16K. The same artifact will be reused if the deferred 32K condition is run.
 
 ## Models and context validation
 
@@ -263,7 +265,7 @@ For each response, compute the AXBench overall steering score as the harmonic me
 
 ## Primary analysis
 
-For each model and method, report the mean at 8K, 16K, and 32K for:
+For each model and method, report the mean at 8K and 16K for:
 
 1. AXBench concept score;
 2. AXBench overall steering score;
@@ -272,25 +274,25 @@ For each model and method, report the mean at 8K, 16K, and 32K for:
 
 The primary comparison is H∞ versus A-LQR on the same 40 question families:
 
-- difference at 32K; and
-- change from 8K to 32K.
+- difference at 16K; and
+- change from 8K to 16K.
 
 Use a paired bootstrap over the 40 question families to give 95% confidence intervals for those method differences. Bootstrap resampling is post-processing; it does not require new model generations.
 
-The main table is organized as three context-length columns. Each cell summarizes
+The main table is organized as two context-length columns. Each cell summarizes
 40 responses, and the row alignment is by the same underlying question identity
-across 8K, 16K, and 32K.
+across 8K and 16K.
 
-The result supports the intended claim only if H∞ preserves more steering at 32K without a corresponding collapse in answer recall or citation F1. Do not merge steering and L-CiteEval task quality into one paper metric; show the trade-off directly.
+The result supports the intended claim only if H∞ preserves more steering at 16K without a corresponding collapse in answer recall or citation F1. Do not merge steering and L-CiteEval task quality into one paper metric; show the trade-off directly.
 
 ## Compute and API cost
 
-- **Long-context generation:** 960 total generations.
-- **Dataset context volume:** approximately 17.3 million context tokens before the fixed one-shot demonstration and chat-template overhead.
+- **Long-context generation:** 640 total generations.
+- **Dataset context volume:** approximately 7.7 million context tokens before the fixed one-shot demonstration and chat-template overhead.
 - **Repeated decoding:** none.
 - **H∞ sweep:** 12 candidates × 50 fixed short instructions × 2 models = 1,200 short-context calibration generations, with no repeated seeds.
 - **H∞ calibration judging:** 1,200 responses × 3 AXBench judges = 3,600 short OpenAI calls. No L-CiteEval answer or citation scorer runs during calibration.
-- **OpenAI judging:** 960 responses × 3 independent AXBench rubrics = 2,880 short calls.
+- **OpenAI judging:** 640 responses × 3 independent AXBench rubrics = 1,920 short calls.
 
 At the current GPT-4o-mini rates, the AXBench judging should remain comfortably below one US dollar because no long context is transmitted. The exact cost must be computed from saved API token usage. The native answer and citation scorers incur no OpenAI cost. Long-context controlled generation, not judging, is the dominant expense.
 
@@ -304,10 +306,10 @@ Before the full run, perform one smoke case per model at each length for all fou
 - controller hooks run with KV cache off;
 - Original and controlled generations use identical decoding settings;
 - all six native metric fields and four AXBench score fields are written;
-- the 40 question identities align across the three length conditions; and
+- the 40 question identities align across the two primary length conditions; and
 - H∞ writes the existing diagnostic bundle unchanged.
 
-The smoke outputs are disposable and are not part of the reported 960 generations.
+The smoke outputs are disposable and are not part of the reported 640 generations.
 
 ## References
 

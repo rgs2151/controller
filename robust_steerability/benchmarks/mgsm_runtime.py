@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import time
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
@@ -43,6 +44,8 @@ from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 METHODS = ("original", "spid", "alqr", "h_infinity")
 DEFAULT_BATCH_SIZE = {"qwen3_4b": 32, "qwen3_8b": 16}
+EVALUATION_SAMPLE_SEED = 42
+MAX_NEW_TOKENS = 256
 
 
 def _utc_now() -> str:
@@ -176,7 +179,7 @@ def generate_completions(
     policy,
     use_cache: bool,
     batch_size: int,
-    max_new_tokens: int = 512,
+    max_new_tokens: int = MAX_NEW_TOKENS,
 ) -> tuple[list[str], list[int]]:
     completions = []
     generated_counts = []
@@ -232,6 +235,7 @@ def _shard_path(
 def generate_shard(
     model_key: str,
     language: str,
+    sample_count: int,
     method: str,
     device: str,
     calibration_id: str,
@@ -240,9 +244,16 @@ def generate_shard(
     shard_count: int,
     generation_batch_size: int | None,
 ) -> None:
-    records = json.loads(data_path(model_key).read_text())["evaluation"][language][
-        shard_index::shard_count
-    ]
+    available = json.loads(data_path(model_key).read_text())["evaluation"][language]
+    if sample_count < 1 or sample_count > len(available):
+        raise ValueError(
+            f"sample_count must be between 1 and {len(available)} for {language}"
+        )
+    selected_indices = sorted(
+        random.Random(EVALUATION_SAMPLE_SEED).sample(range(len(available)), sample_count)
+    )
+    selected = [available[index] for index in selected_indices]
+    records = selected[shard_index::shard_count]
     destination = _shard_path(
         model_key, language, method, shard_index, shard_count, use_cache=use_cache
     )
@@ -253,11 +264,15 @@ def generate_shard(
         "schema_version": 1,
         "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
         "input_language": language,
+        "evaluation_sample_count": sample_count,
+        "evaluation_sample_seed": EVALUATION_SAMPLE_SEED,
+        "evaluation_problem_indices": selected_indices,
         "method": method,
         "parameters": _selection_parameters(model_key, method, calibration_id),
         "calibration_id": calibration_id,
         "evaluated_model_kv_cache": use_cache,
         "generation_batch_size": batch_size,
+        "max_new_tokens": MAX_NEW_TOKENS,
         "model_loading": asdict(model_load_spec(model_key)),
         "shard": {"index": shard_index, "count": shard_count},
     }
@@ -335,7 +350,11 @@ def merge_shards(
         raise ValueError(f"Incomplete MGSM shards for {language}/{method}")
     rows = [row for shard in shards for row in shard["rows"]]
     rows.sort(key=lambda row: int(row["problem_index"]))
-    if [int(row["problem_index"]) for row in rows] != list(range(250)):
+    expected = [
+        int(value)
+        for value in shards[0]["identity"]["evaluation_problem_indices"]
+    ]
+    if [int(row["problem_index"]) for row in rows] != expected:
         raise ValueError(f"MGSM merge changed matched problem order for {language}/{method}")
     common = dict(shards[0]["identity"])
     common.pop("shard")
@@ -346,7 +365,9 @@ def merge_shards(
             "identity": common,
             "status": "complete",
             "attempts": [attempt for shard in shards for attempt in shard["attempts"]],
-            "repetitions": [{"repetition": 0, "sample_count": 250, "rows": rows}],
+            "repetitions": [
+                {"repetition": 0, "sample_count": len(expected), "rows": rows}
+            ],
         },
     )
     return destination
@@ -442,6 +463,7 @@ def main() -> None:
     parser.add_argument("--stage", choices=("generate-shard",), required=True)
     parser.add_argument("--model", choices=tuple(DEFAULT_BATCH_SIZE), required=True)
     parser.add_argument("--language", choices=LANGUAGES, required=True)
+    parser.add_argument("--sample-count", type=int, required=True)
     parser.add_argument("--method", choices=METHODS, required=True)
     parser.add_argument("--device", required=True)
     parser.add_argument("--calibration-id", default="selected")
@@ -453,6 +475,7 @@ def main() -> None:
     generate_shard(
         arguments.model,
         arguments.language,
+        arguments.sample_count,
         arguments.method,
         arguments.device,
         arguments.calibration_id,

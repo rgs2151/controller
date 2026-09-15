@@ -4,6 +4,7 @@ base_dataset = "realtoxicityprompts"
 models = ["gemma2b", "llama8b", "qwen14b"]
 available_methods = ["original", "spid", "alqr", "h_infinity"]
 default_methods = ["original", "spid", "alqr", "h_infinity"]
+default_datasets = ["rtp", "jigsaw", "mmlu"]
 jacobian_prompts = 50
 evaluated_model_kv_cache = false
 available_evaluated_model_kv_cache = [false, true]

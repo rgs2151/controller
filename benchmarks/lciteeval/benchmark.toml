@@ -1,9 +1,10 @@
-schema_version = 1
+schema_version = 2
 benchmark = "lciteeval"
 base_dataset = "lciteeval_length_hotpotqa"
 models = ["qwen25_3b_instruct", "llama31_8b_instruct"]
 available_methods = ["original", "spid", "alqr", "h_infinity"]
 default_methods = ["original", "spid", "alqr", "h_infinity"]
+default_datasets = ["8k", "16k"]
 jacobian_prompts = 50
 evaluated_model_kv_cache = false
 available_evaluated_model_kv_cache = [false, true]

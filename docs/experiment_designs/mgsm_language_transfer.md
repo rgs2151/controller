@@ -57,12 +57,13 @@ test problems.
 - **Test split:** 250 matched problems per language, containing translated
   questions and numeric gold answers but no gold reasoning traces.
 - **Direction use:** all 250 matched English/Spanish problem pairs.
-- **Transfer-test use:** the corresponding 250 problems in the other nine
-  languages.
+- **Transfer-test use:** one fixed aligned 100-problem subset in Chinese,
+  French, Japanese, Swahili, and Telugu, sampled once with seed 42 and reused
+  unchanged across languages and methods.
 
 Because the direction uses every English/Spanish pair, English and Spanish are
-construction diagnostics rather than held-out evaluation conditions. The primary
-held-out comparison consists of the nine other language versions. This is a
+construction data rather than evaluation conditions. The primary held-out
+comparison uses five typologically diverse language versions. This is a
 transductive language-transfer design: problem identities are shared across
 languages, while the input languages used for the reported transfer comparison are
 not used to construct the direction.
@@ -164,14 +165,13 @@ controller.
 
 ## Evaluation conditions
 
-For every one of the 250 matched problem identities, run the nine transfer-language
-versions through every method. The same frozen controller is used throughout.
-English and Spanish generations may be retained as construction diagnostics, but
-they are not included in the held-out transfer claim.
+Run the same fixed 100 problem identities in Chinese, French, Japanese, Swahili,
+and Telugu through every method. The same frozen controller is used throughout.
+English and Spanish are not generated during evaluation.
 
 - **English input:** direction-construction diagnostic.
 - **Spanish input:** desired-language construction diagnostic.
-- **Nine other input languages:** transfer conditions.
+- **Five input languages:** transfer conditions.
 
 The prompt requests a worked solution and a final Arabic-numeral answer but does
 not ask for Spanish. Spanish output should therefore be caused by the controller,
@@ -180,7 +180,7 @@ native-language MGSM exemplars for the corresponding input language.
 
 Generation settings:
 
-- maximum new tokens: 512;
+- maximum new tokens: 256;
 - temperature: 0;
 - top-p: 1;
 - sampling: off;
@@ -252,7 +252,7 @@ benchmark evidence.
 
 For each model, method, and input language, report:
 
-1. MGSM exact-match accuracy over the same 250 problem identities;
+1. MGSM exact-match accuracy over the same 100 problem identities;
 2. mean Spanish rule-following score;
 3. mean AXBench instruction relevance;
 4. mean AXBench fluency;
@@ -264,13 +264,12 @@ The main figure has input language on the x-axis and three panels:
 - **Spanish steering:** mean Spanish rule-following score.
 - **Overall steering:** mean AXBench harmonic-mean score.
 
-Show all four methods. Treat English and Spanish as anchors and visually separate
-the nine transfer languages. The main comparison is H∞ versus A-LQR on the same
-problem identities.
+Show all four methods across the five transfer languages. The main comparison is
+H∞ versus A-LQR on the same problem identities.
 
-Use paired bootstrap confidence intervals over the 250 problem identities for
+Use paired bootstrap confidence intervals over the 100 problem identities for
 H∞−A-LQR differences within each language. Also report the macro-average over
-the nine transfer languages, weighting every language equally.
+the five transfer languages, weighting every language equally.
 
 The intended claim is supported only if H∞ improves Spanish adherence or AXBench
 overall steering across transfer languages without a disproportionate loss of
@@ -279,13 +278,10 @@ mathematical accuracy. Spanish adherence remains a 0–2 score, not a rate.
 ## Compute and API size
 
 - **Held-out test generations per model:**
-  `250 problems × 9 transfer languages × 4 methods = 9,000`.
-- **Two-model held-out evaluation:** `18,000` test generations.
-- **Optional English/Spanish construction diagnostics:**
-  `250 problems × 2 languages × 4 methods × 2 models = 4,000` additional
-  generations.
+  `100 problems × 5 transfer languages × 4 methods = 2,000`.
+- **Two-model held-out evaluation:** `4,000` test generations.
 - **H∞ calibration:** `12 candidates × 50 prompts × 2 models = 1,200` short
-  generations. This is separate from the 18,000 held-out evaluation generations.
+  generations. This is separate from the 4,000 held-out evaluation generations.
 - **Repeated test decoding:** none.
 - **OpenAI scoring:** two short judge calls per generated response; Spanish rule
   following and mathematical accuracy are local deterministic scorers.

@@ -4,10 +4,10 @@ This first-class benchmark runs the frozen AXBench concept-499 direction through
 
 - `artifacts`: materialize the 72/72 AXBench direction data, fit layer-wise all-token DiffMean setpoints, and average 50 desired-example Jacobians into the one A matrix shared by A-LQR and H∞.
 - `calibrate`: write fixed S-PID/A-LQR selections and select H∞ on 50 disjoint short prompts using the harmonic mean of AXBench concept relevance, instruction relevance, and fluency.
-- `evaluate`: generate one deterministic answer for each of 40 matched questions at 8K, 16K, and 32K with Original, S-PID, A-LQR, and H∞.
+- `evaluate`: generate one deterministic answer for each of 40 matched questions at 8K and 16K with Original, S-PID, A-LQR, and H∞.
 - `score`: independently compute L-CiteEval answer overlap, citation NLI, and the AXBench steering scores from saved generations.
 
-The 8K, 16K, and 32K conditions share the same 40 question identities and every controller artifact. Context length changes only at evaluation; no direction, A matrix, disturbance model, gain, or setpoint is refit by length.
+The 8K and 16K conditions share the same 40 question identities and every controller artifact. The registered 32K condition is deferred and can be added later with `--datasets 32k`. Context length changes only at evaluation; no direction, A matrix, disturbance model, gain, or setpoint is refit by length.
 
 The 50 nominal Jacobians use the upstream concept-pipeline limit of 32 tokens.
 The target model is loaded in bfloat16 without quantization; Qwen uses the same

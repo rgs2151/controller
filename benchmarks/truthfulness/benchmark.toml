@@ -4,6 +4,7 @@ base_dataset = "truthfulqa"
 models = ["gemma2b", "llama8b", "qwen14b"]
 available_methods = ["original", "iti", "actadd", "mean_act", "linear_act", "pid_act", "odesteer", "spid", "alqr", "h_infinity"]
 default_methods = ["original", "alqr", "h_infinity"]
+default_datasets = ["id", "spanish", "mmlu"]
 jacobian_prompts = 35
 evaluated_model_kv_cache = false
 available_evaluated_model_kv_cache = [false, true]
