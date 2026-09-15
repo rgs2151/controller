@@ -42,6 +42,12 @@ The project therefore freezes Gemma truthfulness best guesses from those grids:
 ITI uses 32 heads and alpha 10; S-PID uses lambda 1, Kp=.7, Ki=.01, and Kd=.1.
 Neither method is swept.
 
+For Llama-3-8B, the frozen truthfulness choices are ITI with 32 heads and alpha
+10, S-PID with lambda 1, Kp=.1, Ki=.1, and Kd=0, and ODESteer at layer 19 with
+time 25. The ITI and S-PID values are central source-grid choices. The
+truthfulness adapter does not preserve a final Llama ODESteer selection, so its
+preserved same-model comparison setting is carried across without a sweep.
+
 Evaluated-model KV cache defaults to off. `--kv-cache on` remains available for
 an explicit appendix comparison and writes to a different directory. API scoring
 defaults to concurrency 500 and batch size 20.

@@ -136,17 +136,19 @@ ITI_SOURCE_GRIDS = {
     "truthfulness": {"top_heads": (16, 32, 64), "alphas": (5.0, 10.0, 15.0)},
 }
 
-# The paper-producing comparison code preserves candidate grids but not the
-# selected Gemma-2-2B values for these two methods.  The project therefore
-# freezes one central, conservative source-grid choice instead of sweeping.
+# The paper-producing comparison code preserves candidate grids but not these
+# final selections. The project freezes central source-grid choices instead of
+# sweeping them on the benchmark.
 SPID_PROJECT_SELECTIONS = {
     "truthfulness": {
         "gemma2b": {"lambda": 1.0, "kp": 0.7, "ki": 0.01, "kd": 0.1},
+        "llama8b": {"lambda": 1.0, "kp": 0.1, "ki": 0.1, "kd": 0.0},
     },
 }
 ITI_PROJECT_SELECTIONS = {
     "truthfulness": {
         "gemma2b": {"top_heads": 32, "alpha": 10.0},
+        "llama8b": {"top_heads": 32, "alpha": 10.0},
     },
 }
 
@@ -185,7 +187,12 @@ ODESTEER_PAPER_SELECTIONS = {
         "llama8b": (19, 25.0),
         "qwen14b": (24, 65.0),
     },
-    "truthfulness": {"gemma2b": (15, 50.0)},
+    "truthfulness": {
+        "gemma2b": (15, 50.0),
+        # The truthfulness adapter did not preserve a final Llama selection.
+        # Freeze its preserved same-model comparison setting without a sweep.
+        "llama8b": (19, 25.0),
+    },
 }
 ODESTEER_PARAMETERS = {
     "solver": "euler",
