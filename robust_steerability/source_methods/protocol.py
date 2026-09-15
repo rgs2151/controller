@@ -136,6 +136,20 @@ ITI_SOURCE_GRIDS = {
     "truthfulness": {"top_heads": (16, 32, 64), "alphas": (5.0, 10.0, 15.0)},
 }
 
+# The paper-producing comparison code preserves candidate grids but not the
+# selected Gemma-2-2B values for these two methods.  The project therefore
+# freezes one central, conservative source-grid choice instead of sweeping.
+SPID_PROJECT_SELECTIONS = {
+    "truthfulness": {
+        "gemma2b": {"lambda": 1.0, "kp": 0.7, "ki": 0.01, "kd": 0.1},
+    },
+}
+ITI_PROJECT_SELECTIONS = {
+    "truthfulness": {
+        "gemma2b": {"top_heads": 32, "alpha": 10.0},
+    },
+}
+
 
 ACT_STRENGTH = 1.0
 ACT_ADAPTER_MODULE_LIMIT = 4
@@ -367,9 +381,11 @@ def selected_parameters(
         layer, time = ODESTEER_PAPER_SELECTIONS[behavior][key]
         return {"layer": layer, "time": time}
     if method == "spid":
-        if requested is None:
-            raise ValueError("S-PID requires an explicitly recorded development-set selection")
+        if key not in SPID_PROJECT_SELECTIONS.get(behavior, {}):
+            raise ValueError(f"No frozen project S-PID selection for {behavior}/{model_id}")
         grid = SPID_SOURCE_GRIDS[behavior][key]
+        frozen = SPID_PROJECT_SELECTIONS[behavior][key]
+        requested = frozen if requested is None else requested
         expected = {"lambda", "kp", "ki", "kd"}
         if set(requested) != expected:
             raise ValueError(f"S-PID selection must contain exactly {sorted(expected)}")
@@ -377,10 +393,17 @@ def selected_parameters(
             float(requested[name]) != getattr(grid, name) for name in ("kp", "ki", "kd")
         ):
             raise ValueError("S-PID selection is outside the preserved source grid")
-        return {name: float(requested[name]) for name in ("lambda", "kp", "ki", "kd")}
+        resolved = {
+            name: float(requested[name]) for name in ("lambda", "kp", "ki", "kd")
+        }
+        if resolved != frozen:
+            raise ValueError("S-PID must use the frozen project selection")
+        return resolved
     if method == "iti":
-        if requested is None:
-            raise ValueError("ITI requires an explicitly recorded development-set selection")
+        if key not in ITI_PROJECT_SELECTIONS.get(behavior, {}):
+            raise ValueError(f"No frozen project ITI selection for {behavior}/{model_id}")
+        frozen = ITI_PROJECT_SELECTIONS[behavior][key]
+        requested = frozen if requested is None else requested
         expected = {"top_heads", "alpha"}
         if set(requested) != expected:
             raise ValueError(f"ITI selection must contain exactly {sorted(expected)}")
@@ -389,7 +412,10 @@ def selected_parameters(
         alpha = float(requested["alpha"])
         if top_heads not in grid["top_heads"] or alpha not in grid["alphas"]:
             raise ValueError("ITI selection is outside the preserved source grid")
-        return {"top_heads": top_heads, "alpha": alpha}
+        resolved = {"top_heads": top_heads, "alpha": alpha}
+        if resolved != frozen:
+            raise ValueError("ITI must use the frozen project selection")
+        return resolved
     raise ValueError(f"Unsupported method {method!r}")
 
 
@@ -452,7 +478,7 @@ def protocol_manifest(
         "calibration": asdict(calibration),
         "selected_parameters": parameters,
         "selection_stage": (
-            "recorded development-set selection from the preserved source grid"
+            "fixed project choice from the preserved source grid"
             if method in {"iti", "spid"}
             else "fixed source setting"
             if method != "original"

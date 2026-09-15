@@ -719,9 +719,8 @@ def fit_source(
     method: str,
     device: str,
     calibration_id: str,
-    selected_parameters: dict | None,
 ) -> None:
-    """Fit one source-method artifact; hyperparameter selection is supplied."""
+    """Fit one source-method artifact using its frozen parameter selection."""
 
     if method in {"original", "alqr"} or method not in SOURCE_METHODS:
         raise ValueError(f"{method!r} has no source-method fit")
@@ -739,7 +738,7 @@ def fit_source(
             "truthfulness", model_key, method, calibration_id
         ),
         calibration_data_path=_data_path("truthfulness"),
-        selected_parameters=selected_parameters,
+        selected_parameters=None,
     )
 
 
@@ -910,7 +909,6 @@ def main() -> None:
     parser.add_argument("--distribution", choices=("id", "spanish"), required=True)
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
-    parser.add_argument("--selected-parameters")
     parser.add_argument(
         "--scorer", choices=("truthfulqa_true", "truthfulqa_informative")
     )
@@ -939,11 +937,6 @@ def main() -> None:
             arguments.method,
             arguments.device,
             arguments.calibration_id,
-            (
-                json.loads(arguments.selected_parameters)
-                if arguments.selected_parameters is not None
-                else None
-            ),
         )
     elif arguments.stage == "generate":
         if arguments.method is None or arguments.device is None:

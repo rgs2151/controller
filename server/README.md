@@ -25,6 +25,13 @@ python -m robust_steerability.benchmarks.truthfulness evaluate --model llama8b -
 python -m robust_steerability.benchmarks.truthfulness score --model llama8b --scorers truthfulqa_true,truthfulqa_informative,axbench_instruction_relevance,axbench_fluency --devices auto
 ```
 
+Supplying `--h-infinity-q-over-r`, `--h-infinity-q-final-over-r`, and
+`--h-infinity-r` to `calibrate` skips only the H-infinity candidate sweep. Run
+`artifacts` first on a new model/task, then `calibrate`; the latter still fits
+every requested source method, estimates H-infinity disturbance geometry,
+synthesizes the fixed controller, and saves its diagnostics. Use `--methods
+all` when the run should contain every comparison method.
+
 Create the persistent Studio environment once per checkout before starting a
 run:
 
