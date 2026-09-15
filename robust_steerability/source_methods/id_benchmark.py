@@ -904,7 +904,7 @@ def run_generation_job(
     run_attempt["outputs"] = [str(path.relative_to(cache_root)) for path in output_files]
     calibration_metadata = sorted(artifact_root.glob("*.json"))
     run_attempt["calibration_records"] = [
-        str(path.relative_to(Path(__file__).resolve().parents[2]))
+        str(path.resolve())
         for path in calibration_metadata
     ]
     run_attempt["gpu_peak_memory_allocated_bytes"] = torch.cuda.max_memory_allocated(device_index)
