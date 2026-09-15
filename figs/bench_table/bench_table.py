@@ -86,9 +86,13 @@ def _rows(
                     _metric(result, "truth_x_info", required=True),
                     _metric(result, "truth", required=True),
                     _metric(result, "info", required=True),
+                    _metric(result, "instruction_relevance"),
+                    _metric(result, "fluency"),
                     _metric(spanish_result, "truth_x_info", required=True),
                     _metric(spanish_result, "truth", required=True),
                     _metric(spanish_result, "info", required=True),
+                    _metric(spanish_result, "instruction_relevance"),
+                    _metric(spanish_result, "fluency"),
                     _metric(result, "mmlu"),
                 ]
             rows.append(
@@ -163,9 +167,13 @@ def render_markdown(
                 "TruthfulQA–ID T×I ↑",
                 "ID True (%) ↑",
                 "ID Info (%) ↑",
+                "ID Instruction relevance (0–2) ↑",
+                "ID Fluency (0–2) ↑",
                 "Spanish T×I ↑",
                 "Spanish True (%) ↑",
                 "Spanish Info (%) ↑",
+                "Spanish Instruction relevance (0–2) ↑",
+                "Spanish Fluency (0–2) ↑",
                 "MMLU (%) ↑",
             ),
             truthfulness_rows,
@@ -174,8 +182,9 @@ def render_markdown(
     lines.extend(
         [
             "",
-            "Truthfulness values are mean ± SE across five complete 817-question repetitions. "
-            "TBD cells have not been run.",
+            "Truthfulness, AXBench instruction relevance (0–2), and AXBench fluency (0–2) "
+            "are mean ± SE across five complete 817-question repetitions. TBD cells have not "
+            "been run.",
             "",
         ]
     )
@@ -223,14 +232,14 @@ def render_tex(
         "",
         r"\begin{table*}[!htbp]",
         r"\centering",
-        rf"\caption{{Source-comparable truthfulness benchmark with evaluated-model KV cache {cache_label}. $\mathrm{{T{{\cdot}}I}}$ is truthful-times-informative performance. Values are mean $\pm$ SE across five complete 817-question TruthfulQA repetitions. TBD marks cells that have not been run.}}",
+        rf"\caption{{Source-comparable truthfulness benchmark with evaluated-model KV cache {cache_label}. $\mathrm{{T{{\cdot}}I}}$ is truthful-times-informative performance. Instruction relevance and fluency use the AXBench 0--2 rubrics. Values are mean $\pm$ SE across five complete 817-question TruthfulQA repetitions. TBD marks cells that have not been run.}}",
         r"\label{tab:truthfulness-benchmark}",
         r"\scriptsize",
-        r"\setlength{\tabcolsep}{2.7pt}",
+        r"\setlength{\tabcolsep}{2pt}",
         r"\resizebox{\textwidth}{!}{%",
-        r"\begin{tabular}{llccccccc}",
+        r"\begin{tabular}{llccccccccccc}",
         r"\toprule",
-        r"Model & Method & ID T$\times$I $\uparrow$ & ID True (\%) $\uparrow$ & ID Info (\%) $\uparrow$ & Spanish T$\times$I $\uparrow$ & Spanish True (\%) $\uparrow$ & Spanish Info (\%) $\uparrow$ & MMLU (\%) $\uparrow$ \\",
+        r"Model & Method & ID T$\times$I $\uparrow$ & ID True (\%) $\uparrow$ & ID Info (\%) $\uparrow$ & ID Rel. (0--2) $\uparrow$ & ID Flu. (0--2) $\uparrow$ & Spanish T$\times$I $\uparrow$ & Spanish True (\%) $\uparrow$ & Spanish Info (\%) $\uparrow$ & Spanish Rel. (0--2) $\uparrow$ & Spanish Flu. (0--2) $\uparrow$ & MMLU (\%) $\uparrow$ \\",
         r"\midrule",
         *_tex_rows(truthfulness_rows),
         r"\bottomrule",
