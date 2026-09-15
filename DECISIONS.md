@@ -22,7 +22,7 @@ Do not put unit-specific file paths, temporary subsets, cache names, panel mappi
 
 ## Controlled Decoding KV Cache
 
-- Decision: Disable transformer KV caching by default during evaluated-model generation for Original and every steering method. A compact unit may override this only when the user explicitly requests a cache-on comparison or run.
+- Decision: Disable transformer KV caching during evaluated-model generation for Original and every steering method. The active benchmark interfaces do not expose a cache-on mode.
 - Why: Under the current activation-hook feedback implementation, cache-on and cache-off decoding produce materially different controller trajectories and benchmark outcomes; cache state is therefore part of the intervention semantics rather than only a runtime optimization.
 - Use this when: Generating behavior, capability, ID, or distribution-shift evaluations with the shared steering pipeline.
 - Do not use this for: Uncontrolled evaluator and judge models, which may use KV caching because no activation feedback policy is attached.

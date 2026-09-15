@@ -1,4 +1,4 @@
-"""Render the paper benchmark tables to synchronized Markdown and TeX."""
+"""Render the active benchmark tables to synchronized Markdown and TeX."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ UNIT = Path(__file__).resolve().parent
 REPO = UNIT.parents[1]
 RESULTS_ROOT = REPO / "benchmarks"
 PLOTS = UNIT / "plots"
-KV_CONDITIONS = ("kv_cache_on", "kv_cache_off")
 
 MODELS = (
     ("gemma2b", "Gemma-2-2B"),
@@ -31,7 +30,7 @@ METHODS = (
 )
 
 
-def _load_results(condition: str, behavior: str) -> dict[tuple[str, str], dict]:
+def _load_results(behavior: str) -> dict[tuple[str, str], dict]:
     results = {}
     benchmark = "truthfulness" if behavior.startswith("truthfulness") else "toxicity"
     for model_key, _model_label in MODELS:
@@ -39,8 +38,7 @@ def _load_results(condition: str, behavior: str) -> dict[tuple[str, str], dict]:
             path = (
                 RESULTS_ROOT
                 / benchmark
-                / "results"
-                / condition
+                / "results/kv_cache_off"
                 / model_key
                 / behavior
                 / f"{method}.json"
@@ -64,36 +62,32 @@ def _metric(result: dict | None, name: str, *, required: bool = False):
 def _rows(
     behavior: str,
     results: dict[tuple[str, str], dict],
-    shifted_results: dict[tuple[str, str], dict] | None = None,
+    shifted_results: dict[tuple[str, str], dict],
 ) -> list[dict]:
     rows = []
     for model_key, model_label in MODELS:
         for method, markdown_label, tex_label in METHODS:
             result = results.get((model_key, method))
+            shifted = shifted_results.get((model_key, method))
             if behavior == "toxicity":
-                jigsaw_result = (shifted_results or {}).get((model_key, method))
                 values = [
                     _metric(result, "toxicity", required=True),
                     _metric(result, "dist_2", required=True),
                     _metric(result, "perplexity", required=True),
-                    _metric(jigsaw_result, "toxicity", required=True),
-                    _metric(jigsaw_result, "dist_2"),
-                    _metric(jigsaw_result, "perplexity"),
+                    _metric(shifted, "toxicity", required=True),
+                    _metric(shifted, "dist_2"),
+                    _metric(shifted, "perplexity"),
                 ]
             else:
-                spanish_result = (shifted_results or {}).get((model_key, method))
                 values = [
-                    _metric(result, "truth_x_info", required=True),
-                    _metric(result, "truth", required=True),
-                    _metric(result, "info", required=True),
+                    _metric(result, "truth"),
+                    _metric(result, "info"),
                     _metric(result, "instruction_relevance"),
                     _metric(result, "fluency"),
-                    _metric(spanish_result, "truth_x_info", required=True),
-                    _metric(spanish_result, "truth", required=True),
-                    _metric(spanish_result, "info", required=True),
-                    _metric(spanish_result, "instruction_relevance"),
-                    _metric(spanish_result, "fluency"),
-                    _metric(result, "mmlu"),
+                    _metric(shifted, "truth"),
+                    _metric(shifted, "info"),
+                    _metric(shifted, "instruction_relevance"),
+                    _metric(shifted, "fluency"),
                 ]
             rows.append(
                 {
@@ -107,15 +101,11 @@ def _rows(
 
 
 def _markdown_cell(value) -> str:
-    if value is None:
-        return "TBD"
-    return f"{value[0]:.2f} ± {value[1]:.2f}"
+    return "TBD" if value is None else f"{value[0]:.2f} ± {value[1]:.2f}"
 
 
 def _tex_cell(value) -> str:
-    if value is None:
-        return r"\textbf{TBD}"
-    return f"${value[0]:.2f}\\,\\pm\\,{value[1]:.2f}$"
+    return r"\textbf{TBD}" if value is None else f"${value[0]:.2f}\\,\\pm\\,{value[1]:.2f}$"
 
 
 def _markdown_table(title: str, headers: tuple[str, ...], rows: list[dict]) -> list[str]:
@@ -127,15 +117,12 @@ def _markdown_table(title: str, headers: tuple[str, ...], rows: list[dict]) -> l
     return lines
 
 
-def render_markdown(
-    condition: str, toxicity_rows: list[dict], truthfulness_rows: list[dict]
-) -> str:
-    cache_label = "on" if condition == "kv_cache_on" else "off"
+def render_markdown(toxicity_rows: list[dict], truthfulness_rows: list[dict]) -> str:
     lines = [
-        f"# Benchmark tables — evaluated-model KV cache {cache_label}",
+        "# Benchmark tables",
         "",
-        f"Generated from completed summaries in `benchmarks/*/results/{condition}/`. "
-        "The TeX table is generated from the same rows.",
+        "Generated from completed controlled-decoding summaries with evaluated-model KV "
+        "cache disabled. The TeX table is generated from the same rows.",
         "",
     ]
     lines.extend(
@@ -152,29 +139,19 @@ def render_markdown(
             toxicity_rows,
         )
     )
-    lines.extend(
-        [
-            "",
-            "Toxicity, Dist-2, and PPL are mean ± SE across five complete 1,000-prompt repetitions "
-            "for both RTP and Jigsaw.",
-            "",
-        ]
-    )
+    lines.extend(["", "Toxicity values are mean ± SE across five 1,000-prompt repetitions.", ""])
     lines.extend(
         _markdown_table(
             "Truthfulness benchmark",
             (
-                "TruthfulQA–ID T×I ↑",
                 "ID True (%) ↑",
-                "ID Info (%) ↑",
+                "ID Informative (%) ↑",
                 "ID Instruction relevance (0–2) ↑",
                 "ID Fluency (0–2) ↑",
-                "Spanish T×I ↑",
                 "Spanish True (%) ↑",
-                "Spanish Info (%) ↑",
+                "Spanish Informative (%) ↑",
                 "Spanish Instruction relevance (0–2) ↑",
                 "Spanish Fluency (0–2) ↑",
-                "MMLU (%) ↑",
             ),
             truthfulness_rows,
         )
@@ -182,9 +159,9 @@ def render_markdown(
     lines.extend(
         [
             "",
-            "Truthfulness, AXBench instruction relevance (0–2), and AXBench fluency (0–2) "
-            "are mean ± SE across five complete 817-question repetitions. TBD cells have not "
-            "been run.",
+            "Truthfulness values are mean ± SE across five complete 817-question "
+            "repetitions. Judges are scored independently; TBD means the requested judge "
+            "has not been run.",
             "",
         ]
     )
@@ -207,15 +184,12 @@ def _tex_rows(rows: list[dict]) -> list[str]:
     return lines
 
 
-def render_tex(
-    condition: str, toxicity_rows: list[dict], truthfulness_rows: list[dict]
-) -> str:
-    cache_label = "on" if condition == "kv_cache_on" else "off"
+def render_tex(toxicity_rows: list[dict], truthfulness_rows: list[dict]) -> str:
     lines = [
         "% Generated by figs/bench_table/bench_table.py. Do not edit by hand.",
         r"\begin{table*}[!htbp]",
         r"\centering",
-        rf"\caption{{Source-comparable toxicity benchmark with evaluated-model KV cache {cache_label}. Toxicity, Dist-2, and PPL are mean $\pm$ SE across five complete 1,000-prompt repetitions for both RTP and Jigsaw. TBD marks cells that have not been run.}}",
+        r"\caption{Source-comparable toxicity benchmark with evaluated-model KV cache disabled. Toxicity, Dist-2, and PPL are mean $\pm$ SE across five complete 1,000-prompt repetitions for RTP and Jigsaw. TBD marks cells that have not been run.}",
         r"\label{tab:toxicity-benchmark}",
         r"\scriptsize",
         r"\setlength{\tabcolsep}{3pt}",
@@ -232,14 +206,14 @@ def render_tex(
         "",
         r"\begin{table*}[!htbp]",
         r"\centering",
-        rf"\caption{{Source-comparable truthfulness benchmark with evaluated-model KV cache {cache_label}. $\mathrm{{T{{\cdot}}I}}$ is truthful-times-informative performance. Instruction relevance and fluency use the AXBench 0--2 rubrics. Values are mean $\pm$ SE across five complete 817-question TruthfulQA repetitions. TBD marks cells that have not been run.}}",
+        r"\caption{Truthfulness benchmark with evaluated-model KV cache disabled. True and Informative use the pinned TruthfulQA judges; instruction relevance and fluency use the independent AXBench 0--2 rubrics. Values are mean $\pm$ SE across five complete 817-question repetitions. TBD marks judges that have not been run.}",
         r"\label{tab:truthfulness-benchmark}",
         r"\scriptsize",
         r"\setlength{\tabcolsep}{2pt}",
         r"\resizebox{\textwidth}{!}{%",
-        r"\begin{tabular}{llccccccccccc}",
+        r"\begin{tabular}{llcccccccc}",
         r"\toprule",
-        r"Model & Method & ID T$\times$I $\uparrow$ & ID True (\%) $\uparrow$ & ID Info (\%) $\uparrow$ & ID Rel. (0--2) $\uparrow$ & ID Flu. (0--2) $\uparrow$ & Spanish T$\times$I $\uparrow$ & Spanish True (\%) $\uparrow$ & Spanish Info (\%) $\uparrow$ & Spanish Rel. (0--2) $\uparrow$ & Spanish Flu. (0--2) $\uparrow$ & MMLU (\%) $\uparrow$ \\",
+        r"Model & Method & ID True (\%) $\uparrow$ & ID Info. (\%) $\uparrow$ & ID Rel. (0--2) $\uparrow$ & ID Flu. (0--2) $\uparrow$ & Spanish True (\%) $\uparrow$ & Spanish Info. (\%) $\uparrow$ & Spanish Rel. (0--2) $\uparrow$ & Spanish Flu. (0--2) $\uparrow$ \\",
         r"\midrule",
         *_tex_rows(truthfulness_rows),
         r"\bottomrule",
@@ -253,24 +227,20 @@ def render_tex(
 
 def main() -> None:
     PLOTS.mkdir(parents=True, exist_ok=True)
-    for condition in KV_CONDITIONS:
-        toxicity_rows = _rows(
-            "toxicity",
-            _load_results(condition, "toxicity"),
-            _load_results(condition, "toxicity_jigsaw"),
-        )
-        truthfulness_rows = _rows(
-            "truthfulness",
-            _load_results(condition, "truthfulness"),
-            _load_results(condition, "truthfulness_spanish"),
-        )
-        stem = f"bench_table_{condition}"
-        (PLOTS / f"{stem}.md").write_text(
-            render_markdown(condition, toxicity_rows, truthfulness_rows)
-        )
-        (PLOTS / f"{stem}.tex").write_text(
-            render_tex(condition, toxicity_rows, truthfulness_rows)
-        )
+    toxicity_rows = _rows(
+        "toxicity", _load_results("toxicity"), _load_results("toxicity_jigsaw")
+    )
+    truthfulness_rows = _rows(
+        "truthfulness",
+        _load_results("truthfulness"),
+        _load_results("truthfulness_spanish"),
+    )
+    (PLOTS / "bench_table.md").write_text(
+        render_markdown(toxicity_rows, truthfulness_rows)
+    )
+    (PLOTS / "bench_table.tex").write_text(
+        render_tex(toxicity_rows, truthfulness_rows)
+    )
 
 
 if __name__ == "__main__":

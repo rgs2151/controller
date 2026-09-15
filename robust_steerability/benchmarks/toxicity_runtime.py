@@ -76,7 +76,7 @@ CALIBRATION_ID = "selected"
 MODEL_ID = "google/gemma-2-2b"
 MODEL_REVISION = "c5ebcd40d208330abc697524c919956e692655cf"
 MODEL_LABEL = "Gemma-2-2B"
-CACHE = evaluation_root("toxicity", MODEL_KEY, use_cache=False)
+CACHE = evaluation_root("toxicity", MODEL_KEY)
 SHARED = artifact_root("toxicity", MODEL_KEY)
 HINF_CALIBRATION = calibration_root("toxicity", MODEL_KEY, "h_infinity")
 SPID_CALIBRATION = calibration_root("toxicity", MODEL_KEY, "spid")
@@ -131,7 +131,7 @@ def configure_model(
     MODEL_ID = spec.model_id
     MODEL_REVISION = spec.revision
     MODEL_LABEL = spec.label
-    CACHE = evaluation_root("toxicity", model_key, use_cache=False)
+    CACHE = evaluation_root("toxicity", model_key)
     SHARED = artifact_root("toxicity", model_key)
     HINF_CALIBRATION = calibration_root(
         "toxicity", model_key, "h_infinity", calibration_id

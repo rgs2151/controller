@@ -16,7 +16,7 @@ from pathlib import Path
 
 UNIT = Path(__file__).resolve().parent
 REPO = UNIT.parents[1]
-SOURCE = REPO / "benchmarks/truthfulness/cache/gemma2b/evaluations/kv_cache_on/data/truthfulness.json"
+SOURCE = REPO / "benchmarks/truthfulness/cache/gemma2b/evaluations/kv_cache_off/data/truthfulness.json"
 ROOT = UNIT / "cache/data/truthfulness_spanish"
 TRANSLATIONS = ROOT / "translations.json"
 DATASET = UNIT / "data/truthfulqa_spanish.json"

@@ -32,12 +32,13 @@ Run the cache-first A-LQR residual and generated-toxicity smoke test from the re
 python parking/residual_checks/residual_checks.py all
 ```
 
-Run the benchmark as three explicit stages on any visible GPU set:
+Run the truthfulness benchmark as four explicit stages on any visible GPU set:
 
 ```bash
 python -m robust_steerability.benchmarks.truthfulness artifacts --model gemma2b --devices auto
 python -m robust_steerability.benchmarks.truthfulness calibrate --model gemma2b --devices auto
 python -m robust_steerability.benchmarks.truthfulness evaluate --model gemma2b --devices auto
+python -m robust_steerability.benchmarks.truthfulness score --model gemma2b --judges true,informative,instruction_relevance,fluency --devices auto
 ```
 
 Use `--generation-batch-size <n>` only when a larger remote GPU has been

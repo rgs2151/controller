@@ -59,7 +59,6 @@ def main() -> None:
     parser.add_argument("--methods", default="all")
     parser.add_argument("--datasets", default="all")
     parser.add_argument("--devices", default="auto")
-    parser.add_argument("--kv-cache", choices=("off",), default="off")
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument("--run-id")

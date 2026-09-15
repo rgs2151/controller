@@ -22,6 +22,7 @@ source .venv/bin/activate
 python -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
 python -m robust_steerability.benchmarks.truthfulness calibrate --model llama8b --devices auto
 python -m robust_steerability.benchmarks.truthfulness evaluate --model llama8b --devices auto
+python -m robust_steerability.benchmarks.truthfulness score --model llama8b --judges true,informative,instruction_relevance,fluency --devices auto
 ```
 
 Create the persistent Studio environment once per checkout before starting a
