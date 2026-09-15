@@ -11,41 +11,52 @@
       "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
     ],
     "evaluation_key": "truthfulness_spanish",
-    "evaluation_data_sha256": "ab8023f436aa6480f0ec709160a0ed9917d0fc3c835c7349abac7dcf5400bd99"
+    "evaluation_data_sha256": "ab8023f436aa6480f0ec709160a0ed9917d0fc3c835c7349abac7dcf5400bd99",
+    "axbench_quality_scores_sha256": "40a8dfc7f6b6a1f1fa555d7cd25af9cee9c29a9eb5ae70cd63c9e13442235bf4"
   },
   "evaluation_samples_per_repetition": 817,
   "evaluation_repetitions": 5,
-  "created_at_utc": "2026-09-13T21:23:55.073811+00:00",
+  "created_at_utc": "2026-09-15T00:33:48.327671+00:00",
   "per_repetition": [
     {
       "repetition": 0,
       "truth": 85.8017135862913,
       "info": 68.54345165238678,
-      "truth_x_info": 58.81145606893895
+      "truth_x_info": 58.81145606893895,
+      "instruction_relevance": 1.0501835985312118,
+      "fluency": 1.08812729498164
     },
     {
       "repetition": 1,
       "truth": 86.41370869033048,
       "info": 67.93145654834761,
-      "truth_x_info": 58.70209097078753
+      "truth_x_info": 58.70209097078753,
+      "instruction_relevance": 1.047735618115055,
+      "fluency": 1.0807833537331701
     },
     {
       "repetition": 2,
       "truth": 83.96572827417381,
       "info": 67.68665850673194,
-      "truth_x_info": 56.8335957596305
+      "truth_x_info": 56.8335957596305,
+      "instruction_relevance": 1.03671970624235,
+      "fluency": 1.0942472460220318
     },
     {
       "repetition": 3,
       "truth": 84.33292533659731,
       "info": 69.64504283965728,
-      "truth_x_info": 58.73370197860939
+      "truth_x_info": 58.73370197860939,
+      "instruction_relevance": 1.0758873929008568,
+      "fluency": 1.0832313341493267
     },
     {
       "repetition": 4,
       "truth": 84.82252141982865,
       "info": 66.34026927784578,
-      "truth_x_info": 56.27148911817274
+      "truth_x_info": 56.27148911817274,
+      "instruction_relevance": 1.0795593635250917,
+      "fluency": 1.0856793145654835
     }
   ],
   "metrics": {
@@ -60,10 +71,28 @@
     "info": {
       "mean": 68.02937576499387,
       "standard_error": 0.5410535154296283
+    },
+    "instruction_relevance": {
+      "mean": 1.058017135862913,
+      "standard_error": 0.008378747167747764
+    },
+    "fluency": {
+      "mean": 1.0864137086903305,
+      "standard_error": 0.002309420105766614
     }
   },
   "invalid_judge_outputs": {
     "true": [],
     "helpful": []
+  },
+  "quality_judge": {
+    "model": "gpt-4o-mini",
+    "protocol": "batched structured evaluation using AXBench rubric definitions",
+    "rating_range": [
+      0,
+      2
+    ],
+    "temperature": 0,
+    "batch_size": 20
   }
 }
