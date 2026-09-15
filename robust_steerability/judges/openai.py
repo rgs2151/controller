@@ -124,43 +124,53 @@ async def _request(
         ],
         "response_format": _response_format(len(request_rows)),
         "temperature": 0,
-        "max_completion_tokens": 4096,
+        "max_completion_tokens": 16384,
     }
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     for attempt in range(8):
-        async with semaphore:
-            async with session.post(ENDPOINT, headers=headers, json=body) as response:
-                response_text = await response.text()
-                if response.status == 200:
-                    payload = json.loads(response_text)
-                    choice = payload["choices"][0]
-                    if choice.get("finish_reason") != "stop":
+        retry_after = None
+        try:
+            async with semaphore:
+                async with session.post(ENDPOINT, headers=headers, json=body) as response:
+                    response_text = await response.text()
+                    if response.status == 200:
+                        payload = json.loads(response_text)
+                        choice = payload["choices"][0]
+                        finish_reason = choice.get("finish_reason")
+                        if finish_reason != "stop":
+                            raise RuntimeError(
+                                f"OpenAI scorer {scorer_key} batch {batch_index} "
+                                f"finished with {finish_reason!r}"
+                            )
+                        returned = json.loads(choice["message"]["content"])["results"]
+                        expected = [row["item_index"] for row in request_rows]
+                        by_index = {row["item_index"]: row for row in returned}
+                        if sorted(by_index) != expected or len(by_index) != len(returned):
+                            raise ValueError(
+                                f"OpenAI scorer batch {batch_index} changed item indices"
+                            )
+                        return {
+                            "batch_index": batch_index,
+                            "results": [by_index[index] for index in expected],
+                            "api": {
+                                "request_id": payload.get("id"),
+                                "returned_model": payload.get("model"),
+                                "system_fingerprint": payload.get("system_fingerprint"),
+                                "usage": payload.get("usage", {}),
+                            },
+                        }
+                    if response.status not in RETRYABLE_STATUS or attempt == 7:
                         raise RuntimeError(
-                            f"OpenAI scorer batch {batch_index} did not finish cleanly"
+                            f"OpenAI API error {response.status} in {scorer_key} batch "
+                            f"{batch_index}: {response_text}"
                         )
-                    returned = json.loads(choice["message"]["content"])["results"]
-                    expected = [row["item_index"] for row in request_rows]
-                    by_index = {row["item_index"]: row for row in returned}
-                    if sorted(by_index) != expected or len(by_index) != len(returned):
-                        raise ValueError(
-                            f"OpenAI scorer batch {batch_index} changed item indices"
-                        )
-                    return {
-                        "batch_index": batch_index,
-                        "results": [by_index[index] for index in expected],
-                        "api": {
-                            "request_id": payload.get("id"),
-                            "returned_model": payload.get("model"),
-                            "system_fingerprint": payload.get("system_fingerprint"),
-                            "usage": payload.get("usage", {}),
-                        },
-                    }
-                if response.status not in RETRYABLE_STATUS or attempt == 7:
-                    raise RuntimeError(
-                        f"OpenAI API error {response.status} in {scorer_key} batch "
-                        f"{batch_index}: {response_text}"
-                    )
-                retry_after = response.headers.get("Retry-After")
+                    retry_after = response.headers.get("Retry-After")
+        except (aiohttp.ClientError, asyncio.TimeoutError) as error:
+            if attempt == 7:
+                raise RuntimeError(
+                    f"OpenAI transport failed in {scorer_key} batch {batch_index} "
+                    "after 8 attempts"
+                ) from error
         await asyncio.sleep(float(retry_after) if retry_after else min(2**attempt, 30))
     raise RuntimeError("OpenAI API retry loop terminated unexpectedly")
 
@@ -228,14 +238,20 @@ async def _score_async(
                 for destination, scorer_key, batch_index, rows in jobs
             ]
             pending_writes: dict[Path, int] = {path: 0 for path in states}
-            for future in asyncio.as_completed(tasks):
-                destination, result = await future
-                states[destination]["batches"].append(result)
-                states[destination]["batches"].sort(key=lambda row: row["batch_index"])
-                pending_writes[destination] += 1
-                if pending_writes[destination] >= 10:
-                    _write_json(destination, states[destination])
-                    pending_writes[destination] = 0
+            try:
+                for future in asyncio.as_completed(tasks):
+                    destination, result = await future
+                    states[destination]["batches"].append(result)
+                    states[destination]["batches"].sort(key=lambda row: row["batch_index"])
+                    pending_writes[destination] += 1
+                    if pending_writes[destination] >= 10:
+                        _write_json(destination, states[destination])
+                        pending_writes[destination] = 0
+            except Exception:
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+                raise
 
     for destination, saved in states.items():
         rows = generation_rows[destination]
