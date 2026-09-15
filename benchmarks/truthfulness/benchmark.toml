@@ -22,6 +22,9 @@ score_reads_completed_generations = true
 
 [calibration]
 selection_metric = "truthfulqa_true_mean_percentage"
+h_infinity_tuning_samples = 50
+h_infinity_tuning_repetitions = 1
+h_infinity_fixed_selection_supported = true
 
 [storage]
 large_s3_stages = ["artifacts", "calibration"]

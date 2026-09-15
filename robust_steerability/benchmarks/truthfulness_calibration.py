@@ -25,7 +25,9 @@ from robust_steerability.control import (
     HInfinityController,
     HInfinityOptions,
 )
+from robust_steerability.artifacts import configuration_hash
 from robust_steerability.experiments.calibration import calibrate_controller, diagnostic_root
+from robust_steerability.experiments.diagnostics import score as freeze_diagnostic_score
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
 from robust_steerability.judges import huggingface as huggingface_scoring
 from robust_steerability.judges.specs import scorer_spec
@@ -45,13 +47,15 @@ from robust_steerability.source_methods.protocol import (
 
 
 REPO = Path(__file__).resolve().parents[2]
-CALIBRATION_SAMPLES = 100
-CALIBRATION_REPETITIONS = 5
+CALIBRATION_SAMPLES = 50
+CALIBRATION_REPETITIONS = 1
 DISTURBANCE_SAMPLES = 200
 SEED_STRIDE = 100_000
 Q_OVER_R = (0.01, 10**-1.5, 0.1, 10**-0.5, 1.0, 10**0.5, 10.0, 10**1.5)
 Q_FINAL_OVER_R = (0.01, 10**-1.5, 0.1, 10**-0.5)
 FIXED_R = 1.0
+GRID_SELECTION_SOURCE = "TruthfulQA True calibration-grid argmax"
+FIXED_SELECTION_SOURCE = "fixed configuration supplied at calibration launch"
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -91,7 +95,7 @@ def _grid() -> list[dict[str, float | str]]:
 
 
 def prepare(model_key: str, calibration_id: str) -> dict:
-    """Freeze one disturbance split and one 100-question tuning set."""
+    """Freeze one disturbance split and one 50-question tuning set."""
 
     model = MODELS[model_key]
     evaluation._configure_runtime(model_key, calibration_id)
@@ -140,7 +144,13 @@ def prepare(model_key: str, calibration_id: str) -> dict:
     return payload
 
 
-def _settings(model_key: str) -> dict[str, object]:
+def _settings(
+    model_key: str,
+    *,
+    q: float = 0.1,
+    r: float = FIXED_R,
+    q_final: float = 0.1,
+) -> dict[str, object]:
     model = MODELS[model_key]
     counts = ALQR_CALIBRATION_COUNTS["truthfulness"]
     alqr = paper_alqr_setting("truthfulness", model.model_id)
@@ -158,7 +168,7 @@ def _settings(model_key: str) -> dict[str, object]:
         "alqr_setpoint_multiplier": alqr.multiplier,
         "spid_setpoint_multiplier": 1.0,
         "hinf_setpoint_multiplier": alqr.multiplier,
-        "q": 0.1, "r": FIXED_R, "q_final": 0.1,
+        "q": float(q), "r": float(r), "q_final": float(q_final),
         "alqr_q": alqr.q, "alqr_r": alqr.r, "alqr_q_final": alqr.q_final,
         "kp": pid.kp, "ki": pid.ki, "kd": pid.kd,
         "gamma_lower": 0.0, "gamma_upper": 100.0,
@@ -170,7 +180,15 @@ def _settings(model_key: str) -> dict[str, object]:
     }
 
 
-def fit_base(model_key: str, device: str, calibration_id: str) -> None:
+def fit_base(
+    model_key: str,
+    device: str,
+    calibration_id: str,
+    *,
+    q: float = 0.1,
+    r: float = FIXED_R,
+    q_final: float = 0.1,
+) -> dict:
     model_spec = MODELS[model_key]
     data = prepare(model_key, calibration_id)
     fit = json.loads(
@@ -187,13 +205,120 @@ def fit_base(model_key: str, device: str, calibration_id: str) -> None:
         "alqr", "truthfulness", model_spec.model_id, model_spec.revision,
         device, load_access_token(REPO),
     )
-    calibrate_controller(
+    _artifact, metadata = calibrate_controller(
         model, tokenizer, model_label=model_spec.label, model_id=model_spec.model_id,
         cache_path=_root(model_key, calibration_id) / "base/controller.pt",
         nominal_dynamics_path=artifact_root("truthfulness", model_key) / "dynamics.pt",
-        calibration_data=calibration_data, settings=_settings(model_key),
+        calibration_data=calibration_data,
+        settings=_settings(model_key, q=q, r=r, q_final=q_final),
         controller_device=device,
     )
+    return metadata
+
+
+def _controller_from_base(
+    model_key: str,
+    calibration_id: str,
+    parameters: dict[str, float],
+    source: str,
+    configuration_id: str,
+) -> dict:
+    root = _root(model_key, calibration_id)
+    base = torch.load(
+        root / "base/controller.pt", map_location="cpu", weights_only=True, mmap=True
+    )
+    artifact = ControllerArtifact(**base["artifact"])
+    controller = {
+        "identity": {
+            "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
+            "task": "truthfulness",
+            "calibration_id": calibration_id,
+            "parameters": parameters,
+            "configuration_source": source,
+            "configuration_id": configuration_id,
+        },
+        "gains": artifact.hinf_gains.cpu(),
+        "feasible": artifact.hinf_feasible,
+        "gamma_star": artifact.gamma_star,
+        "diagnostics": artifact.hinf_diagnostics,
+    }
+    if not controller["feasible"]:
+        raise ValueError("The fixed H-infinity configuration is infeasible")
+    _write_torch(root / "controller.pt", controller)
+    return controller
+
+
+def select_fixed(
+    model_key: str,
+    device: str,
+    calibration_id: str,
+    *,
+    q_over_r: float,
+    q_final_over_r: float,
+    r: float,
+) -> dict:
+    """Synthesize and freeze one supplied H-infinity configuration without a sweep."""
+
+    if min(q_over_r, q_final_over_r, r) <= 0:
+        raise ValueError("Fixed H-infinity Q/R, Qf/R, and R must be positive")
+    q = float(q_over_r * r)
+    q_final = float(q_final_over_r * r)
+    multiplier = paper_alqr_setting(
+        "truthfulness", MODELS[model_key].model_id
+    ).multiplier
+    parameters = {
+        "lambda": float(multiplier),
+        "q": q,
+        "r": float(r),
+        "q_final": q_final,
+    }
+    prepare(model_key, calibration_id)
+    metadata = fit_base(
+        model_key,
+        device,
+        calibration_id,
+        q=q,
+        r=r,
+        q_final=q_final,
+    )
+    controller = _controller_from_base(
+        model_key,
+        calibration_id,
+        parameters,
+        FIXED_SELECTION_SOURCE,
+        "fixed",
+    )
+    diagnostic = diagnostic_root(_root(model_key, calibration_id) / "base/controller.pt")
+    diagnostic_run = diagnostic / "runs" / (
+        "calibration-" + str(metadata["fingerprint"])[:20]
+    )
+    if not diagnostic_run.exists():
+        raise FileNotFoundError(f"Missing Hannah diagnostic bundle: {diagnostic_run}")
+    payload = {
+        "schema_version": 2,
+        "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
+        "benchmark": "truthfulness",
+        "calibration_id": calibration_id,
+        "protocol": {
+            "selection_strategy": "fixed",
+            "selection_metric": None,
+            "tuning_samples": 0,
+            "tuning_repetitions": 0,
+            "evaluated_model_kv_cache": False,
+            "fixed_setpoint_multiplier": parameters["lambda"],
+        },
+        "selected": {
+            "configuration_id": "fixed",
+            "q_over_r": float(q_over_r),
+            "q_final_over_r": float(q_final_over_r),
+            "parameters": parameters,
+            "gamma_star": controller["gamma_star"],
+            "source": FIXED_SELECTION_SOURCE,
+        },
+        "diagnostic_bundle": str(diagnostic_run.relative_to(_root(model_key, calibration_id))),
+    }
+    _write_json(_root(model_key, calibration_id) / "selection.json", payload)
+    return payload
 
 
 def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
@@ -218,8 +343,8 @@ def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
                 name: float(configuration[name])
                 for name in ("lambda", "q", "r", "q_final")
             },
-            "configuration_source": "five-repetition calibration-grid argmax",
-            "configuration_grid_id": configuration["grid_id"],
+            "configuration_source": GRID_SELECTION_SOURCE,
+            "configuration_id": configuration["grid_id"],
         }
         if destination.exists():
             continue
@@ -388,6 +513,64 @@ def score_truth_grid(model_key: str, device: str, calibration_id: str) -> None:
     _write_json(destination, saved)
 
 
+def _freeze_selected_diagnostics(
+    model_key: str,
+    calibration_id: str,
+    parameters: dict[str, float],
+    controller: dict,
+) -> Path:
+    """Freeze Hannah's complete bundle for the controller selected from the grid."""
+
+    root = _root(model_key, calibration_id)
+    source_path = diagnostic_root(root / "base/controller.pt") / "input.pt"
+    bundle = torch.load(source_path, map_location="cpu", weights_only=True)
+    problem = dict(bundle["problem"])
+    horizon = int(problem["dynamics"].shape[0])
+    dimension = int(problem["dynamics"].shape[1])
+    identity = torch.eye(dimension, dtype=problem["dynamics"].dtype)
+    problem["state_costs"] = (
+        float(parameters["q"]) * identity
+    ).unsqueeze(0).repeat(horizon, 1, 1)
+    problem["control_costs"] = (
+        float(parameters["r"]) * identity
+    ).unsqueeze(0).repeat(horizon, 1, 1)
+    problem["terminal_cost"] = float(parameters["q_final"]) * identity
+    bundle["problem"] = problem
+    bundle["calibration"]["settings"].update({
+        name: parameters[name] for name in ("q", "r", "q_final")
+    })
+    fingerprint = configuration_hash({
+        "base_calibration_fingerprint": bundle["record"]["calibration_fingerprint"],
+        "selected_parameters": parameters,
+    })
+    protocol_settings = {
+        key: value
+        for key, value in bundle["calibration"]["settings"].items()
+        if key != "model_loading"
+    }
+    bundle["record"].update({
+        "run_id": "calibration-" + fingerprint[:20],
+        "calibration_fingerprint": fingerprint,
+        "protocol_id": "full-reduced-state-" + configuration_hash(protocol_settings)[:16],
+    })
+    destination_root = root / "controller_diagnostics"
+    input_path = destination_root / "input.pt"
+    _write_torch(input_path, bundle)
+    solution = HInfinityController(
+        gains=controller["gains"],
+        control_channels=problem["control_channels"],
+        feasible=bool(controller["feasible"]),
+        gamma_star=float(controller["gamma_star"]),
+        diagnostics=controller["diagnostics"],
+    ).solution()
+    return freeze_diagnostic_score(
+        input_path,
+        "cpu",
+        cache_root=destination_root,
+        solution=solution,
+    )
+
+
 def select(model_key: str, calibration_id: str) -> dict:
     root = _root(model_key, calibration_id)
     truth = json.loads(
@@ -423,13 +606,14 @@ def select(model_key: str, calibration_id: str) -> dict:
     _write_torch(destination, controller)
     model = MODELS[model_key]
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "model": [model.model_id, model.revision],
         "benchmark": "truthfulness",
         "calibration_id": calibration_id,
         "protocol": {
-            "samples": CALIBRATION_SAMPLES,
-            "repetitions": CALIBRATION_REPETITIONS,
+            "selection_strategy": "grid",
+            "tuning_samples": CALIBRATION_SAMPLES,
+            "tuning_repetitions": CALIBRATION_REPETITIONS,
             "evaluated_model_kv_cache": False,
             "selection_metric": "mean True percentage across repetitions",
             "q_over_r": list(Q_OVER_R), "q_final_over_r": list(Q_FINAL_OVER_R),
@@ -437,11 +621,21 @@ def select(model_key: str, calibration_id: str) -> dict:
             "fixed_setpoint_multiplier": parameters["lambda"],
         },
         "selected": {
-            **selected, "parameters": parameters,
-            "source": "five-repetition calibration-grid argmax",
+            **selected,
+            "configuration_id": selected["grid_id"],
+            "parameters": parameters,
+            "source": GRID_SELECTION_SOURCE,
         },
         "grid": summaries,
     }
+    payload["diagnostic_bundle"] = str(
+        _freeze_selected_diagnostics(
+            model_key,
+            calibration_id,
+            parameters,
+            controller,
+        ).relative_to(root)
+    )
     _write_json(root / "selection.json", payload)
     return payload
 
@@ -452,10 +646,21 @@ def calibrate(
     log_root: Path,
     calibration_id: str,
     generation_batch_size: int | None = None,
+    fixed_parameters: dict[str, float] | None = None,
 ) -> None:
     evaluation._configure_runtime(model_key, calibration_id)
     selection = _root(model_key, calibration_id) / "selection.json"
     if selection.exists() and (_root(model_key, calibration_id) / "controller.pt").exists():
+        return
+    if fixed_parameters is not None:
+        select_fixed(
+            model_key,
+            devices[0],
+            calibration_id,
+            q_over_r=float(fixed_parameters["q_over_r"]),
+            q_final_over_r=float(fixed_parameters["q_final_over_r"]),
+            r=float(fixed_parameters["r"]),
+        )
         return
     prepare(model_key, calibration_id)
     fit_base(model_key, devices[0], calibration_id)
@@ -496,13 +701,23 @@ def calibrate(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stage", choices=("prepare", "base", "synthesize", "generate-worker", "score-grid", "select"), required=True)
+    parser.add_argument(
+        "--stage",
+        choices=(
+            "prepare", "base", "synthesize", "generate-worker", "score-grid",
+            "select", "select-fixed",
+        ),
+        required=True,
+    )
     parser.add_argument("--model", choices=tuple(MODELS), required=True)
     parser.add_argument("--device")
     parser.add_argument("--shard-index", type=int)
     parser.add_argument("--shard-count", type=int)
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument("--q-over-r", type=float)
+    parser.add_argument("--q-final-over-r", type=float)
+    parser.add_argument("--r", type=float)
     arguments = parser.parse_args()
     if arguments.stage == "prepare":
         prepare(arguments.model, arguments.calibration_id)
@@ -525,9 +740,25 @@ def main() -> None:
             arguments.device,
             arguments.calibration_id,
         )
-    else:
+    elif arguments.stage == "select":
         print(json.dumps(
             select(arguments.model, arguments.calibration_id)["selected"],
+            indent=2,
+        ))
+    else:
+        if None in (arguments.q_over_r, arguments.q_final_over_r, arguments.r):
+            raise ValueError("select-fixed requires --q-over-r, --q-final-over-r, and --r")
+        if arguments.device is None:
+            raise ValueError("select-fixed requires --device")
+        print(json.dumps(
+            select_fixed(
+                arguments.model,
+                arguments.device,
+                arguments.calibration_id,
+                q_over_r=arguments.q_over_r,
+                q_final_over_r=arguments.q_final_over_r,
+                r=arguments.r,
+            )["selected"],
             indent=2,
         ))
 

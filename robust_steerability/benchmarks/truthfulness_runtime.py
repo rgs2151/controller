@@ -34,6 +34,7 @@ from robust_steerability.judges import huggingface as huggingface_scoring
 from robust_steerability.judges.specs import scorer_cache_path, scorer_spec
 from robust_steerability.source_methods.generation import generate_batched
 from robust_steerability.source_methods.id_benchmark import (
+    fit_source_method_calibration,
     load_frozen_alqr_artifacts,
     run_generation_job,
     runtime_provenance,
@@ -276,7 +277,6 @@ def _hinf_paths(model_key: str) -> dict[str, Path]:
         "alqr_setpoint": artifacts / "setpoint.pt",
         "alqr_dynamics": artifacts / "dynamics.pt",
         "hinf_controller": selected / "base" / "controller.pt",
-        "hinf_input": selected / "base" / "controller_diagnostics" / "input.pt",
         "selected_controller": selected / "controller.pt",
         "hyperparameter_calibration": selected / "selection.json",
     }
@@ -296,18 +296,26 @@ def _load_selected_hinf(
         name: float(configuration["parameters"][name])
         for name in ("lambda", "q", "r", "q_final")
     }
+    strategy = calibration.get("protocol", {}).get("selection_strategy")
     if (
-        calibration.get("schema_version") != 1
+        calibration.get("schema_version") != 2
         or calibration.get("model")
         != [MODELS[model_key].model_id, MODELS[model_key].revision]
         or calibration.get("benchmark") != "truthfulness"
         or calibration.get("calibration_id") != CURRENT_CALIBRATION_ID
-        or calibration.get("protocol", {}).get("samples") != 100
-        or calibration.get("protocol", {}).get("repetitions") != 5
+        or strategy not in {"fixed", "grid"}
         or configuration.get("source")
-         != "five-repetition calibration-grid argmax"
+        not in {
+            "fixed configuration supplied at calibration launch",
+            "TruthfulQA True calibration-grid argmax",
+        }
     ):
         raise ValueError("Frozen H-infinity calibration metadata is invalid")
+    diagnostic_bundle = calibration_root(
+        "truthfulness", model_key, HINF_METHOD, CURRENT_CALIBRATION_ID
+    ) / calibration["diagnostic_bundle"]
+    if not diagnostic_bundle.exists():
+        raise FileNotFoundError(f"Missing Hannah diagnostic bundle: {diagnostic_bundle}")
 
     controller = torch.load(
         paths["selected_controller"], map_location="cpu", weights_only=True, mmap=True
@@ -319,9 +327,9 @@ def _load_selected_hinf(
         or controller_identity.get("task") != "truthfulness"
         or controller_identity.get("parameters") != parameters
         or controller_identity.get("configuration_source")
-        != "five-repetition calibration-grid argmax"
-        or controller_identity.get("configuration_grid_id")
-        != calibration["selected"].get("grid_id")
+        != configuration.get("source")
+        or controller_identity.get("configuration_id")
+        != configuration.get("configuration_id")
         or not bool(controller.get("feasible"))
     ):
         raise ValueError("Frozen H-infinity controller does not match its selection record")
@@ -706,6 +714,35 @@ def generate(
     )
 
 
+def fit_source(
+    model_key: str,
+    method: str,
+    device: str,
+    calibration_id: str,
+    selected_parameters: dict | None,
+) -> None:
+    """Fit one source-method artifact; hyperparameter selection is supplied."""
+
+    if method in {"original", "alqr"} or method not in SOURCE_METHODS:
+        raise ValueError(f"{method!r} has no source-method fit")
+    _configure_runtime(model_key, calibration_id)
+    prepare("truthfulness", "id")
+    model = MODELS[model_key]
+    fit_source_method_calibration(
+        behavior="truthfulness",
+        model_id=model.model_id,
+        revision=model.revision,
+        method=method,
+        device=device,
+        token=load_access_token(REPO),
+        calibration_root=calibration_root(
+            "truthfulness", model_key, method, calibration_id
+        ),
+        calibration_data_path=_data_path("truthfulness"),
+        selected_parameters=selected_parameters,
+    )
+
+
 def _generation_files(
     model_key: str, method: str, behavior: str, distribution: str
 ) -> list[Path]:
@@ -858,6 +895,7 @@ def main() -> None:
         "--stage",
         choices=(
             "prepare",
+            "fit-source",
             "generate",
             "generate-hinf",
             "merge-hinf",
@@ -872,6 +910,7 @@ def main() -> None:
     parser.add_argument("--distribution", choices=("id", "spanish"), required=True)
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument("--selected-parameters")
     parser.add_argument(
         "--scorer", choices=("truthfulqa_true", "truthfulqa_informative")
     )
@@ -892,6 +931,20 @@ def main() -> None:
     )
     if arguments.stage == "prepare":
         prepare(arguments.behavior, arguments.distribution)
+    elif arguments.stage == "fit-source":
+        if arguments.method is None or arguments.device is None:
+            raise ValueError("fit-source requires --method and --device")
+        fit_source(
+            arguments.model,
+            arguments.method,
+            arguments.device,
+            arguments.calibration_id,
+            (
+                json.loads(arguments.selected_parameters)
+                if arguments.selected_parameters is not None
+                else None
+            ),
+        )
     elif arguments.stage == "generate":
         if arguments.method is None or arguments.device is None:
             raise ValueError(f"{arguments.stage} requires --method and --device")
