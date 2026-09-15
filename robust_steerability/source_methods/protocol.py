@@ -243,7 +243,7 @@ SCORERS = {
         "dataset": "cais/mmlu",
         "dataset_revision": "c30699e8356da336a370243923dbaf21066bb9fe",
         "shots": 5,
-        "samples": 1000,
+        "samples": 200,
         "generation": GENERATION["mmlu"],
     },
     "perplexity": {

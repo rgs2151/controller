@@ -19,7 +19,7 @@ dataset therefore does not invalidate or regenerate completed sibling datasets.
 - `robust_steerability.judges`: reusable scorer definitions with explicit model,
   rubric, score range, and backend provenance.
 
-MMLU uses one frozen, subject-uniform sample of 1,000 five-shot test questions.
+MMLU uses one frozen, subject-uniform sample of 200 five-shot test questions.
 Its scorer is deterministic A/B/C/D accuracy; it does not call a judge model.
 
 ## A-LQR Parity Roadmap
