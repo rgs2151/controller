@@ -30,5 +30,7 @@ results/<kv-cache-condition>/<model>/<dataset>/<method>.json
 ```
 
 Stage logs record start, finish, elapsed time, host, visible GPUs, requested
-devices, Git state, methods, datasets, cache mode, and stage parameters. Only
-large artifacts and calibrations are transported through S3.
+devices, Git state, methods, datasets, cache mode, stage parameters, and the
+resolved cache root. On Lightning, the complete ignored cache hierarchy is
+written directly to the producing Studio's Teamspace Drive under
+`~/robust-steering-cache/toxicity/<model>/`.

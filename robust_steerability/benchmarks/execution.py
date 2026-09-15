@@ -17,7 +17,7 @@ from typing import Iterator
 
 import torch
 
-from robust_steerability.benchmarks.layout import REPO_ROOT
+from robust_steerability.benchmarks.layout import REPO_ROOT, cache_backend, model_root
 
 
 def utc_now() -> str:
@@ -84,7 +84,7 @@ def tracked_stage(
     if record_path.exists():
         raise FileExistsError(f"Run id {run_id!r} already exists")
     record = {
-        "schema_version": 1, "run_id": run_id, "status": "running",
+        "schema_version": 2, "run_id": run_id, "status": "running",
         "started_at_utc": utc_now(), "benchmark": benchmark, "model": model,
         "stage": stage, "methods": methods, "datasets": datasets,
         "evaluated_model_kv_cache": use_cache, "devices": devices,
@@ -95,7 +95,11 @@ def tracked_stage(
             "dirty": bool(_git(["git", "status", "--porcelain"])),
             "branch": _git(["git", "branch", "--show-current"]),
         },
-        "machine": machine_provenance(), "published_s3_objects": [],
+        "machine": machine_provenance(),
+        "storage": {
+            "backend": cache_backend(),
+            "benchmark_cache_root": str(model_root(benchmark, model)),
+        },
     }
     started = time.perf_counter()
     _write_json(record_path, record)

@@ -12,7 +12,6 @@ dependencies = [
   "accelerate",
   "aiohttp",
   "bitsandbytes",
-  "boto3",
   "datasets==4.4.2",
   "h5py",
   "huggingface-hub",
