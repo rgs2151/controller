@@ -30,7 +30,7 @@ Do not put unit-specific file paths, temporary subsets, cache names, panel mappi
 
 ## Non-H-infinity Hyperparameters
 
-- Decision: Never sweep Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer, S-PID, or A-LQR. Use source-preserved fixed values where available. For Gemma-2-2B truthfulness, use the project best guesses ITI=(32 heads, alpha 10) and S-PID=(lambda 1, Kp=.7, Ki=.01, Kd=.1), both drawn from the preserved source grids.
+- Decision: Never sweep Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer, S-PID, or A-LQR. Use source-preserved fixed values where available. For Gemma-2-2B truthfulness, use the project best guesses ITI=(32 heads, alpha 10) and S-PID=(lambda 1, Kp=.7, Ki=.01, Kd=.1). For Llama-3-8B truthfulness, use ITI=(32 heads, alpha 10), S-PID=(lambda 1, Kp=.1, Ki=.1, Kd=0), and ODESteer=(layer 19, time 25); the ITI and S-PID values are central choices from their preserved source grids, while ODESteer carries the preserved same-model comparison setting into truthfulness. Only H-infinity is selected by a benchmark-specific calibration sweep.
 - Why: Only H-infinity is calibrated by a hyperparameter sweep in this project. The paper-producing source does not preserve final Gemma ITI or S-PID selections, so these values must be explicit assumptions rather than silently tuned on the benchmark.
 - Use this when: Fitting, evaluating, or reporting any non-H-infinity comparison method.
 - Do not use this for: H-infinity calibration, which owns its separate candidate-selection stage.
