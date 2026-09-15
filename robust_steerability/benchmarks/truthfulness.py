@@ -1,4 +1,4 @@
-"""Portable three-stage TruthfulQA benchmark pipeline."""
+"""Portable TruthfulQA pipeline with cache-only AXBench quality judging."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import json
 import sys
 
 from robust_steerability.benchmarks import artifacts
+from robust_steerability.benchmarks import axbench_quality
 from robust_steerability.benchmarks import truthfulness_calibration
 from robust_steerability.benchmarks.execution import default_run_id, tracked_stage
 from robust_steerability.benchmarks.launcher import run_jobs
@@ -130,6 +131,7 @@ def evaluation_stage(
     log_root,
     calibration_id: str,
     generation_batch_size: int | None,
+    quality_workers: int,
 ) -> None:
     cache_value = "on" if use_cache else "off"
     runtime._configure_runtime(
@@ -211,14 +213,59 @@ def evaluation_stage(
                     f"Expected one H-infinity generation cache; found {len(files)}"
                 )
             runtime._merge_truth_judge_shards(files[0])
+    quality_stage(
+        model_key,
+        methods,
+        datasets,
+        use_cache,
+        calibration_id,
+        quality_workers,
+    )
+
+
+def quality_stage(
+    model_key: str,
+    methods: list[str],
+    datasets: list[str],
+    use_cache: bool,
+    calibration_id: str,
+    quality_workers: int,
+) -> None:
+    """Score cached generations with the AXBench relevance and fluency rubrics."""
+
+    cache_value = "on" if use_cache else "off"
+    runtime._configure_runtime(cache_value, model_key, calibration_id)
     for dataset in datasets:
         for method in methods:
+            files = runtime._generation_files(
+                model_key, method, "truthfulness", dataset
+            )
+            if len(files) != 1:
+                raise ValueError(
+                    f"Expected one {method} generation cache; found {len(files)}"
+                )
+            generation_path = files[0]
+            quality_path = axbench_quality.score_generation(
+                generation_path,
+                runtime.CACHE_ROOT,
+                workers=quality_workers,
+            )
             runtime.summarize(model_key, method, "truthfulness", dataset)
+            axbench_quality.add_quality_to_summary(
+                model_key=model_key,
+                method=method,
+                distribution=dataset,
+                use_cache=use_cache,
+                generation_path=generation_path,
+                quality_path=quality_path,
+            )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("stage", choices=("artifacts", "calibrate", "evaluate", "all"))
+    parser.add_argument(
+        "stage", choices=("artifacts", "calibrate", "evaluate", "quality", "all")
+    )
     parser.add_argument("--model", choices=tuple(MODELS), required=True)
     parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
     parser.add_argument("--datasets", default=",".join(DATASETS))
@@ -226,11 +273,18 @@ def main() -> None:
     parser.add_argument("--kv-cache", choices=("on", "off"), default="off")
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument(
+        "--quality-workers", type=int, default=axbench_quality.DEFAULT_WORKERS
+    )
     parser.add_argument("--run-id")
     arguments = parser.parse_args()
     methods = _names(arguments.methods, METHODS)
     datasets = _names(arguments.datasets, DATASETS)
-    devices = resolve_cuda_devices(arguments.devices)
+    devices = (
+        []
+        if arguments.stage == "quality"
+        else resolve_cuda_devices(arguments.devices)
+    )
     run_id = arguments.run_id or default_run_id(
         "truthfulness", arguments.model, arguments.stage
     )
@@ -239,7 +293,10 @@ def main() -> None:
         stage=arguments.stage, methods=methods, datasets=datasets,
         devices=arguments.devices, use_cache=arguments.kv_cache == "on",
         calibration_id=arguments.calibration_id,
-        parameters={"generation_batch_size": arguments.generation_batch_size},
+        parameters={
+            "generation_batch_size": arguments.generation_batch_size,
+            "axbench_quality_workers": arguments.quality_workers,
+        },
     ) as log_root:
         if arguments.stage in {"artifacts", "all"}:
             artifact_stage(arguments.model, devices, log_root)
@@ -252,12 +309,22 @@ def main() -> None:
                 arguments.calibration_id,
                 arguments.generation_batch_size,
             )
+        if arguments.stage == "quality":
+            quality_stage(
+                arguments.model,
+                methods,
+                datasets,
+                arguments.kv_cache == "on",
+                arguments.calibration_id,
+                arguments.quality_workers,
+            )
         if arguments.stage in {"evaluate", "all"}:
             evaluation_stage(
                 arguments.model, methods, datasets, devices,
                 arguments.kv_cache == "on", log_root,
                 arguments.calibration_id,
                 arguments.generation_batch_size,
+                arguments.quality_workers,
             )
 
 
