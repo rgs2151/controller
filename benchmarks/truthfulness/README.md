@@ -38,9 +38,9 @@ it skips candidate generation and judging. The resulting calibration directory
 contains the exact selected gains, gamma, and Hannah diagnostic bundle.
 
 ITI and S-PID have preserved source grids but no preserved final Gemma choice.
-Running them therefore requires an explicit fixed grid member through
-`--iti-top-heads` plus `--iti-alpha`, or `--spid-lambda`. These options record a
-choice and fit the method artifact; they do not run a hyperparameter sweep.
+The project therefore freezes Gemma truthfulness best guesses from those grids:
+ITI uses 32 heads and alpha 10; S-PID uses lambda 1, Kp=.7, Ki=.01, and Kd=.1.
+Neither method is swept.
 
 Evaluated-model KV cache defaults to off. `--kv-cache on` remains available for
 an explicit appendix comparison and writes to a different directory. API scoring
@@ -56,6 +56,7 @@ cache/<model>/evaluations/<kv-cache-condition>/results/<dataset>/<method>.json
 results/<kv-cache-condition>/<model>/<dataset>/<method>.json
 ```
 
-Large artifacts and calibrations may be published to the equivalent S3 prefix.
-Generations and score outputs remain on the machine that ran them; small summaries
-and stage logs are committed to Git.
+On Lightning, this complete cache hierarchy is written directly to the
+producing Studio's Teamspace Drive at
+`~/robust-steering-cache/truthfulness/<model>/`. Small summaries and stage logs
+are committed to Git.

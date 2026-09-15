@@ -35,3 +35,11 @@ Do not put unit-specific file paths, temporary subsets, cache names, panel mappi
 - Use this when: Fitting, evaluating, or reporting any non-H-infinity comparison method.
 - Do not use this for: H-infinity calibration, which owns its separate candidate-selection stage.
 - Notes: If another model/task lacks a source-preserved or project-frozen selection, add and document one before running it; do not introduce a sweep.
+
+## Remote Benchmark Storage
+
+- Decision: Use Lightning Teamspace Drive instead of AWS for remote benchmark storage. Every ignored cache stage—materialized datasets, controller-neutral artifacts, method calibrations, generations, scorer outputs, and diagnostics—stays in the producing Studio's persistent home under `~/robust-steering-cache/`.
+- Why: Lightning Teamspace storage already provides the required project capacity and exposes Studio files across the Teamspace, so a second object-storage transport adds unnecessary credentials and synchronization steps.
+- Use this when: Running or resuming any benchmark stage on a Lightning Studio, or inspecting another Studio's completed cache.
+- Do not use this for: Git-tracked code, logs, result summaries, tables, or plots; those continue to synchronize through Git. The local workstation continues to use its local ignored benchmark cache.
+- Notes: A model/benchmark remains writable on its producing Studio. Peer Studios access its Teamspace path for inspection or explicit read-only reuse; continue the pipeline on the owning Studio.

@@ -91,10 +91,13 @@ named GNU Screen, and invoke the owning benchmark entry point there. Benchmark
 code discovers and uses the visible GPUs; `server/` contains no machine names or
 scientific run plans.
 
-Git carries code, logs, tables, and plots. Remote S3 carries only large reusable
-artifacts such as averaged dynamics and controller `.pt` caches; raw per-prompt
-Jacobians are not retained. The local workstation never
-connects to S3. See `server/README.md` for the exact operating workflow.
+Git carries code, logs, tables, and plots. On Lightning, every ignored benchmark
+cache—datasets, averaged dynamics, calibrations, generations, scorer outputs,
+and controller diagnostics—lives in the producing Studio's Teamspace Drive
+storage under `~/robust-steering-cache/`. Other Studios in the Teamspace can
+read those files through the Drive. The local workstation continues to use the
+benchmark unit's local ignored cache. See `server/README.md` for the exact
+operating workflow.
 
 ## Project Docs
 

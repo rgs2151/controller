@@ -18,5 +18,6 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [storage]
-large_s3_stages = ["artifacts", "calibration"]
+remote_cache_backend = "lightning_teamspace_drive"
+remote_cache_scope = "all_cache_stages"
 tracked_outputs = ["results", "logs"]

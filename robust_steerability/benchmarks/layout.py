@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 
 BENCHMARKS = ("truthfulness", "toxicity")
 KV_CACHE_MODES = ("off", "on")
 REPO_ROOT = Path(__file__).resolve().parents[2]
+LIGHTNING_CACHE_DIRECTORY = "robust-steering-cache"
 
 
 def benchmark_root(benchmark: str) -> Path:
@@ -19,11 +21,20 @@ def benchmark_root(benchmark: str) -> Path:
 
 
 def model_root(benchmark: str, model_key: str) -> Path:
-    """Return all machine-local state for one model and benchmark."""
+    """Return all cached state for one model and benchmark."""
 
     if not model_key or "/" in model_key:
         raise ValueError(f"Invalid model key {model_key!r}")
+    lightning_home = os.environ.get("LIGHTNING_ARTIFACTS_DIR")
+    if lightning_home:
+        return Path(lightning_home) / LIGHTNING_CACHE_DIRECTORY / benchmark / model_key
     return benchmark_root(benchmark) / "cache" / model_key
+
+
+def cache_backend() -> str:
+    """Name the storage backing benchmark caches in the current environment."""
+
+    return "lightning_teamspace_drive" if os.environ.get("LIGHTNING_ARTIFACTS_DIR") else "local"
 
 
 def artifact_root(benchmark: str, model_key: str) -> Path:

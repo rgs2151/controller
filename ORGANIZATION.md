@@ -3,7 +3,7 @@
 ## Root Folders
 
 - `data/`: organized analysis-ready data and its inventory.
-- `benchmarks/`: benchmark-owning units with tracked specifications/results and ignored machine-local caches.
+- `benchmarks/`: benchmark-owning units with tracked specifications/results and ignored local caches; Lightning runs place those caches in the producing Studio's Teamspace Drive storage.
 - `robust_steerability/`: installable project package for shared helpers.
 - `logs/`: Git-versioned manifests, stdout, timing, and resource records produced by remote runs.
 - `parking/`: compact units that are still being explored or iterated.
@@ -86,6 +86,7 @@ Grouping means keeping sibling analyses in one compact unit when they answer the
 ## Cache Rules
 
 - A compact unit reads existing data and writes only inside its own `cache/` and `plots/`.
+- Shared benchmark pipelines use `benchmarks/<benchmark>/cache/` on the local workstation and `~/robust-steering-cache/<benchmark>/` inside Lightning Studios. The Lightning Studio home is persisted in Teamspace Drive and exposed read-only to peer Studios.
 - Reuse cache files when present.
 - Recompute only when explicitly asked or when the user deletes the relevant cache.
 - Do not put new panel caches at the repo root.

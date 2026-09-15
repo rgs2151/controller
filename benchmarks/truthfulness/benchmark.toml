@@ -27,5 +27,6 @@ h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
 
 [storage]
-large_s3_stages = ["artifacts", "calibration"]
+remote_cache_backend = "lightning_teamspace_drive"
+remote_cache_scope = "all_cache_stages"
 tracked_outputs = ["results", "logs"]

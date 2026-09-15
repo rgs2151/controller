@@ -68,17 +68,16 @@ pipeline. Use the same commands on every machine; no host name is encoded in cod
 ## Storage boundary
 
 - Git carries code, run logs, result tables, and plots.
-- A Studio's persistent disk carries its checkout and active working cache.
-- The remote S3 connection carries only large reusable artifacts needed across
-  remote machines: averaged dynamics, setpoints, and calibrated controller bundles.
-- The local workstation never connects to S3.
+- On Lightning, the complete ignored benchmark cache is written directly to
+  `~/robust-steering-cache/<benchmark>/<model>/`. A Studio home is persistent
+  Teamspace Drive storage, so no AWS transport or copy step exists.
+- Each model/benchmark remains owned by the Studio that ran it. Peer Studios can
+  inspect its cache at
+  `/teamspace/studios/<producer-studio>/robust-steering-cache/`.
+- The local workstation uses `benchmarks/<benchmark>/cache/<model>/` and does
+  not access remote Teamspace storage.
 
 After a run finishes, inspect its outputs on the owning machine, commit only its
-logs/results/plots, and push them. Cache directories stay out of Git.
-
-Publish or fetch large objects explicitly after the run is verified:
-
-```bash
-python -m robust_steerability.storage.s3 push --bucket robust-steering --benchmark truthfulness --model llama8b --stage artifacts
-python -m robust_steerability.storage.s3 pull --bucket robust-steering --benchmark truthfulness --model llama8b --stage artifacts
-```
+logs/results/plots, and push them. Teamspace cache directories stay out of Git.
+Continue a model/benchmark on its owning Studio so new files remain writable;
+peer-Studio views are for inspection or explicit read-only reuse.
