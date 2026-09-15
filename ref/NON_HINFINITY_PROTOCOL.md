@@ -40,8 +40,8 @@ the pipeline records and enforces them without sweeping.
 For toxicity, λ=3.5 is the strongest candidate in the paper-producing Gemma
 evaluation script and is fixed according to the paper table's stated selection
 rule: greatest toxicity decrease subject to acceptable PPL. Final evaluation
-does not repeat the source sweep. The 1,000 five-shot MMLU questions are pinned
-once and shared across methods; this removes the source script's avoidable
+does not repeat the source sweep. The 200 five-shot MMLU questions are sampled
+once, pinned, and shared across methods; this removes the source script's avoidable
 method-to-method question-set noise without changing the task or rubric.
 
 ## Source snapshots

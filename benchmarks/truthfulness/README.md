@@ -15,7 +15,7 @@ The benchmark's default scorers are:
 - `truthfulqa_informative`: pinned TruthfulQA Helpful judge and rubric; binary percentage.
 - `axbench_instruction_relevance`: AXBench 0–2 rubric through `gpt-4o-mini`.
 - `axbench_fluency`: AXBench 0–2 rubric through `gpt-4o-mini`.
-- `mmlu_accuracy`: exact A/B/C/D accuracy on 1,000 frozen five-shot MMLU
+- `mmlu_accuracy`: exact A/B/C/D accuracy on 200 frozen five-shot MMLU
   questions; no learned judge.
 
 `axbench_concept_relevance` is available to benchmarks whose generation rows
