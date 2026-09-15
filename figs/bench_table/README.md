@@ -11,7 +11,7 @@
 - Data/input: cache-on RTP, Jigsaw, TruthfulQA-ID, and Spanish summary JSON files.
 - Sessions/groups: model-method pairs; five benchmark repetitions where complete.
 - Labels/targets: RTP and Jigsaw toxicity, Dist-2, and PPL; TruthfulQA T×I, True, Info, AXBench instruction relevance, AXBench fluency, and MMLU.
-- Signals/features/measures: summary means and standard errors; AXBench instruction relevance and fluency are independent 0--2 `gpt-4o-mini` judgments.
+- Signals/features/measures: summary means and standard errors; AXBench instruction relevance and fluency are separate 0--2 `gpt-4o-mini` judgments made in strict structured batches of 20.
 - Parameters/thresholds: evaluated-model KV cache on; evaluator cache state is separate.
 - Outputs: `plots/bench_table_kv_cache_on.md` and `plots/bench_table_kv_cache_on.tex`.
 

@@ -10,6 +10,7 @@ jacobian_prompts = 35
 evaluated_model_kv_cache = false
 quality_judge_model = "gpt-4o-mini"
 quality_judge_metrics = ["instruction_relevance_0_2", "fluency_0_2"]
+quality_judge_batch_size = 20
 
 [stages]
 order = ["artifacts", "calibrate", "evaluate"]
