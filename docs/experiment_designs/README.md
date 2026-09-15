@@ -15,3 +15,4 @@ Current designs:
 - [Toxicity](toxicity.md)
 - [L-CiteEval long-context shift](lciteeval.md)
 - [MGSM multilingual language-steering transfer](mgsm_language_transfer.md)
+- [HarmBench robust refusal](harmful.md)

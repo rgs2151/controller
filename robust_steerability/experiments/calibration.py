@@ -233,6 +233,7 @@ def _fit_controller_inputs(
         "truthfulness": "truthfulness",
         "lciteeval": "positive sentiments and descriptions of enjoyable experiences",
         "mgsm": "respond only in Spanish, and no other language is allowed",
+        "harmful": "non-exhibition of requested harmful behavior",
     }[str(settings["behavior"])]
     raw_dynamics = reuse_or_fit_nominal_dynamics(
         model,

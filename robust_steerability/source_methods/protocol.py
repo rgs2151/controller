@@ -224,6 +224,10 @@ GENERATION = {
         "max_new_tokens": 1,
         "do_sample": False,
     },
+    "harmful": {
+        "max_new_tokens": 512,
+        "do_sample": False,
+    },
     "lciteeval": {
         "max_new_tokens": 200,
         "do_sample": False,
