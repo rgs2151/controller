@@ -1,18 +1,47 @@
-schema_version = 2
+schema_version = 3
 benchmark = "truthfulness"
-fit_dataset = "truthfulqa"
-transfer_datasets = ["truthfulqa_spanish"]
+base_dataset = "truthfulqa"
 models = ["gemma2b", "llama8b", "qwen14b"]
 default_methods = ["original", "alqr", "h_infinity"]
-evaluation_repetitions = 5
-evaluation_samples_per_repetition = 817
 jacobian_prompts = 35
 evaluated_model_kv_cache = false
 available_evaluated_model_kv_cache = [false, true]
-score_scorers = ["truthfulqa_true", "truthfulqa_informative", "axbench_instruction_relevance", "axbench_fluency"]
 api_scorer_model = "gpt-4o-mini"
 api_scorer_batch_size = 20
 api_scorer_concurrency = 500
+
+[[evaluation_datasets]]
+key = "id"
+dataset = "truthfulqa"
+role = "base"
+cache_namespace = "truthfulness"
+generation_profile = "truthfulness"
+samples = 817
+repetitions = 5
+scorers = ["truthfulqa_true", "truthfulqa_informative", "axbench_instruction_relevance", "axbench_fluency"]
+runtime = "truthfulness"
+
+[[evaluation_datasets]]
+key = "spanish"
+dataset = "truthfulqa_spanish"
+role = "transfer"
+cache_namespace = "truthfulness_spanish"
+generation_profile = "truthfulness"
+samples = 817
+repetitions = 5
+scorers = ["truthfulqa_true", "truthfulqa_informative", "axbench_instruction_relevance", "axbench_fluency"]
+runtime = "truthfulness"
+
+[[evaluation_datasets]]
+key = "mmlu"
+dataset = "mmlu"
+role = "capability"
+cache_namespace = "mmlu"
+generation_profile = "mmlu"
+samples = 1000
+repetitions = 1
+scorers = ["mmlu_accuracy"]
+runtime = "multiple_choice"
 
 [stages]
 order = ["artifacts", "calibrate", "evaluate", "score"]

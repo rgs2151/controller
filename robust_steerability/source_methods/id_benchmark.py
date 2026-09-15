@@ -182,13 +182,14 @@ def _generate_candidate(
     tokenizer,
     data: dict,
     behavior: str,
+    generation_profile: str,
     evaluation_key: str,
     model_id: str,
     revision: str,
     method: str,
     device: str,
     parameters: dict,
-    generation_cache: dict[str, bool],
+    use_cache: bool,
     batch_size: int,
     register_hooks: Callable[[], list[torch.utils.hooks.RemovableHandle]] | None,
     reset: Callable[[], None] | None = None,
@@ -199,14 +200,15 @@ def _generate_candidate(
     }:
         raise ValueError("Evaluation repetitions must be consecutively numbered from zero")
     evaluation_samples = len(_records(data, evaluation_key, 0))
-    auxiliary_expected = data.get("capability_evaluation", {})
     manifest = protocol_manifest(
         method,
         behavior,
         model_id,
         revision,
         evaluation_samples,
-        generation_cache=generation_cache,
+        repetitions_expected,
+        generation_profile,
+        use_cache=use_cache,
         requested_parameters=parameters if method in {"iti", "spid"} else None,
     )
     identity = _json_identity({
@@ -221,7 +223,6 @@ def _generate_candidate(
             "seed": SOURCE_RANDOM_SEED,
             "repetition_seed_stride": 100_000,
             "batch_seed_rule": "repetition_seed_plus_batch_start",
-            "capability_seed_start": SOURCE_RANDOM_SEED + 900_000,
         },
     })
     payload = {
@@ -229,7 +230,6 @@ def _generate_candidate(
         "status": "partial",
         "attempts": [],
         "repetitions": [],
-        "capability_evaluation": {},
     }
     if output.exists():
         payload = json.loads(output.read_text())
@@ -257,10 +257,10 @@ def _generate_candidate(
             model,
             tokenizer,
             _texts(records),
-            behavior=behavior,
+            behavior=generation_profile,
             batch_size=batch_size,
             seed=repetition_seed,
-            use_cache=generation_cache["evaluation"],
+            use_cache=use_cache,
             register_hooks=register_hooks,
             reset=reset,
         )
@@ -275,32 +275,6 @@ def _generate_candidate(
                 "rows": _output_rows(records, completions),
             }
         )
-        _write_json(output, payload)
-    for auxiliary_index, (name, records) in enumerate(sorted(auxiliary_expected.items())):
-        if name in payload["capability_evaluation"]:
-            continue
-        auxiliary_started = time.perf_counter()
-        auxiliary_started_at = _utc_now()
-        auxiliary_seed = SOURCE_RANDOM_SEED + 900_000 + auxiliary_index * 100_000
-        completions = generate_batched(
-            model,
-            tokenizer,
-            _texts(records),
-            behavior=name,
-            batch_size=batch_size,
-            seed=auxiliary_seed,
-            use_cache=generation_cache["capability"],
-            register_hooks=register_hooks,
-            reset=reset,
-        )
-        payload["capability_evaluation"][name] = {
-            "started_at_utc": auxiliary_started_at,
-            "finished_at_utc": _utc_now(),
-            "elapsed_seconds": time.perf_counter() - auxiliary_started,
-            "sample_count": len(records),
-            "generation_seed": auxiliary_seed,
-            "rows": _output_rows(records, completions),
-        }
         _write_json(output, payload)
     payload["status"] = "complete"
     attempt["finished_at_utc"] = _utc_now()
@@ -602,7 +576,8 @@ def run_generation_job(
     data_path: Path,
     evaluation_key: str,
     cache_namespace: str,
-    generation_cache: dict[str, bool],
+    generation_profile: str,
+    use_cache: bool,
     selected_parameters: dict | None = None,
     generation_batch_size: int | None = None,
 ) -> None:
@@ -626,7 +601,9 @@ def run_generation_job(
         model_id,
         revision,
         evaluation_samples,
-        generation_cache=generation_cache,
+        len(data["evaluation"][evaluation_key]),
+        generation_profile,
+        use_cache=use_cache,
         requested_parameters=selected_parameters,
     )
     calibration_data = json.loads(calibration_data_path.read_text())
@@ -702,13 +679,14 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            generation_profile=generation_profile,
             evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters={},
-            generation_cache=generation_cache,
+            use_cache=use_cache,
             batch_size=batch_size,
             register_hooks=None,
         )
@@ -731,13 +709,14 @@ def run_generation_job(
                 tokenizer=tokenizer,
                 data=data,
                 behavior=behavior,
+                generation_profile=generation_profile,
                 evaluation_key=evaluation_key,
                 model_id=model_id,
                 revision=revision,
                 method=method,
                 device=device,
                 parameters=parameters,
-                generation_cache=generation_cache,
+                use_cache=use_cache,
                 batch_size=batch_size,
                 register_hooks=lambda: register_generation_policy_hooks(model, policy),
             )
@@ -774,13 +753,14 @@ def run_generation_job(
                 tokenizer=tokenizer,
                 data=data,
                 behavior=behavior,
+                generation_profile=generation_profile,
                 evaluation_key=evaluation_key,
                 model_id=model_id,
                 revision=revision,
                 method=method,
                 device=device,
                 parameters=parameters,
-                generation_cache=generation_cache,
+                use_cache=use_cache,
                 batch_size=batch_size,
                 register_hooks=lambda: register_generation_policy_hooks(model, policy),
             )
@@ -804,13 +784,14 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            generation_profile=generation_profile,
             evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters=parameters,
-            generation_cache=generation_cache,
+            use_cache=use_cache,
             batch_size=batch_size,
             register_hooks=lambda: steerer.register(model),
             reset=steerer.reset,
@@ -828,13 +809,14 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            generation_profile=generation_profile,
             evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters=parameters,
-            generation_cache=generation_cache,
+            use_cache=use_cache,
             batch_size=batch_size,
             register_hooks=lambda: register_iti_hooks(
                 model,
@@ -856,13 +838,14 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            generation_profile=generation_profile,
             evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters=parameters,
-            generation_cache=generation_cache,
+            use_cache=use_cache,
             batch_size=batch_size,
             register_hooks=lambda: register_transport_hooks(
                 model, fitted, strength=parameters["strength"]
@@ -881,13 +864,14 @@ def run_generation_job(
             tokenizer=tokenizer,
             data=data,
             behavior=behavior,
+            generation_profile=generation_profile,
             evaluation_key=evaluation_key,
             model_id=model_id,
             revision=revision,
             method=method,
             device=device,
             parameters=parameters,
-            generation_cache=generation_cache,
+            use_cache=use_cache,
             batch_size=batch_size,
             register_hooks=lambda: register_odesteer_hook(
                 model,

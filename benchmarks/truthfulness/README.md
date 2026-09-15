@@ -15,6 +15,8 @@ The benchmark's default scorers are:
 - `truthfulqa_informative`: pinned TruthfulQA Helpful judge and rubric; binary percentage.
 - `axbench_instruction_relevance`: AXBench 0–2 rubric through `gpt-4o-mini`.
 - `axbench_fluency`: AXBench 0–2 rubric through `gpt-4o-mini`.
+- `mmlu_accuracy`: exact A/B/C/D accuracy on 1,000 frozen five-shot MMLU
+  questions; no learned judge.
 
 `axbench_concept_relevance` is available to benchmarks whose generation rows
 contain an explicit target concept. It is not a TruthfulQA metric.
@@ -22,8 +24,8 @@ contain an explicit target concept. It is not a TruthfulQA metric.
 ```bash
 python -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
 python -m robust_steerability.benchmarks.truthfulness calibrate --model llama8b --methods alqr,h_infinity --devices auto
-python -m robust_steerability.benchmarks.truthfulness evaluate --model llama8b --methods original,alqr,h_infinity --datasets id,spanish --devices auto
-python -m robust_steerability.benchmarks.truthfulness score --model llama8b --methods original,alqr,h_infinity --datasets id,spanish --scorers truthfulqa_true,truthfulqa_informative,axbench_instruction_relevance,axbench_fluency --devices auto
+python -m robust_steerability.benchmarks.truthfulness evaluate --model llama8b --methods original,alqr,h_infinity --datasets id,spanish,mmlu --devices auto
+python -m robust_steerability.benchmarks.truthfulness score --model llama8b --methods original,alqr,h_infinity --datasets id,spanish,mmlu --scorers default --devices auto
 ```
 
 To freeze an already chosen H∞ configuration without running its grid, supply
@@ -51,6 +53,11 @@ preserved same-model comparison setting is carried across without a sweep.
 Evaluated-model KV cache defaults to off. `--kv-cache on` remains available for
 an explicit appendix comparison and writes to a different directory. API scoring
 defaults to concurrency 500 and batch size 20.
+
+`benchmark.toml` is the composition surface. TruthfulQA owns fitting and
+calibration; Spanish and MMLU consume the selected controllers without fitting
+or selecting anything again. Every dataset has an independent cache namespace,
+so adding MMLU leaves complete TruthfulQA and Spanish generations untouched.
 
 ```text
 cache/<model>/artifacts/

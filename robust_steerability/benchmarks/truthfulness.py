@@ -8,22 +8,25 @@ import sys
 
 from robust_steerability.benchmarks import artifacts
 from robust_steerability.benchmarks import truthfulness_calibration
+from robust_steerability.benchmarks import multiple_choice
 from robust_steerability.benchmarks import truthfulness_runtime as runtime
+from robust_steerability.benchmarks.composition import (
+    load_composition,
+    requested_scorers,
+    validate_requested_scorers,
+)
 from robust_steerability.benchmarks.execution import default_run_id, tracked_stage
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import calibration_root
 from robust_steerability.benchmarks.specs import METHODS, MODELS
 from robust_steerability.experiments.resources import resolve_cuda_devices
-from robust_steerability.judges import (
-    TRUTHFULNESS_SCORERS,
-    scorer_cache_path,
-    scorer_spec,
-)
+from robust_steerability.judges import scorer_cache_path, scorer_spec
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.source_methods.protocol import paper_alqr_setting
 
 
-DATASETS = ("id", "spanish")
+COMPOSITION = load_composition("truthfulness")
+DATASETS = COMPOSITION.dataset_keys
 DEFAULT_METHODS = ("original", "alqr", "h_infinity")
 
 
@@ -139,12 +142,25 @@ def evaluation_stage(
     runtime._configure_runtime(
         model_key, calibration_id, generation_batch_size, use_cache=use_cache
     )
-    for dataset in datasets:
+    native_datasets = [
+        dataset for dataset in datasets
+        if COMPOSITION.dataset(dataset).runtime == "truthfulness"
+    ]
+    multiple_choice_datasets = [
+        dataset for dataset in datasets
+        if COMPOSITION.dataset(dataset).runtime == "multiple_choice"
+    ]
+    for dataset in native_datasets:
         runtime.prepare("truthfulness", dataset)
     source_methods = [method for method in methods if method != "h_infinity"]
     jobs = []
-    for dataset in datasets:
+    for dataset in native_datasets:
         for method in source_methods:
+            existing = runtime._generation_files(
+                model_key, method, "truthfulness", dataset
+            )
+            if len(existing) == 1 and multiple_choice.generation_complete(existing[0]):
+                continue
             jobs.append(
                 (
                     f"generate-{dataset}-{method}",
@@ -180,7 +196,12 @@ def evaluation_stage(
         run_jobs(jobs, devices, log_root / "generation")
     if "h_infinity" in methods:
         hinf_devices = devices[: runtime.EVALUATION_REPETITIONS]
-        for dataset in datasets:
+        for dataset in native_datasets:
+            existing = runtime._generation_files(
+                model_key, "h_infinity", "truthfulness", dataset
+            )
+            if len(existing) == 1 and multiple_choice.generation_complete(existing[0]):
+                continue
             runtime.launch_hinf_generation(
                 model_key,
                 "truthfulness",
@@ -188,13 +209,47 @@ def evaluation_stage(
                 hinf_devices,
                 log_root / "generation",
             )
+    capability_jobs = []
+    for dataset_key in multiple_choice_datasets:
+        dataset = COMPOSITION.dataset(dataset_key)
+        multiple_choice.prepare("truthfulness", model_key, dataset)
+        for method in methods:
+            destination = multiple_choice.generation_path(
+                "truthfulness", model_key, dataset, method, use_cache=use_cache
+            )
+            if multiple_choice.generation_complete(destination):
+                continue
+            capability_jobs.append(
+                (
+                    f"generate-{dataset_key}-{method}",
+                    [
+                        sys.executable,
+                        "-m",
+                        "robust_steerability.benchmarks.multiple_choice",
+                        "--benchmark", "truthfulness",
+                        "--model", model_key,
+                        "--dataset", dataset_key,
+                        "--method", method,
+                        "--calibration-id", calibration_id,
+                        "--kv-cache", "on" if use_cache else "off",
+                        "--device", "{device}",
+                        *(
+                            ["--generation-batch-size", str(generation_batch_size)]
+                            if generation_batch_size is not None
+                            else []
+                        ),
+                    ],
+                )
+            )
+    if capability_jobs:
+        run_jobs(capability_jobs, devices, log_root / "generation")
 
 
 def score_stage(
     model_key: str,
     methods: list[str],
     datasets: list[str],
-    scorers: list[str],
+    scorers: tuple[str, ...] | None,
     devices: list[str],
     log_root,
     calibration_id: str,
@@ -205,24 +260,38 @@ def score_stage(
     """Run selected scorers against existing generations, then summarize them."""
 
     runtime._configure_runtime(model_key, calibration_id, use_cache=use_cache)
-    generation_paths = []
-    for dataset in datasets:
+    native_datasets = [
+        dataset for dataset in datasets
+        if COMPOSITION.dataset(dataset).runtime == "truthfulness"
+    ]
+    multiple_choice_datasets = [
+        dataset for dataset in datasets
+        if COMPOSITION.dataset(dataset).runtime == "multiple_choice"
+    ]
+    generation_paths = {}
+    native_scorers = {}
+    for dataset in native_datasets:
+        selected = requested_scorers(COMPOSITION.dataset(dataset), scorers)
+        native_scorers[dataset] = selected
+        if not selected:
+            continue
+        generation_paths[dataset] = []
         for method in methods:
             files = runtime._generation_files(model_key, method, "truthfulness", dataset)
             if len(files) != 1:
                 raise ValueError(
                     f"Expected one {dataset}/{method} generation cache; found {len(files)}"
                 )
-            generation_paths.append(files[0])
+            generation_paths[dataset].append(files[0])
 
-    gpu_scorers = [
-        key for key in scorers if scorer_spec(key).backend == "huggingface_binary"
-    ]
-    api_scorers = [key for key in scorers if scorer_spec(key).backend == "openai_0_2"]
     jobs = []
-    for dataset in datasets:
+    for dataset in native_datasets:
+        if not native_scorers[dataset]:
+            continue
         for method in methods:
-            for scorer in gpu_scorers:
+            for scorer in native_scorers[dataset]:
+                if scorer_spec(scorer).backend != "huggingface_binary":
+                    continue
                 jobs.append(
                     (
                         f"score-{dataset}-{method}-{scorer}",
@@ -253,20 +322,27 @@ def score_stage(
                 )
     if jobs:
         run_jobs(jobs, devices, log_root / "scoring")
-    if api_scorers:
-        openai_scoring.score_generations(
-            generation_paths,
-            runtime.CACHE_ROOT,
-            api_scorers,
-            concurrency=api_concurrency,
-            batch_size=api_batch_size,
-        )
-    for dataset in datasets:
+    for dataset in native_datasets:
+        api_scorers = [
+            key for key in native_scorers[dataset]
+            if scorer_spec(key).backend == "openai_0_2"
+        ]
+        if api_scorers:
+            openai_scoring.score_generations(
+                generation_paths[dataset],
+                runtime.CACHE_ROOT,
+                api_scorers,
+                concurrency=api_concurrency,
+                batch_size=api_batch_size,
+            )
+    for dataset in native_datasets:
+        if not native_scorers[dataset]:
+            continue
         for method in methods:
             generation_path = runtime._generation_files(
                 model_key, method, "truthfulness", dataset
             )[0]
-            for key in scorers:
+            for key in native_scorers[dataset]:
                 path = scorer_cache_path(runtime.CACHE_ROOT, generation_path, key)
                 if not path.exists() or json.loads(path.read_text()).get("status") != "complete":
                     raise ValueError(f"Requested scorer did not complete: {path}")
@@ -275,7 +351,18 @@ def score_stage(
                 method,
                 "truthfulness",
                 dataset,
-                tuple(scorers),
+                native_scorers[dataset],
+            )
+    for dataset_key in multiple_choice_datasets:
+        dataset = COMPOSITION.dataset(dataset_key)
+        selected = requested_scorers(dataset, scorers)
+        if not selected:
+            continue
+        if selected != ("mmlu_accuracy",):
+            raise ValueError(f"Unsupported scorers for {dataset_key}: {selected}")
+        for method in methods:
+            multiple_choice.score_and_summarize(
+                "truthfulness", model_key, dataset, method, use_cache=use_cache
             )
 
 
@@ -285,7 +372,7 @@ def main() -> None:
     parser.add_argument("--model", choices=tuple(MODELS), required=True)
     parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
     parser.add_argument("--datasets", default=",".join(DATASETS))
-    parser.add_argument("--scorers", default=",".join(TRUTHFULNESS_SCORERS))
+    parser.add_argument("--scorers", default="default")
     parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
@@ -303,7 +390,15 @@ def main() -> None:
     arguments = parser.parse_args()
     methods = _names(arguments.methods, METHODS)
     datasets = _names(arguments.datasets, DATASETS)
-    scorers = _names(arguments.scorers, TRUTHFULNESS_SCORERS)
+    scorers = (
+        None
+        if arguments.scorers in {"default", "all"}
+        else tuple(item.strip() for item in arguments.scorers.split(",") if item.strip())
+    )
+    if scorers is not None:
+        for scorer in scorers:
+            scorer_spec(scorer)
+    validate_requested_scorers(COMPOSITION, datasets, scorers)
     h_infinity_values = (
         arguments.h_infinity_q_over_r,
         arguments.h_infinity_q_final_over_r,
@@ -325,8 +420,17 @@ def main() -> None:
         else None
     )
     use_cache = arguments.kv_cache == "on"
+    selected_score_keys = (
+        {
+            scorer
+            for dataset in datasets
+            for scorer in requested_scorers(COMPOSITION.dataset(dataset), scorers)
+        }
+        if arguments.stage == "score"
+        else set()
+    )
     gpu_required = arguments.stage != "score" or any(
-        scorer_spec(key).backend == "huggingface_binary" for key in scorers
+        scorer_spec(key).backend == "huggingface_binary" for key in selected_score_keys
     )
     devices = resolve_cuda_devices(arguments.devices) if gpu_required else []
     run_id = arguments.run_id or default_run_id(
@@ -344,7 +448,7 @@ def main() -> None:
         calibration_id=arguments.calibration_id,
         parameters={
             "generation_batch_size": arguments.generation_batch_size,
-            "scorers": scorers if arguments.stage == "score" else [],
+            "scorers": sorted(selected_score_keys) if arguments.stage == "score" else [],
             "api_concurrency": arguments.api_concurrency,
             "api_batch_size": arguments.api_batch_size,
             "h_infinity_fixed_parameters": h_infinity_parameters,

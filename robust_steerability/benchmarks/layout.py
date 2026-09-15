@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 
 
-BENCHMARKS = ("truthfulness", "toxicity")
 KV_CACHE_MODES = ("off", "on")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LIGHTNING_CACHE_DIRECTORY = "robust-steering-cache"
@@ -15,9 +14,12 @@ LIGHTNING_CACHE_DIRECTORY = "robust-steering-cache"
 def benchmark_root(benchmark: str) -> Path:
     """Return the repository unit that owns one benchmark."""
 
-    if benchmark not in BENCHMARKS:
+    if not benchmark or "/" in benchmark or "\\" in benchmark:
+        raise ValueError(f"Invalid benchmark key {benchmark!r}")
+    root = REPO_ROOT / "benchmarks" / benchmark
+    if not (root / "benchmark.toml").exists():
         raise ValueError(f"Unknown benchmark {benchmark!r}")
-    return REPO_ROOT / "benchmarks" / benchmark
+    return root
 
 
 def model_root(benchmark: str, model_key: str) -> Path:

@@ -225,20 +225,7 @@ GENERATION = {
         "do_sample": False,
     },
 }
-FINAL_EVALUATION_SAMPLES = {"toxicity": 1000, "truthfulness": 817}
-EVALUATION_REPETITIONS = 5
 SOURCE_RANDOM_SEED = 42
-GENERATION_CACHE = {
-    "original": {"evaluation": False, "capability": False},
-    "iti": {"evaluation": False, "capability": False},
-    "actadd": {"evaluation": False, "capability": False},
-    "mean_act": {"evaluation": False, "capability": False},
-    "linear_act": {"evaluation": False, "capability": False},
-    "pid_act": {"evaluation": False, "capability": False},
-    "odesteer": {"evaluation": False, "capability": False},
-    "spid": {"evaluation": False, "capability": False},
-    "alqr": {"evaluation": False, "capability": False},
-}
 
 SCORERS = {
     "toxicity": {
@@ -432,8 +419,10 @@ def protocol_manifest(
     model_id: str,
     checkpoint_revision: str,
     evaluation_samples: int,
+    evaluation_repetitions: int,
+    generation_profile: str,
     *,
-    generation_cache: dict[str, bool],
+    use_cache: bool,
     requested_parameters: dict | None = None,
 ) -> dict:
     """Create a method-specific, auditable final-run manifest."""
@@ -442,17 +431,12 @@ def protocol_manifest(
         raise ValueError(f"Unsupported method {method!r}")
     if not checkpoint_revision:
         raise ValueError("A concrete Hugging Face checkpoint revision is required")
-    if set(generation_cache) != {"evaluation", "capability"} or not all(
-        isinstance(value, bool) for value in generation_cache.values()
-    ):
-        raise ValueError(
-            "generation_cache must explicitly define boolean evaluation and capability policies"
-        )
-    expected_samples = FINAL_EVALUATION_SAMPLES.get(behavior)
-    if evaluation_samples != expected_samples:
-        raise ValueError(
-            f"Final {behavior} evaluation requires exactly {expected_samples} samples per repetition"
-        )
+    if not isinstance(use_cache, bool):
+        raise ValueError("use_cache must be boolean")
+    if evaluation_samples < 1 or evaluation_repetitions < 1:
+        raise ValueError("Evaluation samples and repetitions must be positive")
+    if generation_profile not in GENERATION:
+        raise ValueError(f"Unknown generation profile {generation_profile!r}")
     key = model_key(model_id)
     calibration = calibration_counts(method, behavior)
     parameters = selected_parameters(method, behavior, model_id, requested_parameters)
@@ -493,11 +477,12 @@ def protocol_manifest(
         ),
         "method_details": method_details,
         "evaluation_samples": evaluation_samples,
-        "evaluation_repetitions": EVALUATION_REPETITIONS,
+        "evaluation_repetitions": evaluation_repetitions,
         "evaluation_is_parameter_blind": True,
         "random_seed": SOURCE_RANDOM_SEED,
-        "generation": GENERATION[behavior],
-        "generation_cache": dict(generation_cache),
+        "generation_profile": generation_profile,
+        "generation": GENERATION[generation_profile],
+        "evaluated_model_kv_cache": use_cache,
         "scorers": SCORERS,
         "model_loading": loading,
         "source_revisions": {

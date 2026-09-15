@@ -1,4 +1,4 @@
-"""MMLU prompt loaders for concept-shift experiments."""
+"""Pinned MMLU loaders and exact-answer parsing."""
 
 from __future__ import annotations
 
@@ -6,6 +6,79 @@ import random
 from typing import Iterable
 
 from datasets import get_dataset_config_names, load_dataset
+
+
+LETTERS = "ABCD"
+MMLU_ID = "cais/mmlu"
+MMLU_REVISION = "c30699e8356da336a370243923dbaf21066bb9fe"
+
+
+def _format_five_shot_question(row: dict[str, object], include_answer: bool) -> str:
+    lines = ["Question: " + str(row["question"]).strip()]
+    for index, choice in enumerate(row["choices"][: len(LETTERS)]):
+        lines.append(f"{LETTERS[index]}. {str(choice).strip()}")
+    lines.append(
+        f"Answer: {LETTERS[int(row['answer'])]}" if include_answer else "Answer:"
+    )
+    return "\n".join(lines)
+
+
+def load_mmlu_five_shot_prompts(
+    seed: int,
+    count: int,
+    shots: int = 5,
+) -> list[dict[str, object]]:
+    """Sample MMLU test questions with same-subject dev demonstrations."""
+
+    test = load_dataset(MMLU_ID, "all", split="test", revision=MMLU_REVISION)
+    dev = load_dataset(MMLU_ID, "all", split="dev", revision=MMLU_REVISION)
+    dev_by_subject: dict[str, list[dict[str, object]]] = {}
+    for row in dev:
+        dev_by_subject.setdefault(str(row["subject"]), []).append(dict(row))
+    rng = random.Random(seed + 17)
+    if count < 1 or len(test) < count:
+        raise ValueError(f"Requested {count} MMLU prompts; available: {len(test)}")
+    test_by_subject: dict[str, list[int]] = {}
+    for row_index, row in enumerate(test):
+        test_by_subject.setdefault(str(row["subject"]), []).append(row_index)
+    subjects = sorted(test_by_subject)
+    indices: list[int] = []
+    selected: set[int] = set()
+    while len(indices) < count:
+        row_index = rng.choice(test_by_subject[rng.choice(subjects)])
+        if row_index not in selected:
+            indices.append(row_index)
+            selected.add(row_index)
+    output = []
+    for row_index in indices:
+        row = dict(test[row_index])
+        answer = int(row["answer"])
+        if answer < 0 or answer >= len(LETTERS):
+            raise ValueError(f"Invalid MMLU answer for test row {row_index}")
+        subject = str(row["subject"])
+        examples = rng.sample(dev_by_subject[subject], shots)
+        demonstrations = "\n\n".join(
+            _format_five_shot_question(example, True) for example in examples
+        )
+        prompt = demonstrations + "\n\n" if demonstrations else ""
+        prompt += _format_five_shot_question(row, False)
+        output.append(
+            {
+                "prompt_id": f"mmlu:{subject}:{row_index}",
+                "prompt": prompt,
+                "answer_index": answer,
+                "subject": subject,
+                "demonstrations": examples,
+            }
+        )
+    return output
+
+
+def parse_mmlu_letter(text: str) -> int | None:
+    """Accept one answer letter, never a letter embedded in a word or sentence."""
+
+    answer = text.strip().upper()
+    return LETTERS.index(answer) if answer in tuple(LETTERS) else None
 
 
 def _format_mmlu_prompt(question: str, choices: Iterable[object]) -> str:

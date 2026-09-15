@@ -705,10 +705,8 @@ def generate(
         data_path=data_path,
         evaluation_key=evaluation_key,
         cache_namespace=cache_namespace,
-        generation_cache={
-            "evaluation": CURRENT_USE_CACHE,
-            "capability": CURRENT_USE_CACHE,
-        },
+        generation_profile="truthfulness",
+        use_cache=CURRENT_USE_CACHE,
         selected_parameters=selected_parameters,
         generation_batch_size=GENERATION_BATCH_SIZE_OVERRIDE,
     )
