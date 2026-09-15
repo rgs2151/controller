@@ -29,8 +29,3 @@ MODELS = {
         "97e1e76335b7017d8f67c08a19d103c0504298c9", 4, 8,
     ),
 }
-
-METHODS = (
-    "original", "iti", "actadd", "mean_act", "linear_act", "pid_act",
-    "odesteer", "spid", "alqr", "h_infinity",
-)

@@ -22,6 +22,8 @@ from robust_steerability.benchmarks.layout import (
     evaluation_root,
     results_root,
 )
+from robust_steerability.benchmarks.launcher import run_data_shards
+from robust_steerability.benchmarks.methods import method_spec
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.datasets.registry import dataset_adapter
 from robust_steerability.experiments.methods import build_policy
@@ -31,6 +33,11 @@ from robust_steerability.modeling.huggingface import load_access_token
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.source_methods.generation import generate_batched
 from robust_steerability.source_methods.id_benchmark import (
+    _batch_assignments,
+    _batch_size as source_generation_batch_size,
+    _output_rows,
+    generation_shard_path,
+    merge_generation_shards,
     run_generation_job,
     runtime_provenance,
 )
@@ -123,6 +130,8 @@ def _truthfulness_generation(
     calibration_id: str,
     generation_batch_size: int | None,
     use_cache: bool,
+    shard_index: int,
+    shard_count: int,
 ) -> None:
     from robust_steerability.benchmarks import truthfulness_runtime
 
@@ -132,7 +141,8 @@ def _truthfulness_generation(
         generation_batch_size,
         use_cache=use_cache,
     )
-    if method == "h_infinity":
+    spec = method_spec(method)
+    if spec.runtime == "h_infinity":
         artifact, parameters = truthfulness_runtime._load_selected_hinf(model_key)
         _generate_with_policy(
             "truthfulness",
@@ -143,8 +153,10 @@ def _truthfulness_generation(
             calibration_id,
             generation_batch_size,
             use_cache,
-            build_policy("hinf", artifact, kp=0.0, ki=0.0, kd=0.0),
+            build_policy(str(spec.policy_key), artifact, kp=0.0, ki=0.0, kd=0.0),
             parameters,
+            shard_index,
+            shard_count,
         )
         return
     run_generation_job(
@@ -167,6 +179,8 @@ def _truthfulness_generation(
         generation_profile=dataset.generation_profile,
         use_cache=use_cache,
         generation_batch_size=generation_batch_size,
+        shard_index=shard_index,
+        shard_count=shard_count,
     )
 
 
@@ -178,6 +192,8 @@ def _toxicity_generation(
     calibration_id: str,
     generation_batch_size: int | None,
     use_cache: bool,
+    shard_index: int,
+    shard_count: int,
 ) -> None:
     from robust_steerability.benchmarks import toxicity_runtime
 
@@ -200,6 +216,8 @@ def _toxicity_generation(
         use_cache,
         policy,
         parameters,
+        shard_index,
+        shard_count,
     )
 
 
@@ -214,17 +232,19 @@ def _generate_with_policy(
     use_cache: bool,
     policy,
     parameters: dict,
+    shard_index: int,
+    shard_count: int,
 ) -> None:
-    destination = generation_path(
-        base_benchmark, model_key, dataset, method, use_cache=use_cache
+    root = evaluation_root(base_benchmark, model_key, use_cache=use_cache)
+    destination = generation_shard_path(
+        root, dataset.cache_namespace, method, shard_index, shard_count
     )
-    if generation_complete(destination):
+    if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
         return
     source = json.loads(data_path(base_benchmark, model_key, dataset).read_text())
-    repetitions = source["evaluation"][dataset.cache_namespace]
     model_spec = MODELS[model_key]
     model, tokenizer = load_source_model(
-        "alqr" if method in {"original", "spid", "alqr", "h_infinity"} else method,
+        method_spec(method).model_loader,
         base_benchmark,
         model_spec.model_id,
         model_spec.revision,
@@ -232,8 +252,7 @@ def _generate_with_policy(
         load_access_token(REPO),
     )
     batch_size = generation_batch_size or model_spec.activation_batch_size
-    payload = {
-        "identity": {
+    common_identity = {
             "schema_version": 1,
             "base_benchmark": base_benchmark,
             "model": [model_spec.model_id, model_spec.revision],
@@ -246,10 +265,15 @@ def _generate_with_policy(
             "generation_profile": dataset.generation_profile,
             "kv_cache": use_cache,
             "batch_size": batch_size,
+    }
+    payload = {
+        "identity": {
+            "base": common_identity,
+            "shard": {"index": shard_index, "count": shard_count},
         },
         "status": "partial",
         "attempts": [],
-        "repetitions": [],
+        "batches": [],
     }
     if destination.exists():
         payload = json.loads(destination.read_text())
@@ -261,9 +285,22 @@ def _generate_with_policy(
     }
     payload["attempts"].append(attempt)
     _write_json(destination, payload)
-    for repetition_index in range(len(payload["repetitions"]), dataset.repetitions):
-        records = repetitions[str(repetition_index)]
-        seed = SOURCE_RANDOM_SEED + repetition_index * 100_000
+    assignments = _batch_assignments(source, dataset.cache_namespace, batch_size)
+    assigned = [
+        assignment
+        for index, assignment in enumerate(assignments)
+        if index % shard_count == shard_index
+    ]
+    completed = [
+        (int(row["repetition"]), int(row["start"])) for row in payload["batches"]
+    ]
+    expected = [(repetition, start) for repetition, start, _records in assigned]
+    if completed != expected[: len(completed)]:
+        raise ValueError(f"Multiple-choice shard batches are not a valid prefix: {destination}")
+    for repetition_index, start, records in assigned[len(completed) :]:
+        seed = SOURCE_RANDOM_SEED + repetition_index * 100_000 + start
+        batch_started = time.perf_counter()
+        started_at = datetime.now(timezone.utc).isoformat()
         completions = generate_batched(
             model,
             tokenizer,
@@ -279,15 +316,15 @@ def _generate_with_policy(
             ),
             reset=None if policy is None else policy.reset,
         )
-        payload["repetitions"].append(
+        payload["batches"].append(
             {
                 "repetition": repetition_index,
-                "sample_count": len(records),
+                "start": start,
+                "started_at_utc": started_at,
+                "finished_at_utc": datetime.now(timezone.utc).isoformat(),
+                "elapsed_seconds": time.perf_counter() - batch_started,
                 "generation_seed": seed,
-                "rows": [
-                    {**row, "completion": completion}
-                    for row, completion in zip(records, completions, strict=True)
-                ],
+                "rows": _output_rows(records, completions),
             }
         )
         _write_json(destination, payload)
@@ -310,6 +347,8 @@ def generate(
     calibration_id: str,
     generation_batch_size: int | None,
     use_cache: bool,
+    shard_index: int,
+    shard_count: int,
 ) -> None:
     prepare(base_benchmark, model_key, dataset)
     if generation_complete(
@@ -325,6 +364,8 @@ def generate(
             calibration_id,
             generation_batch_size,
             use_cache,
+            shard_index,
+            shard_count,
         )
     elif base_benchmark == "toxicity":
         _toxicity_generation(
@@ -335,9 +376,64 @@ def generate(
             calibration_id,
             generation_batch_size,
             use_cache,
+            shard_index,
+            shard_count,
         )
     else:
         raise ValueError(f"Unknown base benchmark {base_benchmark!r}")
+
+
+def launch_generation(
+    base_benchmark: str,
+    model_key: str,
+    dataset: EvaluationDataset,
+    method: str,
+    devices: list[str],
+    calibration_id: str,
+    generation_batch_size: int | None,
+    use_cache: bool,
+    log_root: Path,
+) -> Path:
+    """Run one method across all GPUs, then merge its data shards."""
+
+    import sys
+
+    command = [
+        sys.executable,
+        "-m", "robust_steerability.benchmarks.multiple_choice",
+        "--benchmark", base_benchmark,
+        "--model", model_key,
+        "--dataset", dataset.key,
+        "--method", method,
+        "--calibration-id", calibration_id,
+        "--kv-cache", "on" if use_cache else "off",
+        "--device", "{device}",
+        *(
+            ["--generation-batch-size", str(generation_batch_size)]
+            if generation_batch_size is not None
+            else []
+        ),
+    ]
+    spec = method_spec(method)
+    batch_size = generation_batch_size or (
+        source_generation_batch_size(MODELS[model_key].model_id, method)
+        if base_benchmark == "truthfulness" and spec.runtime == "source"
+        else MODELS[model_key].activation_batch_size
+    )
+    batch_count = dataset.repetitions * math.ceil(dataset.samples / batch_size)
+    active_devices = devices[: min(len(devices), batch_count)]
+    run_data_shards(
+        f"generate-{dataset.key}-{method}", command, active_devices, log_root
+    )
+    return merge_generation_shards(
+        cache_root=evaluation_root(base_benchmark, model_key, use_cache=use_cache),
+        cache_namespace=dataset.cache_namespace,
+        method=method,
+        data_path=data_path(base_benchmark, model_key, dataset),
+        evaluation_key=dataset.cache_namespace,
+        batch_size=batch_size,
+        shard_count=len(active_devices),
+    )
 
 
 def score_and_summarize(
@@ -412,6 +508,8 @@ def main() -> None:
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
+    parser.add_argument("--shard-index", type=int, required=True)
+    parser.add_argument("--shard-count", type=int, required=True)
     arguments = parser.parse_args()
     composition = load_composition(arguments.benchmark)
     dataset = composition.dataset(arguments.dataset)
@@ -424,6 +522,8 @@ def main() -> None:
         arguments.calibration_id,
         arguments.generation_batch_size,
         arguments.kv_cache == "on",
+        arguments.shard_index,
+        arguments.shard_count,
     )
 
 
