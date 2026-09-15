@@ -23,12 +23,18 @@ No dataset adapter or scorer changes, and completed methods remain untouched.
   MMLU capability retention.
 - `truthfulness.py`: TruthfulQA as the base dataset, Spanish transfer, and MMLU
   capability retention.
+- `lciteeval.py`: AXBench concept-499 steering transferred unchanged across the
+  40 matched L-CiteEval HotpotQA cases at approximately 8K, 16K, and 32K.
+- `mgsm.py`: one paired English-to-Spanish MGSM direction transferred across
+  nine held-out input languages while preserving exact numerical accuracy.
 - `robust_steerability.judges`: reusable scorer definitions with explicit model,
   rubric, score range, and backend provenance.
 - `judges/exact.py`: deterministic MMLU, L-CiteEval answer-overlap, and AXBench
   aggregate calculations.
 - `judges/lciteeval.py`: the released citation precision/recall/F1 procedure and
   pinned local DeBERTa NLI loader.
+- `judges/mgsm.py`: language-independent final-number extraction and the exact
+  AXBench deterministic Spanish-language rule.
 - `judges/openai.py`: batched concurrent execution of the three independent
   AXBench 0–2 rubrics.
 

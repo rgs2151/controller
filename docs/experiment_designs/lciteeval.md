@@ -153,6 +153,8 @@ calibration instructions:
 - These 50 prompts do not fit the concept direction. They exercise each already
   synthesized H∞ candidate so the AXBench scorers can select its control-cost
   configuration.
+- Format the 200 disturbance instructions and all candidate-generation inputs
+  with the same pinned target-model chat template used at runtime.
 
 Sweep:
 
@@ -160,6 +162,8 @@ Sweep:
 - `Qf/R ∈ {0.01, 0.1, 0.316227766}`;
 - `R=1`;
 - no setpoint-multiplier sweep; use `1.5`;
+- generate at most 128 new tokens per short calibration instruction, matching
+  AXBench's steering evaluation length;
 
 Score calibration generations only with the three independent AXBench OpenAI
 judges: concept presence, instruction relevance, and fluency. Each returns an

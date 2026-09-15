@@ -16,6 +16,7 @@ dependencies = [
   "h5py",
   "huggingface-hub",
   "joblib",
+  "langdetect",
   "matplotlib>=3.8",
   "nltk==3.9.1",
   "numpy",

@@ -12,16 +12,16 @@
 | Gemma-2-2B | S-PID | 55.15 ± 0.37 | 86.41 ± 0.34 | 1.29 ± 0.01 | 1.12 ± 0.00 |
 | Gemma-2-2B | A-LQR | 73.81 ± 0.71 | 76.55 ± 0.65 | 1.12 ± 0.01 | 1.06 ± 0.00 |
 | Gemma-2-2B | H∞ (ours) | 77.45 ± 0.52 | 64.16 ± 0.85 | 1.04 ± 0.01 | 1.02 ± 0.01 |
-| Llama-3-8B | Original | TBD | TBD | TBD | TBD |
-| Llama-3-8B | ITI | TBD | TBD | TBD | TBD |
-| Llama-3-8B | ActAdd | TBD | TBD | TBD | TBD |
-| Llama-3-8B | Mean-AcT | TBD | TBD | TBD | TBD |
-| Llama-3-8B | Linear-AcT | TBD | TBD | TBD | TBD |
-| Llama-3-8B | PID-AcT | TBD | TBD | TBD | TBD |
-| Llama-3-8B | ODESteer | TBD | TBD | TBD | TBD |
-| Llama-3-8B | S-PID | TBD | TBD | TBD | TBD |
-| Llama-3-8B | A-LQR | TBD | TBD | TBD | TBD |
-| Llama-3-8B | H∞ (ours) | TBD | TBD | TBD | TBD |
+| Llama-3-8B | Original | 42.86 ± 0.49 | 94.52 ± 0.24 | 1.59 ± 0.01 | 1.39 ± 0.01 |
+| Llama-3-8B | ITI | 55.47 ± 0.88 | 94.37 ± 0.20 | 1.61 ± 0.02 | 1.39 ± 0.01 |
+| Llama-3-8B | ActAdd | 43.94 ± 0.53 | 93.78 ± 0.29 | 1.57 ± 0.01 | 1.35 ± 0.01 |
+| Llama-3-8B | Mean-AcT | 46.61 ± 0.69 | 94.83 ± 0.49 | 1.61 ± 0.01 | 1.41 ± 0.01 |
+| Llama-3-8B | Linear-AcT | 47.15 ± 0.41 | 94.96 ± 0.39 | 1.61 ± 0.01 | 1.42 ± 0.02 |
+| Llama-3-8B | PID-AcT | 47.12 ± 0.63 | 95.08 ± 0.51 | 1.62 ± 0.01 | 1.41 ± 0.01 |
+| Llama-3-8B | ODESteer | 95.67 ± 0.15 | 11.21 ± 0.45 | 0.00 ± 0.00 | 0.02 ± 0.00 |
+| Llama-3-8B | S-PID | 52.09 ± 0.56 | 94.37 ± 0.22 | 1.59 ± 0.01 | 1.33 ± 0.01 |
+| Llama-3-8B | A-LQR | 55.57 ± 0.71 | 95.03 ± 0.25 | 1.56 ± 0.01 | 1.27 ± 0.01 |
+| Llama-3-8B | H∞ (ours) | 85.21 ± 0.40 | 64.70 ± 0.48 | 0.97 ± 0.03 | 0.97 ± 0.02 |
 | Qwen-2.5-14B | Original | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | ITI | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | ActAdd | TBD | TBD | TBD | TBD |

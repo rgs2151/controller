@@ -8,6 +8,7 @@ dynamics are controller-neutral and shared with A-LQR.
 from __future__ import annotations
 
 import inspect
+import hashlib
 import os
 from dataclasses import asdict
 from pathlib import Path
@@ -42,6 +43,15 @@ def _record_identity(record: dict[str, object]) -> dict[str, str]:
         if key in record:
             identity[key] = str(record[key])
     return identity
+
+
+def _tensor_identity(value: torch.Tensor) -> dict[str, object]:
+    tensor = value.detach().cpu().contiguous()
+    return {
+        "shape": list(tensor.shape),
+        "dtype": str(tensor.dtype),
+        "sha256": hashlib.sha256(tensor.view(torch.uint8).numpy().tobytes()).hexdigest(),
+    }
 
 
 def calibration_data_identity(
@@ -138,7 +148,9 @@ def collect_last_token_states(
             handles.append(layer.register_forward_pre_hook(input_hook(index)))
             if model.config.model_type == "gpt2":
                 projection = layer.attn.c_proj
-            elif model.config.model_type in {"llama", "qwen2", "mistral", "gemma", "gemma2"}:
+            elif model.config.model_type in {
+                "llama", "qwen2", "qwen3", "mistral", "gemma", "gemma2"
+            }:
                 projection = layer.self_attn.o_proj
             else:
                 raise ValueError(f"Attention-head capture unsupported for {model.config.model_type}")
@@ -190,6 +202,7 @@ def _fit_controller_inputs(
     settings: dict,
     nominal_dynamics_path: Path,
     calibration_data: dict[str, object],
+    semantic_calibration: dict[str, torch.Tensor] | None,
 ) -> dict:
     """Identify actual full-order and projected Jacobian dynamics."""
     fit_per_class = int(settings["fit_prompts_per_class"])
@@ -218,6 +231,8 @@ def _fit_controller_inputs(
     nominal_behavior = {
         "toxicity_mitigation": "toxicity",
         "truthfulness": "truthfulness",
+        "lciteeval": "positive sentiments and descriptions of enjoyable experiences",
+        "mgsm": "respond only in Spanish, and no other language is allowed",
     }[str(settings["behavior"])]
     raw_dynamics = reuse_or_fit_nominal_dynamics(
         model,
@@ -250,10 +265,37 @@ def _fit_controller_inputs(
     fit_heads, calibration_heads = fit_states["attention_heads"], calibration_states["attention_heads"]
     fit_states = fit_states["hidden"].to(device)
     calibration_states = calibration_states["hidden"].to(device)
-    raw_contrast = fit_states[fit_per_class:].mean(dim=0) - fit_states[:fit_per_class].mean(dim=0)
-    raw_target = build_contrastive_target(
-        fit_states[fit_per_class:].mean(dim=0), fit_states[:fit_per_class].mean(dim=0),
-        float(settings["hinf_setpoint_multiplier"]))
+    negative_mean = fit_states[:fit_per_class].mean(dim=0)
+    positive_mean = fit_states[fit_per_class:].mean(dim=0)
+    if semantic_calibration is None:
+        raw_target = build_contrastive_target(
+            positive_mean,
+            negative_mean,
+            float(settings["hinf_setpoint_multiplier"]),
+        )
+    else:
+        if set(semantic_calibration) != {"contrast", "feature_norm"}:
+            raise ValueError(
+                "semantic_calibration must contain exactly contrast and feature_norm"
+            )
+        feature = semantic_calibration["contrast"].to(device=device, dtype=torch.float32)
+        feature_norm = semantic_calibration["feature_norm"].to(
+            device=device, dtype=torch.float32
+        )
+        if feature.shape != positive_mean.shape or feature_norm.shape != feature.shape[:1]:
+            raise ValueError("Saved semantic calibration does not match model layers")
+        feature_unit = feature / feature_norm.clamp_min(
+            float(settings["numerical_floor"])
+        ).unsqueeze(1)
+        raw_target = {
+            "nominal": positive_mean,
+            "opposite_mean": negative_mean,
+            "feature": feature,
+            "feature_norm": feature_norm,
+            "feature_unit": feature_unit,
+            "beta": float(settings["hinf_setpoint_multiplier"]) * feature_norm,
+        }
+    raw_contrast = raw_target["feature"]
     means, basis = _fit_reduced_basis(
         fit_states, int(settings["state_rank"]), float(settings["numerical_floor"]), raw_contrast)
     encoders_all = decoders_all = basis
@@ -302,6 +344,14 @@ def _fit_controller_inputs(
         "raw_dynamics": raw_dynamics,
         "nominal_dynamics": nominal_signature,
         "calibration_data": calibration_identity,
+        "semantic_calibration": (
+            None
+            if semantic_calibration is None
+            else {
+                "contrast": _tensor_identity(semantic_calibration["contrast"]),
+                "feature_norm": _tensor_identity(semantic_calibration["feature_norm"]),
+            }
+        ),
         "raw_target": raw_target,
         "problem": asdict(problem),
         "maps": {"means": means, "encoders": encoders_all, "decoders": decoders_all,
@@ -382,12 +432,16 @@ def _fingerprint(
     settings: dict,
     nominal_dynamics: dict[str, object],
     calibration_data: dict[str, object],
+    semantic_calibration: dict[str, object] | None,
 ) -> str:
-    return configuration_hash({
+    payload = {
         "model_label": model_label, "model_id": model_id, "settings": settings,
         "nominal_dynamics": nominal_dynamics,
         "calibration_data": calibration_data,
-    })
+    }
+    if semantic_calibration is not None:
+        payload["semantic_calibration"] = semantic_calibration
+    return configuration_hash(payload)
 
 
 def diagnostic_root(cache_path: Path) -> Path:
@@ -427,16 +481,38 @@ def calibrate_controller(
     model, tokenizer, *, model_label: str, model_id: str, cache_path: Path,
     nominal_dynamics_path: Path, calibration_data: dict[str, object],
     settings: dict[str, object], controller_device: str,
+    semantic_calibration: dict[str, torch.Tensor] | None = None,
 ) -> tuple[ControllerArtifact, dict[str, object]]:
     """Fit/load the shared controller; new fits freeze full H-infinity diagnostics."""
     if cache_path.exists():
         cached = torch.load(cache_path, map_location="cpu", weights_only=True)
-        if cached.get("metadata", {}).get("nominal_dynamics") != nominal_dynamics_signature(
-            nominal_dynamics_path
-        ):
+        nominal_signature = nominal_dynamics_signature(nominal_dynamics_path)
+        semantic_identity = (
+            None
+            if semantic_calibration is None
+            else {
+                "contrast": _tensor_identity(semantic_calibration["contrast"]),
+                "feature_norm": _tensor_identity(semantic_calibration["feature_norm"]),
+            }
+        )
+        calibration_identity = calibration_data_identity(calibration_data, settings)
+        expected_fingerprint = _fingerprint(
+            model_label,
+            model_id,
+            settings,
+            nominal_signature,
+            calibration_identity,
+            semantic_identity,
+        )
+        if cached.get("metadata", {}).get("nominal_dynamics") != nominal_signature:
             raise ValueError(
                 "Cached H-infinity controller was not synthesized from the current "
                 "shared A-LQR dynamics artifact"
+            )
+        if cached.get("fingerprint") != expected_fingerprint:
+            raise ValueError(
+                "The H-infinity calibration ID already contains a different immutable "
+                "dataset, direction, or controller configuration"
             )
         return ControllerArtifact(**cached["artifact"]), cached["metadata"]
 
@@ -447,6 +523,7 @@ def calibrate_controller(
         settings,
         nominal_dynamics_path,
         calibration_data,
+        semantic_calibration,
     )
     fingerprint = _fingerprint(
         model_label,
@@ -454,6 +531,7 @@ def calibrate_controller(
         settings,
         inputs["nominal_dynamics"],
         inputs["calibration_data"],
+        inputs["semantic_calibration"],
     )
     problem = FiniteHorizonControlProblem(**inputs["problem"])
     lqr_gains = -solve_identity_input_lqr(inputs["raw_dynamics"], controller_device,
@@ -484,6 +562,7 @@ def calibrate_controller(
         "nominal_dynamics_path": str(nominal_dynamics_path.resolve()),
         "nominal_dynamics": inputs["nominal_dynamics"],
         "calibration_data": inputs["calibration_data"],
+        "semantic_calibration": inputs["semantic_calibration"],
         "fit_prompt_ids": sorted(inputs["splits"]["fit"]),
         "calibration_prompt_ids": inputs["splits"]["calibration"],
         "tuning_records": inputs["calibration"]["calibration_records"],

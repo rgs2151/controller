@@ -14,3 +14,4 @@ Current designs:
 - [Truthfulness](truthfulness.md)
 - [Toxicity](toxicity.md)
 - [L-CiteEval long-context shift](lciteeval.md)
+- [MGSM multilingual language-steering transfer](mgsm_language_transfer.md)
