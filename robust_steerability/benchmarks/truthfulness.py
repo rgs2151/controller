@@ -20,9 +20,10 @@ from robust_steerability.judges import (
     scorer_spec,
 )
 from robust_steerability.judges import openai as openai_scoring
-from robust_steerability.modeling.huggingface import load_access_token
-from robust_steerability.source_methods.id_benchmark import fit_source_method_calibration
-from robust_steerability.source_methods.protocol import paper_alqr_setting
+from robust_steerability.source_methods.protocol import (
+    SPID_SOURCE_GRIDS,
+    paper_alqr_setting,
+)
 
 
 DATASETS = ("id", "spanish")
@@ -79,7 +80,24 @@ def calibration_stage(
     log_root,
     calibration_id: str,
     generation_batch_size: int | None,
+    h_infinity_parameters: dict[str, float] | None,
+    spid_lambda: float | None,
+    iti_top_heads: int | None,
+    iti_alpha: float | None,
 ) -> None:
+    required_source_selections = {
+        "iti": iti_top_heads is not None and iti_alpha is not None,
+        "spid": spid_lambda is not None,
+    }
+    for method, supplied in required_source_selections.items():
+        selection_path = calibration_root(
+            "truthfulness", model_key, method, calibration_id
+        ) / "selection.json"
+        if method in methods and not supplied and not selection_path.exists():
+            raise FileNotFoundError(
+                f"Pass an explicit fixed selection for {method}; no final Gemma "
+                f"selection is preserved by the source: {selection_path}"
+            )
     if "alqr" in methods:
         _write_alqr_selection(model_key, calibration_id)
     if "h_infinity" in methods:
@@ -89,35 +107,68 @@ def calibration_stage(
             log_root,
             calibration_id,
             generation_batch_size,
+            fixed_parameters=h_infinity_parameters,
         )
-    model = MODELS[model_key]
     runtime._configure_runtime(model_key, calibration_id)
     runtime.prepare("truthfulness", "id")
-    data_path = runtime._data_path("truthfulness")
+    jobs = []
     for method in methods:
         if method in {"original", "alqr", "h_infinity"}:
             continue
         root = calibration_root("truthfulness", model_key, method, calibration_id)
         selected_parameters = None
-        if method in {"iti", "spid"}:
+        if method == "spid" and spid_lambda is not None:
+            gains = SPID_SOURCE_GRIDS["truthfulness"][model_key]
+            selected_parameters = {
+                "lambda": float(spid_lambda),
+                "kp": gains.kp,
+                "ki": gains.ki,
+                "kd": gains.kd,
+            }
+        elif method == "iti" and iti_top_heads is not None and iti_alpha is not None:
+            selected_parameters = {
+                "top_heads": int(iti_top_heads),
+                "alpha": float(iti_alpha),
+            }
+        elif method in {"iti", "spid"}:
             selection_path = root / "selection.json"
             if not selection_path.exists():
                 raise FileNotFoundError(
-                    f"Record the development-grid selection before calibrating "
-                    f"{method}: {selection_path}"
+                    f"Pass an explicit fixed selection for {method}; no final Gemma "
+                    f"selection is preserved by the source: {selection_path}"
                 )
             selected_parameters = json.loads(selection_path.read_text())["parameters"]
-        fit_source_method_calibration(
-            behavior="truthfulness",
-            model_id=model.model_id,
-            revision=model.revision,
-            method=method,
-            device=devices[0],
-            token=load_access_token(runtime.REPO),
-            calibration_root=root,
-            calibration_data_path=data_path,
-            selected_parameters=selected_parameters,
+        jobs.append(
+            (
+                f"fit-{method}",
+                [
+                    sys.executable,
+                    "-m",
+                    "robust_steerability.benchmarks.truthfulness_runtime",
+                    "--stage",
+                    "fit-source",
+                    "--model",
+                    model_key,
+                    "--method",
+                    method,
+                    "--behavior",
+                    "truthfulness",
+                    "--distribution",
+                    "id",
+                    "--calibration-id",
+                    calibration_id,
+                    "--device",
+                    "{device}",
+                    *(
+                        ["--selected-parameters", json.dumps(selected_parameters)]
+                        if selected_parameters is not None
+                        else []
+                    ),
+                ],
+            )
         )
+    if jobs:
+        run_jobs(jobs, devices, log_root / "source-method-fits")
 
 
 def evaluation_stage(
@@ -286,6 +337,12 @@ def main() -> None:
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument("--h-infinity-q-over-r", type=float)
+    parser.add_argument("--h-infinity-q-final-over-r", type=float)
+    parser.add_argument("--h-infinity-r", type=float)
+    parser.add_argument("--spid-lambda", type=float)
+    parser.add_argument("--iti-top-heads", type=int)
+    parser.add_argument("--iti-alpha", type=float)
     parser.add_argument(
         "--api-concurrency", type=int, default=openai_scoring.DEFAULT_CONCURRENCY
     )
@@ -297,6 +354,28 @@ def main() -> None:
     methods = _names(arguments.methods, METHODS)
     datasets = _names(arguments.datasets, DATASETS)
     scorers = _names(arguments.scorers, TRUTHFULNESS_SCORERS)
+    h_infinity_values = (
+        arguments.h_infinity_q_over_r,
+        arguments.h_infinity_q_final_over_r,
+        arguments.h_infinity_r,
+    )
+    if any(value is not None for value in h_infinity_values) and not all(
+        value is not None for value in h_infinity_values
+    ):
+        raise ValueError(
+            "Fixed H-infinity selection requires Q/R, Qf/R, and R together"
+        )
+    if (arguments.iti_top_heads is None) != (arguments.iti_alpha is None):
+        raise ValueError("Fixed ITI selection requires top-heads and alpha together")
+    h_infinity_parameters = (
+        {
+            "q_over_r": float(arguments.h_infinity_q_over_r),
+            "q_final_over_r": float(arguments.h_infinity_q_final_over_r),
+            "r": float(arguments.h_infinity_r),
+        }
+        if all(value is not None for value in h_infinity_values)
+        else None
+    )
     use_cache = arguments.kv_cache == "on"
     gpu_required = arguments.stage != "score" or any(
         scorer_spec(key).backend == "huggingface_binary" for key in scorers
@@ -320,6 +399,10 @@ def main() -> None:
             "scorers": scorers if arguments.stage == "score" else [],
             "api_concurrency": arguments.api_concurrency,
             "api_batch_size": arguments.api_batch_size,
+            "h_infinity_fixed_parameters": h_infinity_parameters,
+            "spid_lambda": arguments.spid_lambda,
+            "iti_top_heads": arguments.iti_top_heads,
+            "iti_alpha": arguments.iti_alpha,
         },
     ) as log_root:
         if arguments.stage == "artifacts":
@@ -332,6 +415,10 @@ def main() -> None:
                 log_root,
                 arguments.calibration_id,
                 arguments.generation_batch_size,
+                h_infinity_parameters,
+                arguments.spid_lambda,
+                arguments.iti_top_heads,
+                arguments.iti_alpha,
             )
         elif arguments.stage == "evaluate":
             evaluation_stage(
