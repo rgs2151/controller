@@ -49,47 +49,47 @@ Model & Method & RTP Tox. (\%) $\downarrow$ & RTP Dist-2 $\uparrow$ & RTP PPL $\
 
 \begin{table*}[!htbp]
 \centering
-\caption{Source-comparable truthfulness benchmark with evaluated-model KV cache on. $\mathrm{T{\cdot}I}$ is truthful-times-informative performance. Values are mean $\pm$ SE across five complete 817-question TruthfulQA repetitions. TBD marks cells that have not been run.}
+\caption{Source-comparable truthfulness benchmark with evaluated-model KV cache on. $\mathrm{T{\cdot}I}$ is truthful-times-informative performance. Instruction relevance and fluency use the AXBench 0--2 rubrics. Values are mean $\pm$ SE across five complete 817-question TruthfulQA repetitions. TBD marks cells that have not been run.}
 \label{tab:truthfulness-benchmark}
 \scriptsize
-\setlength{\tabcolsep}{2.7pt}
+\setlength{\tabcolsep}{2pt}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{llccccccc}
+\begin{tabular}{llccccccccccc}
 \toprule
-Model & Method & ID T$\times$I $\uparrow$ & ID True (\%) $\uparrow$ & ID Info (\%) $\uparrow$ & Spanish T$\times$I $\uparrow$ & Spanish True (\%) $\uparrow$ & Spanish Info (\%) $\uparrow$ & MMLU (\%) $\uparrow$ \\
+Model & Method & ID T$\times$I $\uparrow$ & ID True (\%) $\uparrow$ & ID Info (\%) $\uparrow$ & ID Rel. (0--2) $\uparrow$ & ID Flu. (0--2) $\uparrow$ & Spanish T$\times$I $\uparrow$ & Spanish True (\%) $\uparrow$ & Spanish Info (\%) $\uparrow$ & Spanish Rel. (0--2) $\uparrow$ & Spanish Flu. (0--2) $\uparrow$ & MMLU (\%) $\uparrow$ \\
 \midrule
-\multirow{10}{*}{Gemma-2-2B} & Original & $47.59\,\pm\,0.38$ & $50.04\,\pm\,0.24$ & $95.10\,\pm\,0.33$ & $45.27\,\pm\,0.64$ & $51.87\,\pm\,0.73$ & $87.27\,\pm\,0.43$ & \textbf{TBD} \\
- & ITI & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & ActAdd & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & Mean-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & Linear-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & PID-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & ODESteer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & S-PID & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & A-LQR & $66.89\,\pm\,0.40$ & $75.69\,\pm\,0.45$ & $88.37\,\pm\,0.23$ & $57.87\,\pm\,0.55$ & $85.07\,\pm\,0.46$ & $68.03\,\pm\,0.54$ & \textbf{TBD} \\
- & $\mathbf{H_\infty}$ (ours) & $59.15\,\pm\,0.29$ & $80.07\,\pm\,0.44$ & $73.88\,\pm\,0.56$ & $47.49\,\pm\,0.65$ & $85.85\,\pm\,0.25$ & $55.32\,\pm\,0.87$ & \textbf{TBD} \\
+\multirow{10}{*}{Gemma-2-2B} & Original & $47.59\,\pm\,0.38$ & $50.04\,\pm\,0.24$ & $95.10\,\pm\,0.33$ & $1.35\,\pm\,0.01$ & $1.35\,\pm\,0.01$ & $45.27\,\pm\,0.64$ & $51.87\,\pm\,0.73$ & $87.27\,\pm\,0.43$ & $1.33\,\pm\,0.01$ & $1.27\,\pm\,0.01$ & \textbf{TBD} \\
+ & ITI & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & ActAdd & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & Mean-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & Linear-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & PID-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & ODESteer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & S-PID & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & A-LQR & $66.89\,\pm\,0.40$ & $75.69\,\pm\,0.45$ & $88.37\,\pm\,0.23$ & $1.25\,\pm\,0.01$ & $1.18\,\pm\,0.01$ & $57.87\,\pm\,0.55$ & $85.07\,\pm\,0.46$ & $68.03\,\pm\,0.54$ & $1.06\,\pm\,0.01$ & $1.09\,\pm\,0.00$ & \textbf{TBD} \\
+ & $\mathbf{H_\infty}$ (ours) & $59.15\,\pm\,0.29$ & $80.07\,\pm\,0.44$ & $73.88\,\pm\,0.56$ & $1.12\,\pm\,0.02$ & $1.06\,\pm\,0.00$ & $47.49\,\pm\,0.65$ & $85.85\,\pm\,0.25$ & $55.32\,\pm\,0.87$ & $1.04\,\pm\,0.01$ & $1.06\,\pm\,0.01$ & \textbf{TBD} \\
 \midrule
-\multirow{10}{*}{Llama-3-8B} & Original & $46.26\,\pm\,1.20$ & $47.54\,\pm\,1.27$ & $97.31\,\pm\,0.21$ & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & ITI & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & ActAdd & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & Mean-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & Linear-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & PID-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & ODESteer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & S-PID & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & A-LQR & $64.61\,\pm\,0.40$ & $66.22\,\pm\,0.26$ & $97.58\,\pm\,0.27$ & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & $\mathbf{H_\infty}$ (ours) & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+\multirow{10}{*}{Llama-3-8B} & Original & $46.26\,\pm\,1.20$ & $47.54\,\pm\,1.27$ & $97.31\,\pm\,0.21$ & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & ITI & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & ActAdd & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & Mean-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & Linear-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & PID-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & ODESteer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & S-PID & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & A-LQR & $64.61\,\pm\,0.40$ & $66.22\,\pm\,0.26$ & $97.58\,\pm\,0.27$ & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & $\mathbf{H_\infty}$ (ours) & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
 \midrule
-\multirow{10}{*}{Qwen-2.5-14B} & Original & $49.35\,\pm\,0.55$ & $51.26\,\pm\,0.54$ & $96.28\,\pm\,0.22$ & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & ITI & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & ActAdd & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & Mean-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & Linear-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & PID-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & ODESteer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & S-PID & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & A-LQR & $77.38\,\pm\,0.44$ & $80.27\,\pm\,0.42$ & $96.40\,\pm\,0.22$ & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
- & $\mathbf{H_\infty}$ (ours) & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+\multirow{10}{*}{Qwen-2.5-14B} & Original & $49.35\,\pm\,0.55$ & $51.26\,\pm\,0.54$ & $96.28\,\pm\,0.22$ & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & ITI & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & ActAdd & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & Mean-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & Linear-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & PID-AcT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & ODESteer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & S-PID & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & A-LQR & $77.38\,\pm\,0.44$ & $80.27\,\pm\,0.42$ & $96.40\,\pm\,0.22$ & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
+ & $\mathbf{H_\infty}$ (ours) & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD} \\
 \bottomrule
 \end{tabular}%
 }
