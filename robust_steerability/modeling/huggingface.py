@@ -8,6 +8,7 @@ from pathlib import Path
 
 import torch
 from transformers import (
+    AutoConfig,
     AutoModelForCausalLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -25,6 +26,7 @@ class CausalModelLoadSpec:
     dtype: str = "bfloat16"
     attention_implementation: str | None = "eager"
     quantization_compute_dtype: str = "float16"
+    rope_scaling: dict[str, object] | None = None
 
 
 def load_access_token(repo_root: Path) -> str:
@@ -82,6 +84,14 @@ def load_causal_model(
         "dtype": dtype,
         "low_cpu_mem_usage": True,
     }
+    if spec.rope_scaling is not None:
+        config = AutoConfig.from_pretrained(
+            spec.model_id,
+            revision=spec.revision,
+            token=token or None,
+        )
+        config.rope_scaling = dict(spec.rope_scaling)
+        model_kwargs["config"] = config
     if spec.attention_implementation is not None:
         model_kwargs["attn_implementation"] = spec.attention_implementation
     if spec.quantized:

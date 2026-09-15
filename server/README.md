@@ -69,8 +69,11 @@ pipeline. Use the same commands on every machine; no host name is encoded in cod
 
 - Git carries code, run logs, result tables, and plots.
 - On Lightning, the complete ignored benchmark cache is written directly to
-  `~/robust-steering-cache/<benchmark>/<model>/`. A Studio home is persistent
-  Teamspace Drive storage, so no AWS transport or copy step exists.
+  `~/robust-steering-cache/<benchmark>/<model>/`. Lightning is detected from
+  the Studio environment, so a launch does not depend on manually exporting a
+  path. `LIGHTNING_ARTIFACTS_DIR` remains an optional explicit root override.
+  A Studio home is persistent Teamspace Drive storage, so no AWS transport or
+  copy step exists.
 - Each model/benchmark remains owned by the Studio that ran it. Peer Studios can
   inspect its cache at
   `/teamspace/studios/<producer-studio>/robust-steering-cache/`.

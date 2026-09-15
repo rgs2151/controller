@@ -224,6 +224,18 @@ GENERATION = {
         "max_new_tokens": 1,
         "do_sample": False,
     },
+    "lciteeval": {
+        "max_new_tokens": 200,
+        "do_sample": False,
+        "temperature": 0.0,
+        "top_p": 1.0,
+    },
+    "mgsm": {
+        "max_new_tokens": 512,
+        "do_sample": False,
+        "temperature": 0.0,
+        "top_p": 1.0,
+    },
 }
 SOURCE_RANDOM_SEED = 42
 

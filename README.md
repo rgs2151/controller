@@ -41,6 +41,25 @@ python -m robust_steerability.benchmarks.truthfulness evaluate --model gemma2b -
 python -m robust_steerability.benchmarks.truthfulness score --model gemma2b --scorers default --devices auto
 ```
 
+L-CiteEval uses the same four-stage interface for Qwen2.5-3B-Instruct and
+Llama-3.1-8B-Instruct:
+
+```bash
+python -m robust_steerability.benchmarks.lciteeval artifacts --model qwen25_3b_instruct --devices auto
+python -m robust_steerability.benchmarks.lciteeval calibrate --model qwen25_3b_instruct --devices auto
+python -m robust_steerability.benchmarks.lciteeval evaluate --model qwen25_3b_instruct --devices auto
+python -m robust_steerability.benchmarks.lciteeval score --model qwen25_3b_instruct --scorers default --devices auto
+```
+
+MGSM language transfer uses the same interface for Qwen3-4B and Qwen3-8B:
+
+```bash
+python -m robust_steerability.benchmarks.mgsm artifacts --model qwen3_4b --devices auto
+python -m robust_steerability.benchmarks.mgsm calibrate --model qwen3_4b --devices auto
+python -m robust_steerability.benchmarks.mgsm evaluate --model qwen3_4b --datasets all --devices auto
+python -m robust_steerability.benchmarks.mgsm score --model qwen3_4b --datasets all --scorers default --devices auto
+```
+
 Use `--generation-batch-size <n>` only when a larger remote GPU has been
 validated for that batch. The chosen value is recorded in the stage log.
 

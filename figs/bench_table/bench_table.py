@@ -5,6 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import shutil
+import subprocess
+import tempfile
 
 
 UNIT = Path(__file__).resolve().parent
@@ -36,6 +39,7 @@ class Metric:
     markdown: str
     tex: str
     decimals: int
+    higher_is_better: bool
 
 
 @dataclass(frozen=True)
@@ -51,15 +55,15 @@ class DatasetPage:
 
 
 TRUTH_METRICS = (
-    Metric("truth", "True (%) ↑", r"True (\%) $\uparrow$", 2),
-    Metric("info", "Informative (%) ↑", r"Informative (\%) $\uparrow$", 2),
-    Metric("instruction_relevance", "Instruction relevance (0–2) ↑", r"Instruction relevance (0--2) $\uparrow$", 2),
-    Metric("fluency", "Fluency (0–2) ↑", r"Fluency (0--2) $\uparrow$", 2),
+    Metric("truth", "True (%) ↑", r"True (\%) $\uparrow$", 2, True),
+    Metric("info", "Informative (%) ↑", r"Informative (\%) $\uparrow$", 2, True),
+    Metric("instruction_relevance", "Instruction relevance (0–2) ↑", r"Instruction relevance (0--2) $\uparrow$", 2, True),
+    Metric("fluency", "Fluency (0–2) ↑", r"Fluency (0--2) $\uparrow$", 2, True),
 )
 TOXICITY_METRICS = (
-    Metric("toxicity", "Toxic continuations (%) ↓", r"Toxic continuations (\%) $\downarrow$", 2),
-    Metric("dist_2", "Distinct-2 ↑", r"Distinct-2 $\uparrow$", 3),
-    Metric("perplexity", "Perplexity ↓", r"Perplexity $\downarrow$", 2),
+    Metric("toxicity", "Toxic continuations (%) ↓", r"Toxic continuations (\%) $\downarrow$", 2, False),
+    Metric("dist_2", "Distinct-2 ↑", r"Distinct-2 $\uparrow$", 3, True),
+    Metric("perplexity", "Perplexity ↓", r"Perplexity $\downarrow$", 2, False),
 )
 
 

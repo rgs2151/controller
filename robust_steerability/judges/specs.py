@@ -140,6 +140,52 @@ ALL_SCORERS = {
         "Strip the completion, accept only one of A/B/C/D, and score one exactly "
         "when it matches the stored answer index; otherwise score zero.",
     ),
+    "mgsm_exact_match": ScorerSpec(
+        "mgsm_exact_match",
+        "deterministic_mgsm_exact",
+        "accuracy",
+        "none",
+        None,
+        0.0,
+        1.0,
+        "Extract the final Arabic number independent of answer-prefix language and "
+        "compare it exactly with the stored MGSM answer_number.",
+        input_fields=("completion", "answer_number"),
+        output_fields=("prediction", "answer_number", "score", "valid"),
+        source="MGSM exact numeric answer evaluation",
+    ),
+    "axbench_rule_spanish": ScorerSpec(
+        "axbench_rule_spanish",
+        "deterministic_axbench_spanish",
+        "spanish_adherence",
+        "langdetect",
+        None,
+        0.0,
+        2.0,
+        "Remove the AXBench end-of-turn marker, detect the completion language, and "
+        "score 2 only when langdetect returns es; otherwise score 0.",
+        input_fields=("completion",),
+        output_fields=("detected_language", "score"),
+        source="AXBench RuleEvaluator Spanish rule",
+    ),
+    "mgsm_axbench_overall": ScorerSpec(
+        "mgsm_axbench_overall",
+        "deterministic_harmonic_mean",
+        "axbench_overall",
+        "none",
+        None,
+        0.0,
+        2.0,
+        "Harmonic mean of AXBench Spanish rule following, instruction relevance, "
+        "and fluency; zero when any component is zero.",
+        input_fields=(
+            "axbench_rule_spanish",
+            "axbench_instruction_relevance",
+            "axbench_fluency",
+        ),
+        output_fields=("score",),
+        source="AXBench rule-concept aggregation",
+    ),
     "lcite_answer_overlap": ScorerSpec(
         "lcite_answer_overlap",
         "deterministic_lcite_answer",

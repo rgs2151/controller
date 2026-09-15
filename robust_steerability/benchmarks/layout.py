@@ -11,6 +11,19 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 LIGHTNING_CACHE_DIRECTORY = "robust-steering-cache"
 
 
+def _lightning_artifacts_home() -> Path | None:
+    """Return persistent Studio storage, with an explicit override when needed."""
+
+    configured = os.environ.get("LIGHTNING_ARTIFACTS_DIR")
+    if configured:
+        return Path(configured)
+    if os.environ.get("LIGHTNING_CLOUDSPACE_ID") or Path(
+        "/teamspace/studios/this_studio"
+    ).exists():
+        return Path.home()
+    return None
+
+
 def benchmark_root(benchmark: str) -> Path:
     """Return the repository unit that owns one benchmark."""
 
@@ -27,16 +40,16 @@ def model_root(benchmark: str, model_key: str) -> Path:
 
     if not model_key or "/" in model_key:
         raise ValueError(f"Invalid model key {model_key!r}")
-    lightning_home = os.environ.get("LIGHTNING_ARTIFACTS_DIR")
+    lightning_home = _lightning_artifacts_home()
     if lightning_home:
-        return Path(lightning_home) / LIGHTNING_CACHE_DIRECTORY / benchmark / model_key
+        return lightning_home / LIGHTNING_CACHE_DIRECTORY / benchmark / model_key
     return benchmark_root(benchmark) / "cache" / model_key
 
 
 def cache_backend() -> str:
     """Name the storage backing benchmark caches in the current environment."""
 
-    return "lightning_teamspace_drive" if os.environ.get("LIGHTNING_ARTIFACTS_DIR") else "local"
+    return "lightning_teamspace_drive" if _lightning_artifacts_home() else "local"
 
 
 def artifact_root(benchmark: str, model_key: str) -> Path:
