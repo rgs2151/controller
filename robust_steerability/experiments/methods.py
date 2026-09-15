@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import torch
 
+from robust_steerability.benchmarks.methods import METHODS as BENCHMARK_METHODS
 from robust_steerability.control import (
     HInfinityController,
     LQRController,
@@ -17,12 +18,8 @@ from robust_steerability.runtime.diagnostics import ReducedTrajectoryRecorder
 
 
 METHOD_LABELS = {
-    "original": "Original",
-    "alqr": "A-LQR",
-    "spid": "S-PID",
-    "hinf": "H-infinity",
-    "iti": "ITI", "actadd": "ActAdd", "mean_act": "Mean-AcT",
-    "linear_act": "Linear-AcT", "pid_act": "PID-AcT", "odesteer": "ODESteer",
+    specification.policy_key or key: specification.label
+    for key, specification in BENCHMARK_METHODS.items()
 }
 
 

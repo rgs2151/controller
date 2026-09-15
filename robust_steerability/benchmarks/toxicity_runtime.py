@@ -17,6 +17,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from robust_steerability.calibration.nominal_artifact import nominal_dynamics_signature
+from robust_steerability.benchmarks.composition import load_composition
+from robust_steerability.benchmarks.launcher import run_data_shards
 from robust_steerability.benchmarks.layout import (
     artifact_root,
     benchmark_root,
@@ -57,7 +60,12 @@ from robust_steerability.source_methods.control import (
     build_spid_policy,
 )
 from robust_steerability.source_methods.generation import generate_batched
-from robust_steerability.source_methods.id_benchmark import runtime_provenance
+from robust_steerability.source_methods.id_benchmark import (
+    _batch_assignments,
+    generation_shard_path,
+    merge_generation_shards,
+    runtime_provenance,
+)
 from robust_steerability.source_methods.modeling import load_source_model, source_model_spec
 from robust_steerability.source_methods.protocol import (
     ALQR_CALIBRATION_COUNTS,
@@ -91,7 +99,7 @@ TOXICITY_CLASSIFIER_REVISION = "048c25bb1e199b98802784f96325f4840f22145d"
 PERPLEXITY_MODEL = "mistralai/Mistral-7B-v0.1"
 PERPLEXITY_MODEL_REVISION = "27d67f1b5f57dc0953326b2601d68371d40ea8da"
 
-METHODS = ("original", "spid", "alqr", "h_infinity")
+METHODS = load_composition("toxicity").available_methods
 DISTRIBUTIONS = ("toxicity", "toxicity_jigsaw")
 SCORERS = ("toxicity_classifier", "distinct_2", "perplexity")
 EVALUATION_REPETITIONS = 5
@@ -349,6 +357,13 @@ def _base_payload() -> tuple[ControllerArtifact, dict, HInfinityOptions]:
     if not base_path.exists() or not input_path.exists():
         raise FileNotFoundError("H-infinity base calibration is incomplete")
     payload = torch.load(base_path, map_location="cpu", weights_only=True, mmap=True)
+    metadata = payload.get("metadata", {})
+    nominal_path = SHARED / "dynamics.pt"
+    if metadata.get("nominal_dynamics") != nominal_dynamics_signature(nominal_path):
+        raise ValueError(
+            "Frozen H-infinity controller was not synthesized from the current "
+            "shared A-LQR dynamics artifact"
+        )
     bundle = torch.load(input_path, map_location="cpu", weights_only=True, mmap=True)
     return (
         ControllerArtifact(**payload["artifact"]),
@@ -465,6 +480,7 @@ def _selected_policy(method: str, device: str):
     if method == "spid":
         selection = json.loads((SPID_CALIBRATION / "selection.json").read_text())
         return _spid_policy(float(selection["parameters"]["lambda"]))
+    _base_payload()
     payload = torch.load(
         HINF_CALIBRATION / "controller.pt",
         map_location="cpu",
@@ -840,11 +856,17 @@ def generate_final(
     method: str,
     device: str,
     distributions: tuple[str, ...] = DISTRIBUTIONS,
+    shard_index: int | None = None,
+    shard_count: int | None = None,
 ) -> None:
-    """Generate both final toxicity distributions for one frozen method."""
+    """Generate one data shard for a frozen method on each distribution."""
 
     if method not in METHODS:
         raise ValueError(f"Unknown final method: {method}")
+    if shard_index is None or shard_count is None:
+        raise ValueError("Final toxicity generation requires shard index and count")
+    if shard_count < 1 or not 0 <= shard_index < shard_count:
+        raise ValueError("Final toxicity generation requires a valid shard set")
     prepare()
     required_selection = {
         "alqr": calibration_root(
@@ -867,8 +889,10 @@ def generate_final(
     parameters = _method_parameters(method)
     policy = _selected_policy(method, device)
     for distribution in distributions:
-        destination = _generation_path(distribution, method)
-        identity = {
+        destination = generation_shard_path(
+            CACHE, distribution, method, shard_index, shard_count
+        )
+        common_identity = {
             "schema_version": 1,
             "model": [MODEL_ID, MODEL_REVISION],
             "method": method,
@@ -884,9 +908,12 @@ def generate_final(
                 continue
         else:
             saved = {
-                "identity": identity,
+                "identity": {
+                    "base": common_identity,
+                    "shard": {"index": shard_index, "count": shard_count},
+                },
                 "status": "partial",
-                "repetitions": [],
+                "batches": [],
                 "attempts": [],
             }
         started = time.perf_counter()
@@ -897,16 +924,41 @@ def generate_final(
         }
         saved["attempts"].append(attempt)
         _write_json(destination, saved)
-        for repetition in range(len(saved["repetitions"]), EVALUATION_REPETITIONS):
+        assignments = _batch_assignments(data, distribution, GENERATION_BATCH_SIZE)
+        assigned = [
+            assignment
+            for index, assignment in enumerate(assignments)
+            if index % shard_count == shard_index
+        ]
+        completed = [
+            (int(row["repetition"]), int(row["start"]))
+            for row in saved["batches"]
+        ]
+        expected = [(repetition, start) for repetition, start, _records in assigned]
+        if completed != expected[: len(completed)]:
+            raise ValueError(f"Toxicity shard batches are not a valid prefix: {destination}")
+        for repetition, start, records in assigned[len(completed) :]:
+            batch_started = time.perf_counter()
+            started_at = _utc_now()
             rows = _generate_records(
                 model,
                 tokenizer,
                 policy,
-                data["evaluation"][distribution][str(repetition)],
-                SOURCE_RANDOM_SEED + repetition * SEED_STRIDE,
+                records,
+                SOURCE_RANDOM_SEED + repetition * SEED_STRIDE + start,
                 use_cache=CURRENT_USE_CACHE,
             )
-            saved["repetitions"].append({"repetition": repetition, "rows": rows})
+            saved["batches"].append(
+                {
+                    "repetition": repetition,
+                    "start": start,
+                    "started_at_utc": started_at,
+                    "finished_at_utc": _utc_now(),
+                    "elapsed_seconds": time.perf_counter() - batch_started,
+                    "generation_seed": SOURCE_RANDOM_SEED + repetition * SEED_STRIDE + start,
+                    "rows": rows,
+                }
+            )
             _write_json(destination, saved)
         attempt["finished_at_utc"] = _utc_now()
         attempt["elapsed_seconds"] = time.perf_counter() - started
@@ -1253,13 +1305,44 @@ def evaluate(
     unknown = set(methods) - set(METHODS)
     if unknown or set(normalized_distributions) - set(DISTRIBUTIONS):
         raise ValueError("Unsupported toxicity evaluation selection")
-    selected_methods = tuple(methods)
+    selected_methods = tuple(method for method in METHODS if method in methods)
     worker_logs = log_root or CACHE / "logs"
-    _launch_workers(
-        "generate-final", devices, worker_logs,
-        candidates=False, methods=selected_methods,
-        distributions=normalized_distributions,
-    )
+    for method in selected_methods:
+        if all(
+            _generation_path(distribution, method).exists()
+            and json.loads(_generation_path(distribution, method).read_text()).get("status")
+            == "complete"
+            for distribution in normalized_distributions
+        ):
+            continue
+        command = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--stage", "generate-final",
+            "--model", MODEL_KEY,
+            "--method", method,
+            "--distributions", ",".join(normalized_distributions),
+            "--calibration-id", CALIBRATION_ID,
+            "--generation-batch-size", str(GENERATION_BATCH_SIZE),
+            "--kv-cache", "on" if CURRENT_USE_CACHE else "off",
+            "--device", "{device}",
+        ]
+        run_data_shards(
+            f"generate-{method}",
+            command,
+            devices,
+            worker_logs / method,
+        )
+        for distribution in normalized_distributions:
+            merge_generation_shards(
+                cache_root=CACHE,
+                cache_namespace=distribution,
+                method=method,
+                data_path=DATA_PATH,
+                evaluation_key=distribution,
+                batch_size=GENERATION_BATCH_SIZE,
+                shard_count=len(devices),
+            )
 
 
 def score(
@@ -1322,6 +1405,8 @@ def main() -> None:
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--worker-index", type=int)
     parser.add_argument("--worker-count", type=int)
+    parser.add_argument("--shard-index", type=int)
+    parser.add_argument("--shard-count", type=int)
     parser.add_argument("--method", choices=METHODS)
     parser.add_argument("--distribution", choices=DISTRIBUTIONS)
     parser.add_argument("--distributions", default=",".join(DISTRIBUTIONS))
@@ -1368,7 +1453,13 @@ def main() -> None:
     elif arguments.stage == "calibrate":
         calibrate(devices)
     elif arguments.stage == "generate-final":
-        generate_final(arguments.method, arguments.device, selected_distributions)
+        generate_final(
+            arguments.method,
+            arguments.device,
+            selected_distributions,
+            arguments.shard_index,
+            arguments.shard_count,
+        )
     elif arguments.stage == "score-final":
         score_final(
             arguments.method,

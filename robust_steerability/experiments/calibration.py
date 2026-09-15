@@ -431,6 +431,13 @@ def calibrate_controller(
     """Fit/load the shared controller; new fits freeze full H-infinity diagnostics."""
     if cache_path.exists():
         cached = torch.load(cache_path, map_location="cpu", weights_only=True)
+        if cached.get("metadata", {}).get("nominal_dynamics") != nominal_dynamics_signature(
+            nominal_dynamics_path
+        ):
+            raise ValueError(
+                "Cached H-infinity controller was not synthesized from the current "
+                "shared A-LQR dynamics artifact"
+            )
         return ControllerArtifact(**cached["artifact"]), cached["metadata"]
 
     inputs = _fit_controller_inputs(

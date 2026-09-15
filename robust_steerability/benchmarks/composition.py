@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import tomllib
 
 from robust_steerability.benchmarks.layout import benchmark_root
+from robust_steerability.benchmarks.methods import validate_methods
 from robust_steerability.judges.specs import scorer_spec
 from robust_steerability.source_methods.protocol import GENERATION
 
@@ -30,6 +31,9 @@ class EvaluationDataset:
 class BenchmarkComposition:
     benchmark: str
     base_dataset: str
+    models: tuple[str, ...]
+    available_methods: tuple[str, ...]
+    default_methods: tuple[str, ...]
     datasets: tuple[EvaluationDataset, ...]
 
     def dataset(self, key: str) -> EvaluationDataset:
@@ -46,6 +50,14 @@ class BenchmarkComposition:
 def load_composition(benchmark: str) -> BenchmarkComposition:
     path = benchmark_root(benchmark) / "benchmark.toml"
     payload = tomllib.loads(path.read_text())
+    models = tuple(str(value) for value in payload["models"])
+    available_methods = tuple(str(value) for value in payload["available_methods"])
+    default_methods = tuple(str(value) for value in payload["default_methods"])
+    validate_methods(available_methods)
+    if not default_methods or set(default_methods) - set(available_methods):
+        raise ValueError(
+            f"{path} default_methods must be a non-empty subset of available_methods"
+        )
     entries = payload.get("evaluation_datasets", [])
     if not entries:
         raise ValueError(f"{path} does not define evaluation_datasets")
@@ -82,6 +94,9 @@ def load_composition(benchmark: str) -> BenchmarkComposition:
     return BenchmarkComposition(
         benchmark=benchmark,
         base_dataset=str(payload["base_dataset"]),
+        models=models,
+        available_methods=available_methods,
+        default_methods=default_methods,
         datasets=datasets,
     )
 

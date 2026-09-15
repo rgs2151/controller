@@ -175,6 +175,40 @@ def _output_rows(records: list[dict], completions: list[str]) -> list[dict]:
     return rows
 
 
+def _batch_assignments(
+    data: dict,
+    evaluation_key: str,
+    batch_size: int,
+) -> list[tuple[int, int, list[dict]]]:
+    """Return the original generation batches in deterministic global order."""
+
+    assignments = []
+    repetitions = len(data["evaluation"][evaluation_key])
+    for repetition in range(repetitions):
+        records = _records(data, evaluation_key, repetition)
+        for start in range(0, len(records), batch_size):
+            assignments.append(
+                (repetition, start, records[start : start + batch_size])
+            )
+    return assignments
+
+
+def generation_shard_path(
+    cache_root: Path,
+    cache_namespace: str,
+    method: str,
+    shard_index: int,
+    shard_count: int,
+) -> Path:
+    return (
+        cache_root
+        / "generation_shards"
+        / cache_namespace
+        / method
+        / f"shard_{shard_index:02d}_of_{shard_count:02d}.json"
+    )
+
+
 def _generate_candidate(
     *,
     output: Path,
@@ -193,6 +227,8 @@ def _generate_candidate(
     batch_size: int,
     register_hooks: Callable[[], list[torch.utils.hooks.RemovableHandle]] | None,
     reset: Callable[[], None] | None = None,
+    shard_index: int | None = None,
+    shard_count: int | None = None,
 ) -> None:
     repetitions_expected = len(data["evaluation"][evaluation_key])
     if set(data["evaluation"][evaluation_key]) != {
@@ -225,17 +261,27 @@ def _generate_candidate(
             "batch_seed_rule": "repetition_seed_plus_batch_start",
         },
     })
+    common_identity = identity
+    if (shard_index is None) != (shard_count is None):
+        raise ValueError("Generation sharding requires both shard index and count")
+    sharded = shard_index is not None
+    if sharded and (shard_count < 1 or not 0 <= shard_index < shard_count):
+        raise ValueError("Generation requires a valid nonempty shard set")
+    if sharded:
+        identity = {
+            "base": common_identity,
+            "shard": {"index": shard_index, "count": shard_count},
+        }
     payload = {
         "identity": identity,
         "status": "partial",
         "attempts": [],
-        "repetitions": [],
+        **({"batches": []} if sharded else {"repetitions": []}),
     }
     if output.exists():
         payload = json.loads(output.read_text())
         if payload["status"] == "complete":
             return
-    repetitions = payload["repetitions"]
     attempt_started = time.perf_counter()
     attempt = {
         "started_at_utc": _utc_now(),
@@ -246,42 +292,171 @@ def _generate_candidate(
     _write_json(output, payload)
 
 
-    for repetition in range(len(repetitions), repetitions_expected):
-        records = _records(data, evaluation_key, repetition)
-        if len(records) != evaluation_samples:
-            raise ValueError("Every evaluation repetition must contain the same number of prompts")
-        repetition_started = time.perf_counter()
-        started_at = _utc_now()
-        repetition_seed = SOURCE_RANDOM_SEED + repetition * 100_000
-        completions = generate_batched(
-            model,
-            tokenizer,
-            _texts(records),
-            behavior=generation_profile,
-            batch_size=batch_size,
-            seed=repetition_seed,
-            use_cache=use_cache,
-            register_hooks=register_hooks,
-            reset=reset,
-        )
-        repetitions.append(
-            {
-                "repetition": repetition,
-                "started_at_utc": started_at,
-                "finished_at_utc": _utc_now(),
-                "elapsed_seconds": time.perf_counter() - repetition_started,
-                "sample_count": len(records),
-                "generation_seed": repetition_seed,
-                "rows": _output_rows(records, completions),
-            }
-        )
-        _write_json(output, payload)
+    if sharded:
+        assignments = _batch_assignments(data, evaluation_key, batch_size)
+        assigned = [
+            assignment
+            for index, assignment in enumerate(assignments)
+            if index % shard_count == shard_index
+        ]
+        completed = [
+            (int(row["repetition"]), int(row["start"]))
+            for row in payload["batches"]
+        ]
+        expected = [(repetition, start) for repetition, start, _records in assigned]
+        if completed != expected[: len(completed)]:
+            raise ValueError(f"Generation shard batches are not a valid prefix: {output}")
+        for repetition, start, records in assigned[len(completed) :]:
+            batch_started = time.perf_counter()
+            started_at = _utc_now()
+            batch_seed = SOURCE_RANDOM_SEED + repetition * 100_000 + start
+            completions = generate_batched(
+                model,
+                tokenizer,
+                _texts(records),
+                behavior=generation_profile,
+                batch_size=batch_size,
+                seed=batch_seed,
+                use_cache=use_cache,
+                register_hooks=register_hooks,
+                reset=reset,
+            )
+            payload["batches"].append(
+                {
+                    "repetition": repetition,
+                    "start": start,
+                    "started_at_utc": started_at,
+                    "finished_at_utc": _utc_now(),
+                    "elapsed_seconds": time.perf_counter() - batch_started,
+                    "generation_seed": batch_seed,
+                    "rows": _output_rows(records, completions),
+                }
+            )
+            _write_json(output, payload)
+    else:
+        repetitions = payload["repetitions"]
+        for repetition in range(len(repetitions), repetitions_expected):
+            records = _records(data, evaluation_key, repetition)
+            if len(records) != evaluation_samples:
+                raise ValueError("Every evaluation repetition must contain the same number of prompts")
+            repetition_started = time.perf_counter()
+            started_at = _utc_now()
+            repetition_seed = SOURCE_RANDOM_SEED + repetition * 100_000
+            completions = generate_batched(
+                model,
+                tokenizer,
+                _texts(records),
+                behavior=generation_profile,
+                batch_size=batch_size,
+                seed=repetition_seed,
+                use_cache=use_cache,
+                register_hooks=register_hooks,
+                reset=reset,
+            )
+            repetitions.append(
+                {
+                    "repetition": repetition,
+                    "started_at_utc": started_at,
+                    "finished_at_utc": _utc_now(),
+                    "elapsed_seconds": time.perf_counter() - repetition_started,
+                    "sample_count": len(records),
+                    "generation_seed": repetition_seed,
+                    "rows": _output_rows(records, completions),
+                }
+            )
+            _write_json(output, payload)
     payload["status"] = "complete"
     attempt["finished_at_utc"] = _utc_now()
     attempt["elapsed_seconds"] = time.perf_counter() - attempt_started
-    attempt["completed_repetitions"] = len(repetitions)
+    if sharded:
+        attempt["completed_batches"] = len(payload["batches"])
+    else:
+        attempt["completed_repetitions"] = len(payload["repetitions"])
     attempt["status"] = "complete"
     _write_json(output, payload)
+
+
+def merge_generation_shards(
+    *,
+    cache_root: Path,
+    cache_namespace: str,
+    method: str,
+    data_path: Path,
+    evaluation_key: str,
+    batch_size: int,
+    shard_count: int,
+) -> Path:
+    """Merge data-parallel generation shards into the established final cache."""
+
+    data = json.loads(data_path.read_text())
+    expected = _batch_assignments(data, evaluation_key, batch_size)
+    expected_keys = [(repetition, start) for repetition, start, _records in expected]
+    batches: dict[tuple[int, int], dict] = {}
+    attempts = []
+    common_identity = None
+    for shard_index in range(shard_count):
+        path = generation_shard_path(
+            cache_root, cache_namespace, method, shard_index, shard_count
+        )
+        if not path.exists():
+            raise FileNotFoundError(f"Missing generation shard: {path}")
+        payload = json.loads(path.read_text())
+        if payload.get("status") != "complete":
+            raise ValueError(f"Incomplete generation shard: {path}")
+        identity = payload.get("identity", {})
+        if identity.get("shard") != {"index": shard_index, "count": shard_count}:
+            raise ValueError(f"Generation shard identity mismatch: {path}")
+        if common_identity is None:
+            common_identity = identity["base"]
+        elif identity.get("base") != common_identity:
+            raise ValueError("Generation shards do not share one scientific identity")
+        attempts.extend(payload.get("attempts", []))
+        for batch in payload.get("batches", []):
+            key = (int(batch["repetition"]), int(batch["start"]))
+            if key in batches:
+                raise ValueError(f"Duplicate generation batch {key}")
+            batches[key] = batch
+    if set(batches) != set(expected_keys):
+        missing = sorted(set(expected_keys) - set(batches))
+        extra = sorted(set(batches) - set(expected_keys))
+        raise ValueError(f"Generation shard coverage mismatch: missing={missing}, extra={extra}")
+
+    repetitions = []
+    repetition_count = len(data["evaluation"][evaluation_key])
+    for repetition in range(repetition_count):
+        repetition_batches = [
+            batches[key] for key in expected_keys if key[0] == repetition
+        ]
+        rows = [row for batch in repetition_batches for row in batch["rows"]]
+        expected_records = _records(data, evaluation_key, repetition)
+        if [row["prompt_id"] for row in rows] != [
+            row["prompt_id"] for row in expected_records
+        ]:
+            raise ValueError(f"Merged prompt order changed in repetition {repetition}")
+        repetitions.append(
+            {
+                "repetition": repetition,
+                "started_at_utc": min(batch["started_at_utc"] for batch in repetition_batches),
+                "finished_at_utc": max(batch["finished_at_utc"] for batch in repetition_batches),
+                "elapsed_seconds": sum(
+                    float(batch["elapsed_seconds"]) for batch in repetition_batches
+                ),
+                "sample_count": len(rows),
+                "generation_seed": SOURCE_RANDOM_SEED + repetition * 100_000,
+                "rows": rows,
+            }
+        )
+    destination = cache_root / "generations" / cache_namespace / method / "final.json"
+    _write_json(
+        destination,
+        {
+            "identity": common_identity,
+            "status": "complete",
+            "attempts": attempts,
+            "repetitions": repetitions,
+        },
+    )
+    return destination
 
 
 def load_frozen_alqr_artifacts(
@@ -580,6 +755,8 @@ def run_generation_job(
     use_cache: bool,
     selected_parameters: dict | None = None,
     generation_batch_size: int | None = None,
+    shard_index: int | None = None,
+    shard_count: int | None = None,
 ) -> None:
     """Run one source method on an explicit frozen evaluation dataset."""
 
@@ -595,6 +772,8 @@ def run_generation_job(
     batch_size = generation_batch_size or _batch_size(model_id, method)
     if batch_size < 1:
         raise ValueError("generation_batch_size must be positive")
+    if (shard_index is None) != (shard_count is None):
+        raise ValueError("Generation sharding requires both shard index and count")
     manifest = protocol_manifest(
         method,
         behavior,
@@ -633,6 +812,14 @@ def run_generation_job(
         )
     job_root = cache_root / "generations" / cache_namespace / method
     job_root.mkdir(parents=True, exist_ok=True)
+    generation_output = (
+        job_root / "final.json"
+        if shard_index is None
+        else generation_shard_path(
+            cache_root, cache_namespace, method, shard_index, shard_count
+        )
+    )
+    shard_options = {"shard_index": shard_index, "shard_count": shard_count}
     run_identity = _json_identity({
         "schema_version": 1,
         "model_id": model_id,
@@ -645,7 +832,12 @@ def run_generation_job(
         "protocol": manifest,
         "calibration_selection": calibration_selection,
     })
-    run_path = cache_root / "run_records" / cache_namespace / f"{method}.json"
+    run_name = (
+        f"{method}.json"
+        if shard_index is None
+        else f"{method}_shard_{shard_index:02d}_of_{shard_count:02d}.json"
+    )
+    run_path = cache_root / "run_records" / cache_namespace / run_name
     run_record = {"identity": run_identity, "attempts": []}
     if run_path.exists():
         run_record = json.loads(run_path.read_text())
@@ -674,7 +866,7 @@ def run_generation_job(
 
     if method == "original":
         _generate_candidate(
-            output=job_root / "final.json",
+            output=generation_output,
             model=model,
             tokenizer=tokenizer,
             data=data,
@@ -689,6 +881,7 @@ def run_generation_job(
             use_cache=use_cache,
             batch_size=batch_size,
             register_hooks=None,
+            **shard_options,
         )
     elif method in {"alqr", "spid"}:
         if method == "alqr":
@@ -704,7 +897,7 @@ def run_generation_job(
                 device=device,
             )
             _generate_candidate(
-                output=job_root / "final.json",
+                output=generation_output,
                 model=model,
                 tokenizer=tokenizer,
                 data=data,
@@ -719,6 +912,7 @@ def run_generation_job(
                 use_cache=use_cache,
                 batch_size=batch_size,
                 register_hooks=lambda: register_generation_policy_hooks(model, policy),
+                **shard_options,
             )
             del policy
             torch.cuda.empty_cache()
@@ -748,7 +942,7 @@ def run_generation_job(
                 kd=parameters["kd"],
             )
             _generate_candidate(
-                output=job_root / "final.json",
+                output=generation_output,
                 model=model,
                 tokenizer=tokenizer,
                 data=data,
@@ -763,6 +957,7 @@ def run_generation_job(
                 use_cache=use_cache,
                 batch_size=batch_size,
                 register_hooks=lambda: register_generation_policy_hooks(model, policy),
+                **shard_options,
             )
             del policy
             torch.cuda.empty_cache()
@@ -779,7 +974,7 @@ def run_generation_job(
             parameters["strength"],
         )
         _generate_candidate(
-            output=job_root / "final.json",
+            output=generation_output,
             model=model,
             tokenizer=tokenizer,
             data=data,
@@ -795,6 +990,7 @@ def run_generation_job(
             batch_size=batch_size,
             register_hooks=lambda: steerer.register(model),
             reset=steerer.reset,
+            **shard_options,
         )
     elif method == "iti":
         required = ITI_FIT_SAMPLES_PER_CLASS
@@ -804,7 +1000,7 @@ def run_generation_job(
             {**common_identity, "fit_samples_per_class": required, "max_length": ITI_MAX_LENGTH},
         )
         _generate_candidate(
-            output=job_root / "final.json",
+            output=generation_output,
             model=model,
             tokenizer=tokenizer,
             data=data,
@@ -824,6 +1020,7 @@ def run_generation_job(
                 top_heads=parameters["top_heads"],
                 alpha=parameters["alpha"],
             ),
+            **shard_options,
         )
     elif method in {"mean_act", "linear_act", "pid_act"}:
         required = ACT_FIT_SAMPLES_PER_CLASS[behavior]
@@ -833,7 +1030,7 @@ def run_generation_job(
             {**common_identity, "fit_samples_per_class": required},
         )
         _generate_candidate(
-            output=job_root / "final.json",
+            output=generation_output,
             model=model,
             tokenizer=tokenizer,
             data=data,
@@ -850,6 +1047,7 @@ def run_generation_job(
             register_hooks=lambda: register_transport_hooks(
                 model, fitted, strength=parameters["strength"]
             ),
+            **shard_options,
         )
     else:
         required = ODESTEER_FIT_SAMPLES_PER_CLASS[behavior]
@@ -859,7 +1057,7 @@ def run_generation_job(
             {**common_identity, "fit_samples_per_class": required, "layer": parameters["layer"]},
         )
         _generate_candidate(
-            output=job_root / "final.json",
+            output=generation_output,
             model=model,
             tokenizer=tokenizer,
             data=data,
@@ -879,9 +1077,10 @@ def run_generation_job(
                 layer_index=parameters["layer"],
                 time=parameters["time"],
             ),
+            **shard_options,
         )
 
-    output_files = sorted(path for path in job_root.glob("*.json") if path.name != "unsupported.json")
+    output_files = [generation_output]
     run_attempt["status"] = "complete"
     run_attempt["finished_at_utc"] = _utc_now()
     run_attempt["elapsed_seconds"] = time.perf_counter() - run_started

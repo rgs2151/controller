@@ -10,6 +10,13 @@ artifacts and calibration. Transfer and capability datasets reuse those frozen
 objects and write separate generation, score, and result namespaces. Adding a
 dataset therefore does not invalidate or regenerate completed sibling datasets.
 
+The same composition owns `available_methods` and `default_methods`. Benchmark
+drivers validate those keys through the shared method registry; they do not own
+private method lists. Adding a method means implementing its self-contained
+fit/policy adapter once, registering its orchestration metadata once, and then
+adding its key to the benchmark TOML files where it is scientifically applicable.
+No dataset adapter or scorer changes, and completed methods remain untouched.
+
 ## Current Coverage
 
 - `toxicity.py`: RealToxicityPrompts as the base dataset, Jigsaw transfer, and
@@ -18,6 +25,12 @@ dataset therefore does not invalidate or regenerate completed sibling datasets.
   capability retention.
 - `robust_steerability.judges`: reusable scorer definitions with explicit model,
   rubric, score range, and backend provenance.
+- `judges/exact.py`: deterministic MMLU, L-CiteEval answer-overlap, and AXBench
+  aggregate calculations.
+- `judges/lciteeval.py`: the released citation precision/recall/F1 procedure and
+  pinned local DeBERTa NLI loader.
+- `judges/openai.py`: batched concurrent execution of the three independent
+  AXBench 0–2 rubrics.
 
 MMLU uses one frozen, subject-uniform sample of 200 five-shot test questions.
 Its scorer is deterministic A/B/C/D accuracy; it does not call a judge model.

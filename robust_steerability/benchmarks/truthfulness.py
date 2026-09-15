@@ -16,9 +16,10 @@ from robust_steerability.benchmarks.composition import (
     validate_requested_scorers,
 )
 from robust_steerability.benchmarks.execution import default_run_id, tracked_stage
-from robust_steerability.benchmarks.launcher import run_jobs
+from robust_steerability.benchmarks.launcher import run_data_shards, run_jobs
 from robust_steerability.benchmarks.layout import calibration_root
-from robust_steerability.benchmarks.specs import METHODS, MODELS
+from robust_steerability.benchmarks.methods import method_spec
+from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.judges import scorer_cache_path, scorer_spec
 from robust_steerability.judges import openai as openai_scoring
@@ -27,7 +28,8 @@ from robust_steerability.source_methods.protocol import paper_alqr_setting
 
 COMPOSITION = load_composition("truthfulness")
 DATASETS = COMPOSITION.dataset_keys
-DEFAULT_METHODS = ("original", "alqr", "h_infinity")
+METHODS = COMPOSITION.available_methods
+DEFAULT_METHODS = COMPOSITION.default_methods
 
 
 def _names(value: str, allowed: tuple[str, ...]) -> list[str]:
@@ -97,7 +99,7 @@ def calibration_stage(
     runtime.prepare("truthfulness", "id")
     jobs = []
     for method in methods:
-        if method in {"original", "alqr", "h_infinity"}:
+        if not method_spec(method).requires_source_fit:
             continue
         jobs.append(
             (
@@ -152,97 +154,71 @@ def evaluation_stage(
     ]
     for dataset in native_datasets:
         runtime.prepare("truthfulness", dataset)
-    source_methods = [method for method in methods if method != "h_infinity"]
-    jobs = []
-    for dataset in native_datasets:
-        for method in source_methods:
+    ordered_methods = [method for method in METHODS if method in methods]
+    for method in ordered_methods:
+        for dataset in native_datasets:
             existing = runtime._generation_files(
                 model_key, method, "truthfulness", dataset
             )
             if len(existing) == 1 and multiple_choice.generation_complete(existing[0]):
                 continue
-            jobs.append(
-                (
-                    f"generate-{dataset}-{method}",
-                    [
-                        sys.executable,
-                        "-m",
-                        "robust_steerability.benchmarks.truthfulness_runtime",
-                        "--stage",
-                        "generate",
-                        "--model",
-                        model_key,
-                        "--method",
-                        method,
-                        "--behavior",
-                        "truthfulness",
-                        "--distribution",
-                        dataset,
-                        "--calibration-id",
-                        calibration_id,
-                        "--kv-cache",
-                        "on" if use_cache else "off",
-                        "--device",
-                        "{device}",
-                        *(
-                            ["--generation-batch-size", str(generation_batch_size)]
-                            if generation_batch_size is not None
-                            else []
-                        ),
-                    ],
+            if method_spec(method).runtime == "h_infinity":
+                runtime.launch_hinf_generation(
+                    model_key,
+                    "truthfulness",
+                    dataset,
+                    devices,
+                    log_root / "generation" / method / dataset,
                 )
-            )
-    if jobs:
-        run_jobs(jobs, devices, log_root / "generation")
-    if "h_infinity" in methods:
-        hinf_devices = devices[: runtime.EVALUATION_REPETITIONS]
-        for dataset in native_datasets:
-            existing = runtime._generation_files(
-                model_key, "h_infinity", "truthfulness", dataset
-            )
-            if len(existing) == 1 and multiple_choice.generation_complete(existing[0]):
                 continue
-            runtime.launch_hinf_generation(
-                model_key,
-                "truthfulness",
-                dataset,
-                hinf_devices,
-                log_root / "generation",
+            command = [
+                sys.executable,
+                "-m",
+                "robust_steerability.benchmarks.truthfulness_runtime",
+                "--stage", "generate",
+                "--model", model_key,
+                "--method", method,
+                "--behavior", "truthfulness",
+                "--distribution", dataset,
+                "--calibration-id", calibration_id,
+                "--kv-cache", "on" if use_cache else "off",
+                "--device", "{device}",
+                *(
+                    ["--generation-batch-size", str(generation_batch_size)]
+                    if generation_batch_size is not None
+                    else []
+                ),
+            ]
+            run_data_shards(
+                f"generate-{dataset}-{method}",
+                command,
+                devices,
+                log_root / "generation" / method / dataset,
             )
-    capability_jobs = []
-    for dataset_key in multiple_choice_datasets:
-        dataset = COMPOSITION.dataset(dataset_key)
-        multiple_choice.prepare("truthfulness", model_key, dataset)
-        for method in methods:
+            runtime.merge_source_generation(
+                model_key, method, "truthfulness", dataset, len(devices)
+            )
+
+    for method in ordered_methods:
+        for dataset_key in multiple_choice_datasets:
+            dataset = COMPOSITION.dataset(dataset_key)
+            multiple_choice.prepare("truthfulness", model_key, dataset)
             destination = multiple_choice.generation_path(
                 "truthfulness", model_key, dataset, method, use_cache=use_cache
             )
             if multiple_choice.generation_complete(destination):
                 continue
-            capability_jobs.append(
-                (
-                    f"generate-{dataset_key}-{method}",
-                    [
-                        sys.executable,
-                        "-m",
-                        "robust_steerability.benchmarks.multiple_choice",
-                        "--benchmark", "truthfulness",
-                        "--model", model_key,
-                        "--dataset", dataset_key,
-                        "--method", method,
-                        "--calibration-id", calibration_id,
-                        "--kv-cache", "on" if use_cache else "off",
-                        "--device", "{device}",
-                        *(
-                            ["--generation-batch-size", str(generation_batch_size)]
-                            if generation_batch_size is not None
-                            else []
-                        ),
-                    ],
-                )
+            multiple_choice.launch_generation(
+                "truthfulness",
+                model_key,
+                dataset,
+                method,
+                devices,
+                calibration_id,
+                generation_batch_size,
+                use_cache,
+                log_root / "generation" / method / dataset_key,
             )
-    if capability_jobs:
-        run_jobs(capability_jobs, devices, log_root / "generation")
 
 
 def score_stage(

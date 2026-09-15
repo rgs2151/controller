@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 
 from robust_steerability.benchmarks import artifacts
 from robust_steerability.benchmarks import multiple_choice
@@ -14,7 +13,6 @@ from robust_steerability.benchmarks.composition import (
     requested_scorers,
     validate_requested_scorers,
 )
-from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import calibration_root
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.benchmarks import toxicity_runtime as runtime
@@ -23,8 +21,9 @@ from robust_steerability.judges.specs import scorer_spec
 from robust_steerability.source_methods.protocol import paper_alqr_setting
 
 
-METHODS = ("original", "spid", "alqr", "h_infinity")
 COMPOSITION = load_composition("toxicity")
+METHODS = COMPOSITION.available_methods
+DEFAULT_METHODS = COMPOSITION.default_methods
 DATASETS = COMPOSITION.dataset_keys
 
 
@@ -66,7 +65,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("stage", choices=("artifacts", "calibrate", "evaluate", "score"))
     parser.add_argument("--model", choices=tuple(MODELS), required=True)
-    parser.add_argument("--methods", default="all")
+    parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
     parser.add_argument("--datasets", default="all")
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
@@ -162,40 +161,27 @@ def main() -> None:
                     distributions=native_datasets,
                     log_root=log_root / "evaluation",
                 )
-            jobs = []
-            for dataset_key in multiple_choice_datasets:
-                dataset = COMPOSITION.dataset(dataset_key)
-                multiple_choice.prepare("toxicity", arguments.model, dataset)
-                for method in methods:
+            ordered_methods = [method for method in METHODS if method in methods]
+            for method in ordered_methods:
+                for dataset_key in multiple_choice_datasets:
+                    dataset = COMPOSITION.dataset(dataset_key)
+                    multiple_choice.prepare("toxicity", arguments.model, dataset)
                     destination = multiple_choice.generation_path(
                         "toxicity", arguments.model, dataset, method, use_cache=use_cache
                     )
                     if multiple_choice.generation_complete(destination):
                         continue
-                    jobs.append(
-                        (
-                            f"generate-{dataset_key}-{method}",
-                            [
-                                sys.executable,
-                                "-m",
-                                "robust_steerability.benchmarks.multiple_choice",
-                                "--benchmark", "toxicity",
-                                "--model", arguments.model,
-                                "--dataset", dataset_key,
-                                "--method", method,
-                                "--calibration-id", arguments.calibration_id,
-                                "--kv-cache", "on" if use_cache else "off",
-                                "--device", "{device}",
-                                *(
-                                    ["--generation-batch-size", str(arguments.generation_batch_size)]
-                                    if arguments.generation_batch_size is not None
-                                    else []
-                                ),
-                            ],
-                        )
+                    multiple_choice.launch_generation(
+                        "toxicity",
+                        arguments.model,
+                        dataset,
+                        method,
+                        devices,
+                        arguments.calibration_id,
+                        arguments.generation_batch_size,
+                        use_cache,
+                        log_root / "evaluation" / method / dataset_key,
                     )
-            if jobs:
-                run_jobs(jobs, devices, log_root / "evaluation")
         else:
             native_datasets = [
                 dataset for dataset in datasets

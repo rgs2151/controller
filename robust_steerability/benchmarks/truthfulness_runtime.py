@@ -17,6 +17,7 @@ import numpy as np
 import torch
 from datasets import load_dataset
 
+from robust_steerability.calibration.nominal_artifact import nominal_dynamics_signature
 from robust_steerability.benchmarks.layout import (
     artifact_root,
     benchmark_root,
@@ -34,8 +35,11 @@ from robust_steerability.judges import huggingface as huggingface_scoring
 from robust_steerability.judges.specs import scorer_cache_path, scorer_spec
 from robust_steerability.source_methods.generation import generate_batched
 from robust_steerability.source_methods.id_benchmark import (
+    _batch_assignments,
+    _batch_size as source_generation_batch_size,
     fit_source_method_calibration,
     load_frozen_alqr_artifacts,
+    merge_generation_shards,
     run_generation_job,
     runtime_provenance,
 )
@@ -337,6 +341,14 @@ def _load_selected_hinf(
     source = torch.load(
         paths["hinf_controller"], map_location="cpu", weights_only=True, mmap=True
     )
+    source_metadata = source.get("metadata", {})
+    if source_metadata.get("nominal_dynamics") != nominal_dynamics_signature(
+        paths["alqr_dynamics"]
+    ):
+        raise ValueError(
+            "Frozen H-infinity controller was not synthesized from the current "
+            "shared A-LQR dynamics artifact"
+        )
     base = ControllerArtifact(**source["artifact"])
     artifact = replace(
         base,
@@ -425,7 +437,17 @@ def _generate_hinf_shard(
         raise ValueError("H-infinity benchmark generation requires an explicit CUDA device")
     prepare(behavior, distribution)
     common_identity = _hinf_generation_identity(model_key, behavior, distribution)
-    assigned_repetitions = list(range(shard_index, EVALUATION_REPETITIONS, shard_count))
+    data_path, evaluation_key, _cache_namespace = _distribution_spec(
+        behavior, distribution
+    )
+    data = json.loads(data_path.read_text())
+    batch_size = GENERATION_BATCH_SIZE_OVERRIDE or HINF_GENERATION_BATCH_SIZE
+    assignments = _batch_assignments(data, evaluation_key, batch_size)
+    assigned_batches = [
+        assignment
+        for index, assignment in enumerate(assignments)
+        if index % shard_count == shard_index
+    ]
     destination = _hinf_shard_path(
         model_key, behavior, distribution, shard_index, shard_count
     )
@@ -434,18 +456,23 @@ def _generate_hinf_shard(
         "shard": {
             "index": shard_index,
             "count": shard_count,
-            "assigned_repetitions": assigned_repetitions,
         },
     }
-    payload = {"identity": identity, "status": "partial", "attempts": [], "repetitions": []}
+    payload = {"identity": identity, "status": "partial", "attempts": [], "batches": []}
     if destination.exists():
         payload = json.loads(destination.read_text())
         if payload.get("status") == "complete":
             return
 
-    completed = [row["repetition"] for row in payload["repetitions"]]
-    if completed != assigned_repetitions[: len(completed)]:
-        raise ValueError(f"H-infinity shard repetitions are not a valid prefix: {destination}")
+    completed = [
+        (int(row["repetition"]), int(row["start"]))
+        for row in payload["batches"]
+    ]
+    expected = [
+        (repetition, start) for repetition, start, _records in assigned_batches
+    ]
+    if completed != expected[: len(completed)]:
+        raise ValueError(f"H-infinity shard batches are not a valid prefix: {destination}")
 
     model_spec = MODELS[model_key]
     token = load_access_token(REPO)
@@ -468,27 +495,17 @@ def _generate_hinf_shard(
     attempt["model_load_elapsed_seconds"] = time.perf_counter() - model_load_started
     artifact, _parameters = _load_selected_hinf(model_key)
     policy = build_policy("hinf", artifact, kp=0.0, ki=0.0, kd=0.0)
-    data_path, evaluation_key, _cache_namespace = _distribution_spec(
-        behavior, distribution
-    )
-    data = json.loads(data_path.read_text())
-
-    for repetition in assigned_repetitions[len(completed) :]:
-        records = data["evaluation"][evaluation_key][str(repetition)]
-        if len(records) != EVALUATION_SAMPLES[behavior]:
-            raise ValueError("H-infinity evaluation repetition has the wrong sample count")
-        repetition_started = time.perf_counter()
+    for repetition, start, records in assigned_batches[len(completed) :]:
+        batch_started = time.perf_counter()
         started_at = _utc_now()
-        repetition_seed = SOURCE_RANDOM_SEED + repetition * 100_000
+        batch_seed = SOURCE_RANDOM_SEED + repetition * 100_000 + start
         completions = generate_batched(
             model,
             tokenizer,
             [str(row["text"]) for row in records],
             behavior=behavior,
-            batch_size=(
-                GENERATION_BATCH_SIZE_OVERRIDE or HINF_GENERATION_BATCH_SIZE
-            ),
-            seed=repetition_seed,
+            batch_size=batch_size,
+            seed=batch_seed,
             use_cache=CURRENT_USE_CACHE,
             register_hooks=lambda: register_generation_policy_hooks(model, policy),
         )
@@ -502,14 +519,14 @@ def _generate_hinf_shard(
                     "completion": completion,
                 }
             )
-        payload["repetitions"].append(
+        payload["batches"].append(
             {
                 "repetition": repetition,
+                "start": start,
                 "started_at_utc": started_at,
                 "finished_at_utc": _utc_now(),
-                "elapsed_seconds": time.perf_counter() - repetition_started,
-                "sample_count": len(records),
-                "generation_seed": repetition_seed,
+                "elapsed_seconds": time.perf_counter() - batch_started,
+                "generation_seed": batch_seed,
                 "rows": output_rows,
             }
         )
@@ -517,7 +534,7 @@ def _generate_hinf_shard(
 
     attempt["finished_at_utc"] = _utc_now()
     attempt["elapsed_seconds"] = time.perf_counter() - attempt_started
-    attempt["completed_repetitions"] = len(payload["repetitions"])
+    attempt["completed_batches"] = len(payload["batches"])
     attempt["gpu_peak_memory_allocated_bytes"] = torch.cuda.max_memory_allocated(
         cuda_device_index(device)
     )
@@ -542,7 +559,14 @@ def merge_hinf_generation(
         )
         for index in range(shard_count)
     ]
-    repetitions: list[dict] = []
+    data_path, evaluation_key, _cache_namespace = _distribution_spec(
+        behavior, distribution
+    )
+    data = json.loads(data_path.read_text())
+    batch_size = GENERATION_BATCH_SIZE_OVERRIDE or HINF_GENERATION_BATCH_SIZE
+    expected = _batch_assignments(data, evaluation_key, batch_size)
+    expected_keys = [(repetition, start) for repetition, start, _records in expected]
+    batches: dict[tuple[int, int], dict] = {}
     attempts: list[dict] = []
     for index, path in enumerate(shard_paths):
         if not path.exists():
@@ -550,13 +574,43 @@ def merge_hinf_generation(
         shard = json.loads(path.read_text())
         if shard.get("status") != "complete":
             raise ValueError(f"Invalid H-infinity generation shard: {path}")
-        repetitions.extend(shard["repetitions"])
+        if shard.get("identity", {}).get("shard") != {
+            "index": index,
+            "count": shard_count,
+        }:
+            raise ValueError(f"H-infinity generation shard identity mismatch: {path}")
+        for batch in shard["batches"]:
+            key = (int(batch["repetition"]), int(batch["start"]))
+            if key in batches:
+                raise ValueError(f"Duplicate H-infinity generation batch: {key}")
+            batches[key] = batch
         attempts.extend(shard["attempts"])
-    repetitions.sort(key=lambda row: row["repetition"])
-    if [row["repetition"] for row in repetitions] != list(range(EVALUATION_REPETITIONS)):
-        raise ValueError("Merged H-infinity repetitions are incomplete")
-    if any(len(row["rows"]) != EVALUATION_SAMPLES[behavior] for row in repetitions):
-        raise ValueError("Merged H-infinity repetition has the wrong sample count")
+    if set(batches) != set(expected_keys):
+        raise ValueError("Merged H-infinity batches are incomplete")
+    repetitions = []
+    for repetition in range(EVALUATION_REPETITIONS):
+        repetition_batches = [
+            batches[key] for key in expected_keys if key[0] == repetition
+        ]
+        rows = [row for batch in repetition_batches for row in batch["rows"]]
+        expected_records = data["evaluation"][evaluation_key][str(repetition)]
+        if [row["prompt_id"] for row in rows] != [
+            row["prompt_id"] for row in expected_records
+        ]:
+            raise ValueError(f"Merged H-infinity prompt order changed in repetition {repetition}")
+        repetitions.append(
+            {
+                "repetition": repetition,
+                "started_at_utc": min(batch["started_at_utc"] for batch in repetition_batches),
+                "finished_at_utc": max(batch["finished_at_utc"] for batch in repetition_batches),
+                "elapsed_seconds": sum(
+                    float(batch["elapsed_seconds"]) for batch in repetition_batches
+                ),
+                "sample_count": len(rows),
+                "generation_seed": SOURCE_RANDOM_SEED + repetition * 100_000,
+                "rows": rows,
+            }
+        )
 
     parameters = common_identity["parameters"]
     destination = (
@@ -573,8 +627,7 @@ def merge_hinf_generation(
         "repetitions": repetitions,
         "capability_evaluation": {},
     }
-    if not destination.exists():
-        _write_json(destination, payload)
+    _write_json(destination, payload)
     return destination
 
 
@@ -709,6 +762,34 @@ def generate(
         use_cache=CURRENT_USE_CACHE,
         selected_parameters=selected_parameters,
         generation_batch_size=GENERATION_BATCH_SIZE_OVERRIDE,
+        shard_index=shard_index,
+        shard_count=shard_count,
+    )
+
+
+def merge_source_generation(
+    model_key: str,
+    method: str,
+    behavior: str,
+    distribution: str,
+    shard_count: int,
+) -> Path:
+    """Merge one source method's data-parallel shards."""
+
+    data_path, evaluation_key, cache_namespace = _distribution_spec(
+        behavior, distribution
+    )
+    batch_size = GENERATION_BATCH_SIZE_OVERRIDE or source_generation_batch_size(
+        MODELS[model_key].model_id, method
+    )
+    return merge_generation_shards(
+        cache_root=CACHE_ROOT,
+        cache_namespace=cache_namespace,
+        method=method,
+        data_path=data_path,
+        evaluation_key=evaluation_key,
+        batch_size=batch_size,
+        shard_count=shard_count,
     )
 
 

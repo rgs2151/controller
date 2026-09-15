@@ -63,3 +63,26 @@ def run_jobs(
             break
     if failures:
         raise RuntimeError(f"Benchmark workers failed: {failures}")
+
+
+def run_data_shards(
+    label: str,
+    command: list[str],
+    devices: list[str],
+    log_root: Path,
+) -> None:
+    """Run one method on every GPU by assigning one data shard per device."""
+
+    shard_count = len(devices)
+    jobs = [
+        (
+            f"{label}-shard-{shard_index:02d}",
+            [
+                *command,
+                "--shard-index", str(shard_index),
+                "--shard-count", str(shard_count),
+            ],
+        )
+        for shard_index in range(shard_count)
+    ]
+    run_jobs(jobs, devices, log_root)

@@ -4,9 +4,57 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from collections import Counter
+import re
+import string
 
 from robust_steerability.datasets.mmlu import parse_mmlu_letter
 from robust_steerability.judges.specs import scorer_cache_path, scorer_spec
+
+
+def remove_citations(text: str) -> str:
+    """Apply the citation removal used by L-CiteEval's answer scorer."""
+
+    return re.sub(r"\[\d+", "", re.sub(r" \[\d+", "", text)).replace(
+        " |", ""
+    ).replace("]", "")
+
+
+def normalize_lcite_answer(text: str) -> str:
+    """Normalize an answer exactly along L-CiteEval's HotpotQA path."""
+
+    lowered = text.lower()
+    unpunctuated = "".join(character for character in lowered if character not in string.punctuation)
+    without_articles = re.sub(r"\b(a|an|the)\b", " ", unpunctuated)
+    return " ".join(without_articles.split())
+
+
+def lcite_answer_overlap(prediction: str, answer: str | int | list[str]) -> dict[str, float]:
+    """Return the released L-CiteEval token-overlap metrics for one answer."""
+
+    prediction = remove_citations(prediction.strip().split("\n", 1)[0])
+    gold_answers = answer if isinstance(answer, list) else [str(answer)]
+    best = {"answer_precision": 0.0, "answer_recall": 0.0, "answer_f1": 0.0}
+    for gold in gold_answers:
+        predicted_tokens = normalize_lcite_answer(prediction).split()
+        gold_tokens = normalize_lcite_answer(str(gold)).split()
+        common = Counter(predicted_tokens) & Counter(gold_tokens)
+        overlap = sum(common.values())
+        precision = overlap / len(predicted_tokens) if predicted_tokens else 0.0
+        recall = overlap / len(gold_tokens) if gold_tokens else 0.0
+        f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+        best["answer_precision"] = max(best["answer_precision"], precision)
+        best["answer_recall"] = max(best["answer_recall"], recall)
+        best["answer_f1"] = max(best["answer_f1"], f1)
+    return best
+
+
+def harmonic_mean(scores: list[float]) -> float:
+    """AXBench aggregation: zero if any component is zero."""
+
+    if not scores or any(score == 0 for score in scores):
+        return 0.0
+    return len(scores) / sum(1.0 / score for score in scores)
 
 
 def _write_json(path: Path, payload: object) -> None:
