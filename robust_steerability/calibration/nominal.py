@@ -47,7 +47,7 @@ def average_prompt_jacobians(model, tokenizer, records, *, cache_dir: Path,
 
     def checkpoint() -> None:
         temporary = checkpoint_path.with_suffix(".pt.tmp")
-        torch.save({"identity": identity, "count": processed, "sum": total}, temporary)
+        torch.save({"count": processed, "sum": total}, temporary)
         temporary.replace(checkpoint_path)
         temporary_metadata = metadata_path.with_suffix(".json.tmp")
         temporary_metadata.write_text(json.dumps({
