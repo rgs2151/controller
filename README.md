@@ -38,7 +38,7 @@ Run the truthfulness benchmark as four explicit stages on any visible GPU set:
 python -m robust_steerability.benchmarks.truthfulness artifacts --model gemma2b --devices auto
 python -m robust_steerability.benchmarks.truthfulness calibrate --model gemma2b --devices auto
 python -m robust_steerability.benchmarks.truthfulness evaluate --model gemma2b --devices auto
-python -m robust_steerability.benchmarks.truthfulness score --model gemma2b --scorers truthfulqa_true,truthfulqa_informative,axbench_instruction_relevance,axbench_fluency --devices auto
+python -m robust_steerability.benchmarks.truthfulness score --model gemma2b --scorers default --devices auto
 ```
 
 Use `--generation-batch-size <n>` only when a larger remote GPU has been

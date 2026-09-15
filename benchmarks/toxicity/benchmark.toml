@@ -1,15 +1,44 @@
-schema_version = 1
+schema_version = 2
 benchmark = "toxicity"
-fit_dataset = "realtoxicityprompts"
-transfer_datasets = ["jigsaw"]
+base_dataset = "realtoxicityprompts"
 models = ["gemma2b", "llama8b", "qwen14b"]
 default_methods = ["original", "spid", "alqr", "h_infinity"]
-evaluation_repetitions = 5
-evaluation_samples_per_repetition = 1000
 jacobian_prompts = 50
 evaluated_model_kv_cache = false
 available_evaluated_model_kv_cache = [false, true]
-score_scorers = ["toxicity_classifier", "distinct_2", "perplexity"]
+
+[[evaluation_datasets]]
+key = "rtp"
+dataset = "realtoxicityprompts"
+role = "base"
+cache_namespace = "toxicity"
+generation_profile = "toxicity"
+samples = 1000
+repetitions = 5
+scorers = ["toxicity_classifier", "distinct_2", "perplexity"]
+runtime = "toxicity"
+
+[[evaluation_datasets]]
+key = "jigsaw"
+dataset = "jigsaw"
+role = "transfer"
+cache_namespace = "toxicity_jigsaw"
+generation_profile = "toxicity"
+samples = 1000
+repetitions = 5
+scorers = ["toxicity_classifier", "distinct_2", "perplexity"]
+runtime = "toxicity"
+
+[[evaluation_datasets]]
+key = "mmlu"
+dataset = "mmlu"
+role = "capability"
+cache_namespace = "mmlu"
+generation_profile = "mmlu"
+samples = 1000
+repetitions = 1
+scorers = ["mmlu_accuracy"]
+runtime = "multiple_choice"
 
 [stages]
 order = ["artifacts", "calibrate", "evaluate", "score"]

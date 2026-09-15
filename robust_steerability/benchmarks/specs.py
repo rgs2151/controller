@@ -34,23 +34,3 @@ METHODS = (
     "original", "iti", "actadd", "mean_act", "linear_act", "pid_act",
     "odesteer", "spid", "alqr", "h_infinity",
 )
-
-
-@dataclass(frozen=True)
-class BenchmarkSpec:
-    key: str
-    fit_dataset: str
-    transfer_datasets: tuple[str, ...]
-    evaluation_samples: int
-    repetitions: int
-    jacobian_prompts: int
-
-
-BENCHMARK_SPECS = {
-    "truthfulness": BenchmarkSpec(
-        "truthfulness", "truthfulqa", ("truthfulqa_spanish",), 817, 5, 35
-    ),
-    "toxicity": BenchmarkSpec(
-        "toxicity", "realtoxicityprompts", ("jigsaw",), 1000, 5, 50
-    ),
-}

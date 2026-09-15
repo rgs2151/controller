@@ -4,18 +4,28 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 
 from robust_steerability.benchmarks import artifacts
+from robust_steerability.benchmarks import multiple_choice
 from robust_steerability.benchmarks.execution import default_run_id, tracked_stage
+from robust_steerability.benchmarks.composition import (
+    load_composition,
+    requested_scorers,
+    validate_requested_scorers,
+)
+from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import calibration_root
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.benchmarks import toxicity_runtime as runtime
 from robust_steerability.experiments.resources import resolve_cuda_devices
+from robust_steerability.judges.specs import scorer_spec
 from robust_steerability.source_methods.protocol import paper_alqr_setting
 
 
 METHODS = ("original", "spid", "alqr", "h_infinity")
-DATASETS = ("rtp", "jigsaw")
+COMPOSITION = load_composition("toxicity")
+DATASETS = COMPOSITION.dataset_keys
 
 
 def _names(value: str, allowed: tuple[str, ...]) -> list[str]:
@@ -61,16 +71,34 @@ def main() -> None:
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
-    parser.add_argument("--scorers", default="all")
+    parser.add_argument("--scorers", default="default")
     parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     parser.add_argument("--run-id")
     arguments = parser.parse_args()
     methods = _names(arguments.methods, METHODS)
     datasets = _names(arguments.datasets, DATASETS)
-    scorers = _names(arguments.scorers, runtime.SCORERS)
+    scorers = (
+        None
+        if arguments.scorers in {"default", "all"}
+        else tuple(item.strip() for item in arguments.scorers.split(",") if item.strip())
+    )
+    if scorers is not None:
+        for scorer in scorers:
+            scorer_spec(scorer)
+    validate_requested_scorers(COMPOSITION, datasets, scorers)
     use_cache = arguments.kv_cache == "on"
-    gpu_required = arguments.stage != "score" or bool(
-        {"toxicity_classifier", "perplexity"} & set(scorers)
+    selected_score_keys = (
+        {
+            scorer
+            for dataset in datasets
+            for scorer in requested_scorers(COMPOSITION.dataset(dataset), scorers)
+        }
+        if arguments.stage == "score"
+        else set()
+    )
+    gpu_required = arguments.stage != "score" or any(
+        scorer_spec(key).backend.startswith("huggingface")
+        for key in selected_score_keys
     )
     devices = resolve_cuda_devices(arguments.devices) if gpu_required else ["cpu"]
     runtime.configure_model(
@@ -89,7 +117,7 @@ def main() -> None:
         calibration_id=arguments.calibration_id,
         parameters={
             "generation_batch_size": arguments.generation_batch_size,
-            "scorers": scorers if arguments.stage == "score" else [],
+            "scorers": sorted(selected_score_keys) if arguments.stage == "score" else [],
         },
     ) as log_root:
         if arguments.stage == "artifacts":
@@ -108,20 +136,101 @@ def main() -> None:
             if {"spid", "h_infinity"} & set(methods):
                 runtime.calibrate(devices, log_root=log_root / "calibration")
         elif arguments.stage == "evaluate":
-            runtime.evaluate(
-                devices,
-                methods=methods,
-                distributions=datasets,
-                log_root=log_root / "evaluation",
+            native_datasets = [
+                dataset for dataset in datasets
+                if COMPOSITION.dataset(dataset).runtime == "toxicity"
+            ]
+            multiple_choice_datasets = [
+                dataset for dataset in datasets
+                if COMPOSITION.dataset(dataset).runtime == "multiple_choice"
+            ]
+            normalized = {
+                "rtp": "toxicity",
+                "jigsaw": "toxicity_jigsaw",
+            }
+            native_pending = any(
+                not multiple_choice.generation_complete(
+                    runtime._generation_path(normalized[dataset], method)
+                )
+                for dataset in native_datasets
+                for method in methods
             )
+            if native_pending:
+                runtime.evaluate(
+                    devices,
+                    methods=methods,
+                    distributions=native_datasets,
+                    log_root=log_root / "evaluation",
+                )
+            jobs = []
+            for dataset_key in multiple_choice_datasets:
+                dataset = COMPOSITION.dataset(dataset_key)
+                multiple_choice.prepare("toxicity", arguments.model, dataset)
+                for method in methods:
+                    destination = multiple_choice.generation_path(
+                        "toxicity", arguments.model, dataset, method, use_cache=use_cache
+                    )
+                    if multiple_choice.generation_complete(destination):
+                        continue
+                    jobs.append(
+                        (
+                            f"generate-{dataset_key}-{method}",
+                            [
+                                sys.executable,
+                                "-m",
+                                "robust_steerability.benchmarks.multiple_choice",
+                                "--benchmark", "toxicity",
+                                "--model", arguments.model,
+                                "--dataset", dataset_key,
+                                "--method", method,
+                                "--calibration-id", arguments.calibration_id,
+                                "--kv-cache", "on" if use_cache else "off",
+                                "--device", "{device}",
+                                *(
+                                    ["--generation-batch-size", str(arguments.generation_batch_size)]
+                                    if arguments.generation_batch_size is not None
+                                    else []
+                                ),
+                            ],
+                        )
+                    )
+            if jobs:
+                run_jobs(jobs, devices, log_root / "evaluation")
         else:
-            runtime.score(
-                devices,
-                methods=methods,
-                distributions=datasets,
-                scorers=scorers,
-                log_root=log_root / "scoring",
-            )
+            native_datasets = [
+                dataset for dataset in datasets
+                if COMPOSITION.dataset(dataset).runtime == "toxicity"
+            ]
+            multiple_choice_datasets = [
+                dataset for dataset in datasets
+                if COMPOSITION.dataset(dataset).runtime == "multiple_choice"
+            ]
+            for dataset in native_datasets:
+                selected = requested_scorers(COMPOSITION.dataset(dataset), scorers)
+                if not selected:
+                    continue
+                runtime.score(
+                    devices,
+                    methods=methods,
+                    distributions=[dataset],
+                    scorers=list(selected),
+                    log_root=log_root / "scoring",
+                )
+            for dataset_key in multiple_choice_datasets:
+                dataset = COMPOSITION.dataset(dataset_key)
+                selected = requested_scorers(dataset, scorers)
+                if not selected:
+                    continue
+                if selected != ("mmlu_accuracy",):
+                    raise ValueError(f"Unsupported scorers for {dataset_key}: {selected}")
+                for method in methods:
+                    multiple_choice.score_and_summarize(
+                        "toxicity",
+                        arguments.model,
+                        dataset,
+                        method,
+                        use_cache=use_cache,
+                    )
 
 
 if __name__ == "__main__":
