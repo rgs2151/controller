@@ -88,8 +88,8 @@ remain available for inspection; fresh execution belongs to the new unit.
 Run the active full-set pipelines through
 `python -m robust_steerability.benchmarks.truthfulness` or
 `python -m robust_steerability.benchmarks.toxicity`. Artifact creation,
-calibration, and evaluation are separate commands, and evaluation never silently
-fits a controller.
+calibration, generation-only evaluation, and response scoring are separate
+commands; evaluation never silently fits a controller or invokes a judge.
 Historical 50-prompt artifacts are not current benchmark inputs.
 
 Bundle contents and independent reading/sharing:

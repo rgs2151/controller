@@ -6,7 +6,6 @@ from pathlib import Path
 
 
 BENCHMARKS = ("truthfulness", "toxicity")
-KV_CACHE_CONDITIONS = ("kv_cache_off", "kv_cache_on")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -45,21 +44,13 @@ def calibration_root(
     return model_root(benchmark, model_key) / "calibrations" / method / calibration_id
 
 
-def kv_cache_condition(use_cache: bool) -> str:
-    """Return the explicit directory name for one decoding-cache policy."""
-
-    return "kv_cache_on" if use_cache else "kv_cache_off"
-
-
 def evaluation_root(
     benchmark: str,
     model_key: str,
-    *,
-    use_cache: bool,
 ) -> Path:
-    """Return evaluations isolated by model and evaluated-model cache policy."""
+    """Return controlled-decoding evaluations for one benchmark and model."""
 
-    return model_root(benchmark, model_key) / "evaluations" / kv_cache_condition(use_cache)
+    return model_root(benchmark, model_key) / "evaluations" / "kv_cache_off"
 
 
 def results_root(benchmark: str) -> Path:

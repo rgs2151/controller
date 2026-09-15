@@ -5,7 +5,8 @@ Benchmark modules own reusable prompt records, dataset loading, generation scori
 ## Current Coverage
 
 - `toxicity.py`: RealToxicityPrompts, Jigsaw, Civil Comments, and ToxicChat prompt pools plus generated-continuation toxicity probabilities.
-- `mmlu.py`: Subject-level MMLU loaders and concept-shift ID/OOD prompt-set construction.
+- `truthfulness.py`: separate artifact, calibration, generation-only evaluation, and independent scoring stages for TruthfulQA ID and Spanish.
+- `robust_steerability.judges`: reusable pinned judge definitions and independent local/API judge caches.
 
 ## A-LQR Parity Roadmap
 

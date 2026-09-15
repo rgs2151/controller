@@ -1,4 +1,4 @@
-schema_version = 1
+schema_version = 2
 benchmark = "truthfulness"
 fit_dataset = "truthfulqa"
 transfer_datasets = ["truthfulqa_spanish"]
@@ -8,13 +8,19 @@ evaluation_repetitions = 5
 evaluation_samples_per_repetition = 817
 jacobian_prompts = 35
 evaluated_model_kv_cache = false
-quality_judge_model = "gpt-4o-mini"
-quality_judge_metrics = ["instruction_relevance_0_2", "fluency_0_2"]
-quality_judge_batch_size = 20
+score_judges = ["true", "informative", "instruction_relevance", "fluency"]
+api_judge_model = "gpt-4o-mini"
+api_judge_batch_size = 20
+api_judge_concurrency = 500
 
 [stages]
-order = ["artifacts", "calibrate", "evaluate"]
+order = ["artifacts", "calibrate", "evaluate", "score"]
 evaluation_requires_selected_calibration = true
+evaluation_generates_only = true
+score_reads_completed_generations = true
+
+[calibration]
+selection_metric = "mean_true_percentage"
 
 [storage]
 large_s3_stages = ["artifacts", "calibration"]
