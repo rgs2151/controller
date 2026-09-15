@@ -793,7 +793,11 @@ def run_generation_job(
             direction_path,
             {**common_identity, "fit_samples_per_class": required},
         )
-        steerer = ActAddSteerer(direction, parameters["layer"], parameters["strength"])
+        steerer = ActAddSteerer(
+            direction[parameters["layer"]],
+            parameters["layer"],
+            parameters["strength"],
+        )
         _generate_candidate(
             output=job_root / "final.json",
             model=model,
