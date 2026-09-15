@@ -296,6 +296,7 @@ def main() -> None:
         parameters={
             "generation_batch_size": arguments.generation_batch_size,
             "axbench_quality_workers": arguments.quality_workers,
+            "axbench_quality_batch_size": axbench_quality.BATCH_SIZE,
         },
     ) as log_root:
         if arguments.stage in {"artifacts", "all"}:

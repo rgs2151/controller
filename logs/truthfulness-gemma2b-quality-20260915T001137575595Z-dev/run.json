@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "run_id": "truthfulness-gemma2b-quality-20260915T001137575595Z-dev",
+  "status": "failed",
+  "started_at_utc": "2026-09-15T00:11:37.575647+00:00",
+  "benchmark": "truthfulness",
+  "model": "gemma2b",
+  "stage": "quality",
+  "methods": [
+    "original",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "id",
+    "spanish"
+  ],
+  "evaluated_model_kv_cache": true,
+  "devices": "auto",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "axbench_quality_workers": 64
+  },
+  "command": [
+    "/home/dev/controller/code/robust_steerability/benchmarks/truthfulness.py",
+    "quality",
+    "--model",
+    "gemma2b",
+    "--methods",
+    "original,alqr,h_infinity",
+    "--datasets",
+    "id,spanish",
+    "--kv-cache",
+    "on",
+    "--quality-workers",
+    "64"
+  ],
+  "working_directory": "/home/dev/controller/code",
+  "git": {
+    "commit": "053211acb57924b4b641bf81ed72bb71e02ba6c2",
+    "dirty": false,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "dev",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": null,
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python": "3.11.16",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "packages": {
+      "accelerate": "1.14.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "published_s3_objects": [],
+  "finished_at_utc": "2026-09-15T00:21:37.853400+00:00",
+  "error": {
+    "type": "KeyboardInterrupt",
+    "message": "Stopped because the literal two-request-per-response AXBench protocol was too slow; no partial scores were retained."
+  }
+}

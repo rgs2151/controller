@@ -9,10 +9,11 @@ This unit owns the complete TruthfulQA pipeline and its Spanish transfer test. I
 3. `evaluate` runs five full 817-question repetitions and scores True, Informative, their product, AXBench instruction relevance, and AXBench fluency. Spanish uses the matched translated questions, English answers, and the identical judges.
 
 Evaluation never silently runs calibration. KV cache is off unless an explicit cache-on run is requested.
-The two AXBench measures use the published independent 0--2 prompts with
-`gpt-4o-mini` at temperature zero. The `quality` stage scores existing cached
-generations without regenerating model responses or rerunning the TruthfulQA
-judges.
+The two AXBench measures use the published independent 0--2 rubric definitions
+with `gpt-4o-mini` at temperature zero. For throughput, one strict structured
+request scores batches of 20 responses on both rubrics; the two scores remain
+separate. The `quality` stage scores existing cached generations without
+regenerating model responses or rerunning the TruthfulQA judges.
 
 ## Commands
 
