@@ -24,6 +24,7 @@
 - Do not move, overwrite, regenerate, or clean files in `data/` unless the user explicitly asks.
 - Do not modify, overwrite, regenerate, or clean result artifacts unless the user explicitly asks for that artifact action.
 - Plot outputs are tracked repo artifacts. When regenerating a figure, delete that unit's previous plot/table outputs before writing the new iteration.
+- Every benchmark result table must regenerate its synchronized Markdown, manuscript-compatible TeX, and standalone PDF together. Treat the PDF as the primary human-review artifact and keep each benchmark's own metric columns unchanged.
 - Cache outputs are local compute artifacts and should stay ignored unless the user explicitly asks to track a cache file.
 - After major repo organization changes, commit and push when this repo uses git remotes.
 

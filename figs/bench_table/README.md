@@ -1,11 +1,11 @@
 # Benchmark tables
 
-This unit keeps one self-contained report per evaluated dataset. Each report starts with its result table and then contains only Method, Measures, and Hyperparameters.
+This unit keeps one self-contained report per evaluated dataset. Each report starts with its result table and then contains only Method, Measures, and Hyperparameters. The sibling PDF is the primary human-review surface; Markdown retains the detailed protocol and TeX remains available for manuscript inclusion.
 
 ## Reports
 
-- Truthfulness: [TruthfulQA](truthfulness/truthfulqa.md) and [Spanish TruthfulQA](truthfulness/truthfulqa_spanish.md).
-- Toxicity: [RealToxicityPrompts](toxicity/realtoxicityprompts.md) and [Jigsaw transfer](toxicity/jigsaw.md).
+- Truthfulness: [TruthfulQA PDF](truthfulness/truthfulqa.pdf) and [Spanish TruthfulQA PDF](truthfulness/truthfulqa_spanish.pdf).
+- Toxicity: [RealToxicityPrompts PDF](toxicity/realtoxicityprompts.pdf) and [Jigsaw transfer PDF](toxicity/jigsaw.pdf).
 
 ## Required format
 
@@ -16,7 +16,7 @@ The canonical reporting contract is [structure.md](structure.md). Every report m
 3. Measures table defining every result column.
 4. Hyperparameter table covering every populated model × method row.
 
-Markdown and TeX results are rendered from the same tracked summaries. Regenerate them with:
+Markdown, TeX, and standalone PDF results are rendered from the same tracked summaries. Regenerate all three together with:
 
 ```bash
 python figs/bench_table/bench_table.py
