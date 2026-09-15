@@ -27,6 +27,9 @@ No dataset adapter or scorer changes, and completed methods remain untouched.
   40 matched L-CiteEval HotpotQA cases at approximately 8K, 16K, and 32K.
 - `mgsm.py`: one paired English-to-Spanish MGSM direction transferred across
   nine held-out input languages while preserving exact numerical accuracy.
+- `harmful.py`: HarmBench non-exhibition/refusal steering evaluated on direct
+  requests, five official human-jailbreak cases per behavior, and MMLU
+  capability retention.
 - `robust_steerability.judges`: reusable scorer definitions with explicit model,
   rubric, score range, and backend provenance.
 - `judges/exact.py`: deterministic MMLU, L-CiteEval answer-overlap, and AXBench

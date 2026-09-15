@@ -60,6 +60,15 @@ python -m robust_steerability.benchmarks.mgsm evaluate --model qwen3_4b --device
 python -m robust_steerability.benchmarks.mgsm score --model qwen3_4b --scorers default --devices auto
 ```
 
+HarmBench robust refusal initially uses Llama-3.2-1B-Instruct:
+
+```bash
+python -m robust_steerability.benchmarks.harmful artifacts --model llama32_1b_instruct --devices auto
+python -m robust_steerability.benchmarks.harmful calibrate --model llama32_1b_instruct --devices auto
+python -m robust_steerability.benchmarks.harmful evaluate --model llama32_1b_instruct --devices auto
+python -m robust_steerability.benchmarks.harmful score --model llama32_1b_instruct --scorers default --devices auto
+```
+
 Use `--generation-batch-size <n>` only when a larger remote GPU has been
 validated for that batch. The chosen value is recorded in the stage log.
 

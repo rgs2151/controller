@@ -221,6 +221,97 @@ def _toxicity_generation(
     )
 
 
+def _harmful_generation(
+    model_key: str,
+    dataset: EvaluationDataset,
+    method: str,
+    device: str,
+    calibration_id: str,
+    generation_batch_size: int | None,
+    use_cache: bool,
+    shard_index: int,
+    shard_count: int,
+) -> None:
+    from robust_steerability.benchmarks import harmful_artifacts, harmful_runtime
+
+    model, tokenizer = harmful_artifacts.load_model(model_key, device)
+    steering_policy = harmful_runtime.policy(
+        model_key, method, calibration_id, device
+    )
+
+    def format_prompt(text: str) -> str:
+        return tokenizer.apply_chat_template(
+            [
+                {
+                    "role": "user",
+                    "content": (
+                        "Answer the final multiple-choice question with only "
+                        "A, B, C, or D.\n\n" + text
+                    ),
+                }
+            ],
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+    def generate_suffixes(
+        loaded_model,
+        loaded_tokenizer,
+        prompts: list[str],
+        policy,
+        cache_enabled: bool,
+        batch_size: int,
+    ) -> list[str]:
+        del cache_enabled
+        letters = "ABCD"
+        candidate_ids = []
+        for letter in letters:
+            token_ids = loaded_tokenizer.encode(letter, add_special_tokens=False)
+            if len(token_ids) != 1:
+                raise ValueError(f"MMLU answer {letter!r} is not one token")
+            candidate_ids.append(token_ids[0])
+        completions = []
+        for start in range(0, len(prompts), batch_size):
+            batch = prompts[start : start + batch_size]
+            encoded = loaded_tokenizer(
+                batch, return_tensors="pt", padding=True, truncation=False
+            ).to(next(loaded_model.parameters()).device)
+            handles = (
+                register_generation_policy_hooks(loaded_model, policy)
+                if policy is not None
+                else []
+            )
+            try:
+                with torch.inference_mode():
+                    output = loaded_model(
+                        **encoded, use_cache=False, return_dict=True
+                    )
+            finally:
+                for handle in handles:
+                    handle.remove()
+            selected = output.logits[:, -1, candidate_ids].argmax(dim=-1).tolist()
+            completions.extend(letters[index] for index in selected)
+        return completions
+
+    _generate_with_policy(
+        "harmful",
+        model_key,
+        dataset,
+        method,
+        device,
+        calibration_id,
+        generation_batch_size,
+        use_cache,
+        steering_policy,
+        harmful_runtime.selection_parameters(model_key, method, calibration_id),
+        shard_index,
+        shard_count,
+        model_and_tokenizer=(model, tokenizer),
+        prompt_transform=format_prompt,
+        completion_generator=generate_suffixes,
+    )
+
+
 def _generate_with_policy(
     base_benchmark: str,
     model_key: str,
@@ -234,6 +325,10 @@ def _generate_with_policy(
     parameters: dict,
     shard_index: int,
     shard_count: int,
+    *,
+    model_and_tokenizer=None,
+    prompt_transform=None,
+    completion_generator=None,
 ) -> None:
     root = evaluation_root(base_benchmark, model_key, use_cache=use_cache)
     destination = generation_shard_path(
@@ -243,14 +338,17 @@ def _generate_with_policy(
         return
     source = json.loads(data_path(base_benchmark, model_key, dataset).read_text())
     model_spec = MODELS[model_key]
-    model, tokenizer = load_source_model(
-        method_spec(method).model_loader,
-        base_benchmark,
-        model_spec.model_id,
-        model_spec.revision,
-        device,
-        load_access_token(REPO),
-    )
+    if model_and_tokenizer is None:
+        model, tokenizer = load_source_model(
+            method_spec(method).model_loader,
+            base_benchmark,
+            model_spec.model_id,
+            model_spec.revision,
+            device,
+            load_access_token(REPO),
+        )
+    else:
+        model, tokenizer = model_and_tokenizer
     batch_size = generation_batch_size or model_spec.activation_batch_size
     common_identity = {
             "schema_version": 1,
@@ -301,21 +399,29 @@ def _generate_with_policy(
         seed = SOURCE_RANDOM_SEED + repetition_index * 100_000 + start
         batch_started = time.perf_counter()
         started_at = datetime.now(timezone.utc).isoformat()
-        completions = generate_batched(
-            model,
-            tokenizer,
-            [str(row["text"]) for row in records],
-            behavior=dataset.generation_profile,
-            batch_size=batch_size,
-            seed=seed,
-            use_cache=use_cache,
-            register_hooks=(
-                None
-                if policy is None
-                else lambda: register_generation_policy_hooks(model, policy)
-            ),
-            reset=None if policy is None else policy.reset,
-        )
+        prompts = [str(row["text"]) for row in records]
+        if prompt_transform is not None:
+            prompts = [prompt_transform(prompt) for prompt in prompts]
+        if completion_generator is None:
+            completions = generate_batched(
+                model,
+                tokenizer,
+                prompts,
+                behavior=dataset.generation_profile,
+                batch_size=batch_size,
+                seed=seed,
+                use_cache=use_cache,
+                register_hooks=(
+                    None
+                    if policy is None
+                    else lambda: register_generation_policy_hooks(model, policy)
+                ),
+                reset=None if policy is None else policy.reset,
+            )
+        else:
+            completions = completion_generator(
+                model, tokenizer, prompts, policy, use_cache, batch_size
+            )
         payload["batches"].append(
             {
                 "repetition": repetition_index,
@@ -369,6 +475,18 @@ def generate(
         )
     elif base_benchmark == "toxicity":
         _toxicity_generation(
+            model_key,
+            dataset,
+            method,
+            device,
+            calibration_id,
+            generation_batch_size,
+            use_cache,
+            shard_index,
+            shard_count,
+        )
+    elif base_benchmark == "harmful":
+        _harmful_generation(
             model_key,
             dataset,
             method,
@@ -500,7 +618,9 @@ def score_and_summarize(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--benchmark", choices=("truthfulness", "toxicity"), required=True)
+    parser.add_argument(
+        "--benchmark", choices=("truthfulness", "toxicity", "harmful"), required=True
+    )
     parser.add_argument("--model", choices=tuple(MODELS), required=True)
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--method", required=True)

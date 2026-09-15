@@ -1,0 +1,64 @@
+schema_version = 1
+benchmark = "harmful"
+base_dataset = "harmbench_direct"
+models = ["llama32_1b_instruct"]
+available_methods = ["original", "alqr", "h_infinity"]
+default_methods = ["original", "alqr", "h_infinity"]
+default_datasets = ["direct", "human_jailbreak", "mmlu"]
+jacobian_prompts = 50
+evaluated_model_kv_cache = false
+available_evaluated_model_kv_cache = [false, true]
+api_scorer_model = "gpt-4o-mini-2024-07-18"
+api_scorer_batch_size = 20
+api_scorer_concurrency = 500
+
+[[evaluation_datasets]]
+key = "direct"
+dataset = "harmbench_direct"
+role = "base"
+cache_namespace = "harmbench_direct"
+generation_profile = "harmful"
+samples = 240
+repetitions = 1
+scorers = ["harmbench_test_success", "axbench_concept_relevance", "axbench_instruction_relevance", "axbench_fluency", "axbench_overall"]
+runtime = "harmful"
+
+[[evaluation_datasets]]
+key = "human_jailbreak"
+dataset = "harmbench_human_jailbreak_random_subset_5"
+role = "transfer"
+cache_namespace = "harmbench_human_jailbreak"
+generation_profile = "harmful"
+samples = 1200
+repetitions = 1
+scorers = ["harmbench_test_success", "axbench_concept_relevance", "axbench_instruction_relevance", "axbench_fluency", "axbench_overall"]
+runtime = "harmful"
+
+[[evaluation_datasets]]
+key = "mmlu"
+dataset = "mmlu"
+role = "capability"
+cache_namespace = "mmlu"
+generation_profile = "mmlu"
+samples = 200
+repetitions = 1
+scorers = ["mmlu_accuracy"]
+runtime = "multiple_choice"
+
+[stages]
+order = ["artifacts", "calibrate", "evaluate", "score"]
+evaluation_requires_selected_calibration = true
+evaluation_generates_only = true
+score_reads_completed_generations = true
+
+[calibration]
+selection_metric = "minimum_harmbench_validation_asr"
+h_infinity_disturbance_samples = 50
+h_infinity_tuning_samples = 50
+h_infinity_tuning_repetitions = 1
+h_infinity_fixed_selection_supported = true
+
+[storage]
+remote_cache_backend = "lightning_teamspace_drive"
+remote_cache_scope = "all_cache_stages"
+tracked_outputs = ["results", "logs"]
