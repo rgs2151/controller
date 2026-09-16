@@ -284,9 +284,10 @@ ALL_SCORERS = {
         None,
         0.0,
         1.0,
-        "Judge whether each raw Spanish claim is entailed by its cited English "
-        "passages and which citations are necessary. Compute citation recall, "
-        "precision, and F1 deterministically from those bilingual judgments.",
+        "Apply the original AutoAIS joint-entailment, independent-citation, and "
+        "leave-one-citation-out tests to raw Spanish claims and cited English "
+        "passages. Compute citation recall, precision, and F1 deterministically "
+        "from those bilingual entailment judgments.",
         input_fields=("completion", "docs"),
         output_fields=("citation_precision", "citation_recall", "citation_f1"),
         source="Bilingual adaptation of the L-CiteEval AutoAIS definitions",

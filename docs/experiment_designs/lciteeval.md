@@ -17,7 +17,7 @@
 - **H∞ disturbance data:** 200 upstream 2WikiMultihopQA training questions
   formatted as approximately 8K L-Cite citation prompts.
 - **Baseline settings:** Fixed S-PID and A-LQR settings; no baseline sweep.
-- **H∞ selection:** 40 official L-CiteEval 2Wiki base-context questions; 12 cost
+- **H∞ selection:** 10 frozen official L-CiteEval 2Wiki base-context questions; 12 cost
   configurations; maximize the Spanish-adherence, instruction-relevance, and
   fluency harmonic mean.
 - **Final evaluation:** 40 matched HotpotQA questions × 2 lengths; deterministic
@@ -28,7 +28,7 @@
 - **Scoring:** Bilingual answer correctness, bilingual citation
   recall/precision/F1, Spanish adherence, instruction relevance, fluency, and
   overall steering.
-- **Evaluation size:** Per model, 480 H∞ selection generations and 320 final
+- **Evaluation size:** Per model, 120 H∞ selection generations and 320 final
   generations.
 
 ## Status
@@ -100,14 +100,14 @@ GSM8K or generic short instructions are not used for this stage.
 
 - **S-PID:** fixed `lambda=1.5`, `Kp=0.5`, `Ki=0.5`, `Kd=0.01`.
 - **A-LQR:** fixed once at `lambda=1.5`, `Q=0.1`, `R=1`, `Qf=0.1`; no sweep.
-- **H∞ development set:** the 40 unique shortest/base-context question families
-  from the official L-CiteEval 2WikiMultihopQA release.
-- These 40 questions are disjoint from the upstream 2Wiki training questions
+- **H∞ development set:** the first 10 frozen shortest/base-context question
+  families from the official L-CiteEval 2WikiMultihopQA release.
+- These 10 questions are disjoint from the upstream 2Wiki training questions
   used for disturbance fitting and from the final HotpotQA questions.
 - **H∞ grid:** `R=1`, `Q/R in {0.01, 0.1, 1, 10}`, and
   `Qf/R in {0.01, 0.1, 0.316...}`.
-- One generation per question per candidate: `12 × 40 = 480` selection
-  generations. “40 prompts” means 40 independent generations, not a 40-shot
+- One generation per question per candidate: `12 × 10 = 120` selection
+  generations. “10 prompts” means 10 independent generations, not a 10-shot
   prompt.
 - **Objective:** maximum harmonic mean of Spanish adherence, instruction
   relevance, and fluency.
@@ -131,8 +131,14 @@ GSM8K or generic short instructions are not used for this stage.
   response directly with the English question and official answer. Scores are
   0 (incorrect/absent), 0.5 (partially correct), or 1 (fully correct).
 - **Citation recall, precision, and F1:** a bilingual OpenAI judge compares each
-  raw Spanish claim directly with its cited English passages. Code computes the
-  three metrics from the judge's claim-support and citation-necessity decisions.
+  raw Spanish claim directly with its cited English passages. It performs the
+  original AutoAIS joint, independent-citation, and leave-one-citation-out
+  entailment tests; code applies the original citation metric equations.
+- **Comparability note:** citation scoring changes only the bilingual entailment
+  model, so its inputs, decision protocol, three-citation cap, and metric formulas
+  match L-CiteEval. Answer correctness is a bilingual semantic replacement for
+  the original English token-overlap score and is therefore not numerically
+  identical to the paper's answer F1.
 - The response is never translated or language-normalized. Citation markers and
   the stored Spanish generation remain untouched.
 
@@ -154,13 +160,14 @@ into one paper metric.
 | Direction | Matched MGSM English/Spanish questions | 250 pairs |
 | Shared `A` | Spanish side of the frozen MGSM pairs | 50 prompts |
 | H∞ disturbance fit | Upstream 2WikiMultihopQA train | 200 questions |
-| H∞ selection | Official L-CiteEval 2Wiki shortest/base rows | 40 questions |
+| H∞ selection | First 10 frozen official L-CiteEval 2Wiki shortest/base rows | 10 questions |
 | Final evaluation | Official L-CiteEval-Length HotpotQA | 40 questions × 2 lengths |
 
 The official L-CiteEval 2Wiki release contains only 40 unique question families,
 so it cannot honestly supply both 200 disturbance prompts and a disjoint
 selection set. The 200 disturbance prompts therefore come from upstream 2Wiki
-training data; the official 40 are reserved for selection.
+training data; the first 10 questions in the pinned official order are frozen
+for selection and the other 30 are unused.
 
 ## References
 

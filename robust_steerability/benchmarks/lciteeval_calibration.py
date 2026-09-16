@@ -50,6 +50,7 @@ API_SCORERS = (
 )
 COMPONENT_SCORERS = ("axbench_rule_spanish", *API_SCORERS)
 OVERALL_SCORER = "axbench_spanish_overall"
+TUNING_PROMPTS = 10
 
 
 def _root(model_key: str, calibration_id: str) -> Path:
@@ -152,7 +153,7 @@ def fit_base(
         "dataset": {
             "direction": "250 matched MGSM English/Spanish questions",
             "disturbance": "200 upstream 2WikiMultihopQA train prompts at about 8K",
-            "tuning": "40 official L-CiteEval 2Wiki shortest-context questions",
+            "tuning": "first 10 frozen official L-CiteEval 2Wiki shortest-context questions",
             "evaluation": "L-CiteEval-Length HotpotQA",
         },
     }
@@ -239,7 +240,12 @@ def generate_worker(
         root / "base/controller.pt", map_location="cpu", weights_only=True, mmap=True
     )
     base = ControllerArtifact(**base_payload["artifact"])
-    prompts = [str(row["model_input"]) for row in data["calibration"]["tuning"]]
+    tuning_rows = data["calibration"]["tuning"][:TUNING_PROMPTS]
+    if len(tuning_rows) != TUNING_PROMPTS:
+        raise ValueError(
+            f"L-CiteEval H-infinity calibration requires {TUNING_PROMPTS} tuning prompts"
+        )
+    prompts = [str(row["model_input"]) for row in tuning_rows]
     batch_size = generation_batch_size or 1
     for configuration in _grid()[shard_index::shard_count]:
         grid_id = str(configuration["grid_id"])
@@ -281,7 +287,7 @@ def generate_worker(
                 "generated_tokens": count,
             }
             for row, completion, count in zip(
-                data["calibration"]["tuning"], completions, generated, strict=True
+                tuning_rows, completions, generated, strict=True
             )
         ]
         _write_json(
@@ -310,7 +316,13 @@ def generate_worker(
                         ),
                     }
                 ],
-                "repetitions": [{"repetition": 0, "sample_count": 40, "rows": rows}],
+                "repetitions": [
+                    {
+                        "repetition": 0,
+                        "sample_count": TUNING_PROMPTS,
+                        "rows": rows,
+                    }
+                ],
             },
         )
 
@@ -464,7 +476,7 @@ def select(model_key: str, calibration_id: str) -> dict:
         "protocol": {
             "selection_strategy": "grid",
             "selection_metric": "mean per-response Spanish adherence/relevance/fluency harmonic mean",
-            "tuning_samples": 40,
+            "tuning_samples": TUNING_PROMPTS,
             "tuning_repetitions": 1,
             "evaluated_model_kv_cache": False,
             "q_over_r": list(Q_OVER_R),
