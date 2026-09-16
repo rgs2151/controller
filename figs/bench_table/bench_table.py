@@ -796,13 +796,19 @@ def render_lcite_markdown(rows: list[dict], *, full: bool) -> str:
     title = "L-CiteEval length transfer — full results" if full else "L-CiteEval length transfer — summary"
     metrics = LCITE_METRICS if full else LCITE_SUMMARY_METRICS
     headers = " | ".join(metric.markdown for metric in metrics)
-    lines = [f"# {title}", "", f"| Context | Model | Method | {headers} |", "|---|---|---|" + "---:|" * len(metrics)]
+    leading_headers = "Context | Model | Method" if full else "Model | Context | Method"
+    lines = [f"# {title}", "", f"| {leading_headers} | {headers} |", "|---|---|---|" + "---:|" * len(metrics)]
     for row in rows:
         values = " | ".join(
             f"{value:.{metric.decimals}f}"
             for value, metric in zip(row["values"], metrics, strict=True)
         )
-        lines.append(f"| {row['condition']} | {LCITE_MODEL} | {row['method_markdown']} | {values} |")
+        leading_values = (
+            f"{row['condition']} | {LCITE_MODEL} | {row['method_markdown']}"
+            if full
+            else f"{LCITE_MODEL} | {row['condition']} | {row['method_markdown']}"
+        )
+        lines.append(f"| {leading_values} | {values} |")
     documentation = LCITE_DOCUMENTATION if full else LCITE_SUMMARY_DOCUMENTATION
     lines.extend(["", documentation.strip(), ""])
     return "\n".join(lines)
@@ -853,9 +859,14 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
         r"\setlength{\tabcolsep}{5pt}",
         r"\resizebox{\textwidth}{!}{%",
     ]
-    lines.append(f"\\begin{{tabular}}{{rl{'c' * column_count}}}")
+    if full:
+        lines.append(f"\\begin{{tabular}}{{rl{'c' * column_count}}}")
+        leading_headers = "Context & Method"
+    else:
+        lines.append(f"\\begin{{tabular}}{{rrl{'c' * column_count}}}")
+        leading_headers = "Model & Context & Method"
     lines.append(
-        "Context & Method & "
+        leading_headers + " & "
         + " & ".join(
             (r"\cellcolor{projectdarkred!10}" if index == 0 else "") + metric.tex
             for index, metric in enumerate(metrics)
@@ -868,6 +879,11 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
         best_values = _lcite_best_values(group, metrics)
         for method_index, row in enumerate(group):
             condition = f"\\multirow{{{len(group)}}}{{*}}{{{condition_label}}}" if method_index == 0 else ""
+            model = (
+                f"\\multirow{{{len(rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{LCITE_MODEL}}}}}"
+                if not full and condition_index == 0 and method_index == 0
+                else ""
+            )
             values = " & ".join(
                 _lcite_tex_value(
                     value,
@@ -883,11 +899,14 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
                 )
                 for index, (value, metric) in enumerate(zip(row["values"], metrics, strict=True))
             )
-            lines.append(f"{condition} & {row['method_tex']} & {values} \\\\")
+            prefix = f"{condition} & {row['method_tex']}" if full else f"{model} & {condition} & {row['method_tex']}"
+            lines.append(f"{prefix} & {values} \\\\")
             if method_index == 0:
-                lines.append(f"\\cmidrule(l){{2-{column_count + 2}}}")
+                first_column = 2 if full else 3
+                last_column = column_count + (2 if full else 3)
+                lines.append(f"\\cmidrule(l){{{first_column}-{last_column}}}")
         if condition_index != len(LCITE_CONDITIONS) - 1:
-            lines.append(r"\midrule")
+            lines.append(r"\midrule" if full else f"\\cmidrule(l){{2-{column_count + 3}}}")
     lines.extend([r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""])
     return "\n".join(lines)
 
