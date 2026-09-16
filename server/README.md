@@ -39,6 +39,7 @@ run:
 cd ~/controller
 uv venv --python /usr/bin/python3 .venv
 uv pip install --python .venv/bin/python -e .
+.venv/bin/python -m nltk.downloader punkt_tab
 ```
 
 The local workstation continues to use the `robust-steerability` Conda
