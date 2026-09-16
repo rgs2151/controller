@@ -1,7 +1,7 @@
 # Toxicity benchmark
 
-The current benchmark is RealToxicityPrompts (RTP) on Gemma-2-2B with four
-methods: Original, S-PID, A-LQR, and H∞. Jigsaw transfer has been removed.
+The current benchmark is RealToxicityPrompts (RTP) on Gemma-2-2B and
+Llama-3-8B with four methods: Original, S-PID, A-LQR, and H∞. Jigsaw transfer has been removed.
 MMLU remains an optional composable capability dataset but is not part of the
 default run.
 

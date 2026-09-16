@@ -1,7 +1,7 @@
 schema_version = 4
 benchmark = "toxicity"
 base_dataset = "realtoxicityprompts"
-models = ["gemma2b"]
+models = ["gemma2b", "llama8b"]
 available_methods = ["original", "spid", "alqr", "h_infinity"]
 default_methods = ["original", "spid", "alqr", "h_infinity"]
 default_datasets = ["rtp"]
