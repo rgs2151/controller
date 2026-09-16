@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import re
 
-import langdetect
-
 
 NUMBER_PATTERN = re.compile(r"-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?")
 
@@ -38,6 +36,8 @@ def exact_match(completion: str, answer_number: int | float) -> dict[str, object
 
 def spanish_rule_score(completion: str) -> dict[str, object]:
     """Apply AXBench's deterministic Spanish-only language rule."""
+
+    import langdetect
 
     text = completion.replace("<end_of_turn>", "").strip()
     try:
