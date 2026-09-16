@@ -54,7 +54,7 @@ score_reads_completed_generations = true
 [calibration]
 selection_metric = "mean_axbench_spanish_overall"
 h_infinity_disturbance_samples = 200
-h_infinity_tuning_samples = 40
+h_infinity_tuning_samples = 10
 h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
 

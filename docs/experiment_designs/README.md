@@ -54,7 +54,7 @@ different scientific roles even when they originate from the same dataset.
 | [Truthfulness](truthfulness.md) | Truthful, non-misleading answers | TruthfulQA true vs false answers | 200 disjoint TruthfulQA prompts | 50 disjoint TruthfulQA prompts | English and Spanish TruthfulQA; optional MMLU |
 | [Toxicity](toxicity.md) | Non-toxic language | RTP non-toxic vs toxic prompts | 200 disjoint RTP prompts | 50 disjoint RTP prompts | RTP; optional MMLU |
 | [MGSM](mgsm_language_transfer.md) | Answer only in Spanish | 250 matched Spanish vs English questions | 200 GSM8K-train prompts | 50 disjoint GSM8K-train prompts | 100 matched problems in five held-out languages |
-| [L-CiteEval](lciteeval.md) | New run: answer in Spanish | 250 matched MGSM Spanish vs English questions | 200 upstream 2WikiMultihopQA training questions | 40 official L-CiteEval 2Wiki questions | 40 matched HotpotQA questions at 8K and 16K |
+| [L-CiteEval](lciteeval.md) | New run: answer in Spanish | 250 matched MGSM Spanish vs English questions | 200 upstream 2WikiMultihopQA training questions | 10 frozen official L-CiteEval 2Wiki questions | 40 matched HotpotQA questions at 8K and 16K |
 | [HarmBench](harmful.md) | Non-exhibition of harmful behavior | 50 safe/non-exhibiting vs 50 harmful-compliance completions | 50 direct validation behaviors | The same 50 validation behaviors | 240 direct and 1,200 human-jailbreak prompts; optional MMLU |
 
 ## Shared rules
