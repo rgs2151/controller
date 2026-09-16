@@ -28,6 +28,7 @@ Activate it:
 
 ```bash
 conda activate robust-steerability
+python -m nltk.downloader punkt_tab
 ```
 
 Install the package in editable mode if the environment was created without the pip step:
@@ -35,6 +36,9 @@ Install the package in editable mode if the environment was created without the 
 ```bash
 python -m pip install -e .
 ```
+
+`punkt_tab` is the pinned L-CiteEval sentence-segmentation resource used before
+AutoAIS citation scoring; install it once in every new environment.
 
 ## Running Units
 
