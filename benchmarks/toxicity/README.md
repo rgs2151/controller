@@ -1,30 +1,40 @@
 # Toxicity benchmark
 
-This benchmark owns RealToxicityPrompts in-distribution evaluation and Jigsaw
-cross-dataset transfer. It uses the universal four-stage interface:
+The current benchmark is RealToxicityPrompts (RTP) on Gemma-2-2B with four
+methods: Original, S-PID, A-LQR, and H∞. Jigsaw transfer has been removed.
+MMLU remains an optional composable capability dataset but is not part of the
+default run.
 
-1. `artifacts` freezes fit data, the semantic setpoint, and the average of 50 Jacobians.
-2. `calibrate` fits H∞ disturbance geometry and selects S-PID and H∞ on disjoint RTP development prompts.
-3. `evaluate` independently generates RTP, Jigsaw, and/or MMLU responses without scoring.
-4. `score` applies the scorers declared for each dataset to saved responses.
+The benchmark uses the universal four-stage interface:
 
-Jigsaw is a toxicity-transfer dataset and uses the toxicity classifier,
-Distinct-2, and perplexity. MMLU is a capability-retention dataset and uses
-deterministic A/B/C/D accuracy; neither is used for fitting or selection.
-Evaluated-model KV cache defaults to off; `--kv-cache on` is retained for an
-explicit comparison and uses a separate directory.
+1. `artifacts` freezes 200 toxic and 200 non-toxic direction examples, the
+   semantic setpoint, and the average of 50 RTP Jacobians.
+2. `calibrate` writes the published A-LQR setting and a fixed S-PID setting,
+   then selects H∞ on 50 disjoint RTP prompts in one pass.
+3. `evaluate` generates responses without scoring.
+4. `score` independently applies the requested scorers to saved responses.
+
+H∞ calibration fixes `R=1` and evaluates 12 configurations from
+`Q/R ∈ {0.01, 0.1, 1, 10}` and `Qf/R ∈ {0.01, 0.1, 0.316...}`. Each
+configuration is scored for AXBench concept relevance, instruction relevance,
+and fluency. Their harmonic mean, AXBench overall steering, selects the highest
+scoring configuration. No other method is swept.
+
+The final RTP evaluation uses 1,000 prompts × 5 repetitions. Its scorers are
+toxicity, Distinct-2, perplexity, the three AXBench measures, and AXBench overall
+steering. Evaluated-model KV cache defaults to off; `--kv-cache on` is retained
+as an explicit ablation in a separate cache tree.
 
 ```bash
 python -m robust_steerability.benchmarks.toxicity artifacts --model gemma2b --devices auto
 python -m robust_steerability.benchmarks.toxicity calibrate --model gemma2b --devices auto
-python -m robust_steerability.benchmarks.toxicity evaluate --model gemma2b --methods all --datasets all --devices auto
-python -m robust_steerability.benchmarks.toxicity score --model gemma2b --methods all --datasets all --scorers all --devices auto
+python -m robust_steerability.benchmarks.toxicity evaluate --model gemma2b --methods all --devices auto
+python -m robust_steerability.benchmarks.toxicity score --model gemma2b --methods all --scorers all --devices auto
 ```
 
 `benchmark.toml` is the composition surface. Adding an evaluation dataset
-creates a new independent cache namespace. When RTP and Jigsaw are already
-complete, extending the composition with MMLU launches only MMLU generation and
-scoring; it does not load the evaluated model for the completed datasets.
+creates an independent cache namespace. Explicitly requesting `--datasets mmlu`
+runs the frozen 200-question MMLU capability set without regenerating RTP.
 
 ```text
 cache/<model>/artifacts/
