@@ -1,0 +1,35 @@
+{
+  "identity": {
+    "base_benchmark": "harmful",
+    "model": [
+      "meta-llama/Llama-3.2-1B-Instruct",
+      "9213176726f574b556790deb65791e0c5aa438b6"
+    ],
+    "method": "h_infinity",
+    "dataset": [
+      "cais/mmlu",
+      "c30699e8356da336a370243923dbaf21066bb9fe"
+    ],
+    "distribution": "mmlu",
+    "role": "capability",
+    "kv_cache": false,
+    "scorers": [
+      "mmlu_accuracy"
+    ]
+  },
+  "evaluation_samples_per_repetition": 200,
+  "evaluation_repetitions": 1,
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "mmlu_accuracy": 27.500000000000004,
+      "samples": 200
+    }
+  ],
+  "metrics": {
+    "mmlu_accuracy": {
+      "mean": 27.500000000000004,
+      "standard_error": 3.1573327350787723
+    }
+  }
+}
