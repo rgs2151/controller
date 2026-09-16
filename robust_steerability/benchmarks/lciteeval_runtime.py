@@ -28,7 +28,7 @@ from robust_steerability.benchmarks.lciteeval_artifacts import (
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.calibration.nominal_artifact import load_shared_nominal_dynamics
 from robust_steerability.calibration.nominal_artifact import nominal_dynamics_signature
-from robust_steerability.datasets.lciteeval import AXBENCH_CONCEPT
+from robust_steerability.datasets.lciteeval import SPANISH_CONCEPT
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
 from robust_steerability.judges.exact import harmonic_mean, lcite_answer_overlap
 from robust_steerability.judges.lciteeval import (
@@ -37,6 +37,8 @@ from robust_steerability.judges.lciteeval import (
     pipeline_entailment,
 )
 from robust_steerability.judges.specs import scorer_cache_path
+from robust_steerability.judges.mgsm import spanish_rule_score
+from robust_steerability.judges.translation import translated_completions
 from robust_steerability.modeling.huggingface import cuda_device_index
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.source_methods.control import (
@@ -50,8 +52,8 @@ from robust_steerability.source_methods.id_benchmark import runtime_provenance
 METHODS = ("original", "spid", "alqr", "h_infinity")
 CONDITIONS = ("8k", "16k", "32k")
 DEFAULT_BATCH_SIZE = {
-    "qwen25_3b_instruct": {"8k": 4, "16k": 2, "32k": 1},
-    "llama31_8b_instruct": {"8k": 2, "16k": 1, "32k": 1},
+    "qwen25_3b_instruct": {"8k": 2, "16k": 1, "32k": 1},
+    "llama31_8b_instruct": {"8k": 1, "16k": 1, "32k": 1},
 }
 
 
@@ -119,7 +121,7 @@ def _policy(model_key: str, method: str, calibration_id: str, device: str):
     if method == "alqr":
         dynamics = load_shared_nominal_dynamics(
             artifact_root(BENCHMARK, model_key) / "dynamics.pt",
-            behavior=AXBENCH_CONCEPT,
+            behavior=SPANISH_CONCEPT,
             model_id=MODELS[model_key].model_id,
             model_revision=MODELS[model_key].revision,
         )
@@ -152,7 +154,7 @@ def _policy(model_key: str, method: str, calibration_id: str, device: str):
         "feature_norm"
     ][:-1].clamp_min(1e-4).unsqueeze(1)
     if not torch.allclose(base.raw_feature_unit, expected_feature, atol=1e-6, rtol=1e-5):
-        raise ValueError("H-infinity does not use the current shared AXBench direction")
+        raise ValueError("H-infinity does not use the current shared Spanish direction")
     artifact = replace(
         base,
         hinf_gains=selected["gains"],
@@ -161,14 +163,6 @@ def _policy(model_key: str, method: str, calibration_id: str, device: str):
         hinf_diagnostics=selected["diagnostics"],
     )
     return build_policy("hinf", artifact, kp=0.0, ki=0.0, kd=0.0)
-
-
-def format_short_instruction(tokenizer, instruction: str) -> str:
-    return tokenizer.apply_chat_template(
-        [{"role": "user", "content": instruction}],
-        tokenize=False,
-        add_generation_prompt=True,
-    )
 
 
 def _stop_token_ids(model, tokenizer) -> list[int]:
@@ -322,7 +316,7 @@ def generate_shard(
                     "input_tokens": row["input_tokens"],
                     "question": row["question"],
                     "text": f"{row['instruction']}\n\nQuestion: {row['question']}",
-                    "concept": AXBENCH_CONCEPT,
+                    "concept": SPANISH_CONCEPT,
                     "completion": completion,
                     "generated_tokens": generated,
                 }
@@ -415,6 +409,7 @@ def score_answer_overlap(model_key: str, generation: Path, *, use_cache: bool) -
     if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
         return destination
     source = _dataset_map(model_key)
+    translated = translated_completions(cache_root(model_key, use_cache), generation)
     payload = json.loads(generation.read_text())
     rows = []
     for repetition in payload["repetitions"]:
@@ -422,7 +417,7 @@ def score_answer_overlap(model_key: str, generation: Path, *, use_cache: bool) -
             rows.append(
                 {
                     "prompt_id": row["prompt_id"],
-                    **lcite_answer_overlap(row["completion"], source[row["prompt_id"]]["answer"]),
+                    **lcite_answer_overlap(translated[row["prompt_id"]], source[row["prompt_id"]]["answer"]),
                 }
             )
     _write_json(destination, {"status": "complete", "rows": rows})
@@ -436,6 +431,7 @@ def score_citations(
     if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
         return destination
     source = _dataset_map(model_key)
+    translated = translated_completions(cache_root(model_key, use_cache), generation)
     pipeline = load_lcite_entailer(cuda_device_index(device))
     entails = pipeline_entailment(pipeline)
     payload = json.loads(generation.read_text())
@@ -457,7 +453,7 @@ def score_citations(
             {
                 "prompt_id": row["prompt_id"],
                 **lcite_citation_scores(
-                    row["completion"], source[row["prompt_id"]]["docs"], entails
+                    translated[row["prompt_id"]], source[row["prompt_id"]]["docs"], entails
                 ),
             }
         )
@@ -466,10 +462,25 @@ def score_citations(
     return destination
 
 
+def score_spanish_adherence(model_key: str, generation: Path, *, use_cache: bool) -> Path:
+    root = cache_root(model_key, use_cache)
+    destination = scorer_cache_path(root, generation, "axbench_rule_spanish")
+    if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
+        return destination
+    payload = json.loads(generation.read_text())
+    rows = [
+        {"prompt_id": row["prompt_id"], **spanish_rule_score(str(row["completion"]))}
+        for repetition in payload["repetitions"]
+        for row in repetition["rows"]
+    ]
+    _write_json(destination, {"status": "complete", "rows": rows})
+    return destination
+
+
 def score_axbench_overall(model_key: str, generation: Path, *, use_cache: bool) -> Path:
     root = cache_root(model_key, use_cache)
     components = (
-        "axbench_concept_relevance",
+        "axbench_rule_spanish",
         "axbench_instruction_relevance",
         "axbench_fluency",
     )
@@ -488,7 +499,7 @@ def score_axbench_overall(model_key: str, generation: Path, *, use_cache: bool) 
         }
         for prompt_id in prompt_ids
     ]
-    destination = scorer_cache_path(root, generation, "axbench_overall")
+    destination = scorer_cache_path(root, generation, "axbench_spanish_overall")
     _write_json(destination, {"status": "complete", "rows": rows})
     return destination
 

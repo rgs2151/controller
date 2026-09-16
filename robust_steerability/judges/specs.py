@@ -214,6 +214,24 @@ ALL_SCORERS = {
         output_fields=("score",),
         source="AXBench rule-concept aggregation",
     ),
+    "axbench_spanish_overall": ScorerSpec(
+        "axbench_spanish_overall",
+        "deterministic_harmonic_mean",
+        "axbench_overall",
+        "none",
+        None,
+        0.0,
+        2.0,
+        "Harmonic mean of AXBench Spanish adherence, instruction relevance, and "
+        "fluency; zero when any component is zero.",
+        input_fields=(
+            "axbench_rule_spanish",
+            "axbench_instruction_relevance",
+            "axbench_fluency",
+        ),
+        output_fields=("score",),
+        source="AXBench Spanish-rule aggregation",
+    ),
     "lcite_answer_overlap": ScorerSpec(
         "lcite_answer_overlap",
         "deterministic_lcite_answer",

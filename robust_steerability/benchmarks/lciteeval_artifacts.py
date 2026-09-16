@@ -1,4 +1,4 @@
-"""AXBench DiffMean setpoint and shared nominal dynamics for L-CiteEval."""
+"""Spanish DiffMean setpoint and shared nominal dynamics for L-CiteEval."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import sys
 import time
-from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -26,14 +25,14 @@ from robust_steerability.calibration.nominal_artifact import (
     save_nominal_dynamics,
 )
 from robust_steerability.datasets.lciteeval import (
-    AXBENCH_CONCEPT,
-    axbench_direction_rows,
-    h_infinity_prompt_splits,
+    DIRECTION_PAIRS,
+    SPANISH_CONCEPT,
+    materialize_direction,
     materialize_evaluation,
+    materialize_h_infinity_splits,
 )
 from robust_steerability.modeling.huggingface import (
     CausalModelLoadSpec,
-    cuda_device_index,
     load_access_token,
     load_causal_model,
 )
@@ -41,9 +40,9 @@ from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 
-BENCHMARK = "lciteeval"
+BENCHMARK = "lciteeval_spanish"
 JACOBIAN_PROMPTS = 50
-JACOBIAN_MAX_LENGTH = 32
+JACOBIAN_MAX_LENGTH = 512
 CONTEXT_WINDOW = 131_072
 
 
@@ -94,10 +93,16 @@ def load_model(model_key: str, device: str):
 
 def _suffix_length(tokenizer) -> int:
     first = tokenizer.apply_chat_template(
-        [{"role": "user", "content": "1"}], tokenize=True
+        [{"role": "user", "content": "1"}],
+        tokenize=True,
+        add_generation_prompt=True,
+        enable_thinking=False,
     )
     second = tokenizer.apply_chat_template(
-        [{"role": "user", "content": "2"}], tokenize=True
+        [{"role": "user", "content": "2"}],
+        tokenize=True,
+        add_generation_prompt=True,
+        enable_thinking=False,
     )
     for index, (left, right) in enumerate(zip(reversed(first), reversed(second))):
         if left != right:
@@ -107,42 +112,21 @@ def _suffix_length(tokenizer) -> int:
 
 def _prefix_length(tokenizer) -> int:
     first = tokenizer.apply_chat_template(
-        [{"role": "user", "content": "1"}], tokenize=True
+        [{"role": "user", "content": "1"}],
+        tokenize=True,
+        add_generation_prompt=True,
+        enable_thinking=False,
     )
     second = tokenizer.apply_chat_template(
-        [{"role": "user", "content": "2"}], tokenize=True
+        [{"role": "user", "content": "2"}],
+        tokenize=True,
+        add_generation_prompt=True,
+        enable_thinking=False,
     )
     for index, (left, right) in enumerate(zip(first, second)):
         if left != right:
             return index
-    raise ValueError("Could not identify the AXBench chat prefix")
-
-
-def _axbench_text(tokenizer, model_key: str, prompt: str, response: str) -> str:
-    messages = []
-    if model_key == "llama31_8b_instruct":
-        messages.append({"role": "system", "content": "You are a helpful assistant."})
-    messages.extend(
-        [
-            {"role": "user", "content": prompt},
-            {"role": "assistant", "content": response},
-        ]
-    )
-    tokens = tokenizer.apply_chat_template(
-        messages, tokenize=True, add_generation_prompt=True
-    )
-    suffix = _suffix_length(tokenizer)
-    stop = -suffix if suffix else None
-    tokens = tokens[1:stop]
-    return tokenizer.decode(tokens)
-
-
-def _instruction_text(tokenizer, instruction: str) -> str:
-    return tokenizer.apply_chat_template(
-        [{"role": "user", "content": instruction}],
-        tokenize=False,
-        add_generation_prompt=True,
-    )
+    raise ValueError("Could not identify the chat-template prefix")
 
 
 def prepare(model_key: str, tokenizer=None) -> dict:
@@ -163,39 +147,19 @@ def prepare(model_key: str, tokenizer=None) -> dict:
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token = tokenizer.eos_token
             tokenizer.pad_token_id = tokenizer.eos_token_id
-    direction = axbench_direction_rows()
-    formatted: dict[str, list[dict]] = {}
-    for label in ("undesired", "desired"):
-        formatted[label] = [
-            {
-                **record,
-                "text": _axbench_text(
-                    tokenizer,
-                    model_key,
-                    str(record["prompt"]),
-                    str(record["response"]),
-                ),
-            }
-            for record in direction[label]
-        ]
-    prompt_splits = h_infinity_prompt_splits()
-    prompt_splits["disturbance"] = [
-        {
-            **record,
-            "instruction": record["text"],
-            "text": _instruction_text(tokenizer, str(record["text"])),
-        }
-        for record in prompt_splits["disturbance"]
-    ]
+    direction = materialize_direction(tokenizer)
+    prompt_splits = materialize_h_infinity_splits(
+        tokenizer, context_window=CONTEXT_WINDOW
+    )
     payload = {
         "schema_version": 1,
         "benchmark": BENCHMARK,
         "model": [model.model_id, model.revision],
-        "concept": AXBENCH_CONCEPT,
-        "direction_estimator": "AXBench DiffMean over every valid non-prefix token",
+        "concept": SPANISH_CONCEPT,
+        "direction_estimator": "paired MGSM Spanish-minus-English question DiffMean",
         "calibration": {
-            **formatted,
-            "jacobian": formatted["desired"][:JACOBIAN_PROMPTS],
+            **direction,
+            "jacobian": direction["desired"][:JACOBIAN_PROMPTS],
             "disturbance": prompt_splits["disturbance"],
             "tuning": prompt_splits["tuning"],
         },
@@ -212,6 +176,7 @@ def _class_token_mean(model, tokenizer, texts: list[str], batch_size: int) -> to
     layers = _decoder_layers(model)
     device = next(model.parameters()).device
     prefix = _prefix_length(tokenizer)
+    suffix = _suffix_length(tokenizer)
     total = None
     count = 0
     for start in range(0, len(texts), batch_size):
@@ -245,12 +210,15 @@ def _class_token_mean(model, tokenizer, texts: list[str], batch_size: int) -> to
             for handle in handles:
                 handle.remove()
         if any(value is None for value in captured):
-            raise RuntimeError("Failed to capture AXBench DiffMean states")
+            raise RuntimeError("Failed to capture Spanish DiffMean states")
         positions = encoded["attention_mask"].long().cumsum(dim=1) - 1
+        lengths = encoded["attention_mask"].sum(dim=1, keepdim=True)
         valid = encoded["attention_mask"].bool() & (positions >= prefix)
+        if suffix:
+            valid &= positions < (lengths - suffix)
         batch_count = int(valid.sum())
         if batch_count == 0:
-            raise ValueError("AXBench batch has no non-prefix tokens")
+            raise ValueError("Spanish direction batch has no valid question tokens")
         batch_sum = torch.stack(
             [value.float()[valid].sum(dim=0).double().cpu() for value in captured]
         )
@@ -259,7 +227,7 @@ def _class_token_mean(model, tokenizer, texts: list[str], batch_size: int) -> to
         total.add_(batch_sum)
         count += batch_count
     if total is None or count == 0:
-        raise ValueError("AXBench direction class is empty")
+        raise ValueError("Spanish direction class is empty")
     return (total / count).float()
 
 
@@ -290,10 +258,10 @@ def fit_setpoint(model_key: str, device: str) -> None:
         {
             "identity": {
                 "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
-                "concept": AXBENCH_CONCEPT,
-                "estimator": "AXBench DiffMean",
-                "desired_records": 72,
-                "undesired_records": 72,
+                "concept": SPANISH_CONCEPT,
+                "estimator": "paired MGSM Spanish-minus-English question DiffMean",
+                "desired_records": DIRECTION_PAIRS,
+                "undesired_records": DIRECTION_PAIRS,
             },
             "contrast": contrast,
             "feature_norm": feature_norm,
@@ -396,7 +364,7 @@ def fit_jacobians(
     ]
     dynamics = aggregate_jacobian_partials(partials, counts)
     identity = nominal_dynamics_identity(
-        behavior=AXBENCH_CONCEPT,
+        behavior=SPANISH_CONCEPT,
         model_id=MODELS[model_key].model_id,
         model_revision=MODELS[model_key].revision,
         records=records,
@@ -421,7 +389,7 @@ def write_manifest(model_key: str) -> None:
         {
             "schema_version": 1,
             "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
-            "concept": AXBENCH_CONCEPT,
+            "concept": SPANISH_CONCEPT,
             "shared_by": ["spid", "alqr", "h_infinity"],
             "status": {
                 name: "complete" if (root / name).exists() else "missing"
