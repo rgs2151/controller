@@ -29,6 +29,7 @@ from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.exact import harmonic_mean
 from robust_steerability.judges.mgsm import spanish_rule_score
 from robust_steerability.judges.specs import scorer_cache_path
+from robust_steerability.modeling.huggingface import release_cuda_memory
 
 
 BENCHMARK = artifacts.BENCHMARK
@@ -506,6 +507,7 @@ def calibrate(
         select_fixed(model_key, devices[0], calibration_id, **fixed_parameters)
         return
     fit_base(model_key, devices[0], calibration_id)
+    release_cuda_memory(devices[0])
     synthesize_grid(model_key, devices[0], calibration_id)
     jobs = [
         (
