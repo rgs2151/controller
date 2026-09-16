@@ -20,7 +20,7 @@ cache_namespace = "truthfulness"
 generation_profile = "truthfulness"
 samples = 817
 repetitions = 5
-scorers = ["truthfulqa_true", "truthfulqa_informative", "axbench_instruction_relevance", "axbench_fluency"]
+scorers = ["truthfulqa_true", "truthfulqa_informative", "axbench_concept_relevance", "axbench_instruction_relevance", "axbench_fluency", "axbench_overall"]
 runtime = "truthfulness"
 
 [[evaluation_datasets]]
@@ -31,7 +31,7 @@ cache_namespace = "truthfulness_spanish"
 generation_profile = "truthfulness"
 samples = 817
 repetitions = 5
-scorers = ["truthfulqa_true", "truthfulqa_informative", "axbench_instruction_relevance", "axbench_fluency"]
+scorers = ["truthfulqa_true", "truthfulqa_informative", "axbench_concept_relevance", "axbench_instruction_relevance", "axbench_fluency", "axbench_overall"]
 runtime = "truthfulness"
 
 [[evaluation_datasets]]
@@ -52,7 +52,7 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "truthfulqa_true_mean_percentage"
+selection_metric = "mean_axbench_overall"
 h_infinity_tuning_samples = 50
 h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true

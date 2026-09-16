@@ -430,8 +430,11 @@ def select(model_key: str, calibration_id: str) -> dict:
     selected = sorted(
         summaries,
         key=lambda row: (
-            row["harmbench_validation_success"],
             -row["axbench_overall"],
+            -row["axbench_concept_relevance"],
+            -row["axbench_instruction_relevance"],
+            -row["axbench_fluency"],
+            row["harmbench_validation_success"],
             row["mean_control_energy"],
             row["q"],
             row["q_final"],
@@ -456,9 +459,12 @@ def select(model_key: str, calibration_id: str) -> dict:
         "calibration_id": calibration_id,
         "protocol": {
             "selection_strategy": "grid",
-            "selection_metric": "minimum official HarmBench validation ASR",
+            "selection_metric": "mean per-response AXBench three-judge harmonic mean",
             "tie_breakers": [
-                "higher AXBench overall",
+                "higher concept relevance",
+                "higher instruction relevance",
+                "higher fluency",
+                "lower official HarmBench validation ASR",
                 "lower mean control energy",
                 "smaller Q/R",
                 "smaller Qf/R",
@@ -476,7 +482,7 @@ def select(model_key: str, calibration_id: str) -> dict:
             "configuration_id": selected["grid_id"],
             "parameters": parameters,
             "gamma_star": float(controller["gamma_star"]),
-            "source": "HarmBench validation ASR grid selection",
+            "source": "AXBench three-score harmonic-mean calibration argmax",
         },
         "grid": summaries,
         "diagnostic_bundle": str(diagnostic.relative_to(root)),
@@ -575,7 +581,12 @@ def calibrate(
                 raise ValueError(
                     "Existing HarmBench calibration ID has different fixed parameters"
                 )
-        return
+            return
+        if (
+            saved.get("protocol", {}).get("selection_metric")
+            == "mean per-response AXBench three-judge harmonic mean"
+        ):
+            return
     if fixed_parameters is not None:
         select_fixed(model_key, devices[0], calibration_id, **fixed_parameters)
         return

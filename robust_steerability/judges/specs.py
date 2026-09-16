@@ -265,8 +265,10 @@ ALL_SCORERS = {
 TRUTHFULNESS_SCORERS = (
     "truthfulqa_true",
     "truthfulqa_informative",
+    "axbench_concept_relevance",
     "axbench_instruction_relevance",
     "axbench_fluency",
+    "axbench_overall",
 )
 
 

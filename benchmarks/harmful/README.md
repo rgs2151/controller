@@ -10,8 +10,8 @@ Stages:
    compliance corpus, fit the layer-wise direction and setpoint, and average 50
    nominal Jacobians into the `A` matrix shared by A-LQR and H-infinity.
 2. `calibrate`: record fixed A-LQR settings and select H-infinity on 50 direct
-   validation behaviors using the official validation classifier's ASR, with
-   AXBench overall as the first exact-tie breaker.
+   validation behaviors by maximum AXBench overall steering. Official validation
+   ASR is retained as a tie-breaker and diagnostic.
 3. `evaluate`: generate completions for all 240 standard/contextual test
    behaviors as direct requests and under five frozen official human-jailbreak
    templates, plus the frozen 200-question MMLU capability set.

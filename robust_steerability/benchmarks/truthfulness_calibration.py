@@ -29,9 +29,9 @@ from robust_steerability.artifacts import configuration_hash
 from robust_steerability.experiments.calibration import calibrate_controller, diagnostic_root
 from robust_steerability.experiments.diagnostics import score as freeze_diagnostic_score
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
-from robust_steerability.judges import huggingface as huggingface_scoring
-from robust_steerability.judges.specs import scorer_spec
-from robust_steerability.benchmarks.metrics import truth_judge_prompt
+from robust_steerability.judges import openai as openai_scoring
+from robust_steerability.judges.exact import harmonic_mean
+from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.huggingface import load_access_token
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.source_methods.generation import generate_batched
@@ -54,8 +54,13 @@ SEED_STRIDE = 100_000
 Q_OVER_R = (0.01, 10**-1.5, 0.1, 10**-0.5, 1.0, 10**0.5, 10.0, 10**1.5)
 Q_FINAL_OVER_R = (0.01, 10**-1.5, 0.1, 10**-0.5)
 FIXED_R = 1.0
-GRID_SELECTION_SOURCE = "TruthfulQA True calibration-grid argmax"
+GRID_SELECTION_SOURCE = "AXBench three-score harmonic-mean calibration argmax"
 FIXED_SELECTION_SOURCE = "fixed configuration supplied at calibration launch"
+API_SCORERS = (
+    "axbench_concept_relevance",
+    "axbench_instruction_relevance",
+    "axbench_fluency",
+)
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -460,57 +465,45 @@ def generate_worker(
         _write_json(destination, payload)
 
 
-def score_truth_grid(model_key: str, device: str, calibration_id: str) -> None:
+def score_axbench_grid(
+    model_key: str,
+    calibration_id: str,
+    *,
+    api_concurrency: int,
+    api_batch_size: int,
+) -> None:
     root = _root(model_key, calibration_id)
-    specification = scorer_spec("truthfulqa_true")
-    model_id = specification.model_id
-    revision = specification.revision
-    prompt_label = str(specification.prompt_label)
-    destination = root / "grid/scores/truthfulqa_true.json"
     generation_paths = sorted((root / "grid/generations").glob("*.json"))
-    identity = {
-        "model": [model_id, revision],
-        "scorer": "truthfulqa_true",
-        "rubric": specification.rubric,
-    }
-    if destination.exists():
-        saved = json.loads(destination.read_text())
-        if saved.get("status") == "complete":
-            return
-    rows = []
-    for path in generation_paths:
-        payload = json.loads(path.read_text())
-        if payload.get("status") != "complete":
-            raise ValueError(f"Incomplete calibration generation: {path}")
-        rows.extend(
-            row for repetition in payload["repetitions"] for row in repetition["rows"]
-        )
-    scorer_model, tokenizer = huggingface_scoring.load_scorer(
-        model_id, revision, device, load_access_token(REPO)
+    if len(generation_paths) != len(_grid()):
+        raise ValueError("Truthfulness H-infinity grid generations are incomplete")
+    openai_scoring.score_generations(
+        generation_paths,
+        root / "grid",
+        list(API_SCORERS),
+        concurrency=api_concurrency,
+        batch_size=api_batch_size,
+        row_defaults={"concept": evaluation.TRUTHFULNESS_CONCEPT},
     )
-    if not destination.exists():
-        saved = {"identity": identity, "status": "partial", "rows": []}
-    _write_json(destination, saved)
-    batch_size = huggingface_scoring.BATCH_SIZE
-    for start in range(len(saved["rows"]), len(rows), batch_size):
-        batch = rows[start:start + batch_size]
-        prompts = [
-            truth_judge_prompt(row["question"], row["completion"], prompt_label)
-            for row in batch
-        ]
-        outputs = huggingface_scoring.score_batch(
-            scorer_model, tokenizer, prompts, device
-        )
-        saved["rows"].extend([
+    for generation_path in generation_paths:
+        mappings = []
+        for scorer in API_SCORERS:
+            payload = json.loads(
+                scorer_cache_path(root / "grid", generation_path, scorer).read_text()
+            )
+            mappings.append(
+                {str(row["prompt_id"]): float(row["score"]) for row in payload["rows"]}
+            )
+        rows = [
             {
-                "grid_id": row["grid_id"], "repetition": row["repetition"],
-                "prompt_id": row["prompt_id"], **output,
+                "prompt_id": prompt_id,
+                "score": harmonic_mean([mapping[prompt_id] for mapping in mappings]),
             }
-            for row, output in zip(batch, outputs, strict=True)
-        ])
-        _write_json(destination, saved)
-    saved["status"] = "complete"
-    _write_json(destination, saved)
+            for prompt_id in mappings[0]
+        ]
+        _write_json(
+            scorer_cache_path(root / "grid", generation_path, "axbench_overall"),
+            {"status": "complete", "rows": rows},
+        )
 
 
 def _freeze_selected_diagnostics(
@@ -573,29 +566,33 @@ def _freeze_selected_diagnostics(
 
 def select(model_key: str, calibration_id: str) -> dict:
     root = _root(model_key, calibration_id)
-    truth = json.loads(
-        (root / "grid/scores/truthfulqa_true.json").read_text()
-    )["rows"]
-    truth_map = {(r["grid_id"], r["repetition"], r["prompt_id"]): r["score"] for r in truth}
     summaries = []
     for configuration in _grid():
-        grid_id = str(configuration["grid_id"])
-        per_repetition = []
-        for repetition in range(CALIBRATION_REPETITIONS):
-            keys = [key for key in truth_map if key[0] == grid_id and key[1] == repetition]
-            t = 100.0 * float(np.mean([truth_map[key] for key in keys]))
-            per_repetition.append({"repetition": repetition, "truth": t})
+        generation_path = (
+            root / "grid/generations" / f"{configuration['grid_id']}.json"
+        )
+        means = {}
+        for scorer in (*API_SCORERS, "axbench_overall"):
+            payload = json.loads(
+                scorer_cache_path(root / "grid", generation_path, scorer).read_text()
+            )
+            means[scorer] = float(
+                np.mean([float(row["score"]) for row in payload["rows"]])
+            )
         configuration["lambda"] = paper_alqr_setting(
             "truthfulness", MODELS[model_key].model_id
         ).multiplier
-        summaries.append({
-            **configuration,
-            "truth": float(np.mean([row["truth"] for row in per_repetition])),
-            "per_repetition": per_repetition,
-        })
+        summaries.append({**configuration, **means})
     selected = sorted(
         summaries,
-        key=lambda row: (-row["truth"], row["q"], row["q_final"]),
+        key=lambda row: (
+            -row["axbench_overall"],
+            -row["axbench_concept_relevance"],
+            -row["axbench_instruction_relevance"],
+            -row["axbench_fluency"],
+            row["q"],
+            row["q_final"],
+        ),
     )[0]
     parameters = {
         name: float(selected[name]) for name in ("lambda", "q", "r", "q_final")
@@ -615,7 +612,14 @@ def select(model_key: str, calibration_id: str) -> dict:
             "tuning_samples": CALIBRATION_SAMPLES,
             "tuning_repetitions": CALIBRATION_REPETITIONS,
             "evaluated_model_kv_cache": False,
-            "selection_metric": "mean True percentage across repetitions",
+            "selection_metric": "mean per-response AXBench three-judge harmonic mean",
+            "tie_breakers": [
+                "higher concept relevance",
+                "higher instruction relevance",
+                "higher fluency",
+                "smaller Q/R",
+                "smaller Qf/R",
+            ],
             "q_over_r": list(Q_OVER_R), "q_final_over_r": list(Q_FINAL_OVER_R),
             "fixed_r": FIXED_R,
             "fixed_setpoint_multiplier": parameters["lambda"],
@@ -646,6 +650,9 @@ def calibrate(
     log_root: Path,
     calibration_id: str,
     generation_batch_size: int | None = None,
+    *,
+    api_concurrency: int = openai_scoring.DEFAULT_CONCURRENCY,
+    api_batch_size: int = openai_scoring.DEFAULT_BATCH_SIZE,
     fixed_parameters: dict[str, float] | None = None,
 ) -> None:
     evaluation._configure_runtime(model_key, calibration_id)
@@ -687,7 +694,12 @@ def calibrate(
         )
         return
     if selection.exists() and (_root(model_key, calibration_id) / "controller.pt").exists():
-        return
+        saved = json.loads(selection.read_text())
+        if (
+            saved.get("protocol", {}).get("selection_metric")
+            == "mean per-response AXBench three-judge harmonic mean"
+        ):
+            return
     prepare(model_key, calibration_id)
     fit_base(model_key, devices[0], calibration_id)
     synthesize_grid(model_key, devices[0], calibration_id)
@@ -711,17 +723,12 @@ def calibrate(
         for index, _device in enumerate(devices)
     ]
     run_jobs(generation_jobs, devices, log_root / "hinf-grid-generation")
-    scoring_jobs = [(
-        "hinf-grid-score-truthfulqa-true",
-        [
-            sys.executable, "-m",
-            "robust_steerability.benchmarks.truthfulness_calibration",
-            "--stage", "score-grid", "--model", model_key,
-            "--device", "{device}",
-            "--calibration-id", calibration_id,
-        ],
-    )]
-    run_jobs(scoring_jobs, devices, log_root / "hinf-grid-scoring")
+    score_axbench_grid(
+        model_key,
+        calibration_id,
+        api_concurrency=api_concurrency,
+        api_batch_size=api_batch_size,
+    )
     select(model_key, calibration_id)
 
 
@@ -741,6 +748,12 @@ def main() -> None:
     parser.add_argument("--shard-count", type=int)
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument(
+        "--api-concurrency", type=int, default=openai_scoring.DEFAULT_CONCURRENCY
+    )
+    parser.add_argument(
+        "--api-batch-size", type=int, default=openai_scoring.DEFAULT_BATCH_SIZE
+    )
     parser.add_argument("--q-over-r", type=float)
     parser.add_argument("--q-final-over-r", type=float)
     parser.add_argument("--r", type=float)
@@ -761,10 +774,11 @@ def main() -> None:
             arguments.generation_batch_size,
         )
     elif arguments.stage == "score-grid":
-        score_truth_grid(
+        score_axbench_grid(
             arguments.model,
-            arguments.device,
             arguments.calibration_id,
+            api_concurrency=arguments.api_concurrency,
+            api_batch_size=arguments.api_batch_size,
         )
     elif arguments.stage == "select":
         print(json.dumps(
