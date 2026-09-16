@@ -12,7 +12,12 @@ import aiohttp
 
 from robust_steerability.judges.exact import remove_citations
 from robust_steerability.judges.lciteeval import _sentences
-from robust_steerability.judges.openai import ENDPOINT, RETRYABLE_STATUS, _api_key
+from robust_steerability.judges.openai import (
+    ENDPOINT,
+    RETRYABLE_STATUS,
+    IncompleteJudgeResponse,
+    _api_key,
+)
 from robust_steerability.judges.specs import scorer_cache_path
 
 
@@ -157,7 +162,7 @@ def _response_format(scorer: str, count: int) -> dict:
 
 def _request_rows(scorer: str, indexed_rows: list[tuple[int, dict]], dataset: dict[str, dict]) -> list[dict]:
     requested = []
-    for item_index, row in indexed_rows:
+    for item_index, (_, row) in enumerate(indexed_rows):
         source = dataset[str(row["prompt_id"])]
         if scorer == ANSWER_SCORER:
             requested.append(
@@ -177,6 +182,37 @@ def _request_rows(scorer: str, indexed_rows: list[tuple[int, dict]], dataset: di
                 }
             )
     return requested
+
+
+def _validate_citation_structure(result: dict, request_row: dict) -> None:
+    expected_claims = request_row["claims"]
+    returned_claims = {
+        int(claim["claim_index"]): claim for claim in result["claims"]
+    }
+    expected_claim_indices = list(range(len(expected_claims)))
+    if (
+        sorted(returned_claims) != expected_claim_indices
+        or len(returned_claims) != len(result["claims"])
+    ):
+        raise IncompleteJudgeResponse("changed_claim_indices")
+    for claim_index, expected_claim in enumerate(expected_claims):
+        returned_citations = {
+            int(citation["citation_index"]): citation
+            for citation in returned_claims[claim_index]["citations"]
+        }
+        expected_citations = expected_claim["citations"]
+        expected_citation_indices = list(range(len(expected_citations)))
+        if (
+            sorted(returned_citations) != expected_citation_indices
+            or len(returned_citations)
+            != len(returned_claims[claim_index]["citations"])
+            or any(
+                int(returned_citations[index]["citation_id"])
+                != int(expected_citations[index]["citation_id"])
+                for index in expected_citation_indices
+            )
+        ):
+            raise IncompleteJudgeResponse("changed_citation_indices")
 
 
 def _rubric(scorer: str) -> str:
@@ -225,17 +261,31 @@ async def _request(session, semaphore, key: str, scorer: str, batch_index: int, 
                         payload = json.loads(text)
                         choice = payload["choices"][0]
                         if choice.get("finish_reason") != "stop":
-                            raise RuntimeError(
-                                f"Incomplete {scorer} response: {choice.get('finish_reason')}"
+                            raise IncompleteJudgeResponse(
+                                str(choice.get("finish_reason"))
                             )
-                        returned = json.loads(choice["message"]["content"])["results"]
-                        expected = [row["item_index"] for row in request_rows]
+                        content = choice.get("message", {}).get("content")
+                        if not content:
+                            raise IncompleteJudgeResponse("empty_content")
+                        returned = json.loads(content)["results"]
+                        expected = list(range(len(request_rows)))
                         by_index = {int(row["item_index"]): row for row in returned}
                         if sorted(by_index) != expected or len(by_index) != len(returned):
-                            raise ValueError(f"{scorer} changed item indices")
+                            raise IncompleteJudgeResponse("changed_item_indices")
+                        ordered = [by_index[index] for index in expected]
+                        if scorer == CITATION_SCORER:
+                            for result, request_row in zip(
+                                ordered, request_rows, strict=True
+                            ):
+                                _validate_citation_structure(result, request_row)
+                        results = []
+                        for local_index, (global_index, _) in enumerate(indexed_rows):
+                            result = dict(ordered[local_index])
+                            result["item_index"] = global_index
+                            results.append(result)
                         return {
                             "batch_index": batch_index,
-                            "results": [by_index[index] for index in expected],
+                            "results": results,
                             "api": {
                                 "request_id": payload.get("id"),
                                 "returned_model": payload.get("model"),
@@ -248,6 +298,42 @@ async def _request(session, semaphore, key: str, scorer: str, batch_index: int, 
         except (aiohttp.ClientError, asyncio.TimeoutError):
             if attempt == 7:
                 raise
+        except IncompleteJudgeResponse as error:
+            if len(indexed_rows) > 1:
+                midpoint = len(indexed_rows) // 2
+                left = await _request(
+                    session,
+                    semaphore,
+                    key,
+                    scorer,
+                    batch_index,
+                    indexed_rows[:midpoint],
+                    dataset,
+                )
+                right = await _request(
+                    session,
+                    semaphore,
+                    key,
+                    scorer,
+                    batch_index,
+                    indexed_rows[midpoint:],
+                    dataset,
+                )
+                return {
+                    "batch_index": batch_index,
+                    "results": left["results"] + right["results"],
+                    "api": {
+                        "split_after_incomplete_response": True,
+                        "initial_reason": error.reason,
+                        "requests": [left["api"], right["api"]],
+                    },
+                }
+            if attempt == 7:
+                _, row = indexed_rows[0]
+                raise RuntimeError(
+                    f"OpenAI {scorer} could not score prompt "
+                    f"{row.get('prompt_id')!r}: {error}"
+                ) from error
         await asyncio.sleep(float(retry_after) if retry_after else min(2**attempt, 30))
     raise RuntimeError(f"OpenAI {scorer} retry loop terminated unexpectedly")
 
