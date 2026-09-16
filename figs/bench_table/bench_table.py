@@ -260,10 +260,9 @@ MGSM_METHODS = (
     ("h_infinity", "H∞ (ours)", r"$\mathbf{H_\infty}$ (ours)"),
 )
 MGSM_METRICS = (
-    Metric("mgsm_axbench_overall.score", "Overall steering (0–2) ↑", r"Overall steering (0--2) $\uparrow$", 3, True),
-    Metric("mgsm_exact_match.score", "Exact answer (%) ↑", r"Exact answer (\%) $\uparrow$", 1, True),
-    Metric("axbench_rule_spanish.score", "Spanish rule (0–2) ↑", r"Spanish rule (0--2) $\uparrow$", 2, True),
-    Metric("axbench_instruction_relevance.score", "Instruction relevance (0–2) ↑", r"Instruction relevance (0--2) $\uparrow$", 2, True),
+    Metric("mgsm_exact_match.score", "Accuracy (%) ↑", r"Accuracy (\%) $\uparrow$", 1, True),
+    Metric("axbench_rule_spanish.score", "Spanish relevance (0–2) ↑", r"\shortstack{Spanish\\relevance (0--2) $\uparrow$}", 2, True),
+    Metric("axbench_instruction_relevance.score", "Instruction relevance (0–2) ↑", r"\shortstack{Instruction\\relevance (0--2) $\uparrow$}", 2, True),
     Metric("axbench_fluency.score", "Fluency (0–2) ↑", r"Fluency (0--2) $\uparrow$", 2, True),
 )
 
@@ -274,15 +273,14 @@ MGSM_DOCUMENTATION = r"""## Method
 - Direction: all 250 matched English–Spanish MGSM pairs define the Spanish steering direction. A-LQR and H∞ share the same 50-Jacobian dynamics estimate. H∞ additionally fits its disturbance geometry and robust controller without changing the shared dynamics matrix.
 - Prompting: each language uses its native eight-shot worked-example prompt. Generation is deterministic, limited to 256 new tokens, and runs with evaluated-model KV cache disabled.
 - Model: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c`, with thinking mode disabled.
-- The overall report is the equal-weight macro-average of the five language-level means. The full report exposes all 20 language–method cells.
+- The summary report is the equal-weight macro-average of the five language-level means. The full report exposes all 20 language–method cells.
 
 ## Measures
 
 | Column | Meaning | Scorer and decision rule |
 |---|---|---|
-| Overall steering (0–2) ↑ | Joint Spanish adherence, instruction relevance, and fluency. | Per-response harmonic mean of the three AXBench components; zero if any component is zero, then averaged over the 250 problems. |
-| Exact answer (%) ↑ | Percentage of problems with the correct final numeric answer. | Deterministic language-independent parser; commas and a trailing `.0` are normalized, and missing or unparseable answers are incorrect. |
-| Spanish rule (0–2) ↑ | Whether the generated response is in Spanish. | AXBench deterministic Spanish rule evaluator: 0 = rule not satisfied and 2 = rule satisfied. |
+| Accuracy (%) ↑ | Percentage of problems with the correct final numeric answer. | Deterministic language-independent parser; commas and a trailing `.0` are normalized, and missing or unparseable answers are incorrect. |
+| Spanish relevance (0–2) ↑ | Whether the generated response is in Spanish. | AXBench deterministic Spanish rule evaluator: 0 = rule not satisfied and 2 = rule satisfied. |
 | Instruction relevance (0–2) ↑ | Whether the response addresses and attempts the arithmetic task. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Language quality of the generated response. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
@@ -507,6 +505,7 @@ def _mgsm_overall_rows(rows: list[dict]) -> list[dict]:
         method_rows = [row for row in rows if row["method_key"] == method_key]
         overall.append(
             {
+                "method_key": method_key,
                 "method_markdown": markdown_label,
                 "method_tex": tex_label,
                 "values": tuple(
@@ -524,7 +523,7 @@ def _mgsm_markdown_value(value: float, metric: Metric) -> str:
 
 
 def render_mgsm_markdown(rows: list[dict], *, full: bool) -> str:
-    title = "MGSM multilingual transfer — full results" if full else "MGSM multilingual transfer — overall"
+    title = "MGSM multilingual transfer — full results" if full else "MGSM multilingual transfer — summary"
     headers = " | ".join(metric.markdown for metric in MGSM_METRICS)
     if full:
         lines = [f"# {title}", "", f"| Language | Model | Method | {headers} |", "|---|---|---|" + "---:|" * len(MGSM_METRICS)]
@@ -543,15 +542,26 @@ def render_mgsm_markdown(rows: list[dict], *, full: bool) -> str:
     return "\n".join(lines)
 
 
-def _mgsm_tex_value(value: float, metric: Metric, *, best: bool, primary: bool) -> str:
+def _mgsm_tex_value(
+    value: float,
+    metric: Metric,
+    *,
+    emphasis: str | None,
+    primary: bool,
+) -> str:
     background = r"\cellcolor{projectdarkred!10}" if primary else ""
     number = f"{value:.{metric.decimals}f}"
-    return background + (f"$\\mathbf{{{number}}}$" if best else f"${number}$")
+    if emphasis == "bold":
+        number = f"\\mathbf{{{number}}}"
+    elif emphasis == "underline":
+        number = f"\\underline{{{number}}}"
+    return background + f"${number}$"
 
 
 def _mgsm_best_values(rows: list[dict]) -> tuple[float, ...]:
+    steered_rows = [row for row in rows if row["method_key"] != "original"]
     return tuple(
-        max(row["values"][index] for row in rows)
+        max(row["values"][index] for row in steered_rows)
         for index in range(len(MGSM_METRICS))
     )
 
@@ -561,7 +571,7 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
     caption = (
         "Full MGSM multilingual-transfer results for Qwen3-4B. Each language uses the same 250 problem identities."
         if full
-        else "Overall MGSM multilingual-transfer results for Qwen3-4B, macro-averaged equally across five languages with 250 problems per language."
+        else "Summary MGSM multilingual-transfer results for Qwen3-4B, macro-averaged equally across five languages with 250 problems per language."
     )
     label = "tab:mgsm-full" if full else "tab:mgsm-overall"
     lines = [
@@ -596,7 +606,13 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
                     _mgsm_tex_value(
                         value,
                         metric,
-                        best=value == best_values[index],
+                        emphasis=(
+                            "bold"
+                            if row["method_key"] == "h_infinity" and value == best_values[index]
+                            else "underline"
+                            if row["method_key"] != "original" and value == best_values[index]
+                            else None
+                        ),
                         primary=index == 0,
                     )
                     for index, (value, metric) in enumerate(zip(row["values"], MGSM_METRICS, strict=True))
@@ -625,7 +641,13 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
                 _mgsm_tex_value(
                     value,
                     metric,
-                    best=value == best_values[index],
+                    emphasis=(
+                        "bold"
+                        if row["method_key"] == "h_infinity" and value == best_values[index]
+                        else "underline"
+                        if row["method_key"] != "original" and value == best_values[index]
+                        else None
+                    ),
                     primary=index == 0,
                 )
                 for index, (value, metric) in enumerate(zip(row["values"], MGSM_METRICS, strict=True))
