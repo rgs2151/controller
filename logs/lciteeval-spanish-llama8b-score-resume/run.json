@@ -1,0 +1,88 @@
+{
+  "schema_version": 2,
+  "run_id": "lciteeval-spanish-llama8b-score-resume",
+  "status": "complete",
+  "started_at_utc": "2026-09-16T14:32:01.614547+00:00",
+  "benchmark": "lciteeval_spanish",
+  "model": "llama31_8b_instruct",
+  "stage": "score",
+  "methods": [
+    "original",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "8k",
+    "16k"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "none",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "scorers": [
+      "axbench_fluency",
+      "axbench_instruction_relevance",
+      "axbench_rule_spanish",
+      "axbench_spanish_overall",
+      "lcite_answer_bilingual",
+      "lcite_citation_bilingual"
+    ],
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "robust_steerability/benchmarks/lciteeval.py",
+    "score",
+    "--model",
+    "llama31_8b_instruct",
+    "--methods",
+    "original,alqr,h_infinity",
+    "--datasets",
+    "8k,16k",
+    "--scorers",
+    "default",
+    "--devices",
+    "auto",
+    "--calibration-id",
+    "selected",
+    "--kv-cache",
+    "off",
+    "--api-concurrency",
+    "500",
+    "--api-batch-size",
+    "20",
+    "--run-id",
+    "lciteeval-spanish-llama8b-score-resume"
+  ],
+  "working_directory": "/teamspace/studios/this_studio/controller",
+  "git": {
+    "commit": "75a10a83a75459f2505724ad50688b5f58b9d67a",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "vm-1789567979856782036",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": "01m2ges9x7p9xpz3z1b9208rk6.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/lciteeval_spanish/llama31_8b_instruct"
+  },
+  "finished_at_utc": "2026-09-16T14:33:07.777580+00:00",
+  "elapsed_seconds": 65.26595250900004
+}
