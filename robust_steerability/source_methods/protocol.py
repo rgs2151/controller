@@ -90,6 +90,7 @@ ODESTEER_FIT_SAMPLES_PER_CLASS = {"toxicity": 5000, "truthfulness": 1800}
 ALQR_PAPER_SELECTIONS = {
     "toxicity": {
         "gemma2b": LQRSetting(multiplier=3.5, q=0.1, r=1.0, q_final=0.1),
+        "llama8b": LQRSetting(multiplier=2.0, q=0.1, r=10.0, q_final=10.0),
     },
     "truthfulness": {
         "gemma2b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
