@@ -1,4 +1,4 @@
-"""Portable RTP-to-Jigsaw artifacts, calibration, evaluation, and scoring."""
+"""Portable RealToxicityPrompts artifacts, calibration, evaluation, and scoring."""
 
 from __future__ import annotations
 
@@ -18,13 +18,18 @@ from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.benchmarks import toxicity_runtime as runtime
 from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.judges.specs import scorer_spec
-from robust_steerability.source_methods.protocol import paper_alqr_setting
+from robust_steerability.judges import openai as openai_scoring
+from robust_steerability.source_methods.protocol import (
+    SPID_SOURCE_GRIDS,
+    paper_alqr_setting,
+)
 
 
 COMPOSITION = load_composition("toxicity")
 METHODS = COMPOSITION.available_methods
 DEFAULT_METHODS = COMPOSITION.default_methods
 DATASETS = COMPOSITION.dataset_keys
+DEFAULT_DATASETS = COMPOSITION.default_datasets
 
 
 def _names(value: str, allowed: tuple[str, ...]) -> list[str]:
@@ -61,16 +66,47 @@ def _write_alqr_selection(model_key: str, calibration_id: str) -> None:
     destination.write_text(json.dumps(payload, indent=2) + "\n")
 
 
+def _write_spid_selection(model_key: str, calibration_id: str) -> None:
+    model = MODELS[model_key]
+    grid = SPID_SOURCE_GRIDS["toxicity"][model_key]
+    destination = calibration_root(
+        "toxicity", model_key, "spid", calibration_id
+    ) / "selection.json"
+    payload = {
+        "schema_version": 1,
+        "model": [model.model_id, model.revision],
+        "benchmark": "toxicity",
+        "method": "spid",
+        "calibration_id": calibration_id,
+        "source": "fixed source-method setting; S-PID is not swept",
+        "kv_cache": False,
+        "parameters": {
+            "lambda": 1.0,
+            "kp": grid.kp,
+            "ki": grid.ki,
+            "kd": grid.kd,
+        },
+    }
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(payload, indent=2) + "\n")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("stage", choices=("artifacts", "calibrate", "evaluate", "score"))
-    parser.add_argument("--model", choices=tuple(MODELS), required=True)
+    parser.add_argument("--model", choices=COMPOSITION.models, required=True)
     parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
-    parser.add_argument("--datasets", default="all")
+    parser.add_argument("--datasets", default=",".join(DEFAULT_DATASETS))
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument("--scorers", default="default")
+    parser.add_argument(
+        "--api-concurrency", type=int, default=openai_scoring.DEFAULT_CONCURRENCY
+    )
+    parser.add_argument(
+        "--api-batch-size", type=int, default=openai_scoring.DEFAULT_BATCH_SIZE
+    )
     parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     parser.add_argument("--run-id")
     arguments = parser.parse_args()
@@ -117,6 +153,8 @@ def main() -> None:
         parameters={
             "generation_batch_size": arguments.generation_batch_size,
             "scorers": sorted(selected_score_keys) if arguments.stage == "score" else [],
+            "api_concurrency": arguments.api_concurrency,
+            "api_batch_size": arguments.api_batch_size,
         },
     ) as log_root:
         if arguments.stage == "artifacts":
@@ -132,8 +170,15 @@ def main() -> None:
         elif arguments.stage == "calibrate":
             if "alqr" in methods:
                 _write_alqr_selection(arguments.model, arguments.calibration_id)
-            if {"spid", "h_infinity"} & set(methods):
-                runtime.calibrate(devices, log_root=log_root / "calibration")
+            if "spid" in methods:
+                _write_spid_selection(arguments.model, arguments.calibration_id)
+            if "h_infinity" in methods:
+                runtime.calibrate(
+                    devices,
+                    log_root=log_root / "calibration",
+                    api_concurrency=arguments.api_concurrency,
+                    api_batch_size=arguments.api_batch_size,
+                )
         elif arguments.stage == "evaluate":
             native_datasets = [
                 dataset for dataset in datasets
@@ -143,13 +188,9 @@ def main() -> None:
                 dataset for dataset in datasets
                 if COMPOSITION.dataset(dataset).runtime == "multiple_choice"
             ]
-            normalized = {
-                "rtp": "toxicity",
-                "jigsaw": "toxicity_jigsaw",
-            }
             native_pending = any(
                 not multiple_choice.generation_complete(
-                    runtime._generation_path(normalized[dataset], method)
+                    runtime._generation_path(dataset, method)
                 )
                 for dataset in native_datasets
                 for method in methods
@@ -201,6 +242,8 @@ def main() -> None:
                     distributions=[dataset],
                     scorers=list(selected),
                     log_root=log_root / "scoring",
+                    api_concurrency=arguments.api_concurrency,
+                    api_batch_size=arguments.api_batch_size,
                 )
             for dataset_key in multiple_choice_datasets:
                 dataset = COMPOSITION.dataset(dataset_key)
