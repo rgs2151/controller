@@ -297,6 +297,52 @@ These are descriptive means on one fixed 250-problem evaluation set per language
 """
 
 
+LCITE_MODEL = "Qwen2.5-3B-Instruct"
+LCITE_MODEL_KEY = "qwen25_3b_instruct"
+LCITE_CONDITIONS = (("8k", "8K"), ("16k", "16K"))
+LCITE_METHODS = MGSM_METHODS
+LCITE_METRICS = (
+    Metric("lcite_answer_overlap.answer_recall", "Answer recall (%) ↑", r"\shortstack{Answer\\recall (\%) $\uparrow$}", 1, True),
+    Metric("lcite_citation_nli.citation_f1", "Citation F1 (%) ↑", r"Citation F1 (\%) $\uparrow$", 1, True),
+    Metric("axbench_concept_relevance.score", "Concept relevance (0–2) ↑", r"\shortstack{Concept\\relevance (0--2) $\uparrow$}", 2, True),
+    Metric("axbench_instruction_relevance.score", "Instruction relevance (0–2) ↑", r"\shortstack{Instruction\\relevance (0--2) $\uparrow$}", 2, True),
+    Metric("axbench_fluency.score", "Fluency (0–2) ↑", r"Fluency (0--2) $\uparrow$", 2, True),
+)
+
+
+LCITE_DOCUMENTATION = r"""## Method
+
+- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K and 16K tokens, citing the minimum supporting passages after every answer sentence.
+- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across both context lengths.
+- Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`. The direction uses all 72 released positive responses and 72 genre-matched negative responses from `pyvene/axbench-concept500` variant `prod_9b_l20_v1`.
+- Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller without changing that shared dynamics matrix.
+- Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
+- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at both lengths.
+- The summary report is the equal-weight macro-average of the 8K and 16K means. The full report exposes all eight context-length–method cells.
+
+## Measures
+
+| Column | Meaning | Scorer and decision rule |
+|---|---|---|
+| Answer recall (%) ↑ | Gold-answer tokens recovered by the generated answer. | Official normalized L-CiteEval token-overlap recall after removing citation markers; the best matching released gold answer is used. |
+| Citation F1 (%) ↑ | Balance between supported claims and necessary citations. | Pinned `tasksource/deberta-base-long-nli` at revision `04dcf11f844b07bc57015169fca2b7d6df8299d5`, applied only to each claim and its cited passages. |
+| Concept relevance (0–2) ↑ | Natural presence of the target positive-sentiment concept. | AXBench concept-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
+| Instruction relevance (0–2) ↑ | Whether the response addresses the HotpotQA question and citation instruction. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
+| Fluency (0–2) ↑ | Readability and language quality of the generated answer. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
+
+These are descriptive means on one deterministic generation for each of 40 matched questions per context length, not repeated trials; therefore the table does not report standard errors.
+
+## Hyperparameters
+
+| Model | Method | Hyperparameter choice |
+|---|---|---|
+| Qwen2.5-3B-Instruct | Original | No intervention |
+| Qwen2.5-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01; frozen upstream concept-steering configuration |
+| Qwen2.5-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I; frozen upstream concept-steering configuration |
+| Qwen2.5-3B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054; selected on 50 disjoint short AXBench-style prompts |
+"""
+
+
 def _load_result(page: DatasetPage, model: str, method: str) -> dict | None:
     path = RESULTS_ROOT / page.benchmark / "results/kv_cache_off" / model / page.namespace / f"{method}.json"
     return json.loads(path.read_text()) if path.exists() else None
@@ -670,6 +716,213 @@ def render_mgsm_reports() -> None:
         render_pdf(tex, destination / f"{stem}.pdf")
 
 
+def _load_lcite_result(condition: str, method: str) -> dict:
+    path = (
+        RESULTS_ROOT
+        / "lciteeval/results/kv_cache_off"
+        / LCITE_MODEL_KEY
+        / f"hotpotqa_{condition}"
+        / f"{method}.json"
+    )
+    return json.loads(path.read_text())
+
+
+def _lcite_value(result: dict, metric: Metric) -> float:
+    value = float(result["metrics"][metric.key])
+    if metric.key in {
+        "lcite_answer_overlap.answer_recall",
+        "lcite_citation_nli.citation_f1",
+    }:
+        return 100.0 * value
+    return value
+
+
+def _lcite_rows() -> list[dict]:
+    rows = []
+    for condition_key, condition_label in LCITE_CONDITIONS:
+        for method_key, markdown_label, tex_label in LCITE_METHODS:
+            result = _load_lcite_result(condition_key, method_key)
+            rows.append(
+                {
+                    "condition": condition_label,
+                    "method_key": method_key,
+                    "method_markdown": markdown_label,
+                    "method_tex": tex_label,
+                    "values": tuple(
+                        _lcite_value(result, metric) for metric in LCITE_METRICS
+                    ),
+                }
+            )
+    return rows
+
+
+def _lcite_summary_rows(rows: list[dict]) -> list[dict]:
+    summary = []
+    for method_key, markdown_label, tex_label in LCITE_METHODS:
+        method_rows = [row for row in rows if row["method_key"] == method_key]
+        summary.append(
+            {
+                "method_key": method_key,
+                "method_markdown": markdown_label,
+                "method_tex": tex_label,
+                "values": tuple(
+                    sum(row["values"][index] for row in method_rows)
+                    / len(method_rows)
+                    for index in range(len(LCITE_METRICS))
+                ),
+            }
+        )
+    return summary
+
+
+def render_lcite_markdown(rows: list[dict], *, full: bool) -> str:
+    title = "L-CiteEval length transfer — full results" if full else "L-CiteEval length transfer — summary"
+    headers = " | ".join(metric.markdown for metric in LCITE_METRICS)
+    if full:
+        lines = [f"# {title}", "", f"| Context | Model | Method | {headers} |", "|---|---|---|" + "---:|" * len(LCITE_METRICS)]
+        display_rows = rows
+    else:
+        lines = [f"# {title}", "", f"| Model | Method | {headers} |", "|---|---|" + "---:|" * len(LCITE_METRICS)]
+        display_rows = _lcite_summary_rows(rows)
+    for row in display_rows:
+        values = " | ".join(
+            f"{value:.{metric.decimals}f}"
+            for value, metric in zip(row["values"], LCITE_METRICS, strict=True)
+        )
+        prefix = f"| {row['condition']} | {LCITE_MODEL}" if full else f"| {LCITE_MODEL}"
+        lines.append(f"{prefix} | {row['method_markdown']} | {values} |")
+    lines.extend(["", LCITE_DOCUMENTATION.strip(), ""])
+    return "\n".join(lines)
+
+
+def _lcite_best_values(rows: list[dict]) -> tuple[float, ...]:
+    steered_rows = [row for row in rows if row["method_key"] != "original"]
+    return tuple(
+        max(row["values"][index] for row in steered_rows)
+        for index in range(len(LCITE_METRICS))
+    )
+
+
+def _lcite_tex_value(
+    value: float,
+    metric: Metric,
+    *,
+    emphasis: str | None,
+    primary: bool,
+) -> str:
+    background = r"\cellcolor{projectdarkred!10}" if primary else ""
+    number = f"{value:.{metric.decimals}f}"
+    if emphasis == "bold":
+        number = f"\\mathbf{{{number}}}"
+    elif emphasis == "underline":
+        number = f"\\underline{{{number}}}"
+    return background + f"${number}$"
+
+
+def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
+    column_count = len(LCITE_METRICS)
+    caption = (
+        "Full L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. Each context length uses the same 40 question identities."
+        if full
+        else "Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct, macro-averaged equally across the matched 8K and 16K conditions."
+    )
+    label = "tab:lciteeval-full" if full else "tab:lciteeval-summary"
+    lines = [
+        "% Generated by figs/bench_table/bench_table.py. Do not edit by hand.",
+        r"\begin{table*}[!htbp]",
+        r"\centering",
+        r"\definecolor{projectdarkred}{RGB}{128,0,0}",
+        f"\\caption{{{caption} Higher is better for every column.}}",
+        f"\\label{{{label}}}",
+        r"\small",
+        r"\renewcommand{\arraystretch}{1.08}",
+        r"\setlength{\tabcolsep}{5pt}",
+        r"\resizebox{\textwidth}{!}{%",
+    ]
+    if full:
+        lines.append(f"\\begin{{tabular}}{{rl{'c' * column_count}}}")
+        lines.append(
+            "Context & Method & "
+            + " & ".join(
+                (r"\cellcolor{projectdarkred!10}" if index == 0 else "") + metric.tex
+                for index, metric in enumerate(LCITE_METRICS)
+            )
+            + r" \\"
+        )
+        lines.append(r"\midrule")
+        for condition_index, (_, condition_label) in enumerate(LCITE_CONDITIONS):
+            group = [row for row in rows if row["condition"] == condition_label]
+            best_values = _lcite_best_values(group)
+            for method_index, row in enumerate(group):
+                condition = f"\\multirow{{{len(group)}}}{{*}}{{{condition_label}}}" if method_index == 0 else ""
+                values = " & ".join(
+                    _lcite_tex_value(
+                        value,
+                        metric,
+                        emphasis=(
+                            "bold"
+                            if row["method_key"] == "h_infinity" and value == best_values[index]
+                            else "underline"
+                            if row["method_key"] != "original" and value == best_values[index]
+                            else None
+                        ),
+                        primary=index == 0,
+                    )
+                    for index, (value, metric) in enumerate(zip(row["values"], LCITE_METRICS, strict=True))
+                )
+                lines.append(f"{condition} & {row['method_tex']} & {values} \\\\")
+                if method_index == 0:
+                    lines.append(f"\\cmidrule(l){{2-{column_count + 2}}}")
+            if condition_index != len(LCITE_CONDITIONS) - 1:
+                lines.append(r"\midrule")
+    else:
+        summary = _lcite_summary_rows(rows)
+        best_values = _lcite_best_values(summary)
+        lines.append(f"\\begin{{tabular}}{{rl{'c' * column_count}}}")
+        lines.append(
+            " & Method & "
+            + " & ".join(
+                (r"\cellcolor{projectdarkred!10}" if index == 0 else "") + metric.tex
+                for index, metric in enumerate(LCITE_METRICS)
+            )
+            + r" \\"
+        )
+        lines.append(r"\midrule")
+        for method_index, row in enumerate(summary):
+            model = f"\\multirow{{{len(summary)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{LCITE_MODEL}}}}}" if method_index == 0 else ""
+            values = " & ".join(
+                _lcite_tex_value(
+                    value,
+                    metric,
+                    emphasis=(
+                        "bold"
+                        if row["method_key"] == "h_infinity" and value == best_values[index]
+                        else "underline"
+                        if row["method_key"] != "original" and value == best_values[index]
+                        else None
+                    ),
+                    primary=index == 0,
+                )
+                for index, (value, metric) in enumerate(zip(row["values"], LCITE_METRICS, strict=True))
+            )
+            lines.append(f"{model} & {row['method_tex']} & {values} \\\\")
+            if method_index == 0:
+                lines.append(f"\\cmidrule(l){{2-{column_count + 2}}}")
+    lines.extend([r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""])
+    return "\n".join(lines)
+
+
+def render_lcite_reports() -> None:
+    destination = UNIT / "lciteeval"
+    destination.mkdir(parents=True, exist_ok=True)
+    rows = _lcite_rows()
+    for stem, full in (("lciteeval_summary", False), ("lciteeval_full", True)):
+        (destination / f"{stem}.md").write_text(render_lcite_markdown(rows, full=full))
+        tex = render_lcite_tex(rows, full=full)
+        (destination / f"{stem}.tex").write_text(tex)
+        render_pdf(tex, destination / f"{stem}.pdf")
+
+
 def main() -> None:
     for page in PAGES:
         destination = UNIT / page.folder
@@ -680,6 +933,7 @@ def main() -> None:
         (destination / f"{page.stem}.tex").write_text(tex)
         render_pdf(tex, destination / f"{page.stem}.pdf")
     render_mgsm_reports()
+    render_lcite_reports()
 
 
 if __name__ == "__main__":

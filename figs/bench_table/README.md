@@ -7,6 +7,7 @@ This unit keeps one self-contained report per evaluated dataset. Each report sta
 - Truthfulness: [TruthfulQA PDF](truthfulness/truthfulqa.pdf) and [Spanish TruthfulQA PDF](truthfulness/truthfulqa_spanish.pdf).
 - Toxicity: [RealToxicityPrompts PDF](toxicity/realtoxicityprompts.pdf) and [Jigsaw transfer PDF](toxicity/jigsaw.pdf).
 - MGSM multilingual transfer: [summary PDF](mgsm/mgsm_overall.pdf) and [full per-language PDF](mgsm/mgsm_full.pdf).
+- L-CiteEval length transfer: [summary PDF](lciteeval/lciteeval_summary.pdf) and [full 8K/16K PDF](lciteeval/lciteeval_full.pdf).
 
 ## Required format
 
