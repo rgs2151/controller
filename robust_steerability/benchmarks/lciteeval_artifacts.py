@@ -35,6 +35,7 @@ from robust_steerability.modeling.huggingface import (
     CausalModelLoadSpec,
     load_access_token,
     load_causal_model,
+    release_cuda_memory,
 )
 from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
@@ -275,6 +276,8 @@ def fit_setpoint(model_key: str, device: str) -> None:
             "runtime": runtime_provenance(device),
         },
     )
+    del model, tokenizer
+    release_cuda_memory(device)
 
 
 def fit_jacobian_shard(
