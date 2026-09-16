@@ -21,9 +21,10 @@ from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.specs import scorer_spec
+from robust_steerability.judges.translation import translate_generations
 
 
-COMPOSITION = load_composition("lciteeval")
+COMPOSITION = load_composition("lciteeval_spanish")
 DATASETS = COMPOSITION.dataset_keys
 DEFAULT_DATASETS = COMPOSITION.default_datasets
 METHODS = COMPOSITION.available_methods
@@ -48,7 +49,7 @@ def _write_selection(model_key: str, method: str, calibration_id: str) -> None:
     else:
         return
     destination = calibration_root(
-        "lciteeval", model_key, method, calibration_id
+        COMPOSITION.benchmark, model_key, method, calibration_id
     ) / "selection.json"
     if destination.exists():
         return
@@ -58,7 +59,7 @@ def _write_selection(model_key: str, method: str, calibration_id: str) -> None:
             {
                 "schema_version": 1,
                 "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
-                "benchmark": "lciteeval",
+                "benchmark": COMPOSITION.benchmark,
                 "method": method,
                 "calibration_id": calibration_id,
                 "source": source,
@@ -184,8 +185,28 @@ def score_stage(
             if not runtime.generation_complete(generation):
                 raise ValueError(f"Missing completed generation: {generation}")
             generation_paths.append((condition, method, generation))
-            if "lcite_answer_overlap" in selected:
-                runtime.score_answer_overlap(model_key, generation, use_cache=use_cache)
+    translated_paths = [
+        generation
+        for condition, _method, generation in generation_paths
+        if {
+            "lcite_answer_overlap",
+            "lcite_citation_nli",
+        }
+        & set(requested_by_dataset[condition])
+    ]
+    if translated_paths:
+        translate_generations(
+            translated_paths,
+            runtime.cache_root(model_key, use_cache),
+            concurrency=api_concurrency,
+            batch_size=api_batch_size,
+        )
+    for condition, _method, generation in generation_paths:
+        selected = requested_by_dataset[condition]
+        if "lcite_answer_overlap" in selected:
+            runtime.score_answer_overlap(model_key, generation, use_cache=use_cache)
+        if "axbench_rule_spanish" in selected:
+            runtime.score_spanish_adherence(model_key, generation, use_cache=use_cache)
 
     citation_jobs = []
     for condition, method, generation in generation_paths:
@@ -231,7 +252,7 @@ def score_stage(
             batch_size=api_batch_size,
         )
     for condition, _method, generation in generation_paths:
-        if "axbench_overall" in requested_by_dataset[condition]:
+        if "axbench_spanish_overall" in requested_by_dataset[condition]:
             runtime.score_axbench_overall(model_key, generation, use_cache=use_cache)
     for condition, method, _generation in generation_paths:
         runtime.summarize(
@@ -305,10 +326,12 @@ def main() -> None:
         for key in selected_score_keys
     )
     devices = resolve_cuda_devices(arguments.devices) if gpu_required else []
-    run_id = arguments.run_id or default_run_id("lciteeval", arguments.model, arguments.stage)
+    run_id = arguments.run_id or default_run_id(
+        COMPOSITION.benchmark, arguments.model, arguments.stage
+    )
     with tracked_stage(
         run_id=run_id,
-        benchmark="lciteeval",
+        benchmark=COMPOSITION.benchmark,
         model=arguments.model,
         stage=arguments.stage,
         methods=methods,

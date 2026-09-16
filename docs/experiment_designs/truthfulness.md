@@ -1,46 +1,96 @@
 # Truthfulness
 
-## Goal
+## Pipeline card
 
-Steer models away from answers based on common misconceptions.
+- **Status:** Implemented; reported runs use KV cache off.
+- **Task:** Answer open-ended TruthfulQA questions.
+- **Distribution shift:** English questions are translated into Spanish while
+  answers remain requested in English.
+- **Steered behavior:** Truthful, factually accurate, non-misleading answers.
+- **Direction data:** 200 false-answer strings and 200 true-answer strings from
+  TruthfulQA; layer-wise DiffMean.
+- **Shared dynamics:** 35 independent true-answer Jacobians; one `A` per model
+  shared by A-LQR and H∞.
+- **H∞ disturbance data:** 200 disjoint TruthfulQA prompts.
+- **Baseline settings:** Published or frozen project settings; no baseline sweep.
+- **H∞ selection:** 50 further disjoint prompts; 32 cost configurations; maximize
+  AXBench overall steering.
+- **Final evaluation:** 817 questions × 5 seeds in English and Spanish; optional
+  fixed 200-question five-shot MMLU.
+- **Models:** Gemma-2-2B, Llama-3-8B, and Qwen-2.5-14B.
+- **Methods:** Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer,
+  S-PID, A-LQR, and H∞.
+- **Scoring:** True, Informative, concept relevance, instruction relevance,
+  fluency, AXBench overall, and optional MMLU accuracy.
+- **Evaluation size:** Per model, 1,600 H∞ selection generations and 81,700 final
+  TruthfulQA generations when all methods and both languages are run.
 
-## Design
+## Question
 
-- **Base dataset:** English TruthfulQA.
-- **Controller setup:** build and select controllers using only the English TruthfulQA data reserved for those stages.
-- **In-distribution evaluation:** answer all 817 English TruthfulQA questions in five seeded repetitions.
-- **Language transfer:** answer Spanish translations of the same 817 questions in five seeded repetitions, with answers requested in English. Reuse the English controller without refitting or recalibration.
-- **Capability check:** answer one fixed random sample of 200 MMLU test questions. Each question includes five solved examples and requires one A/B/C/D answer. Every method receives the same questions.
+Can a controller increase truthful answers on TruthfulQA and retain that behavior
+when the same questions are translated into Spanish?
 
-## Models
+## Frozen scope
 
-- Gemma-2-2B
-- Llama-3-8B
-- Qwen-2.5-14B
+- **Models:** Gemma-2-2B, Llama-3-8B, and Qwen-2.5-14B.
+- **Methods:** Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT,
+  ODESteer, S-PID, A-LQR, and H∞.
+- **KV cache:** off for reported runs.
+- **Base task:** open-ended TruthfulQA.
 
-Spanish is out of distribution relative to the English controller setup. This does not mean the models have never seen Spanish during pretraining.
+## 1. Direction fitting
 
-## Methods
+- Source: TruthfulQA multiple-choice validation data.
+- Undesired class: 200 question–false-answer strings.
+- Desired class: 200 question–true-answer strings.
+- Estimator: layer-wise desired-minus-undesired DiffMean.
+- The saved direction and setpoint are fitted separately for every model.
 
-- Original
-- ITI
-- ActAdd
-- Mean-AcT
-- Linear-AcT
-- PID-AcT
-- ODESteer
-- S-PID
-- A-LQR
-- H∞
+## 2. Shared dynamics
 
-## Measures
+- Use 35 independently sampled true-answer strings.
+- Average their prompt Jacobians into one saved nominal matrix `A`.
+- A-LQR and H∞ use the same `A` artifact.
 
-- **True:** whether the answer is judged truthful.
-- **Informative:** whether the answer provides useful information.
-- **Instruction relevance:** whether the answer addresses the question.
-- **Fluency:** whether the answer is well written.
-- **MMLU accuracy:** percentage of the 200 questions answered with the correct A/B/C/D choice.
+## 3. H∞ disturbance fitting
 
-## Main comparison
+- Use 200 TruthfulQA prompts disjoint from the direction and Jacobian records.
+- Fit the reduced coordinates and disturbance channels `D` once.
+- Recompute the H∞ solution for each cost configuration; preserve `gamma*` and
+  Hannah's diagnostic bundle for the selected controller.
 
-Does a controller built on English TruthfulQA improve truthfulness on English, retain its effect after the input language changes to Spanish, and preserve general MMLU performance?
+## 4. Controller selection
+
+- **A-LQR:** use the published model-specific setting; do not sweep it.
+- **Other baselines:** use their frozen published or project settings; do not
+  sweep them on final TruthfulQA.
+- **H∞ development set:** 50 additional TruthfulQA prompts, disjoint from all fit
+  records and final evaluation prompts.
+- **H∞ grid:** `R=1`, eight frozen `Q/R` values, and four frozen `Qf/R` values.
+- **Objective:** maximum mean AXBench overall steering, the harmonic mean of
+  truthful-concept relevance, instruction relevance, and fluency.
+- True and Informative are final outcomes, not selection objectives.
+
+## 5. Final evaluation
+
+- **English:** all 817 TruthfulQA questions × 5 seeded repetitions.
+- **Spanish transfer:** Spanish translations of the same 817 questions × 5
+  seeded repetitions. The prompt requests an English answer.
+- The English-fitted controller is reused without refitting or reselection.
+- **Optional capability check:** one frozen 200-question, five-shot MMLU sample.
+
+## Scoring
+
+- **True:** pinned TruthfulQA truth judge; binary percentage.
+- **Informative:** pinned TruthfulQA helpfulness judge; binary percentage.
+- **Concept relevance:** AXBench 0–2 truthfulness-concept rubric.
+- **Instruction relevance:** AXBench 0–2 rubric.
+- **Fluency:** AXBench 0–2 rubric.
+- **AXBench overall:** per-response harmonic mean of the preceding three AXBench
+  scores.
+- **MMLU accuracy:** exact A/B/C/D accuracy; no learned judge.
+
+## Evaluation size
+
+- Per dataset and method: `817 × 5 = 4,085` generations.
+- Spanish is a language transfer condition, not a new calibration condition.

@@ -23,8 +23,9 @@ No dataset adapter or scorer changes, and completed methods remain untouched.
   MMLU capability retention.
 - `truthfulness.py`: TruthfulQA as the base dataset, Spanish transfer, and MMLU
   capability retention.
-- `lciteeval.py`: AXBench concept-499 steering transferred unchanged across the
-  40 matched L-CiteEval HotpotQA cases at approximately 8K, 16K, and 32K.
+- `lciteeval.py`: MGSM English-to-Spanish steering transferred across the 40
+  matched L-CiteEval HotpotQA cases at approximately 8K and 16K; historical
+  concept-499 results remain isolated under `benchmarks/lciteeval`.
 - `mgsm.py`: one paired English-to-Spanish MGSM direction transferred across
   nine held-out input languages while preserving exact numerical accuracy.
 - `harmful.py`: HarmBench non-exhibition/refusal steering evaluated on direct

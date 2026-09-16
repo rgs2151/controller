@@ -1,315 +1,99 @@
-# MGSM multilingual language-steering transfer
+# MGSM multilingual language transfer
 
-## Material Passport
+## Pipeline card
 
-- Origin Skill: experiment-agent
-- Origin Mode: plan
-- Origin Date: 2026-09-15
-- Verification Status: LOCAL END-TO-END SMOKE VERIFIED (2026-09-15)
-- Version Label: code_plan_v1
-
-## Draft experiment
-
-Test whether a controller that learns an English-to-Spanish language direction can
-preserve that steering objective when the same mathematical problem is presented
-in languages never used to construct or select the controller, without destroying
-the model's ability to solve the problem.
-
-- **Evaluation dataset:** MGSM.
-- **Construction language:** English.
-- **Desired response language:** Spanish.
-- **Transfer variable:** language of the input problem.
+- **Status:** Implemented; Qwen3-4B is complete and Qwen3-8B is provisioned.
+- **Task:** Solve MGSM arithmetic problems with native eight-shot examples.
+- **Distribution shift:** Input language changes across Chinese, French, Japanese,
+  Swahili, and Telugu.
+- **Steered behavior:** Respond only in Spanish.
+- **Direction data:** All 250 matched MGSM English/Spanish question pairs;
+  paired Spanish-minus-English DiffMean.
+- **Shared dynamics:** 50 frozen Spanish-question Jacobians; one `A` per model
+  shared by A-LQR and H∞.
+- **H∞ disturbance data:** 200 frozen GSM8K training questions.
+- **Baseline settings:** Fixed S-PID and A-LQR settings; no sweep.
+- **H∞ selection:** 50 disjoint GSM8K questions; 12 cost configurations;
+  maximize the Spanish-adherence, instruction-relevance, and fluency harmonic mean.
+- **Final evaluation:** 100 matched problems × 5 held-out languages;
+  deterministic generation with a 256-token cap.
 - **Models:** Qwen3-4B and Qwen3-8B.
 - **Methods:** Original, S-PID, A-LQR, and H∞.
-- **Decoding:** one deterministic generation per problem; no repeated seeds.
-- **Primary outcomes:** exact numerical answer accuracy and Spanish rule following.
+- **Scoring:** Exact final-number accuracy, Spanish adherence, instruction
+  relevance, fluency, and overall steering.
+- **Evaluation size:** Per model, 600 H∞ selection generations and 2,000 final
+  generations.
 
-The main hypothesis is that H∞ retains Spanish response steering more consistently
-than A-LQR as the input language changes, while preserving comparable mathematical
-accuracy.
+## Question
 
-## What MGSM contains
+Can a controller make the model answer only in Spanish when the arithmetic
+question itself moves into unseen input languages, while retaining correctness?
 
-The Hugging Face release contains the same 250 GSM8K test problems in 11 language
-configurations:
+## Frozen scope
 
-- English (`en`);
-- Spanish (`es`);
-- Bengali (`bn`);
-- Chinese (`zh`);
-- French (`fr`);
-- German (`de`);
-- Japanese (`ja`);
-- Russian (`ru`);
-- Swahili (`sw`);
-- Telugu (`te`); and
-- Thai (`th`).
+- **Models:** Qwen3-4B and Qwen3-8B.
+- **Methods:** Original, S-PID, A-LQR, and H∞.
+- **Steering rule:** `respond only in Spanish, and no other language is allowed`.
+- **Primary transfer languages:** Chinese, French, Japanese, Swahili, and Telugu.
+- **Decoding:** deterministic, native eight-shot prompting, at most 256 new
+  tokens, one generation per problem.
+- **KV cache:** off.
 
-The paper describes ten translations **in addition to English**. Consequently,
-after English and Spanish there are nine transfer languages, not eight. Each
-configuration has eight translated few-shot exemplars and the same 250 matched
-test problems.
+## 1. Direction fitting
 
-- **Source:** `juletxara/mgsm`.
-- **Pinned revision:** `b2f13d426afe3be8d69a7e739b36724db8b66bbc`.
-- **Train split:** 8 native-language few-shot exemplars per language, including
-  translated step-by-step answers and equation solutions.
-- **Test split:** 250 matched problems per language, containing translated
-  questions and numeric gold answers but no gold reasoning traces.
-- **Direction use:** all 250 matched English/Spanish problem pairs.
-- **Transfer-test use:** one fixed aligned 100-problem subset in Chinese,
-  French, Japanese, Swahili, and Telugu, sampled once with seed 42 and reused
-  unchanged across languages and methods.
+- Source: all 250 aligned MGSM test-question identities in English and Spanish.
+- Undesired class: the English question.
+- Desired class: the matched Spanish translation of the same question.
+- Verify matching numerical answers before fitting.
+- Estimator: paired, layer-wise Spanish-minus-English DiffMean over valid tokens.
+- The texts are shared, but the direction is extracted separately in every model.
 
-Because the direction uses every English/Spanish pair, English and Spanish are
-construction data rather than evaluation conditions. The primary held-out
-comparison uses five typologically diverse language versions. This is a
-transductive language-transfer design: problem identities are shared across
-languages, while the input languages used for the reported transfer comparison are
-not used to construct the direction.
+## 2. Shared dynamics
 
-## What the original MGSM paper measured
+- Use the first frozen 50 Spanish direction questions.
+- Average their prompt Jacobians into one saved `A` per model.
+- A-LQR and H∞ use that exact matrix.
 
-MGSM evaluates arithmetic reasoning with **exact-match accuracy on the final
-numeric answer**. The gold answer is an Arabic numeral in every language. The
-paper reports accuracy by language and macro-averaged across languages while
-comparing direct, native-language chain-of-thought, English chain-of-thought, and
-translation-based prompting conditions. It does not assign partial credit to a
-correct reasoning trace with an incorrect final number.
+## 3. H∞ disturbance fitting
 
-This experiment uses the paper's native-language eight-shot chain-of-thought
-condition because a reasoning trace supplies enough natural language to measure
-whether the response has shifted into Spanish. One deterministic completion is
-used instead of self-consistency or repeated sampling.
+- Use 200 frozen GSM8K training questions outside MGSM evaluation.
+- Fit `D`, reduced coordinates, and the base H∞ problem once per model.
 
-## Steering direction
+## 4. Controller selection
 
-Use the actual AXBench rule:
+- **S-PID:** fixed `lambda=1.5`, `Kp=0.5`, `Ki=0.5`, `Kd=0.01`.
+- **A-LQR:** fixed `lambda=1.5`, `Q=0.1`, `R=1`, `Qf=0.1`. No sweep.
+- **H∞ development set:** 50 additional GSM8K training questions, disjoint from
+  the 200 disturbance prompts.
+- **H∞ grid:** `R=1`, `Q/R in {0.01, 0.1, 1, 10}`, and
+  `Qf/R in {0.01, 0.1, 0.316...}`.
+- **Objective:** maximum harmonic mean of Spanish adherence, instruction
+  relevance, and fluency.
 
-> `respond only in Spanish, and no other language is allowed`
+## 5. Final evaluation
 
-Construct the direction from all 250 matched English/Spanish pairs in MGSM:
-
-1. Align all 250 English and Spanish rows by problem identity.
-2. Use the English question text as the undesired example.
-3. Use the matched Spanish translation of that question as the desired example.
-4. Apply the same minimal chat wrapper to both languages; do not add a worked
-   solution or output-language instruction.
-5. Verify that each pair has the same `answer_number` before artifact construction.
-6. Materialize the 250 aligned question pairs once and reuse them for every method
-   and model.
-
-The MGSM test rows contain translated questions and numeric gold answers, not
-translated worked solutions. Using matched question pairs is therefore the direct
-way to use the complete released English/Spanish set. Keeping problem identity and
-mathematical content matched means the contrast primarily captures language rather
-than problem identity or reasoning content.
-
-Following AXBench `DiffMean`, format each question with the target model's own chat
-template, remove BOS, padding, and suffix tokens, collect the valid-token residual
-states, and compute independently at every controlled layer
-
-\[
-v_k = \mu_k^{\mathrm{Spanish}}-\mu_k^{\mathrm{English}},
-\qquad
-\hat v_k = v_k / \lVert v_k \rVert_2.
-\]
-
-The paired text corpus is shared, but the residual direction is extracted
-separately in each target model's representation space.
-
-## Controller artifacts
-
-- Build the semantic setpoint and nominal dynamics once per model from the frozen
-  direction corpus and the project's artifact prompts.
-- Use the frozen artifact pipeline without changing the H∞ state, residual,
-  disturbance, Riccati, or gain definitions.
-- A-LQR and H∞ use the same saved nominal matrix `A`.
-- H∞ may compute `A` only when the shared A-LQR artifact is absent, using the
-  same shared Jacobian procedure.
-- No controller is refit for an MGSM language.
-
-### Fixed non-H∞ methods
-
-Do not sweep S-PID or A-LQR. Use the source-preserved concept-steering settings:
-
-- **S-PID:** setpoint multiplier `1.5`, `Kp=0.5`, `Ki=0.5`, `Kd=0.01`.
-- **A-LQR:** setpoint multiplier `1.5`, `Q=0.1 I`, `R=1 I`, `Qf=0.1 I`.
-
-### H∞ selection
-
-H∞ is the only swept method. Use 50 fixed GSM8K training problems that are not
-part of MGSM. Present those calibration problems in English and use the same 50
-identities for every H∞ candidate and model. Save every calibration generation,
-component score, candidate mean, and the selected configuration.
-
-Sweep:
-
-- `Q/R ∈ {0.01, 0.1, 1, 10}`;
-- `Qf/R ∈ {0.01, 0.1, 0.316227766}`;
-- `R=1`;
-- setpoint multiplier `1.5`; and
-- no setpoint, lambda, or attenuation-multiplier sweep.
-
-Score each calibration response with the three AXBench components:
-
-1. Spanish rule following;
-2. instruction relevance; and
-3. fluency.
-
-Each component is on the AXBench `0–2` scale. Compute the per-response harmonic
-mean, assigning zero when any component is zero, and select the candidate with the
-highest mean over the 50 responses. Break exact ties by higher instruction
-relevance and then higher fluency. Do not use MGSM test accuracy to select the
-controller.
-
-## Evaluation conditions
-
-Run the same fixed 100 problem identities in Chinese, French, Japanese, Swahili,
-and Telugu through every method. The same frozen controller is used throughout.
-English and Spanish are not generated during evaluation.
-
-- **English input:** direction-construction diagnostic.
-- **Spanish input:** desired-language construction diagnostic.
-- **Five input languages:** transfer conditions.
-
-The prompt requests a worked solution and a final Arabic-numeral answer but does
-not ask for Spanish. Spanish output should therefore be caused by the controller,
-not by an explicit output-language instruction. Use the eight official
-native-language MGSM exemplars for the corresponding input language.
-
-Generation settings:
-
-- maximum new tokens: 256;
-- temperature: 0;
-- top-p: 1;
-- sampling: off;
-- one generation per problem;
-- evaluated-model KV cache: off for all methods; and
-- Qwen3 thinking mode: off for both sizes, so they use one comparable visible
-  reasoning-and-answer channel.
-
-Save the problem identity, input language, fully assembled prompt, tokenized input
-length, raw generation, extracted final number, model revision, method
-configuration, controller artifact ID, device, start time, end time, and peak GPU
-memory.
+- Use one fixed aligned subset of 100 problem identities.
+- Evaluate the same identities in Chinese, French, Japanese, Swahili, and Telugu.
+- English and Spanish build the steering direction and are not primary test
+  conditions.
+- No controller is refit by language.
 
 ## Scoring
 
-Generation and scoring are separate stages. Scoring never regenerates an answer.
+- **Accuracy:** exact final-number match.
+- **Spanish adherence:** deterministic AXBench rule score, 0 or 2.
+- **Instruction relevance:** AXBench 0–2 rubric.
+- **Fluency:** AXBench 0–2 rubric.
+- **Overall steering:** per-response harmonic mean of the three steering scores.
 
-| Scorer | Backend | Output |
-|---|---|---|
-| `mgsm_exact_match` | Deterministic Python | Final-number correctness in `{0,1}` |
-| `axbench_rule_spanish` | AXBench deterministic rule evaluator | Spanish adherence in `{0,2}` |
-| `axbench_instruction_relevance` | AXBench OpenAI rubric | Relevance in `{0,1,2}` plus explanation |
-| `axbench_fluency` | AXBench OpenAI rubric | Fluency in `{0,1,2}` plus explanation |
-| `mgsm_axbench_overall` | Deterministic post-processing | Harmonic mean in `[0,2]`, or zero if any component is zero |
+## Evaluation size
 
-### Mathematical accuracy
-
-Extract the final Arabic-numeral answer with one language-independent parser and
-compare it exactly with `answer_number`. Ignore comma separators and normalize a
-trailing `.0`. A missing or unparseable answer is incorrect. Retain every raw
-generation for audit.
-
-The language-independent parser is necessary because successful steering can
-change the final-answer prefix from the input language to Spanish. It preserves
-the MGSM paper's substantive measure—exact final-number accuracy—without making
-the parser itself dependent on whether steering succeeded.
-
-### AXBench steering quality
-
-For this rule-type concept, AXBench does not use its concept-relevance LM judge as
-the first component. It uses its deterministic Spanish rule evaluator. The other
-two components retain the official independent 0–2 instruction-relevance and
-fluency rubrics.
-
-- Spanish rule scorer input: generated response.
-- Instruction scorer input: task instruction, current MGSM question, and response.
-- Fluency scorer input: generated response.
-
-Do not send the eight demonstrations to the OpenAI scorers. They are not needed
-to judge whether the response addresses the current question or is fluent.
-
-## Models
-
-| Model | Pinned revision | Why it is suitable |
-|---|---|---|
-| `Qwen/Qwen3-4B` | `1cfa9a7208912126459214e8b04321603b3df60c` | Primary model requested for the experiment. Qwen documents support for 119 languages and dialects, explicitly including every MGSM language. |
-| `Qwen/Qwen3-8B` | `b968826d9c46dd6066d109eabc6255188de91218` | Same documented 119-language coverage at a larger scale, giving a clean within-family comparison. |
-
-Both models explicitly support every MGSM language. Keeping the experiment within
-one model family avoids confounding the controller comparison with different chat
-templates and multilingual training families.
-
-Before artifact construction, run one smoke example in every language for each
-model and verify readable tokenization, non-empty generation, numeric extraction,
-and controller-hook compatibility. This is a support preflight, not reported
-benchmark evidence.
-
-## Primary analysis
-
-For each model, method, and input language, report:
-
-1. MGSM exact-match accuracy over the same 100 problem identities;
-2. mean Spanish rule-following score;
-3. mean AXBench instruction relevance;
-4. mean AXBench fluency;
-5. mean AXBench overall score.
-
-The main figure has input language on the x-axis and three panels:
-
-- **Math accuracy:** exact final-number accuracy.
-- **Spanish steering:** mean Spanish rule-following score.
-- **Overall steering:** mean AXBench harmonic-mean score.
-
-Show all four methods across the five transfer languages. The main comparison is
-H∞ versus A-LQR on the same problem identities.
-
-Use paired bootstrap confidence intervals over the 100 problem identities for
-H∞−A-LQR differences within each language. Also report the macro-average over
-the five transfer languages, weighting every language equally.
-
-The intended claim is supported only if H∞ improves Spanish adherence or AXBench
-overall steering across transfer languages without a disproportionate loss of
-mathematical accuracy. Spanish adherence remains a 0–2 score, not a rate.
-
-## Compute and API size
-
-- **Held-out test generations per model:**
-  `100 problems × 5 transfer languages × 4 methods = 2,000`.
-- **Two-model held-out evaluation:** `4,000` test generations.
-- **H∞ calibration:** `12 candidates × 50 prompts × 2 models = 1,200` short
-  generations. This is separate from the 4,000 held-out evaluation generations.
-- **Repeated test decoding:** none.
-- **OpenAI scoring:** two short judge calls per generated response; Spanish rule
-  following and mathematical accuracy are local deterministic scorers.
-
-## Required preflight
-
-Before the full run, verify:
-
-- all 250 problem identities align exactly across the 11 language configurations;
-- all 250 English/Spanish direction pairs align by problem identity and
-  `answer_number`;
-- the 50 H∞ selection prompts are outside MGSM;
-- the official eight exemplars are loaded for every input language;
-- the final-number parser is invariant to the language of the answer prefix;
-- Qwen3 thinking mode and evaluated-model KV cache are recorded and fixed;
-- A-LQR and H∞ reference the same saved `A` artifact;
-- the three AXBench component scores and harmonic mean are written;
-- H∞ writes its existing diagnostic bundle unchanged; and
-- adding another model or method creates a new cache namespace without
-  overwriting completed results.
+- Per model: `100 × 5 languages × 4 methods = 2,000` generations.
+- H∞ selection per model: `12 × 50 = 600` short generations.
+- There are no repeated final-evaluation seeds.
 
 ## References
 
 - [MGSM paper](https://arxiv.org/abs/2210.03057)
-- [MGSM Hugging Face dataset](https://huggingface.co/datasets/juletxara/mgsm)
-- [Official MGSM repository](https://github.com/google-research/url-nlp/tree/main/mgsm)
+- [MGSM dataset](https://huggingface.co/datasets/juletxara/mgsm)
 - [AXBench paper](https://arxiv.org/abs/2501.17148)
-- [AXBench code](https://github.com/stanfordnlp/axbench)
-- [Qwen3-4B model card](https://huggingface.co/Qwen/Qwen3-4B)
-- [Qwen3 language coverage](https://qwenlm.github.io/blog/qwen3/)
-- [Qwen3-8B model card](https://huggingface.co/Qwen/Qwen3-8B)
