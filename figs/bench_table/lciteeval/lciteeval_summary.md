@@ -1,15 +1,15 @@
 # L-CiteEval length transfer — summary
 
-| Context | Model | Method | Answer recall (%) ↑ | Citation F1 (%) ↑ | Overall steering (0–2) ↑ |
+| Model | Context | Method | Answer recall (%) ↑ | Citation F1 (%) ↑ | Overall steering (0–2) ↑ |
 |---|---|---|---:|---:|---:|
-| 8K | Qwen2.5-3B-Instruct | Original | 66.2 | 7.8 | 0.00 |
-| 8K | Qwen2.5-3B-Instruct | S-PID | 72.1 | 7.2 | 0.00 |
-| 8K | Qwen2.5-3B-Instruct | A-LQR | 70.1 | 5.6 | 0.05 |
-| 8K | Qwen2.5-3B-Instruct | H∞ (ours) | 66.4 | 6.4 | 0.00 |
-| 16K | Qwen2.5-3B-Instruct | Original | 65.2 | 5.8 | 0.15 |
-| 16K | Qwen2.5-3B-Instruct | S-PID | 61.9 | 7.2 | 0.00 |
-| 16K | Qwen2.5-3B-Instruct | A-LQR | 64.8 | 3.0 | 0.00 |
-| 16K | Qwen2.5-3B-Instruct | H∞ (ours) | 65.2 | 7.8 | 0.10 |
+| Qwen2.5-3B-Instruct | 8K | Original | 66.2 | 7.8 | 0.00 |
+| Qwen2.5-3B-Instruct | 8K | S-PID | 72.1 | 7.2 | 0.00 |
+| Qwen2.5-3B-Instruct | 8K | A-LQR | 70.1 | 5.6 | 0.05 |
+| Qwen2.5-3B-Instruct | 8K | H∞ (ours) | 66.4 | 6.4 | 0.00 |
+| Qwen2.5-3B-Instruct | 16K | Original | 65.2 | 5.8 | 0.15 |
+| Qwen2.5-3B-Instruct | 16K | S-PID | 61.9 | 7.2 | 0.00 |
+| Qwen2.5-3B-Instruct | 16K | A-LQR | 64.8 | 3.0 | 0.00 |
+| Qwen2.5-3B-Instruct | 16K | H∞ (ours) | 65.2 | 7.8 | 0.10 |
 
 ## Method
 
