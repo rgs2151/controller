@@ -24,7 +24,11 @@ from robust_steerability.calibration.nominal_artifact import (
     nominal_dynamics_identity,
     save_nominal_dynamics,
 )
-from robust_steerability.modeling.huggingface import cuda_device_index, load_access_token
+from robust_steerability.modeling.huggingface import (
+    cuda_device_index,
+    load_access_token,
+    release_cuda_memory,
+)
 from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.source_methods.calibration import fit_setpoint_from_records
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
@@ -302,6 +306,8 @@ def fit_setpoint(model_key: str, behavior: str, device: str) -> None:
     run["status"] = "complete"
     _write_json(run_path, run)
     _update_timings(behavior, model_key, "setpoint", attempt)
+    del model, tokenizer
+    release_cuda_memory(device)
 
 
 def _partition_records(records: list[dict], shard_index: int, shard_count: int) -> list[dict]:

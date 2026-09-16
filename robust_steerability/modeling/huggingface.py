@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -49,6 +50,15 @@ def cuda_device_index(device: str) -> int:
     if not device.startswith("cuda:"):
         raise ValueError("The quantized model requires a CUDA device such as cuda:0")
     return int(device.split(":", 1)[1])
+
+
+def release_cuda_memory(device: str) -> None:
+    """Release a completed stage's Python objects and CUDA allocator cache."""
+
+    gc.collect()
+    if device.startswith("cuda:") and torch.cuda.is_available():
+        with torch.cuda.device(cuda_device_index(device)):
+            torch.cuda.empty_cache()
 
 
 def load_causal_model(
