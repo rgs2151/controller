@@ -25,8 +25,9 @@
 - **Models:** Qwen2.5-3B-Instruct and Llama-3.1-8B-Instruct; Llama runs next and
   the comparable Qwen Spanish run comes later.
 - **Methods:** Original, S-PID, A-LQR, and H∞.
-- **Scoring:** Answer recall/F1, citation recall/precision/F1, Spanish adherence,
-  instruction relevance, fluency, and overall steering.
+- **Scoring:** Bilingual answer correctness, bilingual citation
+  recall/precision/F1, Spanish adherence, instruction relevance, fluency, and
+  overall steering.
 - **Evaluation size:** Per model, 480 H∞ selection generations and 320 final
   generations.
 
@@ -126,12 +127,14 @@ GSM8K or generic short instructions are not used for this stage.
 
 ### Task quality
 
-- **Answer recall and answer F1:** compare a citation-stripped English
-  normalization of the answer against the official reference answer.
-- **Citation recall, precision, and F1:** use the official L-CiteEval citation
-  pipeline. Citation markers must be preserved through normalization.
-- English normalization is scoring-only; the stored raw model response remains
-  unchanged.
+- **Answer correctness:** a bilingual OpenAI judge compares the raw Spanish
+  response directly with the English question and official answer. Scores are
+  0 (incorrect/absent), 0.5 (partially correct), or 1 (fully correct).
+- **Citation recall, precision, and F1:** a bilingual OpenAI judge compares each
+  raw Spanish claim directly with its cited English passages. Code computes the
+  three metrics from the judge's claim-support and citation-necessity decisions.
+- The response is never translated or language-normalized. Citation markers and
+  the stored Spanish generation remain untouched.
 
 ### Steering quality
 

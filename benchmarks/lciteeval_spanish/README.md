@@ -10,9 +10,10 @@ Qwen run remains under `benchmarks/lciteeval/` and is never reused here.
   L-CiteEval 2Wiki base-context questions.
 - `evaluate`: answer the same 40 HotpotQA questions at 8K and 16K with Original,
   S-PID, A-LQR, and H∞. The registered 32K condition is deferred.
-- `score`: preserve raw Spanish generations, translate a scoring copy to English,
-  compute answer/citation quality on that copy, and compute Spanish adherence,
-  instruction relevance, and fluency on the raw response.
+- `score`: send the untouched Spanish generations directly to bilingual OpenAI
+  answer and citation judges, then compute Spanish adherence, instruction
+  relevance, and fluency on the same raw response. No translation or DeBERTa
+  stage is used.
 
 ```bash
 python -m robust_steerability.benchmarks.lciteeval artifacts --model llama31_8b_instruct --devices auto

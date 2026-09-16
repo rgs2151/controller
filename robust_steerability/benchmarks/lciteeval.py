@@ -15,13 +15,13 @@ from robust_steerability.benchmarks.composition import (
     validate_requested_scorers,
 )
 from robust_steerability.benchmarks.execution import default_run_id, tracked_stage
-from robust_steerability.benchmarks.launcher import run_data_shards, run_jobs
+from robust_steerability.benchmarks.launcher import run_data_shards
 from robust_steerability.benchmarks.layout import calibration_root
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.experiments.resources import resolve_cuda_devices
+from robust_steerability.judges import lciteeval_openai
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.specs import scorer_spec
-from robust_steerability.judges.translation import translate_generations
 
 
 COMPOSITION = load_composition("lciteeval_spanish")
@@ -167,8 +167,6 @@ def score_stage(
     methods: list[str],
     datasets: list[str],
     scorers: tuple[str, ...] | None,
-    devices: list[str],
-    log_root,
     api_concurrency: int,
     api_batch_size: int,
     use_cache: bool,
@@ -185,55 +183,28 @@ def score_stage(
             if not runtime.generation_complete(generation):
                 raise ValueError(f"Missing completed generation: {generation}")
             generation_paths.append((condition, method, generation))
-    translated_paths = [
-        generation
-        for condition, _method, generation in generation_paths
-        if {
-            "lcite_answer_overlap",
-            "lcite_citation_nli",
-        }
-        & set(requested_by_dataset[condition])
-    ]
-    if translated_paths:
-        translate_generations(
-            translated_paths,
-            runtime.cache_root(model_key, use_cache),
-            concurrency=api_concurrency,
-            batch_size=api_batch_size,
-        )
     for condition, _method, generation in generation_paths:
         selected = requested_by_dataset[condition]
-        if "lcite_answer_overlap" in selected:
-            runtime.score_answer_overlap(model_key, generation, use_cache=use_cache)
         if "axbench_rule_spanish" in selected:
             runtime.score_spanish_adherence(model_key, generation, use_cache=use_cache)
 
-    citation_jobs = []
-    for condition, method, generation in generation_paths:
-        if "lcite_citation_nli" not in requested_by_dataset[condition]:
-            continue
-        citation_jobs.append(
-            (
-                f"citation-{condition}-{method}",
-                [
-                    sys.executable,
-                    "-m",
-                    "robust_steerability.benchmarks.lciteeval_runtime",
-                    "--stage",
-                    "score-citations",
-                    "--model",
-                    model_key,
-                    "--device",
-                    "{device}",
-                    "--generation-path",
-                    str(generation),
-                    "--kv-cache",
-                    "on" if use_cache else "off",
-                ],
-            )
+    bilingual_scorers = sorted(
+        {
+            scorer
+            for selected in requested_by_dataset.values()
+            for scorer in selected
+            if scorer_spec(scorer).backend == "openai_lcite_bilingual"
+        }
+    )
+    if bilingual_scorers:
+        lciteeval_openai.score_generations(
+            [generation for _condition, _method, generation in generation_paths],
+            runtime.cache_root(model_key, use_cache),
+            runtime.dataset_map(model_key),
+            bilingual_scorers,
+            concurrency=api_concurrency,
+            batch_size=api_batch_size,
         )
-    if citation_jobs:
-        run_jobs(citation_jobs, devices, log_root / "citation-scoring")
 
     api_scorers = sorted(
         {
@@ -321,10 +292,7 @@ def main() -> None:
         if arguments.stage == "score"
         else set()
     )
-    gpu_required = arguments.stage != "score" or any(
-        scorer_spec(key).backend == "huggingface_lcite_nli"
-        for key in selected_score_keys
-    )
+    gpu_required = arguments.stage != "score"
     devices = resolve_cuda_devices(arguments.devices) if gpu_required else []
     run_id = arguments.run_id or default_run_id(
         COMPOSITION.benchmark, arguments.model, arguments.stage
@@ -378,8 +346,6 @@ def main() -> None:
                 methods,
                 datasets,
                 scorers,
-                devices,
-                log_root,
                 arguments.api_concurrency,
                 arguments.api_batch_size,
                 use_cache,
