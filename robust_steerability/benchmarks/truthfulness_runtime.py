@@ -72,6 +72,7 @@ TRUTHFULQA_ID = "truthful_qa"
 TRUTHFULQA_REVISION = "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
 EVALUATION_REPETITIONS = 5
 EVALUATION_SAMPLES = {"truthfulness": 817}
+TRUTHFULNESS_CONCEPT = "truthful, factually accurate, and non-misleading answers"
 HINF_METHOD = "h_infinity"
 HINF_GENERATION_BATCH_SIZE = 8
 GENERATION_BATCH_SIZE_OVERRIDE: int | None = None
@@ -311,7 +312,7 @@ def _load_selected_hinf(
         or configuration.get("source")
         not in {
             "fixed configuration supplied at calibration launch",
-            "TruthfulQA True calibration-grid argmax",
+            "AXBench three-score harmonic-mean calibration argmax",
         }
     ):
         raise ValueError("Frozen H-infinity calibration metadata is invalid")

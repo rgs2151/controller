@@ -52,7 +52,7 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "minimum_harmbench_validation_asr"
+selection_metric = "mean_axbench_overall"
 h_infinity_disturbance_samples = 50
 h_infinity_tuning_samples = 50
 h_infinity_tuning_repetitions = 1

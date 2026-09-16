@@ -23,6 +23,7 @@ from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.judges import scorer_cache_path, scorer_spec
 from robust_steerability.judges import openai as openai_scoring
+from robust_steerability.judges.exact import harmonic_mean
 from robust_steerability.source_methods.protocol import paper_alqr_setting
 
 
@@ -38,6 +39,35 @@ def _names(value: str, allowed: tuple[str, ...]) -> list[str]:
     if unknown or not names:
         raise ValueError(f"Unsupported names: {sorted(unknown)}")
     return names
+
+
+def _write_axbench_overall(generation_path) -> None:
+    mappings = []
+    for scorer in (
+        "axbench_concept_relevance",
+        "axbench_instruction_relevance",
+        "axbench_fluency",
+    ):
+        payload = json.loads(
+            scorer_cache_path(runtime.CACHE_ROOT, generation_path, scorer).read_text()
+        )
+        mappings.append(
+            {str(row["prompt_id"]): float(row["score"]) for row in payload["rows"]}
+        )
+    rows = [
+        {
+            "prompt_id": prompt_id,
+            "score": harmonic_mean([mapping[prompt_id] for mapping in mappings]),
+        }
+        for prompt_id in mappings[0]
+    ]
+    destination = scorer_cache_path(
+        runtime.CACHE_ROOT, generation_path, "axbench_overall"
+    )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_text(json.dumps({"status": "complete", "rows": rows}, indent=2) + "\n")
+    temporary.replace(destination)
 
 
 def _write_alqr_selection(model_key: str, calibration_id: str) -> None:
@@ -82,6 +112,8 @@ def calibration_stage(
     log_root,
     calibration_id: str,
     generation_batch_size: int | None,
+    api_concurrency: int,
+    api_batch_size: int,
     h_infinity_parameters: dict[str, float] | None,
 ) -> None:
     if "alqr" in methods:
@@ -93,6 +125,8 @@ def calibration_stage(
             log_root,
             calibration_id,
             generation_batch_size,
+            api_concurrency=api_concurrency,
+            api_batch_size=api_batch_size,
             fixed_parameters=h_infinity_parameters,
         )
     runtime._configure_runtime(model_key, calibration_id)
@@ -303,6 +337,13 @@ def score_stage(
             key for key in native_scorers[dataset]
             if scorer_spec(key).backend == "openai_0_2"
         ]
+        if "axbench_overall" in native_scorers[dataset]:
+            api_scorers = list(dict.fromkeys([
+                *api_scorers,
+                "axbench_concept_relevance",
+                "axbench_instruction_relevance",
+                "axbench_fluency",
+            ]))
         if api_scorers:
             openai_scoring.score_generations(
                 generation_paths[dataset],
@@ -310,7 +351,11 @@ def score_stage(
                 api_scorers,
                 concurrency=api_concurrency,
                 batch_size=api_batch_size,
+                row_defaults={"concept": runtime.TRUTHFULNESS_CONCEPT},
             )
+        if "axbench_overall" in native_scorers[dataset]:
+            for generation_path in generation_paths[dataset]:
+                _write_axbench_overall(generation_path)
     for dataset in native_datasets:
         if not native_scorers[dataset]:
             continue
@@ -440,6 +485,8 @@ def main() -> None:
                 log_root,
                 arguments.calibration_id,
                 arguments.generation_batch_size,
+                arguments.api_concurrency,
+                arguments.api_batch_size,
                 h_infinity_parameters,
             )
         elif arguments.stage == "evaluate":

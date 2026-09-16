@@ -62,7 +62,11 @@ def _flatten(payload: dict) -> list[dict]:
     return [row for repetition in payload["repetitions"] for row in repetition["rows"]]
 
 
-def _scorer_record(scorer_key: str, batch_size: int) -> dict[str, object]:
+def _scorer_record(
+    scorer_key: str,
+    batch_size: int,
+    row_defaults: dict[str, object] | None,
+) -> dict[str, object]:
     spec = scorer_spec(scorer_key)
     return {
         "schema_version": 1,
@@ -75,6 +79,7 @@ def _scorer_record(scorer_key: str, batch_size: int) -> dict[str, object]:
         "batch_size": batch_size,
         "max_completion_tokens": MAX_COMPLETION_TOKENS,
         "response_format": "strict JSON schema",
+        "row_defaults": row_defaults or {},
     }
 
 
@@ -238,6 +243,7 @@ async def _score_async(
     scorer_keys: list[str],
     concurrency: int,
     batch_size: int,
+    row_defaults: dict[str, object] | None,
 ) -> list[Path]:
     states: dict[Path, dict] = {}
     generation_rows: dict[Path, list[dict]] = {}
@@ -248,13 +254,15 @@ async def _score_async(
         if generation.get("status") != "complete":
             raise ValueError(f"Generation is incomplete: {generation_path}")
         rows = _flatten(generation)
+        if row_defaults:
+            rows = [{**row_defaults, **row} for row in rows]
         for scorer_key in scorer_keys:
             spec = scorer_spec(scorer_key)
             if spec.backend != "openai_0_2":
                 raise ValueError(f"{scorer_key} is not an OpenAI scorer")
             destination = scorer_cache_path(root, generation_path, scorer_key)
             saved = {
-                "scorer": _scorer_record(scorer_key, batch_size),
+                "scorer": _scorer_record(scorer_key, batch_size, row_defaults),
                 "status": "partial",
                 "created_at_utc": datetime.now(timezone.utc).isoformat(),
                 "batches": [],
@@ -337,9 +345,17 @@ def score_generations(
     *,
     concurrency: int = DEFAULT_CONCURRENCY,
     batch_size: int = DEFAULT_BATCH_SIZE,
+    row_defaults: dict[str, object] | None = None,
 ) -> list[Path]:
     if concurrency < 1 or batch_size < 1:
         raise ValueError("concurrency and batch_size must be positive")
     return asyncio.run(
-        _score_async(generation_paths, root, scorer_keys, concurrency, batch_size)
+        _score_async(
+            generation_paths,
+            root,
+            scorer_keys,
+            concurrency,
+            batch_size,
+            row_defaults,
+        )
     )
