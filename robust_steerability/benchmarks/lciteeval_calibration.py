@@ -32,7 +32,7 @@ from robust_steerability.judges.exact import harmonic_mean
 from robust_steerability.judges.mgsm import spanish_rule_score
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
-from robust_steerability.modeling.huggingface import cuda_device_index
+from robust_steerability.modeling.huggingface import cuda_device_index, release_cuda_memory
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 
@@ -597,6 +597,7 @@ def calibrate(
         select_fixed(model_key, devices[0], calibration_id, **fixed_parameters)
         return
     fit_base(model_key, devices[0], calibration_id)
+    release_cuda_memory(devices[0])
     synthesize_grid(model_key, devices[0], calibration_id)
     jobs = [
         (

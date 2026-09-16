@@ -32,7 +32,7 @@ from robust_steerability.experiments.methods import ControllerArtifact, build_po
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.exact import harmonic_mean
 from robust_steerability.judges.specs import scorer_cache_path
-from robust_steerability.modeling.huggingface import load_access_token
+from robust_steerability.modeling.huggingface import load_access_token, release_cuda_memory
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.source_methods.generation import generate_batched
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
@@ -702,6 +702,7 @@ def calibrate(
             return
     prepare(model_key, calibration_id)
     fit_base(model_key, devices[0], calibration_id)
+    release_cuda_memory(devices[0])
     synthesize_grid(model_key, devices[0], calibration_id)
     generation_jobs = [
         (
