@@ -260,6 +260,37 @@ ALL_SCORERS = {
         output_fields=("citation_precision", "citation_recall", "citation_f1"),
         source="L-CiteEval eval_citation.py AutoAIS scorer",
     ),
+    "lcite_answer_bilingual": ScorerSpec(
+        "lcite_answer_bilingual",
+        "openai_lcite_bilingual",
+        "answer_correctness",
+        "gpt-4o-mini-2024-07-18",
+        None,
+        0.0,
+        1.0,
+        "Compare the raw Spanish response directly with the English question and "
+        "reference answer. Score 0 for incorrect or absent, 1 for partially correct, "
+        "and 2 for fully correct, then normalize to [0, 1]. Do not translate the "
+        "stored response or penalize the language difference.",
+        input_fields=("question", "answer", "completion"),
+        output_fields=("score", "raw_score", "explanation"),
+        source="Project bilingual L-CiteEval answer-correctness rubric",
+    ),
+    "lcite_citation_bilingual": ScorerSpec(
+        "lcite_citation_bilingual",
+        "openai_lcite_bilingual",
+        "citation_f1",
+        "gpt-4o-mini-2024-07-18",
+        None,
+        0.0,
+        1.0,
+        "Judge whether each raw Spanish claim is entailed by its cited English "
+        "passages and which citations are necessary. Compute citation recall, "
+        "precision, and F1 deterministically from those bilingual judgments.",
+        input_fields=("completion", "docs"),
+        output_fields=("citation_precision", "citation_recall", "citation_f1"),
+        source="Bilingual adaptation of the L-CiteEval AutoAIS definitions",
+    ),
     "axbench_overall": ScorerSpec(
         "axbench_overall",
         "deterministic_harmonic_mean",
