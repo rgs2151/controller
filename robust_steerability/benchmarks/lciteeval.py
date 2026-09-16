@@ -19,7 +19,6 @@ from robust_steerability.benchmarks.launcher import run_data_shards
 from robust_steerability.benchmarks.layout import calibration_root
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.experiments.resources import resolve_cuda_devices
-from robust_steerability.judges import lciteeval_openai
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.specs import scorer_spec
 
@@ -197,6 +196,8 @@ def score_stage(
         }
     )
     if bilingual_scorers:
+        from robust_steerability.judges import lciteeval_openai
+
         lciteeval_openai.score_generations(
             [generation for _condition, _method, generation in generation_paths],
             runtime.cache_root(model_key, use_cache),

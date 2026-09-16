@@ -6,8 +6,6 @@ import copy
 import re
 from collections.abc import Callable
 
-from nltk import sent_tokenize
-
 from robust_steerability.judges.exact import remove_citations
 from robust_steerability.judges.specs import scorer_spec
 
@@ -23,6 +21,8 @@ def _format_document(document: str | dict) -> str:
 
 def _sentences(text: str) -> list[str]:
     """Split generated claims with the same NLTK tokenizer as L-CiteEval."""
+
+    from nltk import sent_tokenize
 
     return sent_tokenize(text)
 
