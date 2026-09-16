@@ -117,7 +117,7 @@ def _response_format(count: int) -> dict[str, object]:
 
 def _request_rows(scorer_key: str, indexed_rows: list[tuple[int, dict]]) -> list[dict]:
     rows = []
-    for item_index, row in indexed_rows:
+    for item_index, (_, row) in enumerate(indexed_rows):
         item = {
             "item_index": item_index,
             "instruction": str(row["text"]),
@@ -172,15 +172,21 @@ async def _request(
                         if not content:
                             raise IncompleteJudgeResponse("empty_content")
                         returned = json.loads(content)["results"]
-                        expected = [row["item_index"] for row in request_rows]
+                        expected = list(range(len(request_rows)))
                         by_index = {row["item_index"]: row for row in returned}
                         if sorted(by_index) != expected or len(by_index) != len(returned):
-                            raise ValueError(
-                                f"OpenAI scorer batch {batch_index} changed item indices"
+                            raise IncompleteJudgeResponse(
+                                "changed_item_indices",
+                                f"batch {batch_index}",
                             )
+                        results = []
+                        for local_index, (global_index, _) in enumerate(indexed_rows):
+                            result = dict(by_index[local_index])
+                            result["item_index"] = global_index
+                            results.append(result)
                         return {
                             "batch_index": batch_index,
-                            "results": [by_index[index] for index in expected],
+                            "results": results,
                             "api": {
                                 "request_id": payload.get("id"),
                                 "returned_model": payload.get("model"),
