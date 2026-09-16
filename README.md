@@ -2,6 +2,20 @@
 
 Research code for measuring and controlling robust steerability in language-model representation dynamics under distribution shift.
 
+## Experiment Compute Map
+
+| Benchmark | Run owner | Current state |
+|---|---|---|
+| Truthfulness | Remote 1 | Completed runs and reusable cache live there. |
+| L-CiteEval | Remote 1 | Completed runs and reusable cache live there. |
+| MGSM | Remote 2 | Completed runs and reusable cache live there. |
+| Toxicity | Local 2 (`toastedpotato-dev`) | Assigned here; artifact creation must resume after the current GPU-driver failure is cleared. |
+| HarmBench | Local 1 | Completed run and reusable cache live here. |
+
+The run owner is the machine that retains each benchmark's ignored scientific
+cache. Git synchronizes code, logs, result tables, and plots, but does not move
+these machine-owned caches.
+
 ## Setup
 
 Create the environment from the repo root:
