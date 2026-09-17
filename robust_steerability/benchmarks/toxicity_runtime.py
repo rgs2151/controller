@@ -10,6 +10,7 @@ import random
 import subprocess
 import sys
 import time
+import tomllib
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -96,6 +97,15 @@ PERPLEXITY_MODEL = "mistralai/Mistral-7B-v0.1"
 PERPLEXITY_MODEL_REVISION = "27d67f1b5f57dc0953326b2601d68371d40ea8da"
 
 COMPOSITION = load_composition("toxicity")
+CALIBRATION_CONFIG = tomllib.loads(
+    (REPO / "benchmarks/toxicity/benchmark.toml").read_text()
+)["calibration"]
+AVAILABLE_SELECTION_METRICS = tuple(
+    str(value) for value in CALIBRATION_CONFIG["available_selection_metrics"]
+)
+DEFAULT_SELECTION_METRIC = str(CALIBRATION_CONFIG["selection_metric"])
+if DEFAULT_SELECTION_METRIC not in AVAILABLE_SELECTION_METRICS:
+    raise ValueError("Toxicity default calibration metric is not available")
 METHODS = COMPOSITION.available_methods
 DISTRIBUTIONS = ("rtp",)
 API_SCORERS = (
@@ -501,6 +511,21 @@ def _candidate_policy(candidate: dict, device: str):
     return _hinf_grid_policy(str(candidate["candidate_id"]))
 
 
+def _calibration_generation_path(name: str) -> Path:
+    return HINF_CALIBRATION / "grid/generations" / f"{name}.json"
+
+
+def _calibration_rows(generation_path: Path) -> list[dict]:
+    payload = json.loads(generation_path.read_text())
+    if payload.get("status") != "complete":
+        raise ValueError(f"Incomplete calibration generation: {generation_path}")
+    return [
+        row
+        for repetition in payload["repetitions"]
+        for row in repetition["rows"]
+    ]
+
+
 def _generate_records(
     model,
     tokenizer,
@@ -593,6 +618,52 @@ def generate_calibration_worker(device: str, worker_index: int, worker_count: in
         _write_json(destination, saved)
 
 
+def generate_calibration_reference(method: str, device: str) -> Path:
+    """Generate a matched unsteered or A-LQR calibration reference."""
+
+    if method not in {"original", "alqr"}:
+        raise ValueError(f"Unsupported calibration reference {method!r}")
+    destination = _calibration_generation_path(method)
+    if destination.exists():
+        saved = json.loads(destination.read_text())
+        if saved.get("status") == "complete":
+            return destination
+    prepare()
+    model, tokenizer = load_source_model(
+        "alqr", "toxicity", MODEL_ID, MODEL_REVISION, device, load_access_token(REPO)
+    )
+    data = json.loads(DATA_PATH.read_text())
+    policy = None if method == "original" else _alqr_policy(device)
+    rows = _generate_records(
+        model,
+        tokenizer,
+        policy,
+        data["hyperparameter_evaluation"]["rtp"]["0"],
+        SOURCE_RANDOM_SEED,
+        use_cache=False,
+    )
+    _write_json(
+        destination,
+        {
+            "identity": {
+                "schema_version": 1,
+                "method": method,
+                "model": [MODEL_ID, MODEL_REVISION],
+                "kv_cache": False,
+                "generation": GENERATION["toxicity"],
+                "batch_size": GENERATION_BATCH_SIZE,
+                "matched_calibration_reference": True,
+            },
+            "status": "complete",
+            "repetitions": [{"repetition": 0, "rows": rows}],
+        },
+    )
+    del model, tokenizer
+    gc.collect()
+    torch.cuda.empty_cache()
+    return destination
+
+
 def _load_perplexity_model(device: str, token: str):
     return load_causal_model(
         CausalModelLoadSpec(
@@ -662,14 +733,108 @@ def _write_axbench_overall(root: Path, generation_path: Path) -> Path:
     return destination
 
 
-def score_calibration_grid(*, api_concurrency: int, api_batch_size: int) -> None:
-    """Score every H-infinity candidate with the three AXBench judges."""
+def _score_calibration_local(generation_paths: list[Path], device: str) -> None:
+    root = HINF_CALIBRATION / "grid"
+    token = load_access_token(REPO)
+    pending = [
+        path for path in generation_paths
+        if not scorer_cache_path(root, path, "toxicity_classifier").exists()
+    ]
+    if pending:
+        classifier, tokenizer = load_sequence_classifier(
+            TOXICITY_CLASSIFIER,
+            TOXICITY_CLASSIFIER_REVISION,
+            device,
+            token,
+        )
+        for generation_path in pending:
+            probabilities = toxicity_probabilities(
+                [str(row["completion"]) for row in _calibration_rows(generation_path)],
+                classifier,
+                tokenizer,
+                device,
+                batch_size=TOXICITY_BATCH_SIZE,
+                max_length=512,
+            )
+            _write_json(
+                scorer_cache_path(root, generation_path, "toxicity_classifier"),
+                {
+                    "status": "complete",
+                    "scorer": "toxicity_classifier",
+                    "model": [TOXICITY_CLASSIFIER, TOXICITY_CLASSIFIER_REVISION],
+                    "values": [float(value) for value in probabilities],
+                },
+            )
+        del classifier, tokenizer
+        gc.collect()
+        torch.cuda.empty_cache()
+
+    pending = [
+        path for path in generation_paths
+        if not scorer_cache_path(root, path, "perplexity").exists()
+    ]
+    if pending:
+        model, tokenizer = _load_perplexity_model(device, token)
+        for generation_path in pending:
+            rows = _calibration_rows(generation_path)
+            _write_json(
+                scorer_cache_path(root, generation_path, "perplexity"),
+                {
+                    "status": "complete",
+                    "scorer": "perplexity",
+                    "model": [PERPLEXITY_MODEL, PERPLEXITY_MODEL_REVISION],
+                    "values": _perplexities(
+                        model,
+                        tokenizer,
+                        [str(row["text"]) + str(row["completion"]) for row in rows],
+                        device,
+                    ),
+                },
+            )
+        del model, tokenizer
+        gc.collect()
+        torch.cuda.empty_cache()
+
+    for generation_path in generation_paths:
+        destination = scorer_cache_path(root, generation_path, "distinct_2")
+        if destination.exists():
+            continue
+        generation = json.loads(generation_path.read_text())
+        _write_json(
+            destination,
+            {
+                "status": "complete",
+                "scorer": "distinct_2",
+                "definition": "unique generated bigrams divided by generated bigrams",
+                "values": [
+                    distinct_ngrams(
+                        [str(row["completion"]) for row in repetition["rows"]], 2
+                    )
+                    for repetition in generation["repetitions"]
+                ],
+            },
+        )
+
+
+def score_calibration_grid(
+    device: str,
+    *,
+    api_concurrency: int,
+    api_batch_size: int,
+    include_references: bool = False,
+) -> None:
+    """Score saved H-infinity candidates without changing the active selection."""
 
     root = HINF_CALIBRATION / "grid"
     generation_paths = [
-        root / "generations" / f"{candidate['candidate_id']}.json"
+        _calibration_generation_path(candidate["candidate_id"])
         for candidate in _candidate_specs()
     ]
+    if include_references:
+        generation_paths.extend(
+            generate_calibration_reference(method, device)
+            for method in ("original", "alqr")
+        )
     if any(not path.exists() for path in generation_paths):
         raise FileNotFoundError("H-infinity calibration generations are incomplete")
     openai_scoring.score_generations(
@@ -681,13 +846,11 @@ def score_calibration_grid(*, api_concurrency: int, api_batch_size: int) -> None
     )
     for generation_path in generation_paths:
         _write_axbench_overall(root, generation_path)
+    _score_calibration_local(generation_paths, device)
 
 
-def _candidate_summary(candidate: dict) -> dict:
-    generation_path = HINF_CALIBRATION / "grid/generations" / f"{candidate['candidate_id']}.json"
-    generation = json.loads(generation_path.read_text())
-    if generation.get("status") != "complete":
-        raise ValueError(f"Incomplete calibration candidate: {candidate['candidate_id']}")
+def _calibration_summary(generation_path: Path, candidate: dict | None = None) -> dict:
+    rows = _calibration_rows(generation_path)
     root = HINF_CALIBRATION / "grid"
     means = {}
     for scorer in (*API_SCORERS, "axbench_overall"):
@@ -695,27 +858,171 @@ def _candidate_summary(candidate: dict) -> dict:
         if payload.get("status") != "complete":
             raise ValueError(f"Incomplete calibration score: {scorer}")
         means[scorer] = float(np.mean([float(row["score"]) for row in payload["rows"]]))
+    toxicity = json.loads(
+        scorer_cache_path(root, generation_path, "toxicity_classifier").read_text()
+    )
+    probabilities = [float(value) for value in toxicity["values"]]
+    perplexity = json.loads(
+        scorer_cache_path(root, generation_path, "perplexity").read_text()
+    )
+    distinct_2 = json.loads(
+        scorer_cache_path(root, generation_path, "distinct_2").read_text()
+    )
+    summary = {
+        "samples": len(rows),
+        "mean_toxicity_probability": float(np.mean(probabilities)),
+        "toxicity_percent": toxicity_frequency(probabilities)[0],
+        "dist_2": float(np.mean([float(value) for value in distinct_2["values"]])),
+        "perplexity": float(np.mean([float(value) for value in perplexity["values"]])),
+        **means,
+    }
+    return {**candidate, **summary} if candidate is not None else summary
+
+
+def _toxicity_quality_metrics(candidate: dict, baseline: dict) -> dict:
+    config = CALIBRATION_CONFIG["toxicity_quality_composite"]
+    baseline_toxicity = float(baseline["mean_toxicity_probability"])
+    if baseline_toxicity <= 0:
+        raise ValueError("Toxicity-quality calibration requires a positive baseline score")
+    toxicity_safety = float(np.clip(
+        1.0 - float(candidate["mean_toxicity_probability"]) / baseline_toxicity,
+        0.0,
+        1.0,
+    ))
+    fluency = float(np.clip(float(candidate["axbench_fluency"]) / 2.0, 0.0, 1.0))
+    perplexity_ratio = float(candidate["perplexity"]) / float(baseline["perplexity"])
+    zero_ratio = float(config["perplexity_zero_score_ratio"])
+    perplexity_preservation = float(np.clip(
+        1.0 - max(0.0, math.log(perplexity_ratio)) / math.log(zero_ratio),
+        0.0,
+        1.0,
+    ))
+    distinct_2_ratio = float(candidate["dist_2"]) / float(baseline["dist_2"])
+    distinct_2_preservation = float(np.clip(distinct_2_ratio, 0.0, 1.0))
+    fluency_ratio = float(candidate["axbench_fluency"]) / float(
+        baseline["axbench_fluency"]
+    )
+    components = {
+        "toxicity_safety": toxicity_safety,
+        "fluency_normalized": fluency,
+        "perplexity_preservation": perplexity_preservation,
+        "distinct_2_preservation": distinct_2_preservation,
+    }
+    weights = {
+        "toxicity_safety": float(config["toxicity_weight"]),
+        "fluency_normalized": float(config["fluency_weight"]),
+        "perplexity_preservation": float(config["perplexity_weight"]),
+        "distinct_2_preservation": float(config["distinct_2_weight"]),
+    }
+    if not math.isclose(sum(weights.values()), 1.0):
+        raise ValueError("Toxicity-quality calibration weights must sum to one")
+    composite = 0.0 if any(value <= 0 for value in components.values()) else math.prod(
+        components[name] ** weights[name] for name in components
+    )
+    gates = {
+        "minimum_fluency_ratio": fluency_ratio
+        >= float(config["minimum_fluency_ratio"]),
+        "maximum_perplexity_ratio": perplexity_ratio
+        <= float(config["maximum_perplexity_ratio"]),
+        "minimum_distinct_2_ratio": distinct_2_ratio
+        >= float(config["minimum_distinct_2_ratio"]),
+    }
     return {
         **candidate,
-        **means,
+        **components,
+        "perplexity_ratio": perplexity_ratio,
+        "distinct_2_ratio": distinct_2_ratio,
+        "fluency_ratio": fluency_ratio,
+        "toxicity_quality_composite": float(composite),
+        "quality_gates": gates,
+        "quality_gates_passed": all(gates.values()),
     }
 
 
-def select_calibration() -> None:
-    """Freeze the H-infinity configuration with highest AXBench overall score."""
-
-    summaries = [_candidate_summary(candidate) for candidate in _candidate_specs()]
-    hinf = sorted(
-        summaries,
-        key=lambda row: (
-            -row["axbench_overall"],
-            -row["axbench_concept_relevance"],
-            -row["axbench_instruction_relevance"],
-            -row["axbench_fluency"],
-            row["parameters"]["q_over_r"],
-            row["parameters"]["q_final_over_r"],
+def calibration_profile(selection_metric: str) -> dict:
+    if selection_metric not in AVAILABLE_SELECTION_METRICS:
+        raise ValueError(f"Unknown toxicity calibration metric {selection_metric!r}")
+    summaries = [
+        _calibration_summary(
+            _calibration_generation_path(candidate["candidate_id"]), candidate
+        )
+        for candidate in _candidate_specs()
+    ]
+    baseline = None
+    comparators = None
+    if selection_metric == "mean_axbench_overall":
+        ranked = sorted(
+            summaries,
+            key=lambda row: (
+                -row["axbench_overall"],
+                -row["axbench_concept_relevance"],
+                -row["axbench_instruction_relevance"],
+                -row["axbench_fluency"],
+                row["parameters"]["q_over_r"],
+                row["parameters"]["q_final_over_r"],
+            ),
+        )
+        rule = "maximize mean AXBench overall steering"
+    else:
+        baseline = _calibration_summary(_calibration_generation_path("original"))
+        summaries = [_toxicity_quality_metrics(row, baseline) for row in summaries]
+        comparators = {
+            "original": {
+                **baseline,
+                "toxicity_quality_composite": None,
+            },
+            "alqr": _toxicity_quality_metrics(
+                _calibration_summary(_calibration_generation_path("alqr")), baseline
+            ),
+        }
+        eligible = [row for row in summaries if row["quality_gates_passed"]]
+        if not eligible:
+            raise ValueError("No H-infinity candidate passed the toxicity-quality gates")
+        ranked = sorted(
+            eligible,
+            key=lambda row: (
+                -row["toxicity_quality_composite"],
+                -row["toxicity_safety"],
+                row["mean_toxicity_probability"],
+                -row["axbench_fluency"],
+                row["parameters"]["q_over_r"],
+                row["parameters"]["q_final_over_r"],
+            ),
+        )
+        rule = "maximize baseline-relative toxicity-quality composite subject to quality gates"
+    return {
+        "schema_version": 1,
+        "model": [MODEL_ID, MODEL_REVISION],
+        "benchmark": "toxicity",
+        "selection_metric": selection_metric,
+        "selection_rule": rule,
+        "metric_configuration": (
+            CALIBRATION_CONFIG.get("toxicity_quality_composite")
+            if selection_metric == "toxicity_quality_composite"
+            else None
         ),
-    )[0]
+        "baseline": baseline,
+        "comparators": comparators,
+        "selected": ranked[0],
+        "ranking": [row["candidate_id"] for row in ranked],
+        "grid": summaries,
+    }
+
+
+def write_calibration_profile(selection_metric: str) -> Path:
+    profile = calibration_profile(selection_metric)
+    destination = (
+        HINF_CALIBRATION / "grid/selection_profiles" / f"{selection_metric}.json"
+    )
+    _write_json(destination, profile)
+    return destination
+
+
+def select_calibration(selection_metric: str = DEFAULT_SELECTION_METRIC) -> None:
+    """Activate one explicitly named H-infinity calibration objective."""
+
+    profile = calibration_profile(selection_metric)
+    hinf = profile["selected"]
     base, _bundle, _options = _base_payload()
     variant_path = HINF_CALIBRATION / "grid/controllers" / f"{hinf['candidate_id']}.pt"
     variant = torch.load(variant_path, map_location="cpu", weights_only=True)
@@ -736,6 +1043,7 @@ def select_calibration() -> None:
                 "task": "toxicity",
                 "kv_cache": False,
                 "selection_candidate": hinf["candidate_id"],
+                "selection_metric": selection_metric,
                 "parameters": hinf["parameters"],
             },
             "artifact": selected_artifact.__dict__,
@@ -758,16 +1066,14 @@ def select_calibration() -> None:
                 "q_final_over_r": list(Q_FINAL_OVER_R),
                 "fixed_r": FIXED_R,
             },
-            "selection_rule": "maximize mean AXBench overall steering",
-            "tie_breakers": [
-                "higher concept relevance",
-                "higher instruction relevance",
-                "higher fluency",
-                "smaller Q/R",
-                "smaller Qf/R",
-            ],
+            "selection_metric": selection_metric,
+            "selection_rule": profile["selection_rule"],
+            "metric_configuration": profile["metric_configuration"],
+            "baseline": profile["baseline"],
+            "comparators": profile["comparators"],
             "selected": hinf,
-            "grid": summaries,
+            "ranking": profile["ranking"],
+            "grid": profile["grid"],
         },
     )
 
@@ -1240,23 +1546,54 @@ def calibrate(
     log_root: Path | None = None,
     api_concurrency: int = openai_scoring.DEFAULT_CONCURRENCY,
     api_batch_size: int = openai_scoring.DEFAULT_BATCH_SIZE,
+    selection_metric: str = DEFAULT_SELECTION_METRIC,
 ) -> None:
     prepare()
     hinf_selection_path = HINF_CALIBRATION / "selection.json"
     controller_path = HINF_CALIBRATION / "controller.pt"
     if hinf_selection_path.exists() and controller_path.exists():
-        return
+        active = json.loads(hinf_selection_path.read_text())
+        if active.get("selection_metric") == selection_metric:
+            return
     calibrate_hinf_base(devices[0])
     synthesize_hinf_grid(devices[0])
     worker_logs = log_root or CACHE / "logs"
-    _launch_workers(
-        "generate-calibration-worker", devices, worker_logs, candidates=True
-    )
+    candidate_paths = [
+        _calibration_generation_path(candidate["candidate_id"])
+        for candidate in _candidate_specs()
+    ]
+    if not all(
+        path.exists() and json.loads(path.read_text()).get("status") == "complete"
+        for path in candidate_paths
+    ):
+        _launch_workers(
+            "generate-calibration-worker", devices, worker_logs, candidates=True
+        )
     score_calibration_grid(
+        devices[0],
         api_concurrency=api_concurrency,
         api_batch_size=api_batch_size,
+        include_references=selection_metric == "toxicity_quality_composite",
     )
-    select_calibration()
+    select_calibration(selection_metric)
+
+
+def analyze_calibration(
+    device: str,
+    *,
+    selection_metric: str,
+    api_concurrency: int = openai_scoring.DEFAULT_CONCURRENCY,
+    api_batch_size: int = openai_scoring.DEFAULT_BATCH_SIZE,
+) -> Path:
+    """Score and rank the saved grid without replacing the active controller."""
+
+    score_calibration_grid(
+        device,
+        api_concurrency=api_concurrency,
+        api_batch_size=api_batch_size,
+        include_references=selection_metric == "toxicity_quality_composite",
+    )
+    return write_calibration_profile(selection_metric)
 
 
 def evaluate(
@@ -1354,6 +1691,7 @@ def main() -> None:
             "generate-calibration-worker",
             "score-calibration-grid",
             "select-calibration",
+            "analyze-calibration",
             "calibrate",
             "generate-final",
             "score-final",
@@ -1365,6 +1703,11 @@ def main() -> None:
     )
     parser.add_argument("--model", choices=COMPOSITION.models, required=True)
     parser.add_argument("--calibration-id", default="selected")
+    parser.add_argument(
+        "--selection-metric",
+        choices=AVAILABLE_SELECTION_METRICS,
+        default=DEFAULT_SELECTION_METRIC,
+    )
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument("--device")
     parser.add_argument("--devices", default="auto")
@@ -1400,7 +1743,7 @@ def main() -> None:
     )
     if not selected_scorers or set(selected_scorers) - set(SCORERS):
         raise ValueError("--scorers contains an unsupported value")
-    needs_gpu = arguments.stage in {"calibrate", "evaluate"} or (
+    needs_gpu = arguments.stage in {"calibrate", "evaluate", "analyze-calibration"} or (
         arguments.stage == "score"
         and bool({"toxicity_classifier", "perplexity"} & set(selected_scorers))
     )
@@ -1417,16 +1760,27 @@ def main() -> None:
         )
     elif arguments.stage == "score-calibration-grid":
         score_calibration_grid(
+            arguments.device,
+            api_concurrency=arguments.api_concurrency,
+            api_batch_size=arguments.api_batch_size,
+            include_references=arguments.selection_metric
+            == "toxicity_quality_composite",
+        )
+    elif arguments.stage == "select-calibration":
+        select_calibration(arguments.selection_metric)
+    elif arguments.stage == "analyze-calibration":
+        analyze_calibration(
+            devices[0],
+            selection_metric=arguments.selection_metric,
             api_concurrency=arguments.api_concurrency,
             api_batch_size=arguments.api_batch_size,
         )
-    elif arguments.stage == "select-calibration":
-        select_calibration()
     elif arguments.stage == "calibrate":
         calibrate(
             devices,
             api_concurrency=arguments.api_concurrency,
             api_batch_size=arguments.api_batch_size,
+            selection_metric=arguments.selection_metric,
         )
     elif arguments.stage == "generate-final":
         generate_final(

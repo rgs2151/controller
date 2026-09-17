@@ -41,13 +41,24 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "mean_axbench_overall"
+selection_metric = "toxicity_quality_composite"
+available_selection_metrics = ["mean_axbench_overall", "toxicity_quality_composite"]
 h_infinity_disturbance_samples = 200
 h_infinity_tuning_samples = 50
 h_infinity_tuning_repetitions = 1
 h_infinity_fixed_r = 1.0
 h_infinity_q_over_r = [0.01, 0.1, 1.0, 10.0]
 h_infinity_q_final_over_r = [0.01, 0.1, 0.31622776601683794]
+
+[calibration.toxicity_quality_composite]
+toxicity_weight = 0.60
+fluency_weight = 0.20
+perplexity_weight = 0.15
+distinct_2_weight = 0.05
+minimum_fluency_ratio = 0.85
+maximum_perplexity_ratio = 1.5
+minimum_distinct_2_ratio = 0.95
+perplexity_zero_score_ratio = 1.5
 
 [storage]
 remote_cache_backend = "lightning_teamspace_drive"

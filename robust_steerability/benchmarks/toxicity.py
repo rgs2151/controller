@@ -99,6 +99,11 @@ def main() -> None:
     parser.add_argument("--datasets", default=",".join(DEFAULT_DATASETS))
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
+    parser.add_argument(
+        "--selection-metric",
+        choices=runtime.AVAILABLE_SELECTION_METRICS,
+        default=runtime.DEFAULT_SELECTION_METRIC,
+    )
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument("--scorers", default="default")
     parser.add_argument(
@@ -155,6 +160,7 @@ def main() -> None:
             "scorers": sorted(selected_score_keys) if arguments.stage == "score" else [],
             "api_concurrency": arguments.api_concurrency,
             "api_batch_size": arguments.api_batch_size,
+            "selection_metric": arguments.selection_metric,
         },
     ) as log_root:
         if arguments.stage == "artifacts":
@@ -178,6 +184,7 @@ def main() -> None:
                     log_root=log_root / "calibration",
                     api_concurrency=arguments.api_concurrency,
                     api_batch_size=arguments.api_batch_size,
+                    selection_metric=arguments.selection_metric,
                 )
         elif arguments.stage == "evaluate":
             native_datasets = [
