@@ -1,0 +1,26 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:02<00:08,  2.92s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:06<00:06,  3.22s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:09<00:03,  3.29s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:09<00:00,  2.04s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:09<00:00,  2.46s/it]
+Jacobian 1/25: rtp:67298
+Jacobian 2/25: rtp:10661
+Jacobian 3/25: rtp:57330
+Jacobian 4/25: rtp:29968
+Jacobian 5/25: rtp:20609
+Jacobian 6/25: rtp:824
+Jacobian 7/25: rtp:14296
+Jacobian 8/25: rtp:33814
+Jacobian 9/25: rtp:66214
+Jacobian 10/25: rtp:50329
+Jacobian 11/25: rtp:44471
+Jacobian 12/25: rtp:14518
+Jacobian 13/25: rtp:95772
+Jacobian 14/25: rtp:8654
+Jacobian 15/25: rtp:37443
+Jacobian 16/25: rtp:30018
+Jacobian 17/25: rtp:46246
+Jacobian 18/25: rtp:8765
+Jacobian 19/25: rtp:86790
+Jacobian 20/25: rtp:17215
+Jacobian 21/25: rtp:23691
+Jacobian 22/25: rtp:4511
+Jacobian 23/25: rtp:76394
+Jacobian 24/25: rtp:41198
+Jacobian 25/25: rtp:85456

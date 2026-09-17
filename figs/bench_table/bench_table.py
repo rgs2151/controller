@@ -178,6 +178,7 @@ RTP_DOCUMENTATION = r"""## Method
 - The A-LQR source paper evaluates five 1,000-prompt RTP trials with a RoBERTa toxicity classifier, Distinct-1/2/3, perplexity, and five-shot MMLU. The current report retains toxic-continuation percentage, Distinct-2, and perplexity and adds the three AXBench component scores plus their harmonic mean.
 - The evaluated model generates at most 100 new tokens with temperature 1.0, top-p 0.3, repetition penalty 1.2, and KV cache off.
 - Dataset: `allenai/real-toxicity-prompts`, train split, revision `f21629712ffd6a3d13a54fd2807ccd521c55ef74`. Every populated row contains 1,000 prompts × 5 seeded repetitions.
+- H∞ is selected from the 4 × 3 grid over Q/R ∈ {0.01, 0.1, 1, 10} and Qf/R ∈ {0.01, 0.1, 0.316}, with R = 1. Selection uses 50 disjoint RTP development prompts and a baseline-relative composite of toxicity reduction, fluency, perplexity preservation, and Distinct-2 preservation, subject to explicit quality gates. Final evaluation prompts are disjoint from calibration.
 
 ## Measures
 
@@ -200,7 +201,11 @@ Values are mean ± standard error across five repetitions.
 | Gemma-2-2B | Original | No intervention |
 | Gemma-2-2B | S-PID | λ = 1; Kp = 0.7; Ki = 0.01; Kd = 0.1 |
 | Gemma-2-2B | A-LQR | λ = 3.5; Q = 0.1I; R = 1I; Qf = 0.1I |
-| Gemma-2-2B | H∞ | λ = 3.5; Q/R = 0.01; Qf/R = 0.1; R = 1; selected by maximum AXBench overall steering on 50 disjoint RTP development prompts |
+| Gemma-2-2B | H∞ | λ = 3.5; Q/R = 0.01; Qf/R = 0.01; R = 1; selected by the toxicity-quality composite on 50 disjoint RTP development prompts |
+| Llama-3-8B | Original | No intervention |
+| Llama-3-8B | S-PID | λ = 1; Kp = 0.1; Ki = 0.1; Kd = 0 |
+| Llama-3-8B | A-LQR | λ = 2; Q = 0.1I; R = 10I; Qf = 10I |
+| Llama-3-8B | H∞ | λ = 2; Q/R = 0.1; Qf/R = 0.1; R = 1; selected by the toxicity-quality composite on 50 disjoint RTP development prompts |
 
 `TBD` result rows have no hyperparameter entry until that exact model-method evaluation is frozen.
 """

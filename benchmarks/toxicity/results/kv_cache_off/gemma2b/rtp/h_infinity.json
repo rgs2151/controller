@@ -22,83 +22,83 @@
   "per_repetition": [
     {
       "repetition": 0,
-      "toxicity": 0.2,
-      "dist_2": 0.6986387357227255,
-      "perplexity": 11.448289363384246,
-      "axbench_concept_relevance": 0.557,
-      "axbench_instruction_relevance": 1.5,
-      "axbench_fluency": 1.415,
-      "axbench_overall": 0.5288
+      "toxicity": 0.8,
+      "dist_2": 0.6913703703703704,
+      "perplexity": 10.915076788425445,
+      "axbench_concept_relevance": 0.651,
+      "axbench_instruction_relevance": 1.481,
+      "axbench_fluency": 1.368,
+      "axbench_overall": 0.6013999999999999
     },
     {
       "repetition": 1,
-      "toxicity": 0.3,
-      "dist_2": 0.7018166196145821,
-      "perplexity": 11.723494399547578,
-      "axbench_concept_relevance": 0.467,
-      "axbench_instruction_relevance": 1.465,
-      "axbench_fluency": 1.402,
-      "axbench_overall": 0.45080000000000003
+      "toxicity": 0.8999999999999999,
+      "dist_2": 0.6957564575645756,
+      "perplexity": 11.013292475700379,
+      "axbench_concept_relevance": 0.801,
+      "axbench_instruction_relevance": 1.441,
+      "axbench_fluency": 1.42,
+      "axbench_overall": 0.7286
     },
     {
       "repetition": 2,
-      "toxicity": 0.3,
-      "dist_2": 0.7003447133726707,
-      "perplexity": 11.742337922096253,
-      "axbench_concept_relevance": 0.662,
-      "axbench_instruction_relevance": 1.445,
-      "axbench_fluency": 1.432,
-      "axbench_overall": 0.6409
+      "toxicity": 1.0999999999999999,
+      "dist_2": 0.6920186512562315,
+      "perplexity": 10.978631007671357,
+      "axbench_concept_relevance": 0.794,
+      "axbench_instruction_relevance": 1.441,
+      "axbench_fluency": 1.405,
+      "axbench_overall": 0.7385999999999999
     },
     {
       "repetition": 3,
-      "toxicity": 0.2,
-      "dist_2": 0.695720594334789,
-      "perplexity": 11.693048375129699,
-      "axbench_concept_relevance": 0.575,
-      "axbench_instruction_relevance": 1.501,
-      "axbench_fluency": 1.394,
-      "axbench_overall": 0.5557000000000001
+      "toxicity": 0.6,
+      "dist_2": 0.6923256471050724,
+      "perplexity": 11.018497224330902,
+      "axbench_concept_relevance": 0.8,
+      "axbench_instruction_relevance": 1.478,
+      "axbench_fluency": 1.401,
+      "axbench_overall": 0.7504
     },
     {
       "repetition": 4,
-      "toxicity": 0.2,
-      "dist_2": 0.6979387730211002,
-      "perplexity": 11.626498675823212,
-      "axbench_concept_relevance": 0.518,
-      "axbench_instruction_relevance": 1.444,
-      "axbench_fluency": 1.435,
-      "axbench_overall": 0.47829999999999995
+      "toxicity": 1.0,
+      "dist_2": 0.6979138310772353,
+      "perplexity": 11.029292330503464,
+      "axbench_concept_relevance": 0.578,
+      "axbench_instruction_relevance": 1.459,
+      "axbench_fluency": 1.418,
+      "axbench_overall": 0.5244
     }
   ],
   "metrics": {
     "toxicity": {
-      "mean": 0.24,
-      "standard_error": 0.02449489742783178
+      "mean": 0.8800000000000001,
+      "standard_error": 0.08602325267042624
     },
     "dist_2": {
-      "mean": 0.6988918872131735,
-      "standard_error": 0.0010414983036545963
+      "mean": 0.6938769914746971,
+      "standard_error": 0.0012643518861656467
     },
     "perplexity": {
-      "mean": 11.646733747196198,
-      "standard_error": 0.05336995050977812
+      "mean": 10.99095796532631,
+      "standard_error": 0.0207806058460698
     },
     "axbench_concept_relevance": {
-      "mean": 0.5558,
-      "standard_error": 0.032374990347488905
+      "mean": 0.7248,
+      "standard_error": 0.04650096773186555
     },
     "axbench_instruction_relevance": {
-      "mean": 1.4709999999999999,
-      "standard_error": 0.01261348484757482
+      "mean": 1.4600000000000002,
+      "standard_error": 0.008625543461139126
     },
     "axbench_fluency": {
-      "mean": 1.4156000000000002,
-      "standard_error": 0.008053570636680373
+      "mean": 1.4024,
+      "standard_error": 0.009341306118525364
     },
     "axbench_overall": {
-      "mean": 0.5309,
-      "standard_error": 0.03309246137717774
+      "mean": 0.6686799999999999,
+      "standard_error": 0.04500038222059897
     }
   }
 }
