@@ -9,7 +9,7 @@ Research code for measuring and controlling robust steerability in language-mode
 | Truthfulness | Remote 1 | Completed runs and reusable cache live there. |
 | L-CiteEval | Remote 1 | Completed runs and reusable cache live there. |
 | MGSM | Remote 2 | Completed runs and reusable cache live there. |
-| Toxicity | Local 2 (`toastedpotato-dev`) | Assigned here; artifact creation must resume after the current GPU-driver failure is cleared. |
+| Toxicity | Local 1 | Gemma-2-2B and Llama-3-8B runs and reusable caches live here. |
 | HarmBench | Local 1 | Completed run and reusable cache live here. |
 
 The run owner is the machine that retains each benchmark's ignored scientific
