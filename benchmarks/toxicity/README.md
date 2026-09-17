@@ -16,9 +16,18 @@ The benchmark uses the universal four-stage interface:
 
 H∞ calibration fixes `R=1` and evaluates 12 configurations from
 `Q/R ∈ {0.01, 0.1, 1, 10}` and `Qf/R ∈ {0.01, 0.1, 0.316...}`. Each
-configuration is scored for AXBench concept relevance, instruction relevance,
-and fluency. Their harmonic mean, AXBench overall steering, selects the highest
-scoring configuration. No other method is swept.
+configuration is scored for toxicity probability and percentage, Distinct-2,
+perplexity, AXBench concept relevance, instruction relevance, fluency, and
+AXBench overall steering. The selection rule is configured independently of
+these recorded measures. Available rules are the original AXBench harmonic
+mean and the default baseline-relative toxicity-quality composite. The latter
+weights toxicity reduction, fluency, perplexity preservation, and Distinct-2
+preservation by 0.60/0.20/0.15/0.05 and applies the quality gates recorded in
+`benchmark.toml`. No other method is swept.
+
+Passing `--selection-metric mean_axbench_overall` retains the original rule;
+passing `--selection-metric toxicity_quality_composite` uses the new rule.
+Changing the rule reuses completed candidate generations and scorer caches.
 
 The final RTP evaluation uses 1,000 prompts × 5 repetitions. Its scorers are
 toxicity, Distinct-2, perplexity, the three AXBench measures, and AXBench overall
