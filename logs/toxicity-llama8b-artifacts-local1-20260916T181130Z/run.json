@@ -1,0 +1,79 @@
+{
+  "schema_version": 2,
+  "run_id": "toxicity-llama8b-artifacts-local1-20260916T181130Z",
+  "status": "complete",
+  "started_at_utc": "2026-09-16T18:11:33.178535+00:00",
+  "benchmark": "toxicity",
+  "model": "llama8b",
+  "stage": "artifacts",
+  "methods": [
+    "original",
+    "spid",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "rtp"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "cuda:0,cuda:1",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "scorers": [],
+    "api_concurrency": 500,
+    "api_batch_size": 20
+  },
+  "command": [
+    "/home/dev/controller/code/robust_steerability/benchmarks/toxicity.py",
+    "artifacts",
+    "--model",
+    "llama8b",
+    "--devices",
+    "cuda:0,cuda:1",
+    "--kv-cache",
+    "off",
+    "--run-id",
+    "toxicity-llama8b-artifacts-local1-20260916T181130Z"
+  ],
+  "working_directory": "/home/dev/controller/code",
+  "git": {
+    "commit": "bffce803699e7bb9d8c4aa957fd0e7fe0a531396",
+    "dirty": false,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "dev",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": null,
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python": "3.11.16",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 5090",
+        "total_memory_bytes": 33670758400
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA GeForce RTX 5090",
+        "total_memory_bytes": 33667612672
+      }
+    ],
+    "packages": {
+      "accelerate": "1.14.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "local",
+    "benchmark_cache_root": "/home/dev/controller/code/benchmarks/toxicity/cache/llama8b"
+  },
+  "finished_at_utc": "2026-09-16T18:34:24.958961+00:00",
+  "elapsed_seconds": 1371.4353766989952
+}

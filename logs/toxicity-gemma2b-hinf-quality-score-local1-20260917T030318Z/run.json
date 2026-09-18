@@ -1,0 +1,95 @@
+{
+  "schema_version": 2,
+  "run_id": "toxicity-gemma2b-hinf-quality-score-local1-20260917T030318Z",
+  "status": "complete",
+  "started_at_utc": "2026-09-17T03:15:14.233743+00:00",
+  "benchmark": "toxicity",
+  "model": "gemma2b",
+  "stage": "score",
+  "methods": [
+    "h_infinity"
+  ],
+  "datasets": [
+    "rtp"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "cuda:0,cuda:1",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "scorers": [
+      "axbench_concept_relevance",
+      "axbench_fluency",
+      "axbench_instruction_relevance",
+      "axbench_overall",
+      "distinct_2",
+      "perplexity",
+      "toxicity_classifier"
+    ],
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "selection_metric": "toxicity_quality_composite"
+  },
+  "command": [
+    "/home/dev/controller/code/robust_steerability/benchmarks/toxicity.py",
+    "score",
+    "--model",
+    "gemma2b",
+    "--methods",
+    "h_infinity",
+    "--datasets",
+    "rtp",
+    "--scorers",
+    "all",
+    "--devices",
+    "cuda:0,cuda:1",
+    "--kv-cache",
+    "off",
+    "--selection-metric",
+    "toxicity_quality_composite",
+    "--api-concurrency",
+    "500",
+    "--run-id",
+    "toxicity-gemma2b-hinf-quality-score-local1-20260917T030318Z"
+  ],
+  "working_directory": "/home/dev/controller/code",
+  "git": {
+    "commit": "4c9d8db0821dfbc71b6b3d315a55350ee51b4e13",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "dev",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": null,
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python": "3.11.16",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 5090",
+        "total_memory_bytes": 33670758400
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA GeForce RTX 5090",
+        "total_memory_bytes": 33667612672
+      }
+    ],
+    "packages": {
+      "accelerate": "1.14.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "local",
+    "benchmark_cache_root": "/home/dev/controller/code/benchmarks/toxicity/cache/gemma2b"
+  },
+  "finished_at_utc": "2026-09-17T03:16:51.586685+00:00",
+  "elapsed_seconds": 97.05299624000327
+}

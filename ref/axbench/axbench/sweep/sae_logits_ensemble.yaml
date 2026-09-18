@@ -1,0 +1,67 @@
+train:
+  model_name: "google/gemma-2-9b-it"
+  layer: 31
+  component: "res"
+  seed: 42
+  use_bf16: true
+  dump_dir: "axbench/results/sae_logits_ensemble_complete"
+  overwrite_data_dir: "./axbench/concept500/prod_9b_l31_v1/generate"
+  output_length: 128
+  models:
+    SAELogitsEnsemble:
+      concept_path: "./axbench/concept500/prod_9b_l31_v1/generate/metadata.jsonl"
+      sae_path: "/path/to/sae" # Update with actual path
+      eval_data_path: "./axbench/concept500/prod_9b_l31_v1/inference/latent_eval_data.parquet"
+      alpha: 0.2
+      min_active: 2
+      topk_logits: 10
+      llm_model: "gpt-4o-mini"
+      encode_batch_size: 8
+      # Standard Parameter (werden erwartet, auch wenn nicht genutzt)
+      batch_size: 1
+      gradient_accumulation_steps: 1
+      n_epochs: 1
+      lr: 0.01
+      weight_decay: 0.0
+      low_rank_dimension: 1
+      intervention_positions: "f1"
+      intervention_type: "addition"
+      binarize_dataset: true
+      train_on_negative: true
+      exclude_bos: false
+
+inference:
+  use_bf16: false
+  models: ["SAELogitsEnsemble"]
+  model_name: "google/gemma-2-9b-it"
+  steering_model_name: "google/gemma-2-9b-it"
+  dump_dir: "axbench/results/sae_logits_ensemble_complete"
+  overwrite_data_dir: "./axbench/concept500/prod_9b_l31_v1/generate"
+  # latent related params
+  output_length: 128
+  latent_num_of_examples: 36
+  latent_batch_size: 10
+  # steering related params
+  steering_intervention_type: "addition"
+  steering_datasets: ["AlpacaEval"]
+  steering_batch_size: 5
+  steering_output_length: 128
+  steering_layers: [31]
+  steering_num_of_examples: 10
+  steering_factors: [320.0, 340.0, 360.0, 380.0, 400.0, 420.0, 430.0]
+  temperature: 1.0 
+  seed: 42
+  master_data_dir: "axbench/data"
+  lm_model: "gpt-4o-mini"
+
+evaluate:
+  models: ["SAELogitsEnsemble"]
+  latent_evaluators: ["AUCROCEvaluator", "HardNegativeEvaluator"]
+  steering_evaluators: ["LMJudgeEvaluator"]
+  dump_dir: "axbench/results/sae_logits_ensemble_complete"
+  winrate_split_ratio: 0.5
+  num_of_workers: 16
+  lm_model: "gpt-4o-mini"
+  run_winrate: false
+  winrate_baseline: "PromptSteering"
+  master_data_dir: "axbench/data"

@@ -1,4 +1,4 @@
-"""Low-rank disturbance geometry from calibration residuals."""
+"""Kaz-aligned disturbance geometry from calibration residuals."""
 
 from __future__ import annotations
 
@@ -9,78 +9,86 @@ import torch
 
 @dataclass(frozen=True)
 class DisturbanceGeometry:
-    """Layer-wise covariance factors with zero padding to a common rank."""
+    """Layer-wise empirical covariance factors."""
 
     channels: torch.Tensor
     means: torch.Tensor
     retained_ranks: torch.Tensor
     explained_variance: torch.Tensor
+    empirical_covariance: torch.Tensor
+    covariance_relative_error: torch.Tensor
 
 
 def fit_disturbance_geometry(
     residuals: torch.Tensor,
-    variance_threshold: float = 0.95,
 ) -> DisturbanceGeometry:
-    """Fit PCA covariance factors from ``(records, layers, state)`` residuals."""
+    """Return ``D`` satisfying ``D D.T = Cov(residuals)`` at each layer."""
 
     if residuals.ndim != 3:
         raise ValueError("residuals must have shape (records, layers, state)")
-    if not 0.0 < variance_threshold <= 1.0:
-        raise ValueError("variance_threshold must be in (0, 1]")
     record_count, layer_count, state_dimension = residuals.shape
     if record_count < 2:
         raise ValueError("at least two calibration residuals are required")
 
     means = residuals.mean(dim=0)
-    decompositions = []
-    retained_ranks = []
-    explained = []
+    covariance_rank = min(record_count - 1, state_dimension)
+    channels = torch.empty(
+        layer_count,
+        state_dimension,
+        covariance_rank,
+        device=residuals.device,
+        dtype=residuals.dtype,
+    )
     for layer_index in range(layer_count):
         centered = residuals[:, layer_index, :] - means[layer_index]
         _, singular_values, right_vectors = torch.linalg.svd(
             centered,
             full_matrices=False,
         )
-        eigenvalues = singular_values.square() / (record_count - 1)
-        fractions = eigenvalues / eigenvalues.sum()
-        cumulative = torch.cumsum(fractions, dim=0)
-        rank = int(
-            torch.searchsorted(
-                cumulative,
-                torch.tensor(
-                    variance_threshold,
-                    device=cumulative.device,
-                    dtype=cumulative.dtype,
-                ),
-            ).item()
-            + 1
+        covariance_eigenvalue_roots = singular_values[:covariance_rank] / (
+            record_count - 1
+        ) ** 0.5
+        channels[layer_index] = (
+            right_vectors[:covariance_rank].T * covariance_eigenvalue_roots
         )
-        rank = min(rank, state_dimension, right_vectors.shape[0])
-        decompositions.append((right_vectors, eigenvalues))
-        retained_ranks.append(rank)
-        explained.append(float(cumulative[rank - 1].item()))
 
-    common_rank = max(retained_ranks)
-    channels = torch.zeros(
-        layer_count,
-        state_dimension,
-        common_rank,
-        device=residuals.device,
-        dtype=residuals.dtype,
+    centered = residuals - means.unsqueeze(0)
+    empirical_covariance = torch.einsum(
+        "nli,nlj->lij", centered, centered
+    ) / (record_count - 1)
+    reconstructed_covariance = channels @ channels.transpose(-1, -2)
+    covariance_error = torch.linalg.matrix_norm(
+        empirical_covariance - reconstructed_covariance,
+        dim=(-2, -1),
     )
-    for layer_index, ((right_vectors, eigenvalues), rank) in enumerate(
-        zip(decompositions, retained_ranks, strict=True)
-    ):
-        channels[layer_index, :, :rank] = (
-            right_vectors[:rank].T * eigenvalues[:rank].sqrt()
+    covariance_norm = torch.linalg.matrix_norm(
+        empirical_covariance,
+        dim=(-2, -1),
+    )
+    relative_error = torch.where(
+        covariance_norm > 0,
+        covariance_error / covariance_norm,
+        covariance_error,
+    )
+    if not torch.isfinite(relative_error).all() or relative_error.max() > 1e-4:
+        raise ValueError(
+            "D @ D.T does not reproduce the empirical residual covariance"
         )
+
     return DisturbanceGeometry(
         channels=channels,
         means=means,
-        retained_ranks=torch.tensor(retained_ranks, device=residuals.device),
-        explained_variance=torch.tensor(
-            explained,
+        retained_ranks=torch.full(
+            (layer_count,),
+            covariance_rank,
+            device=residuals.device,
+            dtype=torch.int64,
+        ),
+        explained_variance=torch.ones(
+            layer_count,
             device=residuals.device,
             dtype=residuals.dtype,
         ),
+        empirical_covariance=empirical_covariance,
+        covariance_relative_error=relative_error,
     )

@@ -1,0 +1,84 @@
+{
+  "identity": {
+    "model_id": "google/gemma-2-2b",
+    "model_revision": "c5ebcd40d208330abc697524c919956e692655cf",
+    "method": "original",
+    "distribution": "spanish",
+    "dataset": [
+      "truthful_qa",
+      "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
+    ],
+    "evaluation_key": "truthfulness_spanish",
+    "kv_cache": false,
+    "scorers": [
+      "truthfulqa_true",
+      "truthfulqa_informative",
+      "axbench_instruction_relevance",
+      "axbench_fluency"
+    ]
+  },
+  "evaluation_samples_per_repetition": 817,
+  "evaluation_repetitions": 5,
+  "created_at_utc": "2026-09-15T05:28:02.575263+00:00",
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "truth": 49.57160342717258,
+      "info": 86.41370869033048,
+      "instruction_relevance": 1.285189718482252,
+      "fluency": 1.1627906976744187
+    },
+    {
+      "repetition": 1,
+      "truth": 49.326805385556916,
+      "info": 87.02570379436965,
+      "instruction_relevance": 1.2962056303549572,
+      "fluency": 1.1603427172582619
+    },
+    {
+      "repetition": 2,
+      "truth": 53.85556915544676,
+      "info": 84.57772337821298,
+      "instruction_relevance": 1.353733170134639,
+      "fluency": 1.1835985312117503
+    },
+    {
+      "repetition": 3,
+      "truth": 52.998776009791925,
+      "info": 88.12729498164015,
+      "instruction_relevance": 1.2937576499388004,
+      "fluency": 1.1701346389228886
+    },
+    {
+      "repetition": 4,
+      "truth": 51.28518971848225,
+      "info": 86.04651162790698,
+      "instruction_relevance": 1.3561811505507957,
+      "fluency": 1.1762545899632804
+    }
+  ],
+  "metrics": {
+    "truth": {
+      "mean": 51.40758873929009,
+      "standard_error": 0.901109538276914
+    },
+    "info": {
+      "mean": 86.43818849449204,
+      "standard_error": 0.583677797677667
+    },
+    "instruction_relevance": {
+      "mean": 1.3170134638922888,
+      "standard_error": 0.015602874888594838
+    },
+    "fluency": {
+      "mean": 1.17062423500612,
+      "standard_error": 0.00428571392901141
+    }
+  },
+  "invalid_scorer_outputs": {
+    "truthfulqa_true": [],
+    "truthfulqa_informative": [],
+    "axbench_instruction_relevance": [],
+    "axbench_fluency": []
+  }
+}

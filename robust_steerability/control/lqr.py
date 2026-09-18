@@ -187,13 +187,22 @@ def solve_identity_input_lqr(
     gains used by :class:`LQRController`.
     """
 
+    if dynamics.ndim != 3 or dynamics.shape[1] != dynamics.shape[2]:
+        raise ValueError("Expected square layer dynamics")
     layer_count, state_dimension, _ = dynamics.shape
-    identity = torch.eye(state_dimension, dtype=torch.float32)
-    problem = FiniteHorizonControlProblem(
-        dynamics=dynamics.float(),
-        control_channels=identity.unsqueeze(0).repeat(layer_count, 1, 1),
-        state_costs=(state_cost * identity).unsqueeze(0).repeat(layer_count, 1, 1),
-        control_costs=(control_cost * identity).unsqueeze(0).repeat(layer_count, 1, 1),
-        terminal_cost=terminal_cost * identity,
-    )
-    return -_solve_lqr(problem, device=device).gains
+    if state_cost < 0 or control_cost <= 0 or terminal_cost < 0:
+        raise ValueError("LQR requires nonnegative state costs and a positive control cost")
+    identity = torch.eye(state_dimension, dtype=torch.float32, device=device)
+    value = terminal_cost * identity
+    gains = torch.empty(layer_count, state_dimension, state_dimension, dtype=torch.float32)
+    # Stream one full-order layer at a time; do not allocate horizon-sized B/Q/R.
+    for layer_index in reversed(range(layer_count)):
+        a = dynamics[layer_index].to(device=device, dtype=torch.float32)
+        cross = value @ a
+        gain = torch.linalg.solve(value + control_cost * identity, cross)
+        value = state_cost * identity + a.T @ cross - cross.T @ gain
+        value = 0.5 * (value + value.T)
+        if not torch.isfinite(gain).all() or not torch.isfinite(value).all():
+            raise ValueError(f"Nonfinite LQR recursion at layer {layer_index}")
+        gains[layer_index] = gain.cpu()
+    return gains

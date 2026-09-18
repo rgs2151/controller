@@ -1,0 +1,104 @@
+{
+  "identity": {
+    "model": [
+      "google/gemma-2-2b",
+      "c5ebcd40d208330abc697524c919956e692655cf"
+    ],
+    "method": "alqr",
+    "distribution": "rtp",
+    "kv_cache": false,
+    "scorers": [
+      "toxicity_classifier",
+      "distinct_2",
+      "perplexity",
+      "axbench_concept_relevance",
+      "axbench_instruction_relevance",
+      "axbench_fluency",
+      "axbench_overall"
+    ]
+  },
+  "evaluation_samples_per_repetition": 1000,
+  "evaluation_repetitions": 5,
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "toxicity": 0.0,
+      "dist_2": 0.6295246377466316,
+      "perplexity": 24.26235855436325,
+      "axbench_concept_relevance": 0.183,
+      "axbench_instruction_relevance": 1.286,
+      "axbench_fluency": 1.084,
+      "axbench_overall": 0.1544
+    },
+    {
+      "repetition": 1,
+      "toxicity": 0.0,
+      "dist_2": 0.6312335367089178,
+      "perplexity": 24.164264996528626,
+      "axbench_concept_relevance": 0.341,
+      "axbench_instruction_relevance": 1.264,
+      "axbench_fluency": 1.084,
+      "axbench_overall": 0.3049
+    },
+    {
+      "repetition": 2,
+      "toxicity": 0.0,
+      "dist_2": 0.62978979387996,
+      "perplexity": 25.036876471042632,
+      "axbench_concept_relevance": 0.37,
+      "axbench_instruction_relevance": 1.26,
+      "axbench_fluency": 1.099,
+      "axbench_overall": 0.29960000000000003
+    },
+    {
+      "repetition": 3,
+      "toxicity": 0.0,
+      "dist_2": 0.6273226518711431,
+      "perplexity": 23.98219381093979,
+      "axbench_concept_relevance": 0.349,
+      "axbench_instruction_relevance": 1.267,
+      "axbench_fluency": 1.077,
+      "axbench_overall": 0.2841
+    },
+    {
+      "repetition": 4,
+      "toxicity": 0.0,
+      "dist_2": 0.6285617406046906,
+      "perplexity": 24.73610519742966,
+      "axbench_concept_relevance": 0.208,
+      "axbench_instruction_relevance": 1.264,
+      "axbench_fluency": 1.084,
+      "axbench_overall": 0.1609
+    }
+  ],
+  "metrics": {
+    "toxicity": {
+      "mean": 0.0,
+      "standard_error": 0.0
+    },
+    "dist_2": {
+      "mean": 0.6292864721622686,
+      "standard_error": 0.000651265764196103
+    },
+    "perplexity": {
+      "mean": 24.43635980606079,
+      "standard_error": 0.19507003058628627
+    },
+    "axbench_concept_relevance": {
+      "mean": 0.29019999999999996,
+      "standard_error": 0.03915022349872348
+    },
+    "axbench_instruction_relevance": {
+      "mean": 1.2682,
+      "standard_error": 0.004586937976471891
+    },
+    "axbench_fluency": {
+      "mean": 1.0856000000000001,
+      "standard_error": 0.003613862199918526
+    },
+    "axbench_overall": {
+      "mean": 0.24078000000000005,
+      "standard_error": 0.03412485018282132
+    }
+  }
+}

@@ -7,9 +7,19 @@ This package is the reusable boundary between language-model experiments and con
 - `control/` owns the shared controller interface plus each controller's offline
   synthesis and online behavior.
 - `modeling/` contains all Hugging Face and transformer-hook details.
-- `calibration/` converts fitted/calibration trajectories into targets, nominal dynamics, residuals, disturbance channels, and normalized coordinates.
+- `calibration/` converts fitted/calibration trajectories into targets, actual transformer Jacobians, residuals, disturbance channels, and reduced coordinates.
 - `runtime/` converts a controller solution or online controller into activation deltas.
-- `benchmarks/` contains reusable behavior records and evaluators.
+- `datasets/` owns pinned dataset loading and prompt construction.
+- `benchmarks/` owns portable artifact, calibration, evaluation, scoring, and
+  result-export pipelines.
+- `experiments/` contains manifest, cache, calibration, generation, and GPU
+  scheduling helpers for compact benchmark units.
+- `experiments/diagnostics.py` exports and reads portable H∞ calibration,
+  solution, and evaluation bundles. `runtime/diagnostics.py` records reduced
+  online trajectories without changing the controller's feedback calculation.
+- `source_methods/` is the frozen, method-specific A-LQR-paper comparison path
+  for A-LQR, S-PID, ActAdd/ActAddLFS, ITI, Mean/Linear/PID-AcT, and ODESteer.
+  It is intentionally separate from H∞ and from the historical 50-sample run.
 
 Experiment-specific prompt subsets, thresholds, statistics, plots, captions, and output paths remain in their owning compact units under `parking/` or `figs/`.
 
@@ -32,9 +42,55 @@ robust_steerability.benchmarks   robust_steerability.modeling
 ## Experimental Stages
 
 1. Fit semantic targets and nominal dynamics on the fit split.
-2. Estimate residual geometry and normalization on the calibration split.
+2. Project actual full-state Jacobians into a target-preserving orthonormal basis and estimate residual geometry.
 3. Construct a `FiniteHorizonControlProblem` and synthesize a controller object.
 4. Freeze every fitted artifact and controller parameter.
 5. Evaluate the frozen policy on held-out test conditions.
 
 The split labels, model revision, tokenizer revision, state definition, layer mapping, and configuration hash belong in saved artifact metadata.
+
+## H∞ diagnostic handoff
+
+New calibrations freeze the numerical problem, residuals, coordinate maps,
+prompt splits, gains, and solver diagnostics. New H∞ benchmark
+generations additionally save reduced trajectories, interventions, per-prompt
+scores, text, seeds, and source/configuration hashes. Prompt checkpoints and
+judge scores are reused on resume.
+
+`load_run(path)` in `robust_steerability.experiments.diagnostics` verifies the
+bundle and loads its tensors on CPU without importing Transformers or loading
+an LLM. Full bundles stay in each unit's ignored cache; the runner writes a
+small, tensor-free inventory into that unit's `plots/diagnostics/`.
+
+Current runs do not whiten state coordinates. They use a target-preserving
+orthonormal reduced basis, orthonormal control channels, raw identity-weighted
+costs `Q=qI`, `R=rI`, and `Qf=qfI`, and a fixed reduced reference whose
+semantic coordinate is the fitted setpoint and whose orthogonal coordinates
+are zero. H∞ receives the complete reduced-state deviation for which its gain
+was synthesized. Each disturbance channel factor is fitted directly so that
+`D[k] D[k]ᵀ` equals the centered empirical calibration-residual covariance;
+there is no PCA truncation or coverage multiplier. Nominal feedforward is zero.
+A-LQR and H∞ read the same strict
+nominal-dynamics artifact; if it is absent, the same averaged-Jacobian estimator
+creates it. Toxicity and truthfulness have separate fit/calibration splits and
+targets. Hannah's solver and diagnostic formulas are unchanged; the reference
+files are not edited.
+
+All ten methods save prompt checkpoints and intervention traces. H-infinity
+saves full reduced controller-coordinate tensors for the diagnostic handoff;
+the other controlled methods save compact per-step norm and energy traces,
+along with their controller artifacts and generated token records. Calibration
+also preserves raw fit/calibration activations, attention-head states, fitted
+baseline parameters, LQR/H∞ solutions, and PID settings. No old-cache
+reconstruction or compatibility interface is supported. Historical Erfan outputs
+remain available for inspection; fresh execution belongs to the new unit.
+
+Run the active full-set pipelines through
+`python -m robust_steerability.benchmarks.truthfulness` or
+`python -m robust_steerability.benchmarks.toxicity`. Artifact creation,
+calibration, generation-only evaluation, and response scoring are separate
+commands; evaluation never silently fits a controller or invokes a judge.
+Historical 50-prompt artifacts are not current benchmark inputs.
+
+Bundle contents and independent reading/sharing:
+[`parking/h_infinity_optimization/README.md`](../parking/h_infinity_optimization/README.md#diagnostic_analysis).

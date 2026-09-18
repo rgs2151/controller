@@ -6,6 +6,10 @@
 
 ```text
 data/
+  lciteeval/
+    direction.jsonl
+    h_infinity_calibration.jsonl
+    manifest.json
   ood_explore/
     manifest.json
     <condition>.jsonl
@@ -20,6 +24,11 @@ data/
 ```
 
 - `prompts/`: disjoint prompt records used to fit semantic directions and nominal dynamics, calibrate disturbance geometry, and evaluate held-out steering.
+- `lciteeval/`: frozen AXBench concept-direction records and disjoint short
+  instructions used to select H∞ for the L-CiteEval benchmark. These local
+  JSONL artifacts are ignored by git; their exact sources, revisions, sampling
+  rules, hashes, and counts are recorded in `manifest.json` and the experiment
+  design document.
 - `ood_explore/`: local, analysis-ready 50-prompt sets for the frozen-LQR OOD
   screening unit. The JSONL files are ignored data artifacts; their schema and
   provenance are recorded here and in the local manifest.
@@ -80,6 +89,9 @@ an independently sampled source dataset.
 
 | name | records | notes |
 | --- | ---: | --- |
+| `lciteeval/direction.jsonl` | 144 | AXBench concept 499: all 72 desired text examples and all 72 genre-matched undesired text examples used only to fit the model-specific semantic direction. |
+| `lciteeval/h_infinity_calibration.jsonl` | 50 | Fixed, unique AlpacaEval instructions used only to compare H∞ candidates; not direction-fitting examples. |
+| `lciteeval/manifest.json` | 1 | Pinned revisions, source hashes, deterministic selection rules, and the verified zero-overlap check. |
 | `ood_explore/*.jsonl` | 450 | Nine source conditions with 50 prompts each; local and ignored by git. |
 | `ood_explore/manifest.json` | 9 conditions | Pinned source, generator, transformation, and inventory metadata. |
 | `prompts/fit.jsonl` | 0 | Fit split; not assembled yet. |

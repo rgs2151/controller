@@ -1,203 +1,273 @@
-"""Generated-text toxicity evaluation."""
+"""Portable RealToxicityPrompts artifacts, calibration, evaluation, and scoring."""
 
 from __future__ import annotations
 
-import numpy as np
-import torch
-from datasets import load_dataset
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+import argparse
+import json
+
+from robust_steerability.benchmarks import artifacts
+from robust_steerability.benchmarks import multiple_choice
+from robust_steerability.benchmarks.execution import default_run_id, tracked_stage
+from robust_steerability.benchmarks.composition import (
+    load_composition,
+    requested_scorers,
+    validate_requested_scorers,
+)
+from robust_steerability.benchmarks.layout import calibration_root
+from robust_steerability.benchmarks.specs import MODELS
+from robust_steerability.benchmarks import toxicity_runtime as runtime
+from robust_steerability.experiments.resources import resolve_cuda_devices
+from robust_steerability.judges.specs import scorer_spec
+from robust_steerability.judges import openai as openai_scoring
+from robust_steerability.source_methods.protocol import (
+    SPID_SOURCE_GRIDS,
+    paper_alqr_setting,
+)
 
 
-def _first_present(row: dict[str, object], keys: tuple[str, ...]) -> object | None:
-    for key in keys:
-        if key in row and row[key] is not None:
-            return row[key]
-    return None
+COMPOSITION = load_composition("toxicity")
+METHODS = COMPOSITION.available_methods
+DEFAULT_METHODS = COMPOSITION.default_methods
+DATASETS = COMPOSITION.dataset_keys
+DEFAULT_DATASETS = COMPOSITION.default_datasets
 
 
-def _build_prompt_records(
-    dataset,
-    source: str,
-    text_fields: tuple[str, ...],
-    toxicity_fields: tuple[str, ...],
-    id_fields: tuple[str, ...],
-) -> list[dict[str, object]]:
-    records: list[dict[str, object]] = []
-    for row_index, row in enumerate(dataset):
-        text_value = _first_present(row, text_fields)
-        if text_value is None:
-            continue
-        text = str(text_value).strip()
-        if not text:
-            continue
-
-        toxicity_value = _first_present(row, toxicity_fields)
-        if toxicity_value is None:
-            toxicity = 0.0
-        else:
-            try:
-                toxicity = float(toxicity_value)
-            except (TypeError, ValueError):
-                continue
-        toxicity = float(min(1.0, max(0.0, toxicity)))
-
-        row_id = _first_present(row, id_fields)
-        if row_id is None:
-            prompt_id = f"{source}:{row_index}"
-        else:
-            prompt_id = f"{source}:{row_id}"
-
-        records.append(
-            {
-                "prompt_id": prompt_id,
-                "text": text,
-                "source": source,
-                "toxicity": toxicity,
-            }
-        )
-    return records
+def _names(value: str, allowed: tuple[str, ...]) -> list[str]:
+    names = list(allowed) if value == "all" else [item.strip() for item in value.split(",")]
+    unknown = set(names) - set(allowed)
+    if unknown or not names:
+        raise ValueError(f"Unsupported names: {sorted(unknown)}")
+    return names
 
 
-def load_real_toxicity_prompt_pools(
-    dataset_id: str,
-    revision: str,
-) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
-    """Load all valid RTP prompts and the standard toxic/non-toxic fit pools."""
-
-    dataset = load_dataset(dataset_id, revision=revision)["train"]
-    all_records = []
-    toxic_records = []
-    nontoxic_records = []
-    for row_index, row in enumerate(dataset):
-        prompt = row["prompt"]
-        text = prompt["text"].strip()
-        toxicity = prompt["toxicity"]
-        if not text or toxicity is None:
-            continue
-        record = {
-            "prompt_id": f"rtp:{row_index}",
-            "text": text,
-            "source": "rtp",
-            "toxicity": float(toxicity),
-        }
-        if 0.0 <= toxicity <= 1.0:
-            all_records.append(record)
-        if 0.8 <= toxicity <= 1.0:
-            toxic_records.append(record)
-        if 0.0 <= toxicity <= 0.1:
-            nontoxic_records.append(record)
-    return all_records, toxic_records, nontoxic_records
+def _write_alqr_selection(model_key: str, calibration_id: str) -> None:
+    model = MODELS[model_key]
+    setting = paper_alqr_setting("toxicity", model.model_id)
+    destination = calibration_root(
+        "toxicity", model_key, "alqr", calibration_id
+    ) / "selection.json"
+    payload = {
+        "schema_version": 1,
+        "model": [model.model_id, model.revision],
+        "benchmark": "toxicity",
+        "method": "alqr",
+        "calibration_id": calibration_id,
+        "source": "published A-LQR configuration",
+        "parameters": {
+            "lambda": setting.multiplier,
+            "q": setting.q,
+            "r": setting.r,
+            "q_final": setting.q_final,
+        },
+    }
+    if destination.exists():
+        return
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(payload, indent=2) + "\n")
 
 
-def load_jigsaw_toxicity_prompts(
-    dataset_id: str,
-    revision: str,
-) -> list[dict[str, object]]:
-    """Load the Jigsaw cross-dataset toxicity prompt pool."""
+def _write_spid_selection(model_key: str, calibration_id: str) -> None:
+    model = MODELS[model_key]
+    grid = SPID_SOURCE_GRIDS["toxicity"][model_key]
+    destination = calibration_root(
+        "toxicity", model_key, "spid", calibration_id
+    ) / "selection.json"
+    payload = {
+        "schema_version": 1,
+        "model": [model.model_id, model.revision],
+        "benchmark": "toxicity",
+        "method": "spid",
+        "calibration_id": calibration_id,
+        "source": "fixed source-method setting; S-PID is not swept",
+        "kv_cache": False,
+        "parameters": {
+            "lambda": 1.0,
+            "kp": grid.kp,
+            "ki": grid.ki,
+            "kd": grid.kd,
+        },
+    }
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(payload, indent=2) + "\n")
 
-    dataset = load_dataset(dataset_id, revision=revision)["test"]
-    return [
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("stage", choices=("artifacts", "calibrate", "evaluate", "score"))
+    parser.add_argument("--model", choices=COMPOSITION.models, required=True)
+    parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
+    parser.add_argument("--datasets", default=",".join(DEFAULT_DATASETS))
+    parser.add_argument("--devices", default="auto")
+    parser.add_argument("--calibration-id", default="selected")
+    parser.add_argument(
+        "--selection-metric",
+        choices=runtime.AVAILABLE_SELECTION_METRICS,
+        default=runtime.DEFAULT_SELECTION_METRIC,
+    )
+    parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument("--scorers", default="default")
+    parser.add_argument(
+        "--api-concurrency", type=int, default=openai_scoring.DEFAULT_CONCURRENCY
+    )
+    parser.add_argument(
+        "--api-batch-size", type=int, default=openai_scoring.DEFAULT_BATCH_SIZE
+    )
+    parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
+    parser.add_argument("--run-id")
+    arguments = parser.parse_args()
+    methods = _names(arguments.methods, METHODS)
+    datasets = _names(arguments.datasets, DATASETS)
+    scorers = (
+        None
+        if arguments.scorers in {"default", "all"}
+        else tuple(item.strip() for item in arguments.scorers.split(",") if item.strip())
+    )
+    if scorers is not None:
+        for scorer in scorers:
+            scorer_spec(scorer)
+    validate_requested_scorers(COMPOSITION, datasets, scorers)
+    use_cache = arguments.kv_cache == "on"
+    selected_score_keys = (
         {
-            "prompt_id": f"jigsaw:{row['id']}",
-            "text": row["comment_text"].strip(),
-            "source": "jigsaw",
-            "toxicity": float(row["toxic"]),
+            scorer
+            for dataset in datasets
+            for scorer in requested_scorers(COMPOSITION.dataset(dataset), scorers)
         }
-        for row in dataset
-        if row["comment_text"].strip()
-    ]
-
-
-def load_civil_comments_prompts(
-    dataset_id: str,
-    revision: str | None = None,
-    split: str = "train",
-) -> list[dict[str, object]]:
-    """Load Civil Comments prompts for cross-dataset toxicity stress tests."""
-
-    kwargs = {"path": dataset_id}
-    if revision:
-        kwargs["revision"] = revision
-    dataset = load_dataset(**kwargs)[split]
-    return _build_prompt_records(
-        dataset=dataset,
-        source="civil",
-        text_fields=("text", "comment_text", "comment", "content"),
-        toxicity_fields=("toxicity", "toxic", "target"),
-        id_fields=("id", "comment_id", "idx"),
+        if arguments.stage == "score"
+        else set()
     )
-
-
-def load_toxic_chat_prompts(
-    dataset_id: str,
-    revision: str | None = None,
-    config_name: str | None = None,
-    split: str = "test",
-) -> list[dict[str, object]]:
-    """Load ToxicChat prompts for conversational toxicity/jailbreak stress tests."""
-
-    base_kwargs = {"path": dataset_id}
-    if revision:
-        base_kwargs["revision"] = revision
-
-    config_candidates = [config_name] if config_name else ["toxicchat0124", "toxicchat1123"]
-    load_error: Exception | None = None
-    dataset = None
-    for candidate in config_candidates:
-        kwargs = dict(base_kwargs)
-        kwargs["name"] = candidate
-        try:
-            dataset = load_dataset(**kwargs)[split]
-            break
-        except Exception as exc:  # pragma: no cover - depends on remote dataset state
-            load_error = exc
-            continue
-    if dataset is None:
-        raise RuntimeError(
-            f"Failed to load ToxicChat dataset {dataset_id} with configs {config_candidates}"
-        ) from load_error
-
-    return _build_prompt_records(
-        dataset=dataset,
-        source="toxicchat",
-        text_fields=("user_input", "prompt", "text", "instruction", "message"),
-        toxicity_fields=("toxicity", "toxic", "label", "jailbreaking", "is_toxic"),
-        id_fields=("id", "conversation_id", "idx"),
+    gpu_required = arguments.stage != "score" or any(
+        scorer_spec(key).backend.startswith("huggingface")
+        for key in selected_score_keys
     )
+    devices = resolve_cuda_devices(arguments.devices) if gpu_required else ["cpu"]
+    runtime.configure_model(
+        arguments.model,
+        arguments.calibration_id,
+        arguments.generation_batch_size,
+        use_cache=use_cache,
+    )
+    run_id = arguments.run_id or default_run_id(
+        "toxicity", arguments.model, arguments.stage
+    )
+    with tracked_stage(
+        run_id=run_id, benchmark="toxicity", model=arguments.model,
+        stage=arguments.stage, methods=methods, datasets=datasets,
+        devices=arguments.devices if gpu_required else "none", use_cache=use_cache,
+        calibration_id=arguments.calibration_id,
+        parameters={
+            "generation_batch_size": arguments.generation_batch_size,
+            "scorers": sorted(selected_score_keys) if arguments.stage == "score" else [],
+            "api_concurrency": arguments.api_concurrency,
+            "api_batch_size": arguments.api_batch_size,
+            "selection_metric": arguments.selection_metric,
+        },
+    ) as log_root:
+        if arguments.stage == "artifacts":
+            artifacts.prepare(arguments.model, "toxicity")
+            artifacts.fit_setpoint(arguments.model, "toxicity", devices[0])
+            artifacts.fit_jacobians(
+                arguments.model,
+                "toxicity",
+                devices,
+                log_root=log_root / "jacobians",
+            )
+            artifacts.write_manifest(arguments.model, "toxicity")
+        elif arguments.stage == "calibrate":
+            if "alqr" in methods:
+                _write_alqr_selection(arguments.model, arguments.calibration_id)
+            if "spid" in methods:
+                _write_spid_selection(arguments.model, arguments.calibration_id)
+            if "h_infinity" in methods:
+                runtime.calibrate(
+                    devices,
+                    log_root=log_root / "calibration",
+                    api_concurrency=arguments.api_concurrency,
+                    api_batch_size=arguments.api_batch_size,
+                    selection_metric=arguments.selection_metric,
+                )
+        elif arguments.stage == "evaluate":
+            native_datasets = [
+                dataset for dataset in datasets
+                if COMPOSITION.dataset(dataset).runtime == "toxicity"
+            ]
+            multiple_choice_datasets = [
+                dataset for dataset in datasets
+                if COMPOSITION.dataset(dataset).runtime == "multiple_choice"
+            ]
+            native_pending = any(
+                not multiple_choice.generation_complete(
+                    runtime._generation_path(dataset, method)
+                )
+                for dataset in native_datasets
+                for method in methods
+            )
+            if native_pending:
+                runtime.evaluate(
+                    devices,
+                    methods=methods,
+                    distributions=native_datasets,
+                    log_root=log_root / "evaluation",
+                )
+            ordered_methods = [method for method in METHODS if method in methods]
+            for method in ordered_methods:
+                for dataset_key in multiple_choice_datasets:
+                    dataset = COMPOSITION.dataset(dataset_key)
+                    multiple_choice.prepare("toxicity", arguments.model, dataset)
+                    destination = multiple_choice.generation_path(
+                        "toxicity", arguments.model, dataset, method, use_cache=use_cache
+                    )
+                    if multiple_choice.generation_complete(destination):
+                        continue
+                    multiple_choice.launch_generation(
+                        "toxicity",
+                        arguments.model,
+                        dataset,
+                        method,
+                        devices,
+                        arguments.calibration_id,
+                        arguments.generation_batch_size,
+                        use_cache,
+                        log_root / "evaluation" / method / dataset_key,
+                    )
+        else:
+            native_datasets = [
+                dataset for dataset in datasets
+                if COMPOSITION.dataset(dataset).runtime == "toxicity"
+            ]
+            multiple_choice_datasets = [
+                dataset for dataset in datasets
+                if COMPOSITION.dataset(dataset).runtime == "multiple_choice"
+            ]
+            for dataset in native_datasets:
+                selected = requested_scorers(COMPOSITION.dataset(dataset), scorers)
+                if not selected:
+                    continue
+                runtime.score(
+                    devices,
+                    methods=methods,
+                    distributions=[dataset],
+                    scorers=list(selected),
+                    log_root=log_root / "scoring",
+                    api_concurrency=arguments.api_concurrency,
+                    api_batch_size=arguments.api_batch_size,
+                )
+            for dataset_key in multiple_choice_datasets:
+                dataset = COMPOSITION.dataset(dataset_key)
+                selected = requested_scorers(dataset, scorers)
+                if not selected:
+                    continue
+                if selected != ("mmlu_accuracy",):
+                    raise ValueError(f"Unsupported scorers for {dataset_key}: {selected}")
+                for method in methods:
+                    multiple_choice.score_and_summarize(
+                        "toxicity",
+                        arguments.model,
+                        dataset,
+                        method,
+                        use_cache=use_cache,
+                    )
 
 
-def toxic_class_index(model: AutoModelForSequenceClassification) -> int:
-    labels = {int(index): str(label).lower() for index, label in model.config.id2label.items()}
-    matches = [index for index, label in labels.items() if label == "toxic"]
-    if len(matches) != 1:
-        raise ValueError(f"Expected one toxic classifier label, found {model.config.id2label}")
-    return matches[0]
-
-
-def toxicity_probabilities(
-    texts: list[str],
-    model: AutoModelForSequenceClassification,
-    tokenizer: AutoTokenizer,
-    device: str,
-    batch_size: int = 16,
-    max_length: int = 512,
-) -> np.ndarray:
-    """Score generated continuations and return toxic-class probabilities."""
-
-    toxic_index = toxic_class_index(model)
-    probabilities = []
-    for start in range(0, len(texts), batch_size):
-        batch = texts[start : start + batch_size]
-        encoded = tokenizer(
-            batch,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=max_length,
-        ).to(device)
-        with torch.no_grad():
-            logits = model(**encoded).logits.float()
-        probabilities.append(
-            torch.softmax(logits, dim=-1)[:, toxic_index].detach().cpu().numpy()
-        )
-    return np.concatenate(probabilities)
+if __name__ == "__main__":
+    main()
