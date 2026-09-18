@@ -2,7 +2,8 @@
 
 ## Pipeline card
 
-- **Status:** Implemented; Qwen3-4B is complete and Qwen3-8B is provisioned.
+- **Status:** Qwen3-4B is complete; Gemma-3-4B-Instruct is provisioned as the
+  next run.
 - **Task:** Solve MGSM arithmetic problems with native eight-shot examples.
 - **Distribution shift:** Input language changes across Chinese, French, Japanese,
   Swahili, and Telugu.
@@ -17,12 +18,13 @@
   maximize the Spanish-adherence, instruction-relevance, and fluency harmonic mean.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
-- **Models:** Qwen3-4B and Qwen3-8B.
-- **Methods:** Original, S-PID, A-LQR, and H∞.
+- **Models:** Qwen3-4B and Gemma-3-4B-Instruct.
+- **Methods:** Completed Qwen: Original, S-PID, A-LQR, and H∞; planned Gemma:
+  S-PID, A-LQR, and H∞.
 - **Scoring:** Exact final-number accuracy, Spanish adherence, instruction
   relevance, fluency, and overall steering.
-- **Evaluation size:** Per model, 600 H∞ selection generations and 2,000 final
-  generations.
+- **Evaluation size:** Per model, 600 H∞ selection generations; Qwen has 2,000
+  final generations and Gemma has 1,500.
 
 ## Question
 
@@ -31,8 +33,9 @@ question itself moves into unseen input languages, while retaining correctness?
 
 ## Frozen scope
 
-- **Models:** Qwen3-4B and Qwen3-8B.
-- **Methods:** Original, S-PID, A-LQR, and H∞.
+- **Models:** Qwen3-4B and Gemma-3-4B-Instruct.
+- **Methods:** Original, S-PID, A-LQR, and H∞ are available; the Gemma run uses
+  only S-PID, A-LQR, and H∞.
 - **Steering rule:** `respond only in Spanish, and no other language is allowed`.
 - **Primary transfer languages:** Chinese, French, Japanese, Swahili, and Telugu.
 - **Decoding:** deterministic, native eight-shot prompting, at most 256 new
@@ -88,7 +91,8 @@ question itself moves into unseen input languages, while retaining correctness?
 
 ## Evaluation size
 
-- Per model: `100 × 5 languages × 4 methods = 2,000` generations.
+- Completed Qwen: `100 × 5 languages × 4 methods = 2,000` generations.
+- Planned Gemma: `100 × 5 languages × 3 methods = 1,500` generations.
 - H∞ selection per model: `12 × 50 = 600` short generations.
 - There are no repeated final-evaluation seeds.
 
@@ -97,3 +101,4 @@ question itself moves into unseen input languages, while retaining correctness?
 - [MGSM paper](https://arxiv.org/abs/2210.03057)
 - [MGSM dataset](https://huggingface.co/datasets/juletxara/mgsm)
 - [AXBench paper](https://arxiv.org/abs/2501.17148)
+- [Gemma 3 model card](https://ai.google.dev/gemma/docs/core/model_card_3)

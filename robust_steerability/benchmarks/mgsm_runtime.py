@@ -43,7 +43,7 @@ from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 
 METHODS = ("original", "spid", "alqr", "h_infinity")
-DEFAULT_BATCH_SIZE = {"qwen3_4b": 32, "qwen3_8b": 16}
+DEFAULT_BATCH_SIZE = {"qwen3_4b": 32, "gemma3_4b_it": 32}
 EVALUATION_SAMPLE_SEED = 42
 MAX_NEW_TOKENS = 256
 
@@ -166,7 +166,7 @@ def _eos_token_ids(model, tokenizer) -> list[int]:
     values = model.config.eos_token_id
     eos = list(values) if isinstance(values, list) else [int(values)]
     im_end = tokenizer.convert_tokens_to_ids("<|im_end|>")
-    if isinstance(im_end, int) and im_end >= 0:
+    if "<|im_end|>" in tokenizer.get_vocab() and isinstance(im_end, int):
         eos.append(im_end)
     return sorted(set(eos))
 
@@ -429,6 +429,7 @@ def summarize(
 ) -> Path:
     root = cache_root(model_key, use_cache)
     generation = generation_path(model_key, language, method, use_cache=use_cache)
+    generation_payload = json.loads(generation.read_text())
     metrics = {}
     for key in scorer_keys:
         payload = json.loads(scorer_cache_path(root, generation, key).read_text())
@@ -443,7 +444,9 @@ def summarize(
         "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
         "input_language": language,
         "method": method,
-        "sample_count": 250,
+        "sample_count": int(
+            generation_payload["identity"]["evaluation_sample_count"]
+        ),
         "metrics": metrics,
     }
     destination = root / "summaries" / f"mgsm_{language}" / f"{method}.json"

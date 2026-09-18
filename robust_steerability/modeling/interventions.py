@@ -8,7 +8,19 @@ from transformers import AutoModelForCausalLM
 from robust_steerability.runtime.policy import ActivationPolicy
 
 
+def _text_config(model: AutoModelForCausalLM):
+    """Return the decoder configuration for text-only and multimodal LMs."""
+
+    return getattr(model.config, "text_config", model.config)
+
+
 def _decoder_layers(model: AutoModelForCausalLM) -> list[torch.nn.Module]:
+    if (
+        hasattr(model, "model")
+        and hasattr(model.model, "language_model")
+        and hasattr(model.model.language_model, "layers")
+    ):
+        return list(model.model.language_model.layers)
     if hasattr(model, "model") and hasattr(model.model, "layers"):
         return list(model.model.layers)
     if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
@@ -17,7 +29,8 @@ def _decoder_layers(model: AutoModelForCausalLM) -> list[torch.nn.Module]:
         return list(model.gpt_neox.layers)
     raise ValueError(
         "Unsupported CausalLM architecture: could not locate decoder layers "
-        "(expected model.layers, transformer.h, or gpt_neox.layers)."
+        "(expected model.language_model.layers, model.layers, transformer.h, "
+        "or gpt_neox.layers)."
     )
 
 
@@ -54,7 +67,7 @@ def forward_with_policy(
     layers = _decoder_layers(model)
     layer_count = len(layers)
     sequence_length = int(encoded["input_ids"].shape[1])
-    hidden_size = model.config.hidden_size
+    hidden_size = _text_config(model).hidden_size
     controls = torch.zeros(layer_count, sequence_length, hidden_size, dtype=torch.float32)
     states: list[torch.Tensor | None] = [None] * (layer_count + 1)
     handles = []
@@ -179,7 +192,7 @@ def capture_last_token_policy_rollout(
     layers = _decoder_layers(model)
     layer_count = len(layers)
     batch_size = int(encoded["input_ids"].shape[0])
-    hidden_size = int(model.config.hidden_size)
+    hidden_size = int(_text_config(model).hidden_size)
     states: list[torch.Tensor | None] = [None] * (layer_count + 1)
     controls: list[torch.Tensor | None] = [None] * layer_count
     handles = []

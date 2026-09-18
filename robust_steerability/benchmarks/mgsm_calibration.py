@@ -554,7 +554,7 @@ def main() -> None:
         choices=("base", "synthesize", "generate-worker", "score-grid", "select"),
         required=True,
     )
-    parser.add_argument("--model", choices=("qwen3_4b", "qwen3_8b"), required=True)
+    parser.add_argument("--model", choices=artifacts.MODEL_KEYS, required=True)
     parser.add_argument("--device")
     parser.add_argument("--shard-index", type=int)
     parser.add_argument("--shard-count", type=int)
