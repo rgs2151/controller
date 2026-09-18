@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import ClassVar, Protocol
 
 import torch
 
 from robust_steerability.control.base import Controller
+from robust_steerability.runtime.diagnostics import ReducedTrajectoryRecorder
 
 
 class ActivationPolicy(Protocol):
     """The only runtime surface required by a model adapter."""
+
+    site: ClassVar[str] = "block_input"
 
     def prepare(self, device: torch.device, dtype: torch.dtype) -> None: ...
 
@@ -28,6 +31,7 @@ class ActivationPolicy(Protocol):
 class DirectControllerPolicy:
     """Pass model activations directly to a controller as feedback inputs."""
 
+    site: ClassVar[str] = "block_input"
     controller: Controller
 
     def prepare(self, device: torch.device, dtype: torch.dtype) -> None:
@@ -48,9 +52,12 @@ class DirectControllerPolicy:
 class SemanticSetpointPolicy:
     """Build a full-state deviation from a layer-wise semantic setpoint."""
 
+    site: ClassVar[str] = "block_input"
     controller: Controller
     feature_unit: torch.Tensor
     setpoints: torch.Tensor
+    recorder: ReducedTrajectoryRecorder | None = None
+    coordinate_system: ClassVar[str] = "physical decoder-input semantic tracking error"
 
     def prepare(self, device: torch.device, dtype: torch.dtype) -> None:
         self.controller.to(device=device, dtype=dtype)
@@ -59,6 +66,8 @@ class SemanticSetpointPolicy:
 
     def reset(self) -> None:
         self.controller.reset()
+        if self.recorder is not None:
+            self.recorder.reset()
 
     def activation_delta(
         self,
@@ -69,13 +78,78 @@ class SemanticSetpointPolicy:
         setpoint = self.setpoints[layer_index]
         scalar_deviation = activation @ feature - setpoint
         state_deviation = scalar_deviation.unsqueeze(-1) * feature
-        return self.controller.intervention(layer_index, state_deviation)
+        control = self.controller.control(layer_index, state_deviation)
+        channels = self.controller.control_channels
+        delta = control if channels is None else control @ channels[layer_index].T
+        if self.recorder is not None:
+            self.recorder.append(layer_index, state=activation, feedback=state_deviation,
+                                 control=control, deviation_control=control,
+                                 reduced_intervention=delta, hidden_delta=delta.to(activation.dtype))
+        return delta
+
+
+@dataclass
+class ReducedStateSetpointPolicy:
+    """Apply full reduced-state feedback around a semantic reference state.
+
+    The first reduced coordinate follows the fitted semantic setpoint. The
+    remaining coordinates have zero reference, so the controller receives all
+    state coordinates for which its gain was synthesized. Orthonormal
+    next-layer bases map its intervention back to the model hidden space.
+    """
+
+    site: ClassVar[str] = "block_input"
+    controller: Controller
+    means: torch.Tensor
+    encoders: torch.Tensor
+    decoders: torch.Tensor
+    feature_unit: torch.Tensor
+    setpoints: torch.Tensor
+    recorder: ReducedTrajectoryRecorder | None = None
+    coordinate_system: ClassVar[str] = "orthonormal full reduced-state tracking error"
+
+    def prepare(self, device: torch.device, dtype: torch.dtype) -> None:
+        self.controller.to(device=device, dtype=torch.float32)
+        self.means = self.means.to(device=device, dtype=torch.float32)
+        self.encoders = self.encoders.to(device=device, dtype=torch.float32)
+        self.decoders = self.decoders.to(device=device, dtype=torch.float32)
+        self.feature_unit = self.feature_unit.to(device=device, dtype=torch.float32)
+        self.setpoints = self.setpoints.to(device=device, dtype=torch.float32)
+
+    def reset(self) -> None:
+        self.controller.reset()
+        if self.recorder is not None:
+            self.recorder.reset()
+
+    def activation_delta(
+        self,
+        layer_index: int,
+        activation: torch.Tensor,
+    ) -> torch.Tensor:
+        activation_float = activation.float()
+        reduced = (
+            activation_float - self.means[layer_index]
+        ) @ self.encoders[layer_index]
+        feature = self.feature_unit[layer_index]
+        reference = self.setpoints[layer_index] * feature
+        state_deviation = reduced - reference
+        control = self.controller.control(layer_index, state_deviation)
+        channels = self.controller.control_channels
+        reduced_delta = control if channels is None else control @ channels[layer_index].T
+        hidden_delta = reduced_delta @ self.decoders[layer_index].T
+        hidden_delta = hidden_delta.to(dtype=activation.dtype)
+        if self.recorder is not None:
+            self.recorder.append(layer_index, state=reduced, feedback=state_deviation,
+                                 control=control, deviation_control=control, reduced_intervention=reduced_delta,
+                                 hidden_delta=hidden_delta)
+        return hidden_delta
 
 
 @dataclass
 class ReferenceStatePolicy:
     """Build controller feedback from full layer-wise reference states."""
 
+    site: ClassVar[str] = "block_input"
     controller: Controller
     reference_states: torch.Tensor
 
@@ -99,6 +173,7 @@ class ReferenceStatePolicy:
 class SumPolicy:
     """Compose multiple policies, including multi-concept steering."""
 
+    site: ClassVar[str] = "block_input"
     policies: tuple[ActivationPolicy, ...]
 
     def __post_init__(self) -> None:

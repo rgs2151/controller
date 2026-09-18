@@ -14,8 +14,32 @@ Do not put unit-specific file paths, temporary subsets, cache names, panel mappi
 
 ## Cross-Model Coordinates
 
-- Decision: Compare models only after whitening reduced state coordinates with calibration statistics, standardizing control and semantic-output coordinates, expressing layer position as normalized depth, and weighting per-layer costs by the normalized depth increment.
-- Why: Raw activation scales, hidden dimensions, and layer counts differ across models and otherwise confound disturbance-gain comparisons.
-- Use this when: Comparing robust steerability, control energy, residual propagation, or controller performance across checkpoints or model families.
-- Do not use this for: Within-model diagnostic plots that explicitly report raw activation coordinates.
-- Notes: Always report whether a result uses normalized or raw coordinates.
+- Decision: Identify and synthesize H∞ in the target-preserving orthonormal reduced coordinates without whitening, output scaling, disturbance scaling, or depth weighting. Use `Q=qI`, `R=rI`, `Qf=qfI`, and construct each `D[k]` so `D[k]D[k]ᵀ` equals the empirical calibration-residual covariance.
+- Why: These are the coordinates and cost definitions supplied to the minimax problem; silently rescaling them changes the controller rather than merely changing how its result is reported.
+- Use this when: Building `A/B/D/Q/R/Qf`, synthesizing H∞, exporting `gamma_star`, or reproducing a calibrated controller.
+- Do not use this for: Post-hoc visualization or statistical standardization that leaves the synthesized problem and saved `gamma_star` unchanged.
+- Notes: Cross-model reports must state that raw-coordinate `gamma_star` values can retain model-scale dependence. Any reporting-only normalization must be saved separately and must never rewrite controller inputs or gains.
+
+## Controlled Decoding KV Cache
+
+- Decision: Default transformer KV caching to off during evaluated-model generation for Original and every steering method. Retain explicit `--kv-cache on` support for appendix comparisons; the two modes use separate evaluation and result directories.
+- Why: Under the current activation-hook feedback implementation, cache-on and cache-off decoding produce materially different controller trajectories and benchmark outcomes; cache state is therefore part of the intervention semantics rather than only a runtime optimization.
+- Use this when: Generating behavior, capability, ID, or distribution-shift evaluations with the shared steering pipeline.
+- Do not use this for: Uncontrolled evaluator and judge models, which may use KV caching because no activation feedback policy is attached.
+- Notes: Record the evaluated-model cache state in every stage log. Scorer-model cache behavior is separate and does not define the evaluated-model condition.
+
+## Non-H-infinity Hyperparameters
+
+- Decision: Never sweep Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer, S-PID, or A-LQR. Use source-preserved fixed values where available. For Gemma-2-2B truthfulness, use the project best guesses ITI=(32 heads, alpha 10) and S-PID=(lambda 1, Kp=.7, Ki=.01, Kd=.1). For Llama-3-8B truthfulness, use ITI=(32 heads, alpha 10), S-PID=(lambda 1, Kp=.1, Ki=.1, Kd=0), and ODESteer=(layer 19, time 25); the ITI and S-PID values are central choices from their preserved source grids, while ODESteer carries the preserved same-model comparison setting into truthfulness. Only H-infinity is selected by a benchmark-specific calibration sweep.
+- Why: Only H-infinity is calibrated by a hyperparameter sweep in this project. The paper-producing source does not preserve final Gemma ITI or S-PID selections, so these values must be explicit assumptions rather than silently tuned on the benchmark.
+- Use this when: Fitting, evaluating, or reporting any non-H-infinity comparison method.
+- Do not use this for: H-infinity calibration, which owns its separate candidate-selection stage.
+- Notes: If another model/task lacks a source-preserved or project-frozen selection, add and document one before running it; do not introduce a sweep.
+
+## Remote Benchmark Storage
+
+- Decision: Use Lightning Teamspace Drive instead of AWS for remote benchmark storage. Every ignored cache stage—materialized datasets, controller-neutral artifacts, method calibrations, generations, scorer outputs, and diagnostics—stays in the producing Studio's persistent home under `~/robust-steering-cache/`.
+- Why: Lightning Teamspace storage already provides the required project capacity and exposes Studio files across the Teamspace, so a second object-storage transport adds unnecessary credentials and synchronization steps.
+- Use this when: Running or resuming any benchmark stage on a Lightning Studio, or inspecting another Studio's completed cache.
+- Do not use this for: Git-tracked code, logs, result summaries, tables, or plots; those continue to synchronize through Git. The local workstation continues to use its local ignored benchmark cache.
+- Notes: A model/benchmark remains writable on its producing Studio. Peer Studios access its Teamspace path for inspection or explicit read-only reuse; continue the pipeline on the owning Studio.

@@ -1,0 +1,39 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/dev/controller/code/robust_steerability/benchmarks/multiple_choice.py", line 651, in <module>
+    main()
+  File "/home/dev/controller/code/robust_steerability/benchmarks/multiple_choice.py", line 636, in main
+    generate(
+  File "/home/dev/controller/code/robust_steerability/benchmarks/multiple_choice.py", line 489, in generate
+    _harmful_generation(
+  File "/home/dev/controller/code/robust_steerability/benchmarks/multiple_choice.py", line 296, in _harmful_generation
+    _generate_with_policy(
+  File "/home/dev/controller/code/robust_steerability/benchmarks/multiple_choice.py", line 422, in _generate_with_policy
+    completions = completion_generator(
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/controller/code/robust_steerability/benchmarks/multiple_choice.py", line 286, in generate_suffixes
+    output = loaded_model(
+             ^^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/site-packages/transformers/utils/generic.py", line 918, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/site-packages/transformers/models/llama/modeling_llama.py", line 473, in forward
+    logits = self.lm_head(hidden_states[:, slice_indices, :])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/site-packages/torch/nn/modules/linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 20.81 GiB. GPU 1 has a total capacity of 31.36 GiB of which 6.63 GiB is free. Including non-PyTorch memory, this process has 24.71 GiB memory in use. Of the allocated memory 2.65 GiB is allocated by PyTorch, and 21.45 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

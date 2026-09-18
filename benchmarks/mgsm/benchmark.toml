@@ -1,0 +1,152 @@
+schema_version = 2
+benchmark = "mgsm"
+base_dataset = "mgsm_en_es_direction"
+models = ["qwen3_4b", "qwen3_8b"]
+available_methods = ["original", "spid", "alqr", "h_infinity"]
+default_methods = ["original", "spid", "alqr", "h_infinity"]
+default_datasets = ["zh", "fr", "ja", "sw", "te"]
+jacobian_prompts = 50
+evaluated_model_kv_cache = false
+available_evaluated_model_kv_cache = [false, true]
+api_scorer_model = "gpt-4o-mini-2024-07-18"
+api_scorer_batch_size = 20
+api_scorer_concurrency = 500
+
+[[evaluation_datasets]]
+key = "en"
+dataset = "mgsm_en_es_direction"
+role = "base"
+cache_namespace = "mgsm_en"
+generation_profile = "mgsm"
+samples = 250
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "es"
+dataset = "mgsm_spanish_anchor"
+role = "transfer"
+cache_namespace = "mgsm_es"
+generation_profile = "mgsm"
+samples = 250
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "bn"
+dataset = "mgsm_bengali"
+role = "transfer"
+cache_namespace = "mgsm_bn"
+generation_profile = "mgsm"
+samples = 250
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "zh"
+dataset = "mgsm_chinese"
+role = "transfer"
+cache_namespace = "mgsm_zh"
+generation_profile = "mgsm"
+samples = 100
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "fr"
+dataset = "mgsm_french"
+role = "transfer"
+cache_namespace = "mgsm_fr"
+generation_profile = "mgsm"
+samples = 100
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "de"
+dataset = "mgsm_german"
+role = "transfer"
+cache_namespace = "mgsm_de"
+generation_profile = "mgsm"
+samples = 250
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "ja"
+dataset = "mgsm_japanese"
+role = "transfer"
+cache_namespace = "mgsm_ja"
+generation_profile = "mgsm"
+samples = 100
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "ru"
+dataset = "mgsm_russian"
+role = "transfer"
+cache_namespace = "mgsm_ru"
+generation_profile = "mgsm"
+samples = 250
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "sw"
+dataset = "mgsm_swahili"
+role = "transfer"
+cache_namespace = "mgsm_sw"
+generation_profile = "mgsm"
+samples = 100
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "te"
+dataset = "mgsm_telugu"
+role = "transfer"
+cache_namespace = "mgsm_te"
+generation_profile = "mgsm"
+samples = 100
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[[evaluation_datasets]]
+key = "th"
+dataset = "mgsm_thai"
+role = "transfer"
+cache_namespace = "mgsm_th"
+generation_profile = "mgsm"
+samples = 250
+repetitions = 1
+scorers = ["mgsm_exact_match", "axbench_rule_spanish", "axbench_instruction_relevance", "axbench_fluency", "mgsm_axbench_overall"]
+runtime = "mgsm"
+
+[stages]
+order = ["artifacts", "calibrate", "evaluate", "score"]
+evaluation_requires_selected_calibration = true
+evaluation_generates_only = true
+score_reads_completed_generations = true
+
+[calibration]
+selection_metric = "mean_mgsm_axbench_overall"
+h_infinity_disturbance_samples = 200
+h_infinity_tuning_samples = 50
+h_infinity_tuning_repetitions = 1
+h_infinity_fixed_selection_supported = true
+
+[storage]
+remote_cache_backend = "lightning_teamspace_drive"
+remote_cache_scope = "all_cache_stages"
+tracked_outputs = ["results", "logs"]

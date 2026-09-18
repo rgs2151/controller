@@ -1,18 +1,18 @@
-"""Reusable behavior datasets and evaluators."""
+"""Portable artifact, calibration, and evaluation pipelines."""
 
 from robust_steerability.benchmarks.base import (
     BenchmarkRecord,
     GenerationRecord,
     validate_disjoint_prompt_ids,
 )
-from robust_steerability.benchmarks.toxicity import (
+from robust_steerability.datasets.toxicity import (
     load_civil_comments_prompts,
     load_jigsaw_toxicity_prompts,
     load_real_toxicity_prompt_pools,
     load_toxic_chat_prompts,
     toxicity_probabilities,
 )
-from robust_steerability.benchmarks.mmlu import (
+from robust_steerability.datasets.mmlu import (
     load_mmlu_concept_shift_sets,
     load_mmlu_subject_prompts,
 )

@@ -1,0 +1,17 @@
+{
+  "model": [
+    "Qwen/Qwen3-4B",
+    "1cfa9a7208912126459214e8b04321603b3df60c"
+  ],
+  "input_language": "sw",
+  "method": "alqr",
+  "sample_count": 250,
+  "metrics": {
+    "mgsm_exact_match.score": 0.12,
+    "mgsm_exact_match.valid_rate": 0.92,
+    "axbench_rule_spanish.score": 1.4,
+    "axbench_instruction_relevance.score": 1.32,
+    "axbench_fluency.score": 0.97,
+    "mgsm_axbench_overall.score": 0.949
+  }
+}

@@ -1,0 +1,70 @@
+############################
+# Python
+############################
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+############################
+# Virtual environments
+############################
+.env
+.venv
+venv/
+env/
+conda/
+.miniconda/
+.anaconda/
+.ipynb_checkpoints/
+
+
+############################
+# OS / Editor
+############################
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+
+############################
+# Model / ML artifacts
+############################
+checkpoints/
+models/
+weights/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+############################
+# HuggingFace / datasets
+############################
+.cache/
+hf_cache/
+wandb/
+wandb-debug.log
+wandb-summary.json
+
+############################
+# Pickle / numpy / data
+############################
+*.pkl
+*.pickle
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.parquet
+
+

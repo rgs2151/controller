@@ -1,0 +1,84 @@
+{
+  "identity": {
+    "model_id": "meta-llama/Meta-Llama-3-8B",
+    "model_revision": "8cde5ca8380496c9a6cc7ef3a8b46a0372a1d920",
+    "method": "original",
+    "distribution": "spanish",
+    "dataset": [
+      "truthful_qa",
+      "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
+    ],
+    "evaluation_key": "truthfulness_spanish",
+    "kv_cache": false,
+    "scorers": [
+      "truthfulqa_true",
+      "truthfulqa_informative",
+      "axbench_instruction_relevance",
+      "axbench_fluency"
+    ]
+  },
+  "evaluation_samples_per_repetition": 817,
+  "evaluation_repetitions": 5,
+  "created_at_utc": "2026-09-15T18:42:59.036041+00:00",
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "truth": 43.94124847001224,
+      "info": 94.4920440636475,
+      "instruction_relevance": 1.5899632802937576,
+      "fluency": 1.368421052631579
+    },
+    {
+      "repetition": 1,
+      "truth": 42.59485924112607,
+      "info": 95.34883720930233,
+      "instruction_relevance": 1.5936352509179927,
+      "fluency": 1.4186046511627908
+    },
+    {
+      "repetition": 2,
+      "truth": 44.063647490820074,
+      "info": 94.61444308445533,
+      "instruction_relevance": 1.602203182374541,
+      "fluency": 1.394124847001224
+    },
+    {
+      "repetition": 3,
+      "truth": 41.615667074663406,
+      "info": 94.00244798041616,
+      "instruction_relevance": 1.598531211750306,
+      "fluency": 1.4075887392900857
+    },
+    {
+      "repetition": 4,
+      "truth": 42.10526315789473,
+      "info": 94.12484700122398,
+      "instruction_relevance": 1.5716034271725827,
+      "fluency": 1.3561811505507957
+    }
+  ],
+  "metrics": {
+    "truth": {
+      "mean": 42.864137086903305,
+      "standard_error": 0.49020769631580857
+    },
+    "info": {
+      "mean": 94.51652386780907,
+      "standard_error": 0.23670844070763508
+    },
+    "instruction_relevance": {
+      "mean": 1.5911872705018362,
+      "standard_error": 0.005321190971672986
+    },
+    "fluency": {
+      "mean": 1.388984088127295,
+      "standard_error": 0.011723500636914243
+    }
+  },
+  "invalid_scorer_outputs": {
+    "truthfulqa_true": [],
+    "truthfulqa_informative": [],
+    "axbench_instruction_relevance": [],
+    "axbench_fluency": []
+  }
+}

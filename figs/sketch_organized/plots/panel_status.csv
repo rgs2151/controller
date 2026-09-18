@@ -1,0 +1,15 @@
+figure,panels,status,basis
+fig1_framing,A-B,conceptual,No experimental values required
+fig2_dynamics_and_residuals,A-D,real,"Existing dynamics, residual, and OOD analyses"
+fig3_robust_steerability,A,conceptual,Calibration-only workflow
+fig3_robust_steerability,B-D,placeholder,Prospective prediction experiment missing
+fig4_id_controller_benchmark,A-C,real,Current 50-record benchmark
+fig4_id_controller_benchmark,D,placeholder,Intervention-energy comparison missing
+fig5_ood_controller_benchmark,A-B,real,"Five-model, 50-prompt OOD benchmark"
+fig5_ood_controller_benchmark,C-D,real_preliminary,Toxicity-only crossover; final experiment missing
+fig6_long_context_prediction,A-C,placeholder,Context-length sweep missing
+figs1_hinf_validation,A-D,real,H-infinity parity and optimization diagnostics
+figs2_nonlinearity_validation,A,placeholder,Excursion analysis missing
+figs2_nonlinearity_validation,B,real,Existing actual-versus-linearized layer trajectory
+figs2_nonlinearity_validation,C-D,placeholder,Strength and coverage analyses missing
+figs3_tuning_and_ablations,A-D,placeholder,"Gain, calibration-size, and geometry sweeps missing"

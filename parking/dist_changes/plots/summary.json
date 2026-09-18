@@ -1,0 +1,196 @@
+{
+  "metrics": {
+    "truth_percent": "100 times the mean binary Truth judge decision",
+    "info_percent": "100 times the mean binary Info judge decision",
+    "mean_layer_relative_residual_percent": "100 times the mean full-state one-step residual norm divided by next-state norm across prompts and layers",
+    "residual_to_performance_gain": "pooled square root of rank-8 closed-loop Q/R/Qf performance energy divided by rank-8 tracking-residual energy"
+  },
+  "conditions": [
+    "id",
+    "spanish",
+    "japanese_romaji",
+    "long_context_end",
+    "long_context_start",
+    "corrupting_words",
+    "bos_mix",
+    "lciteeval_complexity"
+  ],
+  "scores": [
+    {
+      "condition": "id",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 60.0,
+      "info_percent": 94.0,
+      "truth_x_info_percent": 56.4,
+      "mean_layer_relative_residual_percent": 38.751739263534546,
+      "residual_to_performance_gain": 0.05216274012855058,
+      "display_condition": "id"
+    },
+    {
+      "condition": "id",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 48.0,
+      "info_percent": 100.0,
+      "truth_x_info_percent": 48.0,
+      "mean_layer_relative_residual_percent": 39.9752140045166,
+      "residual_to_performance_gain": 0.035984569800317535,
+      "display_condition": "id"
+    },
+    {
+      "condition": "spanish",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 76.0,
+      "info_percent": 60.0,
+      "truth_x_info_percent": 45.6,
+      "mean_layer_relative_residual_percent": 41.97223782539368,
+      "residual_to_performance_gain": 0.051467080121042404,
+      "display_condition": "spanish"
+    },
+    {
+      "condition": "spanish",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 50.0,
+      "info_percent": 84.0,
+      "truth_x_info_percent": 42.0,
+      "mean_layer_relative_residual_percent": 41.81885123252869,
+      "residual_to_performance_gain": 0.03914832754768317,
+      "display_condition": "spanish"
+    },
+    {
+      "condition": "japanese_romaji",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 84.0,
+      "info_percent": 14.000000000000002,
+      "truth_x_info_percent": 11.760000000000002,
+      "mean_layer_relative_residual_percent": 43.63882541656494,
+      "residual_to_performance_gain": 0.055994199114730685,
+      "display_condition": "japanese_romaji"
+    },
+    {
+      "condition": "japanese_romaji",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 68.0,
+      "info_percent": 22.0,
+      "truth_x_info_percent": 14.96,
+      "mean_layer_relative_residual_percent": 44.09943222999573,
+      "residual_to_performance_gain": 0.03972172397202351,
+      "display_condition": "japanese_romaji"
+    },
+    {
+      "condition": "long_context_end",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 52.0,
+      "info_percent": 92.0,
+      "truth_x_info_percent": 47.84,
+      "mean_layer_relative_residual_percent": 42.39260256290436,
+      "residual_to_performance_gain": 0.05128893931285368,
+      "display_condition": "long_context_end"
+    },
+    {
+      "condition": "long_context_end",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 32.0,
+      "info_percent": 94.0,
+      "truth_x_info_percent": 30.08,
+      "mean_layer_relative_residual_percent": 43.39896738529205,
+      "residual_to_performance_gain": 0.03542104608651346,
+      "display_condition": "long_context_end"
+    },
+    {
+      "condition": "long_context_start",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 82.0,
+      "info_percent": 14.000000000000002,
+      "truth_x_info_percent": 11.480000000000002,
+      "mean_layer_relative_residual_percent": 54.865485429763794,
+      "residual_to_performance_gain": 0.04471608242381067,
+      "display_condition": "long_context_start"
+    },
+    {
+      "condition": "long_context_start",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 62.0,
+      "info_percent": 16.0,
+      "truth_x_info_percent": 9.92,
+      "mean_layer_relative_residual_percent": 54.91651892662048,
+      "residual_to_performance_gain": 0.030734505622668114,
+      "display_condition": "long_context_start"
+    },
+    {
+      "condition": "corrupting_words",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 100.0,
+      "info_percent": 24.0,
+      "truth_x_info_percent": 24.0,
+      "mean_layer_relative_residual_percent": 56.125473976135254,
+      "residual_to_performance_gain": 0.04974953007214622,
+      "display_condition": "corrupting_words"
+    },
+    {
+      "condition": "corrupting_words",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 56.00000000000001,
+      "info_percent": 6.0,
+      "truth_x_info_percent": 3.3600000000000008,
+      "mean_layer_relative_residual_percent": 57.58159160614014,
+      "residual_to_performance_gain": 0.03472877131399223,
+      "display_condition": "corrupting_words"
+    },
+    {
+      "condition": "bos_mix",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 100.0,
+      "info_percent": 4.0,
+      "truth_x_info_percent": 4.0,
+      "mean_layer_relative_residual_percent": 50.54720640182495,
+      "residual_to_performance_gain": 0.03783918884635082,
+      "display_condition": "bos_mix"
+    },
+    {
+      "condition": "bos_mix",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 96.0,
+      "info_percent": 0.0,
+      "truth_x_info_percent": 0.0,
+      "mean_layer_relative_residual_percent": 53.03555130958557,
+      "residual_to_performance_gain": 0.027635426312679158,
+      "display_condition": "bos_mix"
+    },
+    {
+      "condition": "lciteeval_complexity",
+      "method": "alqr",
+      "n": 50,
+      "truth_percent": 86.0,
+      "info_percent": 64.0,
+      "truth_x_info_percent": 55.04,
+      "mean_layer_relative_residual_percent": 40.62575101852417,
+      "residual_to_performance_gain": 0.0639061353565994,
+      "display_condition": "lciteeval_complexity"
+    },
+    {
+      "condition": "lciteeval_complexity",
+      "method": "hinf",
+      "n": 50,
+      "truth_percent": 57.99999999999999,
+      "info_percent": 74.0,
+      "truth_x_info_percent": 42.91999999999999,
+      "mean_layer_relative_residual_percent": 40.90840518474579,
+      "residual_to_performance_gain": 0.0444048597475077,
+      "display_condition": "lciteeval_complexity"
+    }
+  ]
+}

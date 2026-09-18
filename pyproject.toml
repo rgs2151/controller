@@ -10,15 +10,19 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "accelerate",
+  "aiohttp",
   "bitsandbytes",
   "datasets==4.4.2",
   "h5py",
   "huggingface-hub",
   "joblib",
+  "langdetect",
   "matplotlib>=3.8",
+  "nltk==3.9.1",
   "numpy",
   "pandas",
   "protobuf",
+  "pykakasi==2.3.0",
   "scikit-learn",
   "scipy",
   "seaborn",
@@ -33,6 +37,5 @@ notebook = [
   "ipykernel",
   "jupyterlab",
 ]
-
 [tool.setuptools.packages.find]
 include = ["robust_steerability*"]

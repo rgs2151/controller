@@ -1,0 +1,35 @@
+Some weights of the model checkpoint at s-nlp/roberta_toxicity_classifier were not used when initializing RobertaForSequenceClassification: ['roberta.pooler.dense.bias', 'roberta.pooler.dense.weight']
+- This IS expected if you are initializing RobertaForSequenceClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing RobertaForSequenceClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:06<00:06,  6.77s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:09<00:00,  4.52s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:09<00:00,  4.86s/it]
+Traceback (most recent call last):
+  File "/home/dev/controller/code/robust_steerability/benchmarks/toxicity_runtime.py", line 1465, in <module>
+    main()
+  File "/home/dev/controller/code/robust_steerability/benchmarks/toxicity_runtime.py", line 1440, in main
+    score_final(
+  File "/home/dev/controller/code/robust_steerability/benchmarks/toxicity_runtime.py", line 1054, in score_final
+    openai_scoring.score_generations(
+  File "/home/dev/controller/code/robust_steerability/judges/openai.py", line 352, in score_generations
+    return asyncio.run(
+           ^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/dev/controller/code/robust_steerability/judges/openai.py", line 307, in _score_async
+    destination, result = await future
+                          ^^^^^^^^^^^^
+  File "/home/dev/miniconda3/envs/robust-steerability/lib/python3.11/asyncio/tasks.py", line 615, in _wait_for_one
+    return f.result()  # May raise f.exception().
+           ^^^^^^^^^^
+  File "/home/dev/controller/code/robust_steerability/judges/openai.py", line 294, in run_job
+    result = await _request(
+             ^^^^^^^^^^^^^^^
+  File "/home/dev/controller/code/robust_steerability/judges/openai.py", line 178, in _request
+    raise ValueError(
+ValueError: OpenAI scorer batch 99 changed item indices
