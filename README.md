@@ -69,13 +69,15 @@ python -m robust_steerability.benchmarks.lciteeval evaluate --model qwen25_3b_in
 python -m robust_steerability.benchmarks.lciteeval score --model qwen25_3b_instruct --scorers default --devices auto
 ```
 
-MGSM language transfer uses the same interface for Qwen3-4B and Qwen3-8B:
+MGSM language transfer uses the same interface for the completed Qwen3-4B run
+and the planned Gemma-3-4B-Instruct run. The Gemma run evaluates only S-PID,
+A-LQR, and H-infinity:
 
 ```bash
-python -m robust_steerability.benchmarks.mgsm artifacts --model qwen3_4b --devices auto
-python -m robust_steerability.benchmarks.mgsm calibrate --model qwen3_4b --devices auto
-python -m robust_steerability.benchmarks.mgsm evaluate --model qwen3_4b --devices auto
-python -m robust_steerability.benchmarks.mgsm score --model qwen3_4b --scorers default --devices auto
+python -m robust_steerability.benchmarks.mgsm artifacts --model gemma3_4b_it --methods spid,alqr,h_infinity --devices auto
+python -m robust_steerability.benchmarks.mgsm calibrate --model gemma3_4b_it --methods spid,alqr,h_infinity --devices auto
+python -m robust_steerability.benchmarks.mgsm evaluate --model gemma3_4b_it --methods spid,alqr,h_infinity --devices auto
+python -m robust_steerability.benchmarks.mgsm score --model gemma3_4b_it --methods spid,alqr,h_infinity --scorers default --devices auto
 ```
 
 HarmBench robust refusal initially uses Llama-3.2-1B-Instruct:

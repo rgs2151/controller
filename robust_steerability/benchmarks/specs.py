@@ -60,12 +60,12 @@ MODELS = {
         8,
         16,
     ),
-    "qwen3_8b": ModelSpec(
-        "qwen3_8b",
-        "Qwen3-8B",
-        "Qwen/Qwen3-8B",
-        "b968826d9c46dd6066d109eabc6255188de91218",
-        4,
+    "gemma3_4b_it": ModelSpec(
+        "gemma3_4b_it",
+        "Gemma-3-4B-Instruct",
+        "google/gemma-3-4b-it",
+        "093f9f388b31de276ce2de164bdc2081324b9767",
         8,
+        16,
     ),
 }
