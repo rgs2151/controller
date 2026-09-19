@@ -140,11 +140,19 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "mean_mgsm_axbench_overall"
+selection_metric = "mean_axbench_overall"
 h_infinity_disturbance_samples = 200
 h_infinity_tuning_samples = 50
 h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
+
+[calibration.h_infinity_lambda_sweep]
+enabled = true
+values = [0.1, 0.25, 0.5, 0.75, 1.0, 1.5]
+fixed_q_over_r = 0.1
+fixed_q_final_over_r = 0.1
+fixed_r = 1.0
+selection_metric = "mean_axbench_overall"
 
 [storage]
 remote_cache_backend = "lightning_teamspace_drive"

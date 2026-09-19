@@ -14,8 +14,9 @@
   shared by A-LQR and H∞.
 - **H∞ disturbance data:** 200 frozen GSM8K training questions.
 - **Baseline settings:** Fixed S-PID and A-LQR settings; no sweep.
-- **H∞ selection:** 50 disjoint GSM8K questions; 12 cost configurations;
-  maximize the Spanish-adherence, instruction-relevance, and fluency harmonic mean.
+- **H∞ selection:** 50 disjoint GSM8K questions shared by every candidate;
+  first select lambda at `Q/R=0.1`, `Qf/R=0.1`, `R=1`, then select from the
+  12-point cost grid. Both stages maximize AXBench Overall.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
 - **Models:** Qwen3-4B and Gemma-3-4B-Instruct.
@@ -68,10 +69,14 @@ question itself moves into unseen input languages, while retaining correctness?
 - **A-LQR:** fixed `lambda=1.5`, `Q=0.1`, `R=1`, `Qf=0.1`. No sweep.
 - **H∞ development set:** 50 additional GSM8K training questions, disjoint from
   the 200 disturbance prompts.
+- **H∞ lambda stage:** sweep the configured lambda values while holding
+  `Q/R=0.1`, `Qf/R=0.1`, and `R=1`; select maximum AXBench Overall, breaking an
+  exact tie toward the smaller lambda. This stage is composition-configurable
+  and may be disabled.
 - **H∞ grid:** `R=1`, `Q/R in {0.01, 0.1, 1, 10}`, and
-  `Qf/R in {0.01, 0.1, 0.316...}`.
-- **Objective:** maximum harmonic mean of Spanish adherence, instruction
-  relevance, and fluency.
+  `Qf/R in {0.01, 0.1, 0.316...}` using the selected lambda.
+- **Objective:** mean of the per-response harmonic mean of AXBench concept
+  relevance, instruction relevance, and fluency.
 
 ## 5. Final evaluation
 
@@ -93,7 +98,8 @@ question itself moves into unseen input languages, while retaining correctness?
 
 - Completed Qwen: `100 × 5 languages × 4 methods = 2,000` generations.
 - Planned Gemma: `100 × 5 languages × 3 methods = 1,500` generations.
-- H∞ selection per model: `12 × 50 = 600` short generations.
+- H∞ selection per model: `6 × 50` lambda-stage generations followed by
+  `12 × 50` cost-grid generations, for `900` short generations total.
 - There are no repeated final-evaluation seeds.
 
 ## References
