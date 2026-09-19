@@ -16,7 +16,7 @@
 - **Baseline settings:** Fixed S-PID and A-LQR settings; no sweep.
 - **H∞ selection:** 50 disjoint GSM8K questions shared by every candidate;
   `lambda=1.5` is fixed to the same target as A-LQR, and the 12-point cost grid
-  maximizes the per-response accuracy/AXBench-Overall weighted harmonic mean.
+  maximizes the per-response accuracy/AXBench-Overall balanced additive score.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
 - **Models:** Qwen3-4B and Llama-3.2-3B-Instruct.
@@ -71,10 +71,10 @@ question itself moves into unseen input languages, while retaining correctness?
   lambda-sweep implementation remains available but is disabled for every run.
 - **H∞ grid:** `R=1`, `Q/R in {0.01, 0.1, 1, 10}`, and
   `Qf/R in {0.01, 0.1, 0.316...}` at the fixed target.
-- **Objective:** mean of the per-response 50/50 weighted harmonic mean of exact
-  answer accuracy and normalized AXBench Overall. AXBench Overall is itself the
-  harmonic mean of Spanish adherence, instruction relevance, and fluency. A
-  response receives zero composite credit if either accuracy or Overall is zero.
+- **Objective:** mean of the per-response score `0.5 × exact-answer accuracy +
+  0.5 × (AXBench Overall / 2)`. AXBench Overall is itself the harmonic mean of
+  Spanish adherence, instruction relevance, and fluency. A zero on either axis
+  removes only that axis's contribution rather than collapsing the entire score.
 
 ## 5. Final evaluation
 

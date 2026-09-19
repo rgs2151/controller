@@ -148,11 +148,10 @@ h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
 
 [calibration.mgsm_quality_composite]
-aggregation = "mean_per_response_weighted_harmonic"
+aggregation = "mean_per_response_weighted_additive"
 mgsm_exact_match_weight = 0.50
 axbench_overall_weight = 0.50
 axbench_score_normalizer = 2.0
-zero_component_score = 0.0
 
 [calibration.h_infinity_lambda_sweep]
 enabled = false

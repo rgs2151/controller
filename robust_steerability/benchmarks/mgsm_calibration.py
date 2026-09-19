@@ -16,10 +16,7 @@ import torch
 from robust_steerability.artifacts import configuration_hash
 from robust_steerability.benchmarks import mgsm_artifacts as artifacts
 from robust_steerability.benchmarks import mgsm_runtime as runtime
-from robust_steerability.benchmarks.calibration import (
-    require_nonzero_selection_metric,
-    weighted_harmonic_mean,
-)
+from robust_steerability.benchmarks.calibration import require_nonzero_selection_metric
 from robust_steerability.benchmarks.composition import load_composition
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import artifact_root, calibration_root
@@ -708,6 +705,8 @@ def select(model_key: str, calibration_id: str) -> dict:
     )
     if not np.isclose(sum(quality_weights), 1.0):
         raise ValueError("MGSM-quality calibration weights must sum to one")
+    if any(weight <= 0 for weight in quality_weights):
+        raise ValueError("MGSM-quality calibration weights must be positive")
     normalizer = float(quality_config["axbench_score_normalizer"])
     if normalizer <= 0:
         raise ValueError("AXBench calibration score normalizer must be positive")
@@ -737,12 +736,12 @@ def select(model_key: str, calibration_id: str) -> dict:
                 f"MGSM calibration scorer alignment mismatch for {configuration['grid_id']}"
             )
         response_scores = [
-            weighted_harmonic_mean(
-                (
-                    exact_by_prompt[prompt_id],
-                    float(np.clip(overall_by_prompt[prompt_id] / normalizer, 0.0, 1.0)),
-                ),
-                quality_weights,
+            (
+                quality_weights[0] * exact_by_prompt[prompt_id]
+                + quality_weights[1]
+                * float(
+                    np.clip(overall_by_prompt[prompt_id] / normalizer, 0.0, 1.0)
+                )
             )
             for prompt_id in exact_by_prompt
         ]
@@ -763,11 +762,11 @@ def select(model_key: str, calibration_id: str) -> dict:
             row["q_final"],
         )
         selection_description = (
-            "mean per-response weighted harmonic mean of exact-answer accuracy "
+            "mean per-response weighted additive combination of exact-answer accuracy "
             "and normalized AXBench Overall"
         )
         selection_source = (
-            "MGSM exact-accuracy/AXBench-Overall weighted-harmonic calibration argmax"
+            "MGSM exact-accuracy/AXBench-Overall weighted-additive calibration argmax"
         )
         metric_configuration = quality_config
     else:
