@@ -22,29 +22,34 @@
 | Qwen3-4B | Telugu | S-PID | 0.0 | 2.00 | 0.00 | 0.00 |
 | Qwen3-4B | Telugu | A-LQR | 19.0 | 1.88 | 1.46 | 1.18 |
 | Qwen3-4B | Telugu | H∞ (ours) | 8.0 | 0.34 | 1.33 | 1.05 |
-| Gemma-3-4B-Instruct | Chinese | S-PID | 0.0 | 0.00 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Chinese | A-LQR | 0.0 | 0.02 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Chinese | H∞ (ours) | 0.0 | 0.04 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | French | S-PID | 0.0 | 0.00 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | French | A-LQR | 0.0 | 1.02 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | French | H∞ (ours) | 0.0 | 1.10 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Japanese | S-PID | 0.0 | 0.00 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Japanese | A-LQR | 0.0 | 0.00 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Japanese | H∞ (ours) | 0.0 | 0.12 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Swahili | S-PID | 0.0 | 0.00 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Swahili | A-LQR | 0.0 | 0.00 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Swahili | H∞ (ours) | 0.0 | 0.20 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Telugu | S-PID | 0.0 | 0.00 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Telugu | A-LQR | 0.0 | 0.00 | 0.00 | 0.00 |
-| Gemma-3-4B-Instruct | Telugu | H∞ (ours) | 0.0 | 0.00 | 0.00 | 0.00 |
+| Llama-3.2-3B | Chinese | Original | 43.0 | 0.00 | 1.79 | 1.59 |
+| Llama-3.2-3B | Chinese | S-PID | 9.0 | 1.96 | 1.23 | 0.87 |
+| Llama-3.2-3B | Chinese | A-LQR | 26.0 | 1.80 | 1.49 | 1.21 |
+| Llama-3.2-3B | Chinese | H∞ (ours) | 37.0 | 0.00 | 1.79 | 1.60 |
+| Llama-3.2-3B | French | Original | 49.0 | 0.00 | 1.83 | 1.71 |
+| Llama-3.2-3B | French | S-PID | 14.0 | 1.98 | 1.21 | 0.67 |
+| Llama-3.2-3B | French | A-LQR | 43.0 | 1.24 | 1.76 | 1.09 |
+| Llama-3.2-3B | French | H∞ (ours) | 38.0 | 0.00 | 1.75 | 1.59 |
+| Llama-3.2-3B | Japanese | Original | 27.0 | 0.00 | 1.56 | 1.34 |
+| Llama-3.2-3B | Japanese | S-PID | 10.0 | 1.96 | 0.67 | 0.63 |
+| Llama-3.2-3B | Japanese | A-LQR | 26.0 | 1.94 | 1.68 | 1.31 |
+| Llama-3.2-3B | Japanese | H∞ (ours) | 25.0 | 0.02 | 1.53 | 1.35 |
+| Llama-3.2-3B | Swahili | Original | 40.0 | 0.00 | 1.79 | 1.49 |
+| Llama-3.2-3B | Swahili | S-PID | 2.0 | 1.90 | 0.47 | 0.38 |
+| Llama-3.2-3B | Swahili | A-LQR | 22.0 | 0.68 | 1.47 | 0.98 |
+| Llama-3.2-3B | Swahili | H∞ (ours) | 31.0 | 0.02 | 1.70 | 1.39 |
+| Llama-3.2-3B | Telugu | Original | 6.0 | 0.00 | 1.43 | 1.07 |
+| Llama-3.2-3B | Telugu | S-PID | 6.0 | 1.90 | 0.79 | 0.46 |
+| Llama-3.2-3B | Telugu | A-LQR | 21.0 | 1.86 | 1.44 | 1.25 |
+| Llama-3.2-3B | Telugu | H∞ (ours) | 6.0 | 0.00 | 1.42 | 1.11 |
 
 ## Method
 
 - Task: solve matched MGSM arithmetic problems in Chinese, French, Japanese, Swahili, and Telugu while steering every response toward Spanish. English and Spanish are excluded from evaluation.
 - Direction: all 250 matched English–Spanish MGSM pairs define the Spanish steering direction. A-LQR and H∞ share the same 50-Jacobian dynamics estimate. H∞ additionally fits its disturbance geometry and robust controller without changing the shared dynamics matrix.
 - Prompting: each language uses its native eight-shot worked-example prompt. Generation is deterministic, limited to 256 new tokens, and runs with evaluated-model KV cache disabled.
-- Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, and `google/gemma-3-4b-it` at revision `093f9f388b31de276ce2de164bdc2081324b9767`.
-- Evaluation size: Qwen uses all 250 problems per language for Original, S-PID, A-LQR, and H∞; Gemma uses the frozen 100-problem subset per language for S-PID, A-LQR, and H∞. The summary macro-averages the five language means independently within each model.
+- Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, and `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`.
+- Evaluation size: Qwen uses all 250 problems per language and Llama uses the frozen 100-problem subset per language. Both models report Original, S-PID, A-LQR, and H∞ on identical problem identities within each model. The summary macro-averages the five language means independently within each model.
 
 ## Measures
 
@@ -55,7 +60,7 @@
 | Instruction relevance (0–2) ↑ | Whether the response addresses and attempts the arithmetic task. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Language quality of the generated response. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
-These are descriptive means on one fixed evaluation set per language, not repeated trials; therefore the table does not report standard errors. Qwen uses 250 problems per language and Gemma uses the frozen 100-problem subset; every method within a model uses identical problem identities.
+These are descriptive means on one fixed evaluation set per language, not repeated trials; therefore the table does not report standard errors. Qwen uses 250 problems per language and Llama uses the frozen 100-problem subset; every method within a model uses identical problem identities.
 
 ## Hyperparameters
 
@@ -65,6 +70,7 @@ These are descriptive means on one fixed evaluation set per language, not repeat
 | Qwen3-4B | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
 | Qwen3-4B | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
 | Qwen3-4B | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.316227766; R = 1; γ★ = 11.0736; selected on 50 disjoint GSM8K training prompts |
-| Gemma-3-4B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
-| Gemma-3-4B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
-| Gemma-3-4B-Instruct | H∞ | R = 1; selected from the frozen 12-point Q/R–Qf/R grid on 50 disjoint GSM8K training prompts |
+| Llama-3.2-3B-Instruct | Original | No intervention |
+| Llama-3.2-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
+| Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.2-3B-Instruct | H∞ | λ = 0.75; Q/R = 0.01; Qf/R = 0.1; R = 1; γ★ = 0.554693; λ selected from the frozen six-point sweep and costs selected from the frozen 12-point grid on 50 disjoint GSM8K training prompts |
