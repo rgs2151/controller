@@ -2,8 +2,8 @@
 
 ## Pipeline card
 
-- **Status:** Qwen3-4B is complete; Llama-3.2-3B-Instruct is provisioned as the
-  next run.
+- **Status:** Qwen3-4B is complete; the first Llama-3.2-3B-Instruct run is
+  superseded and awaits fixed-target H∞ recalibration.
 - **Task:** Solve MGSM arithmetic problems with native eight-shot examples.
 - **Distribution shift:** Input language changes across Chinese, French, Japanese,
   Swahili, and Telugu.
@@ -15,15 +15,15 @@
 - **H∞ disturbance data:** 200 frozen GSM8K training questions.
 - **Baseline settings:** Fixed S-PID and A-LQR settings; no sweep.
 - **H∞ selection:** 50 disjoint GSM8K questions shared by every candidate;
-  first select lambda at `Q/R=0.1`, `Qf/R=0.1`, `R=1`, then select from the
-  12-point cost grid. Both stages maximize AXBench Overall.
+  `lambda=1.5` is fixed to the same target as A-LQR, and the 12-point cost grid
+  maximizes the per-response accuracy/AXBench-Overall weighted harmonic mean.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
 - **Models:** Qwen3-4B and Llama-3.2-3B-Instruct.
 - **Methods:** Original, S-PID, A-LQR, and H∞ for both models.
 - **Scoring:** Exact final-number accuracy, Spanish adherence, instruction
   relevance, fluency, and overall steering.
-- **Evaluation size:** Per model, 900 H∞ selection generations and 2,000 final
+- **Evaluation size:** Per model, 600 H∞ selection generations and 2,000 final
   generations.
 
 ## Question
@@ -67,14 +67,14 @@ question itself moves into unseen input languages, while retaining correctness?
 - **A-LQR:** fixed `lambda=1.5`, `Q=0.1`, `R=1`, `Qf=0.1`. No sweep.
 - **H∞ development set:** 50 additional GSM8K training questions, disjoint from
   the 200 disturbance prompts.
-- **H∞ lambda stage:** sweep the configured lambda values while holding
-  `Q/R=0.1`, `Qf/R=0.1`, and `R=1`; select maximum AXBench Overall, breaking an
-  exact tie toward the smaller lambda. This stage is composition-configurable
-  and may be disabled.
+- **H∞ target:** fixed `lambda=1.5`, exactly matching A-LQR. The generic optional
+  lambda-sweep implementation remains available but is disabled for every run.
 - **H∞ grid:** `R=1`, `Q/R in {0.01, 0.1, 1, 10}`, and
-  `Qf/R in {0.01, 0.1, 0.316...}` using the selected lambda.
-- **Objective:** mean of the per-response harmonic mean of AXBench concept
-  relevance, instruction relevance, and fluency.
+  `Qf/R in {0.01, 0.1, 0.316...}` at the fixed target.
+- **Objective:** mean of the per-response 50/50 weighted harmonic mean of exact
+  answer accuracy and normalized AXBench Overall. AXBench Overall is itself the
+  harmonic mean of Spanish adherence, instruction relevance, and fluency. A
+  response receives zero composite credit if either accuracy or Overall is zero.
 
 ## 5. Final evaluation
 
@@ -96,8 +96,8 @@ question itself moves into unseen input languages, while retaining correctness?
 
 - Completed Qwen: `100 × 5 languages × 4 methods = 2,000` generations.
 - Planned Llama: `100 × 5 languages × 4 methods = 2,000` generations.
-- H∞ selection per model: `6 × 50` lambda-stage generations followed by
-  `12 × 50` cost-grid generations, for `900` short generations total.
+- H∞ selection per model: `12 × 50 = 600` cost-grid generations. There is no
+  setpoint-multiplier sweep.
 - There are no repeated final-evaluation seeds.
 
 ## References
