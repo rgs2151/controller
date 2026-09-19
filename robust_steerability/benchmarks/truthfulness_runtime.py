@@ -76,6 +76,12 @@ TRUTHFULNESS_CONCEPT = "truthful, factually accurate, and non-misleading answers
 HINF_METHOD = "h_infinity"
 HINF_GENERATION_BATCH_SIZE = 8
 GENERATION_BATCH_SIZE_OVERRIDE: int | None = None
+HINF_GRID_CONFIGURATION_SOURCE = (
+    "truthfulness H-infinity Q/R and Qf/R calibration grid"
+)
+HINF_FIXED_CONFIGURATION_SOURCE = (
+    "fixed configuration supplied at calibration launch"
+)
 
 
 def _configure_runtime(
@@ -331,13 +337,18 @@ def _load_selected_hinf(
         paths["selected_controller"], map_location="cpu", weights_only=True, mmap=True
     )
     controller_identity = controller.get("identity", {})
+    expected_configuration_source = (
+        HINF_FIXED_CONFIGURATION_SOURCE
+        if strategy == "fixed"
+        else HINF_GRID_CONFIGURATION_SOURCE
+    )
     if (
         controller_identity.get("model")
         != [MODELS[model_key].model_id, MODELS[model_key].revision]
         or controller_identity.get("task") != "truthfulness"
         or controller_identity.get("parameters") != parameters
         or controller_identity.get("configuration_source")
-        != configuration.get("source")
+        != expected_configuration_source
         or controller_identity.get("configuration_id")
         != configuration.get("configuration_id")
         or not bool(controller.get("feasible"))
