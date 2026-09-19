@@ -96,6 +96,8 @@ ALQR_PAPER_SELECTIONS = {
         "gemma2b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
         "llama8b": LQRSetting(multiplier=2.0, q=0.1, r=10.0, q_final=10.0),
         "qwen14b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
+        # First frozen setting in the paper-producing Qwen-32B protocol.
+        "qwen32b": LQRSetting(multiplier=2.0, q=1.0, r=5.0, q_final=0.1),
     },
 }
 
@@ -144,12 +146,16 @@ SPID_PROJECT_SELECTIONS = {
     "truthfulness": {
         "gemma2b": {"lambda": 1.0, "kp": 0.7, "ki": 0.01, "kd": 0.1},
         "llama8b": {"lambda": 1.0, "kp": 0.1, "ki": 0.1, "kd": 0.0},
+        "qwen14b": {"lambda": 2.0, "kp": 0.5, "ki": 0.01, "kd": 0.01},
+        "qwen32b": {"lambda": 1.5, "kp": 0.7, "ki": 0.1, "kd": 0.0},
     },
 }
 ITI_PROJECT_SELECTIONS = {
     "truthfulness": {
         "gemma2b": {"top_heads": 32, "alpha": 10.0},
         "llama8b": {"top_heads": 32, "alpha": 10.0},
+        "qwen14b": {"top_heads": 32, "alpha": 10.0},
+        "qwen32b": {"top_heads": 32, "alpha": 10.0},
     },
 }
 
@@ -179,6 +185,11 @@ ACT_MODULE_PATTERNS = {
         r"model.layers.*.mlp.down_proj",
         r"model.layers.*.mlp.gate_proj",
     ),
+    "qwen32b": (
+        r"model.layers.*.mlp.up_proj",
+        r"model.layers.*.mlp.down_proj",
+        r"model.layers.*.mlp.gate_proj",
+    ),
 }
 
 
@@ -193,6 +204,9 @@ ODESTEER_PAPER_SELECTIONS = {
         # The truthfulness adapter did not preserve a final Llama selection.
         # Freeze its preserved same-model comparison setting without a sweep.
         "llama8b": (19, 25.0),
+        # The paper uses the same model-specific ODESteer setting for
+        # toxicity and truthfulness.
+        "qwen14b": (24, 65.0),
     },
 }
 ODESTEER_PARAMETERS = {

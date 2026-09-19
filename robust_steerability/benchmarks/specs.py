@@ -44,6 +44,10 @@ MODELS = {
         "qwen14b", "Qwen-2.5-14B", "Qwen/Qwen2.5-14B",
         "97e1e76335b7017d8f67c08a19d103c0504298c9", 4, 8,
     ),
+    "qwen32b": ModelSpec(
+        "qwen32b", "Qwen-2.5-32B", "Qwen/Qwen2.5-32B",
+        "1818d35814b8319459f4bd55ed1ac8709630f003", 2, 4,
+    ),
     "qwen25_3b_instruct": ModelSpec(
         "qwen25_3b_instruct",
         "Qwen-2.5-3B-Instruct",
