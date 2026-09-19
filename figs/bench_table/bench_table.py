@@ -234,7 +234,11 @@ MGSM_METHODS = (
 )
 MGSM_MODELS = (
     ("qwen3_4b", "Qwen3-4B", ("original", "spid", "alqr", "h_infinity")),
-    ("gemma3_4b_it", "Gemma-3-4B-Instruct", ("spid", "alqr", "h_infinity")),
+    (
+        "llama32_3b_instruct",
+        "Llama-3.2-3B",
+        ("original", "spid", "alqr", "h_infinity"),
+    ),
 )
 MGSM_METRICS = (
     Metric("mgsm_exact_match.score", "Accuracy (%) ↑", r"Accuracy (\%) $\uparrow$", 1, True),
@@ -249,8 +253,8 @@ MGSM_DOCUMENTATION = r"""## Method
 - Task: solve matched MGSM arithmetic problems in Chinese, French, Japanese, Swahili, and Telugu while steering every response toward Spanish. English and Spanish are excluded from evaluation.
 - Direction: all 250 matched English–Spanish MGSM pairs define the Spanish steering direction. A-LQR and H∞ share the same 50-Jacobian dynamics estimate. H∞ additionally fits its disturbance geometry and robust controller without changing the shared dynamics matrix.
 - Prompting: each language uses its native eight-shot worked-example prompt. Generation is deterministic, limited to 256 new tokens, and runs with evaluated-model KV cache disabled.
-- Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, and `google/gemma-3-4b-it` at revision `093f9f388b31de276ce2de164bdc2081324b9767`.
-- Evaluation size: Qwen uses all 250 problems per language for Original, S-PID, A-LQR, and H∞; Gemma uses the frozen 100-problem subset per language for S-PID, A-LQR, and H∞. The summary macro-averages the five language means independently within each model.
+- Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, and `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`.
+- Evaluation size: Qwen uses all 250 problems per language and Llama uses the frozen 100-problem subset per language. Both models report Original, S-PID, A-LQR, and H∞ on identical problem identities within each model. The summary macro-averages the five language means independently within each model.
 
 ## Measures
 
@@ -261,7 +265,7 @@ MGSM_DOCUMENTATION = r"""## Method
 | Instruction relevance (0–2) ↑ | Whether the response addresses and attempts the arithmetic task. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Language quality of the generated response. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
-These are descriptive means on one fixed evaluation set per language, not repeated trials; therefore the table does not report standard errors. Qwen uses 250 problems per language and Gemma uses the frozen 100-problem subset; every method within a model uses identical problem identities.
+These are descriptive means on one fixed evaluation set per language, not repeated trials; therefore the table does not report standard errors. Qwen uses 250 problems per language and Llama uses the frozen 100-problem subset; every method within a model uses identical problem identities.
 
 ## Hyperparameters
 
@@ -271,9 +275,10 @@ These are descriptive means on one fixed evaluation set per language, not repeat
 | Qwen3-4B | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
 | Qwen3-4B | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
 | Qwen3-4B | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.316227766; R = 1; γ★ = 11.0736; selected on 50 disjoint GSM8K training prompts |
-| Gemma-3-4B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
-| Gemma-3-4B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
-| Gemma-3-4B-Instruct | H∞ | R = 1; selected from the frozen 12-point Q/R–Qf/R grid on 50 disjoint GSM8K training prompts |
+| Llama-3.2-3B-Instruct | Original | No intervention |
+| Llama-3.2-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
+| Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.2-3B-Instruct | H∞ | λ = 0.75; Q/R = 0.01; Qf/R = 0.1; R = 1; γ★ = 0.554693; λ selected from the frozen six-point sweep and costs selected from the frozen 12-point grid on 50 disjoint GSM8K training prompts |
 """
 
 
@@ -785,9 +790,9 @@ def _mgsm_best_values(rows: list[dict]) -> tuple[float, ...]:
 def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
     column_count = len(MGSM_METRICS)
     caption = (
-        "Full MGSM multilingual-transfer results for Qwen3-4B and Gemma-3-4B-Instruct. Qwen uses 250 problems per language; Gemma uses the frozen 100-problem subset."
+        "Full MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct. Qwen uses 250 problems per language; Llama uses the frozen 100-problem subset."
         if full
-        else "Summary MGSM multilingual-transfer results for Qwen3-4B and Gemma-3-4B-Instruct, macro-averaged equally across five languages within each model."
+        else "Summary MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct, macro-averaged equally across five languages within each model."
     )
     label = "tab:mgsm-full" if full else "tab:mgsm-overall"
     lines = [
@@ -869,7 +874,7 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
             model_rows = [row for row in overall if row["model_key"] == model_key]
             best_values = _mgsm_best_values(model_rows)
             for method_index, row in enumerate(model_rows):
-                model = f"\\multirow{{{len(model_rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{model_label}}}}}" if method_index == 0 else ""
+                model = f"\\multirow{{{len(model_rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{\\scriptsize {model_label}}}}}" if method_index == 0 else ""
                 values = " & ".join(
                     _mgsm_tex_value(
                         value,
