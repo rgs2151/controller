@@ -6,6 +6,7 @@ import argparse
 import json
 import shutil
 import sys
+import tomllib
 from dataclasses import asdict, replace
 from pathlib import Path
 
@@ -15,7 +16,10 @@ import torch
 from robust_steerability.artifacts import configuration_hash
 from robust_steerability.benchmarks import mgsm_artifacts as artifacts
 from robust_steerability.benchmarks import mgsm_runtime as runtime
-from robust_steerability.benchmarks.calibration import require_nonzero_selection_metric
+from robust_steerability.benchmarks.calibration import (
+    require_nonzero_selection_metric,
+    weighted_harmonic_mean,
+)
 from robust_steerability.benchmarks.composition import load_composition
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import artifact_root, calibration_root
@@ -30,11 +34,13 @@ from robust_steerability.experiments.diagnostics import score as freeze_diagnost
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.exact import harmonic_mean
+from robust_steerability.judges.mgsm import exact_match, extract_final_number
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.huggingface import release_cuda_memory
 
 
 BENCHMARK = artifacts.BENCHMARK
+REPO = Path(__file__).resolve().parents[2]
 Q_OVER_R = (0.01, 0.1, 1.0, 10.0)
 Q_FINAL_OVER_R = (0.01, 0.1, 10**-0.5)
 FIXED_R = 1.0
@@ -45,14 +51,26 @@ COMPONENT_SCORERS = (
     "axbench_fluency",
 )
 OVERALL_SCORER = "axbench_overall"
+EXACT_SCORER = "mgsm_exact_match"
+QUALITY_SCORER = "mgsm_quality_composite"
 COMPOSITION = load_composition(BENCHMARK)
+CALIBRATION_CONFIG = tomllib.loads(
+    (REPO / "benchmarks/mgsm/benchmark.toml").read_text()
+)["calibration"]
 LAMBDA_SWEEP = COMPOSITION.calibration.h_infinity_lambda_sweep
 
 
 def _selection_scorer(metric: str) -> str:
-    if metric != "mean_axbench_overall":
-        raise ValueError(f"Unsupported MGSM H-infinity selection metric: {metric}")
-    return OVERALL_SCORER
+    scorers = {
+        "mean_axbench_overall": OVERALL_SCORER,
+        QUALITY_SCORER: QUALITY_SCORER,
+    }
+    try:
+        return scorers[metric]
+    except KeyError as error:
+        raise ValueError(
+            f"Unsupported MGSM H-infinity selection metric: {metric}"
+        ) from error
 
 
 LAMBDA_SELECTION_SCORER = _selection_scorer(LAMBDA_SWEEP.selection_metric)
@@ -362,6 +380,40 @@ def _score_axbench_generations(
         )
 
 
+def _score_exact_generations(
+    model_key: str,
+    generations: list[Path],
+    scorer_root: Path,
+) -> None:
+    """Score calibration answers with the same exact-number rule as evaluation."""
+
+    tuning = artifacts.prepare(model_key)["calibration"]["tuning"]
+    answers = {}
+    for row in tuning:
+        answer = extract_final_number(str(row["answer"]))
+        if answer is None:
+            raise ValueError(f"Could not parse GSM8K calibration answer: {row['prompt_id']}")
+        answers[str(row["prompt_id"])] = answer
+    for generation in generations:
+        destination = scorer_cache_path(scorer_root, generation, EXACT_SCORER)
+        if destination.exists():
+            saved = json.loads(destination.read_text())
+            if saved.get("status") == "complete":
+                continue
+        payload = json.loads(generation.read_text())
+        rows = []
+        for repetition in payload["repetitions"]:
+            for row in repetition["rows"]:
+                prompt_id = str(row["prompt_id"])
+                result = exact_match(str(row["completion"]), answers[prompt_id])
+                rows.append({
+                    "prompt_id": prompt_id,
+                    "repetition": int(repetition["repetition"]),
+                    **result,
+                })
+        _write_json(destination, {"status": "complete", "rows": rows})
+
+
 def score_lambda_sweep(
     model_key: str,
     calibration_id: str,
@@ -599,6 +651,7 @@ def score_grid(
         api_concurrency=api_concurrency,
         api_batch_size=api_batch_size,
     )
+    _score_exact_generations(model_key, generations, root)
 
 
 def _freeze_selected_diagnostics(
@@ -648,6 +701,16 @@ def select(model_key: str, calibration_id: str) -> dict:
     root = _root(model_key, calibration_id)
     multiplier = selected_multiplier(model_key, calibration_id)
     grid_root = _q_grid_root(model_key, calibration_id)
+    quality_config = CALIBRATION_CONFIG[QUALITY_SCORER]
+    quality_weights = (
+        float(quality_config["mgsm_exact_match_weight"]),
+        float(quality_config["axbench_overall_weight"]),
+    )
+    if not np.isclose(sum(quality_weights), 1.0):
+        raise ValueError("MGSM-quality calibration weights must sum to one")
+    normalizer = float(quality_config["axbench_score_normalizer"])
+    if normalizer <= 0:
+        raise ValueError("AXBench calibration score normalizer must be positive")
     summaries = []
     for configuration in grid(multiplier):
         generation = grid_root / "generations" / f"{configuration['grid_id']}.json"
@@ -657,20 +720,66 @@ def select(model_key: str, calibration_id: str) -> dict:
                 scorer_cache_path(grid_root, generation, scorer).read_text()
             )
             means[scorer] = float(np.mean([float(row["score"]) for row in payload["rows"]]))
+        exact_rows = json.loads(
+            scorer_cache_path(grid_root, generation, EXACT_SCORER).read_text()
+        )["rows"]
+        overall_rows = json.loads(
+            scorer_cache_path(grid_root, generation, OVERALL_SCORER).read_text()
+        )["rows"]
+        exact_by_prompt = {
+            str(row["prompt_id"]): float(row["score"]) for row in exact_rows
+        }
+        overall_by_prompt = {
+            str(row["prompt_id"]): float(row["score"]) for row in overall_rows
+        }
+        if exact_by_prompt.keys() != overall_by_prompt.keys():
+            raise ValueError(
+                f"MGSM calibration scorer alignment mismatch for {configuration['grid_id']}"
+            )
+        response_scores = [
+            weighted_harmonic_mean(
+                (
+                    exact_by_prompt[prompt_id],
+                    float(np.clip(overall_by_prompt[prompt_id] / normalizer, 0.0, 1.0)),
+                ),
+                quality_weights,
+            )
+            for prompt_id in exact_by_prompt
+        ]
+        means[EXACT_SCORER] = float(np.mean(list(exact_by_prompt.values())))
+        means[QUALITY_SCORER] = float(np.mean(response_scores))
         summaries.append({**configuration, **means})
     require_nonzero_selection_metric(
         summaries,
         GRID_SELECTION_SCORER,
         context="MGSM H-infinity Q/Qf calibration",
     )
-    selected = sorted(
-        summaries,
-        key=lambda row: (
-            -row[GRID_SELECTION_SCORER],
+    if COMPOSITION.calibration.selection_metric == QUALITY_SCORER:
+        rank_key = lambda row: (
+            -row[QUALITY_SCORER],
+            -row[EXACT_SCORER],
+            -row[OVERALL_SCORER],
             row["q"],
             row["q_final"],
-        ),
-    )[0]
+        )
+        selection_description = (
+            "mean per-response weighted harmonic mean of exact-answer accuracy "
+            "and normalized AXBench Overall"
+        )
+        selection_source = (
+            "MGSM exact-accuracy/AXBench-Overall weighted-harmonic calibration argmax"
+        )
+        metric_configuration = quality_config
+    else:
+        rank_key = lambda row: (
+            -row[OVERALL_SCORER],
+            row["q"],
+            row["q_final"],
+        )
+        selection_description = "mean per-response AXBench three-judge harmonic mean"
+        selection_source = "AXBench three-judge harmonic-mean calibration argmax"
+        metric_configuration = None
+    selected = sorted(summaries, key=rank_key)[0]
     parameters = {key: float(selected[key]) for key in ("lambda", "q", "r", "q_final")}
     controller = torch.load(
         grid_root / "controllers" / f"{selected['grid_id']}.pt",
@@ -687,9 +796,8 @@ def select(model_key: str, calibration_id: str) -> dict:
         "protocol": {
             "selection_strategy": "grid",
             "selection_metric": COMPOSITION.calibration.selection_metric,
-            "selection_metric_description": (
-                "mean per-response AXBench three-judge harmonic mean"
-            ),
+            "selection_metric_description": selection_description,
+            "metric_configuration": metric_configuration,
             "tuning_samples": 50,
             "tuning_repetitions": 1,
             "evaluated_model_kv_cache": False,
@@ -709,7 +817,7 @@ def select(model_key: str, calibration_id: str) -> dict:
             "configuration_id": selected["grid_id"],
             "parameters": parameters,
             "gamma_star": float(controller["gamma_star"]),
-            "source": "AXBench three-judge harmonic-mean calibration argmax",
+            "source": selection_source,
         },
         "grid": summaries,
         "diagnostic_bundle": str(diagnostic.relative_to(root)),
