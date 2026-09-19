@@ -1,7 +1,8 @@
 # L-CiteEval Spanish-transfer benchmark
 
-This is the current L-CiteEval pipeline. The historical positive-sentiment
-Qwen run remains under `benchmarks/lciteeval/` and is never reused here.
+This pipeline is independent from the positive-sentiment L-CiteEval benchmark
+under `benchmarks/lciteeval/`. They have separate entry points, artifacts,
+calibrations, evaluations, and results.
 
 - `artifacts`: fit the Spanish-minus-English MGSM direction and average 50
   Spanish-question Jacobians into the `A` shared by A-LQR and H∞.
@@ -16,8 +17,8 @@ Qwen run remains under `benchmarks/lciteeval/` and is never reused here.
   stage is used.
 
 ```bash
-python -m robust_steerability.benchmarks.lciteeval artifacts --model llama31_8b_instruct --devices auto
-python -m robust_steerability.benchmarks.lciteeval calibrate --model llama31_8b_instruct --devices auto
-python -m robust_steerability.benchmarks.lciteeval evaluate --model llama31_8b_instruct --devices auto
-python -m robust_steerability.benchmarks.lciteeval score --model llama31_8b_instruct --scorers default --devices auto
+python -m robust_steerability.benchmarks.lciteeval_spanish artifacts --model llama31_8b_instruct --devices auto
+python -m robust_steerability.benchmarks.lciteeval_spanish calibrate --model llama31_8b_instruct --devices auto
+python -m robust_steerability.benchmarks.lciteeval_spanish evaluate --model llama31_8b_instruct --devices auto
+python -m robust_steerability.benchmarks.lciteeval_spanish score --model llama31_8b_instruct --scorers default --devices auto
 ```

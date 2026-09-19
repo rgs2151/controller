@@ -6,16 +6,16 @@ import argparse
 import json
 import sys
 
-from robust_steerability.benchmarks import lciteeval_artifacts as artifacts
-from robust_steerability.benchmarks import lciteeval_calibration as calibration
-from robust_steerability.benchmarks import lciteeval_runtime as runtime
+from robust_steerability.benchmarks import lciteeval_spanish_artifacts as artifacts
+from robust_steerability.benchmarks import lciteeval_spanish_calibration as calibration
+from robust_steerability.benchmarks import lciteeval_spanish_runtime as runtime
 from robust_steerability.benchmarks.composition import (
     load_composition,
     requested_scorers,
     validate_requested_scorers,
 )
 from robust_steerability.benchmarks.execution import default_run_id, tracked_stage
-from robust_steerability.benchmarks.launcher import run_data_shards, run_jobs
+from robust_steerability.benchmarks.launcher import run_data_shards
 from robust_steerability.benchmarks.layout import calibration_root
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.experiments.resources import resolve_cuda_devices
@@ -23,7 +23,7 @@ from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.specs import scorer_spec
 
 
-COMPOSITION = load_composition("lciteeval")
+COMPOSITION = load_composition("lciteeval_spanish")
 DATASETS = COMPOSITION.dataset_keys
 DEFAULT_DATASETS = COMPOSITION.default_datasets
 METHODS = COMPOSITION.available_methods
@@ -48,7 +48,7 @@ def _write_selection(model_key: str, method: str, calibration_id: str) -> None:
     else:
         return
     destination = calibration_root(
-        "lciteeval", model_key, method, calibration_id
+        COMPOSITION.benchmark, model_key, method, calibration_id
     ) / "selection.json"
     if destination.exists():
         return
@@ -58,7 +58,7 @@ def _write_selection(model_key: str, method: str, calibration_id: str) -> None:
             {
                 "schema_version": 1,
                 "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
-                "benchmark": "lciteeval",
+                "benchmark": COMPOSITION.benchmark,
                 "method": method,
                 "calibration_id": calibration_id,
                 "source": source,
@@ -125,7 +125,7 @@ def evaluation_stage(
             command = [
                 sys.executable,
                 "-m",
-                "robust_steerability.benchmarks.lciteeval_runtime",
+                "robust_steerability.benchmarks.lciteeval_spanish_runtime",
                 "--stage",
                 "generate-shard",
                 "--model",
@@ -166,8 +166,6 @@ def score_stage(
     methods: list[str],
     datasets: list[str],
     scorers: tuple[str, ...] | None,
-    devices: list[str],
-    log_root,
     api_concurrency: int,
     api_batch_size: int,
     use_cache: bool,
@@ -184,35 +182,30 @@ def score_stage(
             if not runtime.generation_complete(generation):
                 raise ValueError(f"Missing completed generation: {generation}")
             generation_paths.append((condition, method, generation))
-            if "lcite_answer_overlap" in selected:
-                runtime.score_answer_overlap(model_key, generation, use_cache=use_cache)
+    for condition, _method, generation in generation_paths:
+        selected = requested_by_dataset[condition]
+        if "axbench_rule_spanish" in selected:
+            runtime.score_spanish_adherence(model_key, generation, use_cache=use_cache)
 
-    citation_jobs = []
-    for condition, method, generation in generation_paths:
-        if "lcite_citation_nli" not in requested_by_dataset[condition]:
-            continue
-        citation_jobs.append(
-            (
-                f"citation-{condition}-{method}",
-                [
-                    sys.executable,
-                    "-m",
-                    "robust_steerability.benchmarks.lciteeval_runtime",
-                    "--stage",
-                    "score-citations",
-                    "--model",
-                    model_key,
-                    "--device",
-                    "{device}",
-                    "--generation-path",
-                    str(generation),
-                    "--kv-cache",
-                    "on" if use_cache else "off",
-                ],
-            )
+    bilingual_scorers = sorted(
+        {
+            scorer
+            for selected in requested_by_dataset.values()
+            for scorer in selected
+            if scorer_spec(scorer).backend == "openai_lcite_bilingual"
+        }
+    )
+    if bilingual_scorers:
+        from robust_steerability.judges import lciteeval_openai
+
+        lciteeval_openai.score_generations(
+            [generation for _condition, _method, generation in generation_paths],
+            runtime.cache_root(model_key, use_cache),
+            runtime.dataset_map(model_key),
+            bilingual_scorers,
+            concurrency=api_concurrency,
+            batch_size=api_batch_size,
         )
-    if citation_jobs:
-        run_jobs(citation_jobs, devices, log_root / "citation-scoring")
 
     api_scorers = sorted(
         {
@@ -231,7 +224,7 @@ def score_stage(
             batch_size=api_batch_size,
         )
     for condition, _method, generation in generation_paths:
-        if "axbench_overall" in requested_by_dataset[condition]:
+        if "axbench_spanish_overall" in requested_by_dataset[condition]:
             runtime.score_axbench_overall(model_key, generation, use_cache=use_cache)
     for condition, method, _generation in generation_paths:
         runtime.summarize(
@@ -300,15 +293,14 @@ def main() -> None:
         if arguments.stage == "score"
         else set()
     )
-    gpu_required = arguments.stage != "score" or any(
-        scorer_spec(key).backend == "huggingface_lcite_nli"
-        for key in selected_score_keys
-    )
+    gpu_required = arguments.stage != "score"
     devices = resolve_cuda_devices(arguments.devices) if gpu_required else []
-    run_id = arguments.run_id or default_run_id("lciteeval", arguments.model, arguments.stage)
+    run_id = arguments.run_id or default_run_id(
+        COMPOSITION.benchmark, arguments.model, arguments.stage
+    )
     with tracked_stage(
         run_id=run_id,
-        benchmark="lciteeval",
+        benchmark=COMPOSITION.benchmark,
         model=arguments.model,
         stage=arguments.stage,
         methods=methods,
@@ -355,8 +347,6 @@ def main() -> None:
                 methods,
                 datasets,
                 scorers,
-                devices,
-                log_root,
                 arguments.api_concurrency,
                 arguments.api_batch_size,
                 use_cache,

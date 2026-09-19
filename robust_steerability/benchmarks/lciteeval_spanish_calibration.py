@@ -1,4 +1,4 @@
-"""H-infinity calibration for the AXBench-steered L-CiteEval benchmark."""
+"""H-infinity calibration for Spanish-transfer L-CiteEval."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ import numpy as np
 import torch
 
 from robust_steerability.artifacts import configuration_hash
-from robust_steerability.benchmarks import lciteeval_artifacts as artifacts
-from robust_steerability.benchmarks import lciteeval_runtime as runtime
+from robust_steerability.benchmarks import lciteeval_spanish_artifacts as artifacts
+from robust_steerability.benchmarks import lciteeval_spanish_runtime as runtime
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import artifact_root, calibration_root
 from robust_steerability.benchmarks.specs import MODELS
@@ -29,6 +29,7 @@ from robust_steerability.experiments.diagnostics import score as freeze_diagnost
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.exact import harmonic_mean
+from robust_steerability.judges.mgsm import spanish_rule_score
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.modeling.huggingface import cuda_device_index, release_cuda_memory
@@ -41,13 +42,15 @@ Q_OVER_R = (0.01, 0.1, 1.0, 10.0)
 Q_FINAL_OVER_R = (0.01, 0.1, 10**-0.5)
 FIXED_R = 1.0
 SETPOINT_MULTIPLIER = 1.5
-GRID_SELECTION_SOURCE = "AXBench three-judge harmonic-mean calibration argmax"
+GRID_SELECTION_SOURCE = "Spanish adherence/relevance/fluency harmonic-mean calibration argmax"
 FIXED_SELECTION_SOURCE = "fixed configuration supplied at calibration launch"
 API_SCORERS = (
-    "axbench_concept_relevance",
     "axbench_instruction_relevance",
     "axbench_fluency",
 )
+COMPONENT_SCORERS = ("axbench_rule_spanish", *API_SCORERS)
+OVERALL_SCORER = "axbench_spanish_overall"
+TUNING_PROMPTS = 10
 
 
 def _root(model_key: str, calibration_id: str) -> Path:
@@ -93,10 +96,10 @@ def _settings(model_key: str, q: float, r: float, q_final: float) -> dict[str, o
     return {
         "behavior": BENCHMARK,
         "seed": 42,
-        "fit_prompts_per_class": 72,
+        "fit_prompts_per_class": 250,
         "disturbance_prompts": 200,
-        "calibration_max_length": 1024,
-        "activation_batch_size": model.activation_batch_size,
+        "calibration_max_length": 8192,
+        "activation_batch_size": 1,
         "jacobian_prompts": artifacts.JACOBIAN_PROMPTS,
         "jacobian_max_length": artifacts.JACOBIAN_MAX_LENGTH,
         "jacobian_vjp_chunk_size": model.jacobian_vjp_chunk_size,
@@ -143,10 +146,14 @@ def fit_base(
         "negative": data["calibration"]["undesired"],
         "positive": data["calibration"]["desired"],
         "jacobian": data["calibration"]["jacobian"],
-        "disturbance": data["calibration"]["disturbance"],
+        "disturbance": [
+            {**row, "text": row["model_input"]}
+            for row in data["calibration"]["disturbance"]
+        ],
         "dataset": {
-            "direction": "AXBench concept 499",
-            "tuning": "AlpacaEval frozen 50",
+            "direction": "250 matched MGSM English/Spanish questions",
+            "disturbance": "200 upstream 2WikiMultihopQA train prompts at about 8K",
+            "tuning": "first 10 frozen official L-CiteEval 2Wiki shortest-context questions",
             "evaluation": "L-CiteEval-Length HotpotQA",
         },
     }
@@ -233,11 +240,13 @@ def generate_worker(
         root / "base/controller.pt", map_location="cpu", weights_only=True, mmap=True
     )
     base = ControllerArtifact(**base_payload["artifact"])
-    prompts = [
-        runtime.format_short_instruction(tokenizer, str(row["text"]))
-        for row in data["calibration"]["tuning"]
-    ]
-    batch_size = generation_batch_size or MODELS[model_key].activation_batch_size
+    tuning_rows = data["calibration"]["tuning"][:TUNING_PROMPTS]
+    if len(tuning_rows) != TUNING_PROMPTS:
+        raise ValueError(
+            f"L-CiteEval H-infinity calibration requires {TUNING_PROMPTS} tuning prompts"
+        )
+    prompts = [str(row["model_input"]) for row in tuning_rows]
+    batch_size = generation_batch_size or 1
     for configuration in _grid()[shard_index::shard_count]:
         grid_id = str(configuration["grid_id"])
         destination = root / "grid/generations" / f"{grid_id}.json"
@@ -273,12 +282,12 @@ def generate_worker(
                 "prompt_id": row["prompt_id"],
                 "grid_id": grid_id,
                 "text": row["text"],
-                "concept": artifacts.AXBENCH_CONCEPT,
+                "concept": artifacts.SPANISH_CONCEPT,
                 "completion": completion,
                 "generated_tokens": count,
             }
             for row, completion, count in zip(
-                data["calibration"]["tuning"], completions, generated, strict=True
+                tuning_rows, completions, generated, strict=True
             )
         ]
         _write_json(
@@ -307,7 +316,13 @@ def generate_worker(
                         ),
                     }
                 ],
-                "repetitions": [{"repetition": 0, "sample_count": 50, "rows": rows}],
+                "repetitions": [
+                    {
+                        "repetition": 0,
+                        "sample_count": TUNING_PROMPTS,
+                        "rows": rows,
+                    }
+                ],
             },
         )
 
@@ -331,8 +346,21 @@ def score_grid(
         batch_size=api_batch_size,
     )
     for generation in generations:
+        payload = json.loads(generation.read_text())
+        local_rows = [
+            {
+                "prompt_id": row["prompt_id"],
+                **spanish_rule_score(str(row["completion"])),
+            }
+            for repetition in payload["repetitions"]
+            for row in repetition["rows"]
+        ]
+        _write_json(
+            scorer_cache_path(grid_root, generation, "axbench_rule_spanish"),
+            {"status": "complete", "rows": local_rows},
+        )
         maps = []
-        for scorer in API_SCORERS:
+        for scorer in COMPONENT_SCORERS:
             payload = json.loads(scorer_cache_path(grid_root, generation, scorer).read_text())
             maps.append({row["prompt_id"]: float(row["score"]) for row in payload["rows"]})
         rows = [
@@ -343,7 +371,7 @@ def score_grid(
             for prompt_id in maps[0]
         ]
         _write_json(
-            scorer_cache_path(grid_root, generation, "axbench_overall"),
+            scorer_cache_path(grid_root, generation, OVERALL_SCORER),
             {"status": "complete", "rows": rows},
         )
 
@@ -411,7 +439,7 @@ def select(model_key: str, calibration_id: str) -> dict:
     for configuration in _grid():
         generation = root / "grid/generations" / f"{configuration['grid_id']}.json"
         means = {}
-        for scorer in (*API_SCORERS, "axbench_overall"):
+        for scorer in (*COMPONENT_SCORERS, OVERALL_SCORER):
             payload = json.loads(
                 scorer_cache_path(root / "grid", generation, scorer).read_text()
             )
@@ -420,7 +448,8 @@ def select(model_key: str, calibration_id: str) -> dict:
     selected = sorted(
         summaries,
         key=lambda row: (
-            -row["axbench_overall"],
+            -row[OVERALL_SCORER],
+            -row["axbench_rule_spanish"],
             -row["axbench_instruction_relevance"],
             -row["axbench_fluency"],
             row["q"],
@@ -446,8 +475,8 @@ def select(model_key: str, calibration_id: str) -> dict:
         "calibration_id": calibration_id,
         "protocol": {
             "selection_strategy": "grid",
-            "selection_metric": "mean per-response AXBench three-judge harmonic mean",
-            "tuning_samples": 50,
+            "selection_metric": "mean per-response Spanish adherence/relevance/fluency harmonic mean",
+            "tuning_samples": TUNING_PROMPTS,
             "tuning_repetitions": 1,
             "evaluated_model_kv_cache": False,
             "q_over_r": list(Q_OVER_R),
@@ -576,7 +605,7 @@ def calibrate(
             [
                 sys.executable,
                 "-m",
-                "robust_steerability.benchmarks.lciteeval_calibration",
+                "robust_steerability.benchmarks.lciteeval_spanish_calibration",
                 "--stage",
                 "generate-worker",
                 "--model",
