@@ -114,6 +114,7 @@ def calibration_stage(
     generation_batch_size: int | None,
     api_concurrency: int,
     api_batch_size: int,
+    selection_metric: str,
     h_infinity_parameters: dict[str, float] | None,
 ) -> None:
     if "alqr" in methods:
@@ -127,6 +128,7 @@ def calibration_stage(
             generation_batch_size,
             api_concurrency=api_concurrency,
             api_batch_size=api_batch_size,
+            selection_metric=selection_metric,
             fixed_parameters=h_infinity_parameters,
         )
     runtime._configure_runtime(model_key, calibration_id)
@@ -397,6 +399,11 @@ def main() -> None:
     parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
+    parser.add_argument(
+        "--selection-metric",
+        choices=COMPOSITION.calibration.available_selection_metrics,
+        default=COMPOSITION.calibration.selection_metric,
+    )
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument("--h-infinity-q-over-r", type=float)
     parser.add_argument("--h-infinity-q-final-over-r", type=float)
@@ -472,6 +479,7 @@ def main() -> None:
             "scorers": sorted(selected_score_keys) if arguments.stage == "score" else [],
             "api_concurrency": arguments.api_concurrency,
             "api_batch_size": arguments.api_batch_size,
+            "selection_metric": arguments.selection_metric,
             "h_infinity_fixed_parameters": h_infinity_parameters,
         },
     ) as log_root:
@@ -487,6 +495,7 @@ def main() -> None:
                 arguments.generation_batch_size,
                 arguments.api_concurrency,
                 arguments.api_batch_size,
+                arguments.selection_metric,
                 h_infinity_parameters,
             )
         elif arguments.stage == "evaluate":

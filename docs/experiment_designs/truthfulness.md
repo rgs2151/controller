@@ -14,7 +14,8 @@
 - **H∞ disturbance data:** 200 disjoint TruthfulQA prompts.
 - **Baseline settings:** Published or frozen project settings; no baseline sweep.
 - **H∞ selection:** 50 further disjoint prompts; 32 cost configurations; maximize
-  AXBench overall steering.
+  the configured calibration objective. The default combines True, instruction
+  relevance, and fluency with weights .50/.25/.25.
 - **Final evaluation:** 817 questions × 5 seeds in English and Spanish; optional
   fixed 200-question five-shot MMLU.
 - **Models:** Gemma-2-2B, Llama-3-8B, and Qwen-2.5-14B.
@@ -67,9 +68,13 @@ when the same questions are translated into Spanish?
 - **H∞ development set:** 50 additional TruthfulQA prompts, disjoint from all fit
   records and final evaluation prompts.
 - **H∞ grid:** `R=1`, eight frozen `Q/R` values, and four frozen `Qf/R` values.
-- **Objective:** maximum mean AXBench overall steering, the harmonic mean of
-  truthful-concept relevance, instruction relevance, and fluency.
-- True and Informative are final outcomes, not selection objectives.
+- **Default objective:** mean per-response weighted harmonic mean of TruthfulQA
+  True, AXBench instruction relevance, and AXBench fluency, with weights
+  `.50/.25/.25`. A zero component gives that response a zero composite.
+- **Registered alternatives:** historical mean True percentage and mean AXBench
+  overall steering.
+- Informative and concept relevance are final outcomes, not default selection
+  components.
 
 ## 5. Final evaluation
 
