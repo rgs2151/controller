@@ -28,6 +28,9 @@ instruction relevance (.25), and AXBench fluency (.25). The configuration also
 registers the historical `truthfulqa_true_mean_percentage` objective and
 `mean_axbench_overall`; `--selection-metric` selects among them. Informative and
 concept relevance remain reported outcomes and do not enter the default objective.
+H∞ always uses the same model-specific published setpoint multiplier as A-LQR;
+there is no Truthfulness lambda sweep. Calibration sweeps only `Q/R` and `Qf/R`
+with `R=1`.
 
 ```bash
 python -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
