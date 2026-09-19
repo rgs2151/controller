@@ -15,6 +15,7 @@ import torch
 from robust_steerability.artifacts import configuration_hash
 from robust_steerability.benchmarks import mgsm_artifacts as artifacts
 from robust_steerability.benchmarks import mgsm_runtime as runtime
+from robust_steerability.benchmarks.calibration import require_nonzero_selection_metric
 from robust_steerability.benchmarks.composition import load_composition
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import artifact_root, calibration_root
@@ -402,6 +403,11 @@ def select_lambda(model_key: str, calibration_id: str) -> dict:
                 np.mean([float(row["score"]) for row in payload["rows"]])
             )
         summaries.append({**configuration, **means})
+    require_nonzero_selection_metric(
+        summaries,
+        LAMBDA_SELECTION_SCORER,
+        context="MGSM H-infinity lambda calibration",
+    )
     selected = sorted(
         summaries,
         key=lambda row: (-row[LAMBDA_SELECTION_SCORER], row["lambda"]),
@@ -652,6 +658,11 @@ def select(model_key: str, calibration_id: str) -> dict:
             )
             means[scorer] = float(np.mean([float(row["score"]) for row in payload["rows"]]))
         summaries.append({**configuration, **means})
+    require_nonzero_selection_metric(
+        summaries,
+        GRID_SELECTION_SCORER,
+        context="MGSM H-infinity Q/Qf calibration",
+    )
     selected = sorted(
         summaries,
         key=lambda row: (
