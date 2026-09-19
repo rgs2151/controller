@@ -15,7 +15,7 @@ import torch
 from robust_steerability.benchmarks.harmful_artifacts import (
     BENCHMARK,
     CONCEPT,
-    MODEL_KEY,
+    MODEL_KEYS,
     load_model,
     model_load_spec,
 )
@@ -43,7 +43,11 @@ from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 METHODS = ("original", "alqr", "h_infinity")
 CONDITIONS = ("direct", "human_jailbreak")
-DEFAULT_BATCH_SIZE = {"direct": 16, "human_jailbreak": 8}
+DEFAULT_BATCH_SIZE = {
+    "llama32_1b_instruct": {"direct": 16, "human_jailbreak": 8},
+    "llama32_3b_instruct": {"direct": 16, "human_jailbreak": 8},
+    "llama31_8b_instruct": {"direct": 8, "human_jailbreak": 4},
+}
 MAX_NEW_TOKENS = 512
 
 
@@ -245,7 +249,7 @@ def generate_shard(
         shard_count,
         use_cache=use_cache,
     )
-    batch_size = generation_batch_size or DEFAULT_BATCH_SIZE[condition]
+    batch_size = generation_batch_size or DEFAULT_BATCH_SIZE[model_key][condition]
     identity = {
         "schema_version": 1,
         "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
@@ -478,7 +482,7 @@ def summarize(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", choices=("generate-shard",), required=True)
-    parser.add_argument("--model", choices=(MODEL_KEY,), required=True)
+    parser.add_argument("--model", choices=MODEL_KEYS, required=True)
     parser.add_argument("--condition", choices=CONDITIONS, required=True)
     parser.add_argument("--method", choices=METHODS, required=True)
     parser.add_argument("--device", required=True)

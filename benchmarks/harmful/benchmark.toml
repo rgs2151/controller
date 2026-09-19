@@ -1,10 +1,14 @@
 schema_version = 1
 benchmark = "harmful"
 base_dataset = "harmbench_direct"
-models = ["llama32_1b_instruct"]
+models = [
+  "llama32_1b_instruct",
+  "llama32_3b_instruct",
+  "llama31_8b_instruct",
+]
 available_methods = ["original", "alqr", "h_infinity"]
 default_methods = ["original", "alqr", "h_infinity"]
-default_datasets = ["direct", "human_jailbreak", "mmlu"]
+default_datasets = ["direct", "human_jailbreak"]
 jacobian_prompts = 50
 evaluated_model_kv_cache = false
 available_evaluated_model_kv_cache = [false, true]
