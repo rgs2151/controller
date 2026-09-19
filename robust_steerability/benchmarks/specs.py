@@ -24,6 +24,14 @@ MODELS = {
         32,
         32,
     ),
+    "llama32_3b_instruct": ModelSpec(
+        "llama32_3b_instruct",
+        "Llama-3.2-3B-Instruct",
+        "meta-llama/Llama-3.2-3B-Instruct",
+        "0cb88a4f764b7a12671c53f0838cd831a0843b95",
+        16,
+        16,
+    ),
     "gemma2b": ModelSpec(
         "gemma2b", "Gemma-2-2B", "google/gemma-2-2b",
         "c5ebcd40d208330abc697524c919956e692655cf", 16, 32,

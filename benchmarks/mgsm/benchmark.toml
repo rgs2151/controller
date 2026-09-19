@@ -1,9 +1,9 @@
 schema_version = 2
 benchmark = "mgsm"
 base_dataset = "mgsm_en_es_direction"
-models = ["qwen3_4b", "gemma3_4b_it"]
+models = ["qwen3_4b", "llama32_3b_instruct"]
 available_methods = ["original", "spid", "alqr", "h_infinity"]
-default_methods = ["spid", "alqr", "h_infinity"]
+default_methods = ["original", "spid", "alqr", "h_infinity"]
 default_datasets = ["zh", "fr", "ja", "sw", "te"]
 jacobian_prompts = 50
 evaluated_model_kv_cache = false
