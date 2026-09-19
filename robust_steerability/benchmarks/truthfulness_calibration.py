@@ -13,6 +13,7 @@ import numpy as np
 import torch
 
 from robust_steerability.benchmarks import truthfulness_runtime as evaluation
+from robust_steerability.benchmarks.calibration import require_nonzero_selection_metric
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import (
     artifact_root,
@@ -583,6 +584,11 @@ def select(model_key: str, calibration_id: str) -> dict:
             "truthfulness", MODELS[model_key].model_id
         ).multiplier
         summaries.append({**configuration, **means})
+    require_nonzero_selection_metric(
+        summaries,
+        "axbench_overall",
+        context="Truthfulness H-infinity calibration",
+    )
     selected = sorted(
         summaries,
         key=lambda row: (

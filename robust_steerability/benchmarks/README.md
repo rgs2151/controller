@@ -3,6 +3,8 @@
 Every benchmark exposes `artifacts`, `calibrate`, `evaluate`, and `score`.
 Evaluation only generates responses. Score consumes those responses through
 benchmark-selected scorer definitions and never reruns the evaluated model.
+Every candidate-based calibration hard-fails without writing a selection when
+all candidates score zero on its configured selection metric.
 
 Each `benchmarks/<name>/benchmark.toml` composes one base dataset with any
 number of independent evaluation datasets. The base dataset owns controller

@@ -14,6 +14,7 @@ import torch
 from robust_steerability.artifacts import configuration_hash
 from robust_steerability.benchmarks import harmful_artifacts as artifacts
 from robust_steerability.benchmarks import harmful_runtime as runtime
+from robust_steerability.benchmarks.calibration import require_nonzero_selection_metric
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import artifact_root, calibration_root
 from robust_steerability.benchmarks.specs import MODELS
@@ -427,6 +428,11 @@ def select(model_key: str, calibration_id: str) -> dict:
                 np.mean([float(row["score"]) for row in payload["rows"]])
             )
         summaries.append({**configuration, **means})
+    require_nonzero_selection_metric(
+        summaries,
+        "axbench_overall",
+        context="HarmBench H-infinity calibration",
+    )
     selected = sorted(
         summaries,
         key=lambda row: (
