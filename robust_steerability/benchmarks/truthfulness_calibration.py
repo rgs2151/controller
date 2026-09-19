@@ -6,6 +6,7 @@ import argparse
 import json
 import random
 import sys
+import tomllib
 from dataclasses import asdict, replace
 from pathlib import Path
 
@@ -13,7 +14,11 @@ import numpy as np
 import torch
 
 from robust_steerability.benchmarks import truthfulness_runtime as evaluation
-from robust_steerability.benchmarks.calibration import require_nonzero_selection_metric
+from robust_steerability.benchmarks.calibration import (
+    require_nonzero_selection_metric,
+    weighted_harmonic_mean,
+)
+from robust_steerability.benchmarks.composition import load_composition
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import (
     artifact_root,
@@ -30,9 +35,11 @@ from robust_steerability.artifacts import configuration_hash
 from robust_steerability.experiments.calibration import calibrate_controller, diagnostic_root
 from robust_steerability.experiments.diagnostics import score as freeze_diagnostic_score
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
+from robust_steerability.benchmarks.metrics import truth_judge_prompt
+from robust_steerability.judges import huggingface as huggingface_scoring
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.exact import harmonic_mean
-from robust_steerability.judges.specs import scorer_cache_path
+from robust_steerability.judges.specs import scorer_cache_path, scorer_spec
 from robust_steerability.modeling.huggingface import load_access_token, release_cuda_memory
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.source_methods.generation import generate_batched
@@ -48,6 +55,12 @@ from robust_steerability.source_methods.protocol import (
 
 
 REPO = Path(__file__).resolve().parents[2]
+COMPOSITION = load_composition("truthfulness")
+CALIBRATION_CONFIG = tomllib.loads(
+    (REPO / "benchmarks/truthfulness/benchmark.toml").read_text()
+)["calibration"]
+AVAILABLE_SELECTION_METRICS = COMPOSITION.calibration.available_selection_metrics
+DEFAULT_SELECTION_METRIC = COMPOSITION.calibration.selection_metric
 CALIBRATION_SAMPLES = 50
 CALIBRATION_REPETITIONS = 1
 DISTURBANCE_SAMPLES = 200
@@ -55,7 +68,15 @@ SEED_STRIDE = 100_000
 Q_OVER_R = (0.01, 10**-1.5, 0.1, 10**-0.5, 1.0, 10**0.5, 10.0, 10**1.5)
 Q_FINAL_OVER_R = (0.01, 10**-1.5, 0.1, 10**-0.5)
 FIXED_R = 1.0
-GRID_SELECTION_SOURCE = "AXBench three-score harmonic-mean calibration argmax"
+GRID_SELECTION_SOURCES = {
+    "truthfulqa_true_mean_percentage": "TruthfulQA True calibration-grid argmax",
+    "mean_axbench_overall": "AXBench three-score harmonic-mean calibration argmax",
+    "truthfulness_quality_composite": (
+        "TruthfulQA True/instruction-relevance/fluency weighted-harmonic "
+        "calibration argmax"
+    ),
+}
+GRID_CONFIGURATION_SOURCE = "truthfulness H-infinity Q/R and Qf/R calibration grid"
 FIXED_SELECTION_SOURCE = "fixed configuration supplied at calibration launch"
 API_SCORERS = (
     "axbench_concept_relevance",
@@ -349,7 +370,7 @@ def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
                 name: float(configuration[name])
                 for name in ("lambda", "q", "r", "q_final")
             },
-            "configuration_source": GRID_SELECTION_SOURCE,
+            "configuration_source": GRID_CONFIGURATION_SOURCE,
             "configuration_id": configuration["grid_id"],
         }
         if destination.exists():
@@ -466,45 +487,129 @@ def generate_worker(
         _write_json(destination, payload)
 
 
-def score_axbench_grid(
+def _score_truth_grid(model_key: str, device: str, calibration_id: str) -> None:
+    root = _root(model_key, calibration_id)
+    specification = scorer_spec("truthfulqa_true")
+    destination = root / "grid/scores/truthfulqa_true.json"
+    generation_paths = sorted((root / "grid/generations").glob("*.json"))
+    if len(generation_paths) != len(_grid()):
+        raise ValueError("Truthfulness H-infinity grid generations are incomplete")
+    identity = {
+        "model": [specification.model_id, specification.revision],
+        "scorer": "truthfulqa_true",
+        "rubric": specification.rubric,
+    }
+    saved = {"identity": identity, "status": "partial", "rows": []}
+    if destination.exists():
+        saved = json.loads(destination.read_text())
+        if saved.get("status") == "complete":
+            return
+    rows = []
+    for path in generation_paths:
+        payload = json.loads(path.read_text())
+        if payload.get("status") != "complete":
+            raise ValueError(f"Incomplete calibration generation: {path}")
+        rows.extend(
+            row for repetition in payload["repetitions"] for row in repetition["rows"]
+        )
+    _write_json(destination, saved)
+    scorer_model, tokenizer = huggingface_scoring.load_scorer(
+        specification.model_id,
+        str(specification.revision),
+        device,
+        load_access_token(REPO),
+    )
+    for start in range(len(saved["rows"]), len(rows), huggingface_scoring.BATCH_SIZE):
+        batch = rows[start:start + huggingface_scoring.BATCH_SIZE]
+        prompts = [
+            truth_judge_prompt(
+                str(row["question"]),
+                str(row["completion"]),
+                str(specification.prompt_label),
+            )
+            for row in batch
+        ]
+        outputs = huggingface_scoring.score_batch(
+            scorer_model, tokenizer, prompts, device
+        )
+        saved["rows"].extend([
+            {
+                "grid_id": row["grid_id"],
+                "repetition": row["repetition"],
+                "prompt_id": row["prompt_id"],
+                **output,
+            }
+            for row, output in zip(batch, outputs, strict=True)
+        ])
+        _write_json(destination, saved)
+    del scorer_model, tokenizer
+    release_cuda_memory(device)
+    saved["status"] = "complete"
+    _write_json(destination, saved)
+
+
+def _required_api_scorers(selection_metric: str) -> tuple[str, ...]:
+    if selection_metric == "truthfulqa_true_mean_percentage":
+        return ()
+    if selection_metric == "truthfulness_quality_composite":
+        return ("axbench_instruction_relevance", "axbench_fluency")
+    if selection_metric == "mean_axbench_overall":
+        return API_SCORERS
+    raise ValueError(f"Unknown truthfulness calibration metric {selection_metric!r}")
+
+
+def score_grid(
     model_key: str,
+    device: str,
     calibration_id: str,
     *,
+    selection_metric: str,
     api_concurrency: int,
     api_batch_size: int,
 ) -> None:
+    if selection_metric not in AVAILABLE_SELECTION_METRICS:
+        raise ValueError(f"Unknown truthfulness calibration metric {selection_metric!r}")
     root = _root(model_key, calibration_id)
     generation_paths = sorted((root / "grid/generations").glob("*.json"))
     if len(generation_paths) != len(_grid()):
         raise ValueError("Truthfulness H-infinity grid generations are incomplete")
-    openai_scoring.score_generations(
-        generation_paths,
-        root / "grid",
-        list(API_SCORERS),
-        concurrency=api_concurrency,
-        batch_size=api_batch_size,
-        row_defaults={"concept": evaluation.TRUTHFULNESS_CONCEPT},
-    )
-    for generation_path in generation_paths:
-        mappings = []
-        for scorer in API_SCORERS:
-            payload = json.loads(
-                scorer_cache_path(root / "grid", generation_path, scorer).read_text()
-            )
-            mappings.append(
-                {str(row["prompt_id"]): float(row["score"]) for row in payload["rows"]}
-            )
-        rows = [
-            {
-                "prompt_id": prompt_id,
-                "score": harmonic_mean([mapping[prompt_id] for mapping in mappings]),
-            }
-            for prompt_id in mappings[0]
-        ]
-        _write_json(
-            scorer_cache_path(root / "grid", generation_path, "axbench_overall"),
-            {"status": "complete", "rows": rows},
+    if selection_metric in {
+        "truthfulqa_true_mean_percentage",
+        "truthfulness_quality_composite",
+    }:
+        _score_truth_grid(model_key, device, calibration_id)
+    api_scorers = _required_api_scorers(selection_metric)
+    if api_scorers:
+        openai_scoring.score_generations(
+            generation_paths,
+            root / "grid",
+            list(api_scorers),
+            concurrency=api_concurrency,
+            batch_size=api_batch_size,
+            row_defaults={"concept": evaluation.TRUTHFULNESS_CONCEPT},
         )
+    if selection_metric == "mean_axbench_overall":
+        for generation_path in generation_paths:
+            mappings = []
+            for scorer in API_SCORERS:
+                payload = json.loads(
+                    scorer_cache_path(root / "grid", generation_path, scorer).read_text()
+                )
+                mappings.append({
+                    str(row["prompt_id"]): float(row["score"])
+                    for row in payload["rows"]
+                })
+            rows = [
+                {
+                    "prompt_id": prompt_id,
+                    "score": harmonic_mean([mapping[prompt_id] for mapping in mappings]),
+                }
+                for prompt_id in mappings[0]
+            ]
+            _write_json(
+                scorer_cache_path(root / "grid", generation_path, "axbench_overall"),
+                {"status": "complete", "rows": rows},
+            )
 
 
 def _freeze_selected_diagnostics(
@@ -565,41 +670,208 @@ def _freeze_selected_diagnostics(
     )
 
 
-def select(model_key: str, calibration_id: str) -> dict:
+def _truth_score_map(root: Path) -> dict[tuple[str, int, str], float]:
+    payload = json.loads((root / "grid/scores/truthfulqa_true.json").read_text())
+    if payload.get("status") != "complete":
+        raise ValueError("TruthfulQA True calibration scores are incomplete")
+    return {
+        (str(row["grid_id"]), int(row["repetition"]), str(row["prompt_id"])):
+        float(row["score"])
+        for row in payload["rows"]
+    }
+
+
+def _scorer_rows(root: Path, generation_path: Path, scorer: str) -> list[dict]:
+    payload = json.loads(
+        scorer_cache_path(root / "grid", generation_path, scorer).read_text()
+    )
+    if payload.get("status") != "complete":
+        raise ValueError(f"Incomplete calibration score: {scorer}")
+    return list(payload["rows"])
+
+
+def _calibration_profile(
+    model_key: str,
+    calibration_id: str,
+    selection_metric: str,
+) -> dict:
+    if selection_metric not in AVAILABLE_SELECTION_METRICS:
+        raise ValueError(f"Unknown truthfulness calibration metric {selection_metric!r}")
     root = _root(model_key, calibration_id)
+    truth_map = (
+        _truth_score_map(root)
+        if selection_metric in {
+            "truthfulqa_true_mean_percentage",
+            "truthfulness_quality_composite",
+        }
+        else None
+    )
+    quality_config = CALIBRATION_CONFIG["truthfulness_quality_composite"]
+    quality_weights = (
+        float(quality_config["truthfulqa_true_weight"]),
+        float(quality_config["axbench_instruction_relevance_weight"]),
+        float(quality_config["axbench_fluency_weight"]),
+    )
+    if not np.isclose(sum(quality_weights), 1.0):
+        raise ValueError("Truthfulness-quality calibration weights must sum to one")
+    normalizer = float(quality_config["axbench_score_normalizer"])
+    if normalizer <= 0:
+        raise ValueError("AXBench calibration score normalizer must be positive")
     summaries = []
     for configuration in _grid():
+        grid_id = str(configuration["grid_id"])
         generation_path = (
-            root / "grid/generations" / f"{configuration['grid_id']}.json"
+            root / "grid/generations" / f"{grid_id}.json"
         )
-        means = {}
-        for scorer in (*API_SCORERS, "axbench_overall"):
-            payload = json.loads(
-                scorer_cache_path(root / "grid", generation_path, scorer).read_text()
+        generation = json.loads(generation_path.read_text())
+        flattened = [
+            (int(repetition["repetition"]), row)
+            for repetition in generation["repetitions"]
+            for row in repetition["rows"]
+        ]
+        summary = {}
+        if selection_metric == "mean_axbench_overall":
+            for scorer in (*API_SCORERS, "axbench_overall"):
+                rows = _scorer_rows(root, generation_path, scorer)
+                summary[scorer] = float(np.mean([
+                    float(row["score"]) for row in rows
+                ]))
+        elif selection_metric == "truthfulqa_true_mean_percentage":
+            per_repetition = []
+            for repetition in range(CALIBRATION_REPETITIONS):
+                scores = [
+                    truth_map[(grid_id, row_repetition, str(row["prompt_id"]))]
+                    for row_repetition, row in flattened
+                    if row_repetition == repetition
+                ]
+                per_repetition.append({
+                    "repetition": repetition,
+                    "truth": 100.0 * float(np.mean(scores)),
+                })
+            summary = {
+                "truth": float(np.mean([row["truth"] for row in per_repetition])),
+                "per_repetition": per_repetition,
+            }
+        else:
+            instruction_rows = _scorer_rows(
+                root, generation_path, "axbench_instruction_relevance"
             )
-            means[scorer] = float(
-                np.mean([float(row["score"]) for row in payload["rows"]])
+            fluency_rows = _scorer_rows(
+                root, generation_path, "axbench_fluency"
             )
+            if len(flattened) != len(instruction_rows) or len(flattened) != len(fluency_rows):
+                raise ValueError(f"Calibration scorer row-count mismatch for {grid_id}")
+            response_scores = []
+            truth_scores = []
+            instruction_scores = []
+            fluency_scores = []
+            for (repetition, row), instruction, fluency in zip(
+                flattened, instruction_rows, fluency_rows, strict=True
+            ):
+                prompt_id = str(row["prompt_id"])
+                if (
+                    str(instruction["prompt_id"]) != prompt_id
+                    or str(fluency["prompt_id"]) != prompt_id
+                ):
+                    raise ValueError(f"Calibration scorer alignment mismatch for {grid_id}")
+                truth = float(truth_map[(grid_id, repetition, prompt_id)])
+                instruction_score = float(instruction["score"])
+                fluency_score = float(fluency["score"])
+                truth_scores.append(truth)
+                instruction_scores.append(instruction_score)
+                fluency_scores.append(fluency_score)
+                response_scores.append(weighted_harmonic_mean(
+                    (
+                        truth,
+                        float(np.clip(instruction_score / normalizer, 0.0, 1.0)),
+                        float(np.clip(fluency_score / normalizer, 0.0, 1.0)),
+                    ),
+                    quality_weights,
+                ))
+            summary = {
+                "truth": 100.0 * float(np.mean(truth_scores)),
+                "axbench_instruction_relevance": float(np.mean(instruction_scores)),
+                "axbench_fluency": float(np.mean(fluency_scores)),
+                "truthfulness_quality_composite": float(np.mean(response_scores)),
+            }
         configuration["lambda"] = paper_alqr_setting(
             "truthfulness", MODELS[model_key].model_id
         ).multiplier
-        summaries.append({**configuration, **means})
-    require_nonzero_selection_metric(
-        summaries,
-        "axbench_overall",
-        context="Truthfulness H-infinity calibration",
-    )
-    selected = sorted(
-        summaries,
-        key=lambda row: (
+        summaries.append({**configuration, **summary})
+    if selection_metric == "truthfulqa_true_mean_percentage":
+        metric_key = "truth"
+        description = "mean TruthfulQA True percentage across repetitions"
+        tie_breakers = ["smaller Q/R", "smaller Qf/R"]
+        rank_key = lambda row: (-row["truth"], row["q"], row["q_final"])
+    elif selection_metric == "mean_axbench_overall":
+        metric_key = "axbench_overall"
+        description = "mean per-response AXBench three-judge harmonic mean"
+        tie_breakers = [
+            "higher concept relevance",
+            "higher instruction relevance",
+            "higher fluency",
+            "smaller Q/R",
+            "smaller Qf/R",
+        ]
+        rank_key = lambda row: (
             -row["axbench_overall"],
             -row["axbench_concept_relevance"],
             -row["axbench_instruction_relevance"],
             -row["axbench_fluency"],
             row["q"],
             row["q_final"],
+        )
+    else:
+        metric_key = "truthfulness_quality_composite"
+        description = (
+            "mean per-response weighted harmonic mean of TruthfulQA True, "
+            "AXBench instruction relevance, and AXBench fluency"
+        )
+        tie_breakers = [
+            "higher True percentage",
+            "higher instruction relevance",
+            "higher fluency",
+            "smaller Q/R",
+            "smaller Qf/R",
+        ]
+        rank_key = lambda row: (
+            -row["truthfulness_quality_composite"],
+            -row["truth"],
+            -row["axbench_instruction_relevance"],
+            -row["axbench_fluency"],
+            row["q"],
+            row["q_final"],
+        )
+    require_nonzero_selection_metric(
+        summaries, metric_key, context="Truthfulness H-infinity calibration"
+    )
+    ranked = sorted(summaries, key=rank_key)
+    model = MODELS[model_key]
+    return {
+        "schema_version": 1,
+        "model": [model.model_id, model.revision],
+        "benchmark": "truthfulness",
+        "calibration_id": calibration_id,
+        "selection_metric": selection_metric,
+        "selection_metric_description": description,
+        "metric_configuration": (
+            quality_config
+            if selection_metric == "truthfulness_quality_composite"
+            else None
         ),
-    )[0]
+        "tie_breakers": tie_breakers,
+        "selected": ranked[0],
+        "ranking": [str(row["grid_id"]) for row in ranked],
+        "grid": summaries,
+    }
+
+
+def select(model_key: str, calibration_id: str, selection_metric: str) -> dict:
+    root = _root(model_key, calibration_id)
+    profile = _calibration_profile(model_key, calibration_id, selection_metric)
+    profile_path = root / "grid/selection_profiles" / f"{selection_metric}.json"
+    _write_json(profile_path, profile)
+    selected = dict(profile["selected"])
     parameters = {
         name: float(selected[name]) for name in ("lambda", "q", "r", "q_final")
     }
@@ -618,14 +890,10 @@ def select(model_key: str, calibration_id: str) -> dict:
             "tuning_samples": CALIBRATION_SAMPLES,
             "tuning_repetitions": CALIBRATION_REPETITIONS,
             "evaluated_model_kv_cache": False,
-            "selection_metric": "mean per-response AXBench three-judge harmonic mean",
-            "tie_breakers": [
-                "higher concept relevance",
-                "higher instruction relevance",
-                "higher fluency",
-                "smaller Q/R",
-                "smaller Qf/R",
-            ],
+            "selection_metric": selection_metric,
+            "selection_metric_description": profile["selection_metric_description"],
+            "metric_configuration": profile["metric_configuration"],
+            "tie_breakers": profile["tie_breakers"],
             "q_over_r": list(Q_OVER_R), "q_final_over_r": list(Q_FINAL_OVER_R),
             "fixed_r": FIXED_R,
             "fixed_setpoint_multiplier": parameters["lambda"],
@@ -634,9 +902,10 @@ def select(model_key: str, calibration_id: str) -> dict:
             **selected,
             "configuration_id": selected["grid_id"],
             "parameters": parameters,
-            "source": GRID_SELECTION_SOURCE,
+            "source": GRID_SELECTION_SOURCES[selection_metric],
         },
-        "grid": summaries,
+        "selection_profile": str(profile_path.relative_to(root)),
+        "grid": profile["grid"],
     }
     payload["diagnostic_bundle"] = str(
         _freeze_selected_diagnostics(
@@ -659,8 +928,11 @@ def calibrate(
     *,
     api_concurrency: int = openai_scoring.DEFAULT_CONCURRENCY,
     api_batch_size: int = openai_scoring.DEFAULT_BATCH_SIZE,
+    selection_metric: str = DEFAULT_SELECTION_METRIC,
     fixed_parameters: dict[str, float] | None = None,
 ) -> None:
+    if selection_metric not in AVAILABLE_SELECTION_METRICS:
+        raise ValueError(f"Unknown truthfulness calibration metric {selection_metric!r}")
     evaluation._configure_runtime(model_key, calibration_id)
     selection = _root(model_key, calibration_id) / "selection.json"
     if fixed_parameters is not None:
@@ -701,10 +973,7 @@ def calibrate(
         return
     if selection.exists() and (_root(model_key, calibration_id) / "controller.pt").exists():
         saved = json.loads(selection.read_text())
-        if (
-            saved.get("protocol", {}).get("selection_metric")
-            == "mean per-response AXBench three-judge harmonic mean"
-        ):
+        if saved.get("protocol", {}).get("selection_metric") == selection_metric:
             return
     prepare(model_key, calibration_id)
     fit_base(model_key, devices[0], calibration_id)
@@ -730,13 +999,15 @@ def calibrate(
         for index, _device in enumerate(devices)
     ]
     run_jobs(generation_jobs, devices, log_root / "hinf-grid-generation")
-    score_axbench_grid(
+    score_grid(
         model_key,
+        devices[0],
         calibration_id,
+        selection_metric=selection_metric,
         api_concurrency=api_concurrency,
         api_batch_size=api_batch_size,
     )
-    select(model_key, calibration_id)
+    select(model_key, calibration_id, selection_metric)
 
 
 def main() -> None:
@@ -754,6 +1025,11 @@ def main() -> None:
     parser.add_argument("--shard-index", type=int)
     parser.add_argument("--shard-count", type=int)
     parser.add_argument("--calibration-id", default="selected")
+    parser.add_argument(
+        "--selection-metric",
+        choices=AVAILABLE_SELECTION_METRICS,
+        default=DEFAULT_SELECTION_METRIC,
+    )
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument(
         "--api-concurrency", type=int, default=openai_scoring.DEFAULT_CONCURRENCY
@@ -781,15 +1057,23 @@ def main() -> None:
             arguments.generation_batch_size,
         )
     elif arguments.stage == "score-grid":
-        score_axbench_grid(
+        if arguments.device is None:
+            raise ValueError("score-grid requires --device")
+        score_grid(
             arguments.model,
+            arguments.device,
             arguments.calibration_id,
+            selection_metric=arguments.selection_metric,
             api_concurrency=arguments.api_concurrency,
             api_batch_size=arguments.api_batch_size,
         )
     elif arguments.stage == "select":
         print(json.dumps(
-            select(arguments.model, arguments.calibration_id)["selected"],
+            select(
+                arguments.model,
+                arguments.calibration_id,
+                arguments.selection_metric,
+            )["selected"],
             indent=2,
         ))
     else:

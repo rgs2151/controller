@@ -5,8 +5,8 @@ This benchmark uses the same four-stage interface as every benchmark:
 1. `artifacts` freezes the fit data, semantic setpoint, and average of 35 Jacobians.
 2. `calibrate` records published A-LQR parameters, fits each baseline's required
    one-time artifact, and either selects H∞ on a 50-question development set by
-   maximum AXBench overall steering or synthesizes one explicitly supplied H∞
-   configuration without a sweep.
+   the configured calibration objective or synthesizes one explicitly supplied
+   H∞ configuration without a sweep.
 3. `evaluate` generates responses only; it never runs a scorer.
 4. `score` applies any requested subset of independent scorers to existing responses.
 
@@ -22,8 +22,12 @@ The benchmark's default scorers are:
 - `mmlu_accuracy`: exact A/B/C/D accuracy on 200 frozen five-shot MMLU
   questions; no learned judge.
 
-The H∞ grid is selected by maximum mean `axbench_overall`; True and Informative
-remain final TruthfulQA outcomes rather than calibration objectives.
+The default H∞ objective is `truthfulness_quality_composite`: the mean
+per-response weighted harmonic mean of TruthfulQA True (weight .50), AXBench
+instruction relevance (.25), and AXBench fluency (.25). The configuration also
+registers the historical `truthfulqa_true_mean_percentage` objective and
+`mean_axbench_overall`; `--selection-metric` selects among them. Informative and
+concept relevance remain reported outcomes and do not enter the default objective.
 
 ```bash
 python -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
