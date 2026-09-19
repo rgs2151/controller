@@ -13,9 +13,10 @@
   shared by A-LQR and H∞.
 - **H∞ disturbance data:** 200 disjoint TruthfulQA prompts.
 - **Baseline settings:** Published or frozen project settings; no baseline sweep.
-- **H∞ selection:** 50 further disjoint prompts; 32 cost configurations; maximize
-  the configured calibration objective. The default combines True, instruction
-  relevance, and fluency with weights .50/.25/.25.
+- **H∞ selection:** Fix the setpoint multiplier to the same model-specific
+  published value used by A-LQR; sweep only 32 `Q/R` and `Qf/R` cost
+  configurations on 50 further disjoint prompts. The default objective combines
+  True, instruction relevance, and fluency with weights .50/.25/.25.
 - **Final evaluation:** 817 questions × 5 seeds in English and Spanish; optional
   fixed 200-question five-shot MMLU.
 - **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, and Qwen-2.5-32B.
@@ -67,6 +68,8 @@ when the same questions are translated into Spanish?
   sweep them on final TruthfulQA.
 - **H∞ development set:** 50 additional TruthfulQA prompts, disjoint from all fit
   records and final evaluation prompts.
+- **H∞ setpoint multiplier:** fixed to the same model-specific published value
+  used by A-LQR; it is not swept.
 - **H∞ grid:** `R=1`, eight frozen `Q/R` values, and four frozen `Qf/R` values.
 - **Default objective:** mean per-response weighted harmonic mean of TruthfulQA
   True, AXBench instruction relevance, and AXBench fluency, with weights
