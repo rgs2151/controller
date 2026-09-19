@@ -313,6 +313,11 @@ def _load_selected_hinf(
         not in {
             "fixed configuration supplied at calibration launch",
             "AXBench three-score harmonic-mean calibration argmax",
+            "TruthfulQA True calibration-grid argmax",
+            (
+                "TruthfulQA True/instruction-relevance/fluency "
+                "weighted-harmonic calibration argmax"
+            ),
         }
     ):
         raise ValueError("Frozen H-infinity calibration metadata is invalid")

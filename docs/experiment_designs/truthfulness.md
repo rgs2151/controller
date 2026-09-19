@@ -18,7 +18,7 @@
   relevance, and fluency with weights .50/.25/.25.
 - **Final evaluation:** 817 questions × 5 seeds in English and Spanish; optional
   fixed 200-question five-shot MMLU.
-- **Models:** Gemma-2-2B, Llama-3-8B, and Qwen-2.5-14B.
+- **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, and Qwen-2.5-32B.
 - **Methods:** Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer,
   S-PID, A-LQR, and H∞.
 - **Scoring:** True, Informative, concept relevance, instruction relevance,
@@ -33,7 +33,7 @@ when the same questions are translated into Spanish?
 
 ## Frozen scope
 
-- **Models:** Gemma-2-2B, Llama-3-8B, and Qwen-2.5-14B.
+- **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, and Qwen-2.5-32B.
 - **Methods:** Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT,
   ODESteer, S-PID, A-LQR, and H∞.
 - **KV cache:** off for reported runs.
