@@ -2,44 +2,64 @@
 \begin{table*}[!htbp]
 \centering
 \definecolor{projectdarkred}{RGB}{128,0,0}
-\caption{Full MGSM multilingual-transfer results for Qwen3-4B. Each language uses the same 250 problem identities. Higher is better for every column.}
+\caption{Full MGSM multilingual-transfer results for Qwen3-4B and Gemma-3-4B-Instruct. Qwen uses 250 problems per language; Gemma uses the frozen 100-problem subset. Higher is better for every column.}
 \label{tab:mgsm-full}
 \small
 \renewcommand{\arraystretch}{1.08}
 \setlength{\tabcolsep}{5pt}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{rlcccc}
-Language & Method & \cellcolor{projectdarkred!10}Accuracy (\%) $\uparrow$ & \shortstack{Spanish\\relevance (0--2) $\uparrow$} & \shortstack{Instruction\\relevance (0--2) $\uparrow$} & Fluency (0--2) $\uparrow$ \\
+\begin{tabular}{rrlcccc}
+Model & Language & Method & \cellcolor{projectdarkred!10}Accuracy (\%) $\uparrow$ & \shortstack{Spanish\\relevance (0--2) $\uparrow$} & \shortstack{Instruction\\relevance (0--2) $\uparrow$} & Fluency (0--2) $\uparrow$ \\
 \midrule
-\multirow{4}{*}{Chinese} & Original & \cellcolor{projectdarkred!10}$71.0$ & $0.00$ & $1.80$ & $1.71$ \\
-\cmidrule(l){2-6}
- & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $\underline{2.00}$ & $0.00$ & $0.00$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$20.0$ & $1.98$ & $1.53$ & $1.15$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{51.0}$ & $\mathbf{2.00}$ & $\mathbf{1.87}$ & $\mathbf{1.52}$ \\
+\multirow{20}{*}{\rotatebox[origin=c]{90}{Qwen3-4B}} & \multirow{4}{*}{Chinese} & Original & \cellcolor{projectdarkred!10}$71.0$ & $0.00$ & $1.80$ & $1.71$ \\
+\cmidrule(l){3-7}
+ &  & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $\underline{2.00}$ & $0.00$ & $0.00$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$20.0$ & $1.98$ & $1.53$ & $1.15$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{51.0}$ & $\mathbf{2.00}$ & $\mathbf{1.87}$ & $\mathbf{1.52}$ \\
+\cmidrule(l){2-7}
+ & \multirow{4}{*}{French} & Original & \cellcolor{projectdarkred!10}$60.0$ & $0.00$ & $1.93$ & $1.70$ \\
+\cmidrule(l){3-7}
+ &  & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $1.92$ & $0.00$ & $0.00$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$29.0$ & $1.94$ & $1.62$ & $1.11$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{48.0}$ & $\mathbf{1.96}$ & $\mathbf{1.96}$ & $\mathbf{1.42}$ \\
+\cmidrule(l){2-7}
+ & \multirow{4}{*}{Japanese} & Original & \cellcolor{projectdarkred!10}$56.0$ & $0.00$ & $1.80$ & $1.64$ \\
+\cmidrule(l){3-7}
+ &  & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $\underline{2.00}$ & $0.00$ & $0.00$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$32.0$ & $1.84$ & $1.63$ & $1.01$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{40.0}$ & $1.98$ & $\mathbf{1.71}$ & $\mathbf{1.20}$ \\
+\cmidrule(l){2-7}
+ & \multirow{4}{*}{Swahili} & Original & \cellcolor{projectdarkred!10}$15.0$ & $0.00$ & $1.43$ & $1.23$ \\
+\cmidrule(l){3-7}
+ &  & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $\underline{1.96}$ & $0.00$ & $0.00$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$12.0$ & $1.40$ & $1.32$ & $0.97$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{14.0}$ & $0.92$ & $\mathbf{1.44}$ & $\mathbf{1.06}$ \\
+\cmidrule(l){2-7}
+ & \multirow{4}{*}{Telugu} & Original & \cellcolor{projectdarkred!10}$6.0$ & $0.00$ & $1.83$ & $1.05$ \\
+\cmidrule(l){3-7}
+ &  & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $\underline{2.00}$ & $0.00$ & $0.00$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$\underline{19.0}$ & $1.88$ & $\underline{1.46}$ & $\underline{1.18}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$8.0$ & $0.34$ & $1.33$ & $1.05$ \\
 \midrule
-\multirow{4}{*}{French} & Original & \cellcolor{projectdarkred!10}$60.0$ & $0.00$ & $1.93$ & $1.70$ \\
-\cmidrule(l){2-6}
- & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $1.92$ & $0.00$ & $0.00$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$29.0$ & $1.94$ & $1.62$ & $1.11$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{48.0}$ & $\mathbf{1.96}$ & $\mathbf{1.96}$ & $\mathbf{1.42}$ \\
-\midrule
-\multirow{4}{*}{Japanese} & Original & \cellcolor{projectdarkred!10}$56.0$ & $0.00$ & $1.80$ & $1.64$ \\
-\cmidrule(l){2-6}
- & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $\underline{2.00}$ & $0.00$ & $0.00$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$32.0$ & $1.84$ & $1.63$ & $1.01$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{40.0}$ & $1.98$ & $\mathbf{1.71}$ & $\mathbf{1.20}$ \\
-\midrule
-\multirow{4}{*}{Swahili} & Original & \cellcolor{projectdarkred!10}$15.0$ & $0.00$ & $1.43$ & $1.23$ \\
-\cmidrule(l){2-6}
- & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $\underline{1.96}$ & $0.00$ & $0.00$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$12.0$ & $1.40$ & $1.32$ & $0.97$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{14.0}$ & $0.92$ & $\mathbf{1.44}$ & $\mathbf{1.06}$ \\
-\midrule
-\multirow{4}{*}{Telugu} & Original & \cellcolor{projectdarkred!10}$6.0$ & $0.00$ & $1.83$ & $1.05$ \\
-\cmidrule(l){2-6}
- & S-PID & \cellcolor{projectdarkred!10}$0.0$ & $\underline{2.00}$ & $0.00$ & $0.00$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$\underline{19.0}$ & $1.88$ & $\underline{1.46}$ & $\underline{1.18}$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$8.0$ & $0.34$ & $1.33$ & $1.05$ \\
+\multirow{15}{*}{\rotatebox[origin=c]{90}{Gemma-3-4B-Instruct}} & \multirow{3}{*}{Chinese} & S-PID & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $0.00$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $0.02$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{0.0}$ & $\mathbf{0.04}$ & $\mathbf{0.00}$ & $\mathbf{0.00}$ \\
+\cmidrule(l){2-7}
+ & \multirow{3}{*}{French} & S-PID & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $0.00$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $1.02$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{0.0}$ & $\mathbf{1.10}$ & $\mathbf{0.00}$ & $\mathbf{0.00}$ \\
+\cmidrule(l){2-7}
+ & \multirow{3}{*}{Japanese} & S-PID & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $0.00$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $0.00$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{0.0}$ & $\mathbf{0.12}$ & $\mathbf{0.00}$ & $\mathbf{0.00}$ \\
+\cmidrule(l){2-7}
+ & \multirow{3}{*}{Swahili} & S-PID & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $0.00$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $0.00$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{0.0}$ & $\mathbf{0.20}$ & $\mathbf{0.00}$ & $\mathbf{0.00}$ \\
+\cmidrule(l){2-7}
+ & \multirow{3}{*}{Telugu} & S-PID & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $\underline{0.00}$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$\underline{0.0}$ & $\underline{0.00}$ & $\underline{0.00}$ & $\underline{0.00}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{0.0}$ & $\mathbf{0.00}$ & $\mathbf{0.00}$ & $\mathbf{0.00}$ \\
 \bottomrule
 \end{tabular}%
 }
