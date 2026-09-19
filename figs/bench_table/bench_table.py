@@ -18,6 +18,7 @@ MODELS = (
     ("gemma2b", "Gemma-2-2B"),
     ("llama8b", "Llama-3-8B"),
     ("qwen14b", "Qwen-2.5-14B"),
+    ("qwen32b", "Qwen-2.5-32B"),
 )
 METHODS = (
     ("original", "Original", "Original"),
@@ -278,7 +279,7 @@ These are descriptive means on one fixed evaluation set per language, not repeat
 
 LCITE_MODEL = "Qwen2.5-3B-Instruct"
 LCITE_MODEL_KEY = "qwen25_3b_instruct"
-LCITE_CONDITIONS = (("8k", "8K"), ("16k", "16K"))
+LCITE_CONDITIONS = (("8k", "8K"), ("16k", "16K"), ("32k", "32K"))
 LCITE_METHODS = MGSM_METHODS
 LCITE_METRICS = (
     Metric("lcite_answer_overlap.answer_recall", "Answer recall (%) ↑", r"\shortstack{Answer\\recall (\%) $\uparrow$}", 1, True),
@@ -296,13 +297,13 @@ LCITE_SUMMARY_METRICS = (
 
 LCITE_DOCUMENTATION = r"""## Method
 
-- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K and 16K tokens, citing the minimum supporting passages after every answer sentence.
-- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across both context lengths.
+- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K, 16K, and 32K tokens, citing the minimum supporting passages after every answer sentence.
+- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across all three context lengths.
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`. The direction uses all 72 released positive responses and 72 genre-matched negative responses from `pyvene/axbench-concept500` variant `prod_9b_l20_v1`.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller without changing that shared dynamics matrix.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at both lengths.
-- The summary report is the equal-weight macro-average of the 8K and 16K means. The full report exposes all eight context-length–method cells.
+- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths.
+- The summary keeps 8K, 16K, and 32K separate. The full report exposes all 12 context-length–method cells.
 
 ## Measures
 
@@ -329,13 +330,13 @@ These are descriptive means on one deterministic generation for each of 40 match
 
 LCITE_SUMMARY_DOCUMENTATION = r"""## Method
 
-- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K and 16K tokens, citing the minimum supporting passages after every answer sentence.
-- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across both context lengths.
+- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K, 16K, and 32K tokens, citing the minimum supporting passages after every answer sentence.
+- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across all three context lengths.
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`, using all 72 released positive responses and 72 genre-matched negative responses.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at both lengths.
-- The 8K and 16K conditions remain separate; no cross-length average is reported.
+- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths.
+- The 8K, 16K, and 32K conditions remain separate; no cross-length average is reported.
 
 ## Measures
 
@@ -360,6 +361,7 @@ These are descriptive means on one deterministic generation for each of 40 match
 
 LCITE_SPANISH_MODEL = "Llama-3.1-8B-Instruct"
 LCITE_SPANISH_MODEL_KEY = "llama31_8b_instruct"
+LCITE_SPANISH_CONDITIONS = (("8k", "8K"), ("16k", "16K"))
 LCITE_SPANISH_METHODS = (
     ("original", "Original", "Original"),
     ("alqr", "A-LQR", "A-LQR"),
@@ -993,9 +995,9 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
     metrics = LCITE_METRICS if full else LCITE_SUMMARY_METRICS
     column_count = len(metrics)
     caption = (
-        "Full L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. Each context length uses the same 40 question identities."
+        "Full L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. The 8K, 16K, and 32K conditions use the same 40 question identities."
         if full
-        else "Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. The matched 8K and 16K conditions are reported separately."
+        else "Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. The matched 8K, 16K, and 32K conditions are reported separately."
     )
     label = "tab:lciteeval-full" if full else "tab:lciteeval-summary"
     lines = [
@@ -1099,7 +1101,7 @@ def _lcite_spanish_value(result: dict, metric: Metric) -> float:
 
 def _lcite_spanish_rows(metrics: tuple[Metric, ...]) -> list[dict]:
     rows = []
-    for condition_key, condition_label in LCITE_CONDITIONS:
+    for condition_key, condition_label in LCITE_SPANISH_CONDITIONS:
         for method_key, markdown_label, tex_label in LCITE_SPANISH_METHODS:
             result = _load_lcite_spanish_result(condition_key, method_key)
             rows.append(
@@ -1177,7 +1179,7 @@ def render_lcite_spanish_tex(rows: list[dict], *, full: bool) -> str:
         + r" \\",
         r"\midrule",
     ]
-    for condition_index, (_, condition_label) in enumerate(LCITE_CONDITIONS):
+    for condition_index, (_, condition_label) in enumerate(LCITE_SPANISH_CONDITIONS):
         group = [row for row in rows if row["condition"] == condition_label]
         best_values = _lcite_best_values(group, metrics)
         for method_index, row in enumerate(group):
@@ -1215,7 +1217,7 @@ def render_lcite_spanish_tex(rows: list[dict], *, full: bool) -> str:
             )
             if method_index == 0:
                 lines.append(f"\\cmidrule(l){{3-{column_count + 3}}}")
-        if condition_index != len(LCITE_CONDITIONS) - 1:
+        if condition_index != len(LCITE_SPANISH_CONDITIONS) - 1:
             lines.append(f"\\cmidrule(l){{2-{column_count + 3}}}")
     lines.extend(
         [r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""]
