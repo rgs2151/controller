@@ -32,18 +32,19 @@ every requested source method, estimates H-infinity disturbance geometry,
 synthesizes the fixed controller, and saves its diagnostics. Use `--methods
 all` when the run should contain every comparison method.
 
-Create the persistent Studio environment once per checkout before starting a
-run:
+Create or reuse the node-local environment before starting a run:
 
 ```bash
 cd ~/controller
-uv venv --python /usr/bin/python3 .venv
-uv pip install --python .venv/bin/python -e .
-.venv/bin/python -m nltk.downloader punkt_tab
+PYTHON=$(server/bootstrap_node_env.sh)
+$PYTHON -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
 ```
 
-The local workstation continues to use the `robust-steerability` Conda
-environment; Lightning Studios use the checkout-local `.venv` above.
+The bootstrap installs packages under `/tmp`, avoiding slow imports through
+Teamspace Drive. It reuses the environment while the container lives and
+rebuilds it automatically after container migration or when `pyproject.toml`
+changes. The local workstation continues to use the `robust-steerability`
+Conda environment.
 
 If the remote GPU has been checked with a smoke run and supports a larger
 generation batch, pass `--generation-batch-size <n>` to the calibration or
