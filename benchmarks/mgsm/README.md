@@ -10,8 +10,8 @@ five transfer languages: Chinese, French, Japanese, Swahili, and Telugu.
 - `calibrate`: write the frozen S-PID/A-LQR selections and run the 12-point H∞
   Q/R–Qf/R grid at the same fixed `lambda=1.5` target used by A-LQR. The optional
   lambda-sweep machinery remains available but is disabled. The cost grid reuses
-  the same 50 frozen GSM8K questions and selects by the mean per-response weighted
-  harmonic mean of exact-answer accuracy and normalized AXBench Overall.
+  the same 50 frozen GSM8K questions and selects by the mean per-response balanced
+  additive combination of exact-answer accuracy and normalized AXBench Overall.
 - `evaluate`: generate one native-eight-shot worked solution for each of 100
   matched problems in every requested input language, capped at 256 new tokens.
 - `score`: independently compute exact final-number accuracy, AXBench Spanish rule
