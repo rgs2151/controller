@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from dataclasses import asdict, replace
 from pathlib import Path
@@ -14,6 +15,7 @@ import torch
 from robust_steerability.artifacts import configuration_hash
 from robust_steerability.benchmarks import mgsm_artifacts as artifacts
 from robust_steerability.benchmarks import mgsm_runtime as runtime
+from robust_steerability.benchmarks.composition import load_composition
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import artifact_root, calibration_root
 from robust_steerability.benchmarks.specs import MODELS
@@ -27,7 +29,6 @@ from robust_steerability.experiments.diagnostics import score as freeze_diagnost
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.exact import harmonic_mean
-from robust_steerability.judges.mgsm import spanish_rule_score
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.huggingface import release_cuda_memory
 
@@ -37,8 +38,24 @@ Q_OVER_R = (0.01, 0.1, 1.0, 10.0)
 Q_FINAL_OVER_R = (0.01, 0.1, 10**-0.5)
 FIXED_R = 1.0
 SETPOINT_MULTIPLIER = 1.5
-OPENAI_SCORERS = ("axbench_instruction_relevance", "axbench_fluency")
-COMPONENT_SCORERS = ("axbench_rule_spanish", *OPENAI_SCORERS)
+COMPONENT_SCORERS = (
+    "axbench_concept_relevance",
+    "axbench_instruction_relevance",
+    "axbench_fluency",
+)
+OVERALL_SCORER = "axbench_overall"
+COMPOSITION = load_composition(BENCHMARK)
+LAMBDA_SWEEP = COMPOSITION.calibration.h_infinity_lambda_sweep
+
+
+def _selection_scorer(metric: str) -> str:
+    if metric != "mean_axbench_overall":
+        raise ValueError(f"Unsupported MGSM H-infinity selection metric: {metric}")
+    return OVERALL_SCORER
+
+
+LAMBDA_SELECTION_SCORER = _selection_scorer(LAMBDA_SWEEP.selection_metric)
+GRID_SELECTION_SCORER = _selection_scorer(COMPOSITION.calibration.selection_metric)
 
 
 def _root(model_key: str, calibration_id: str) -> Path:
@@ -59,11 +76,11 @@ def _write_torch(path: Path, payload: object) -> None:
     temporary.replace(path)
 
 
-def grid() -> list[dict[str, float | str]]:
+def grid(multiplier: float = SETPOINT_MULTIPLIER) -> list[dict[str, float | str]]:
     return [
         {
             "grid_id": f"q_{q_index:02d}_qf_{qf_index:02d}",
-            "lambda": SETPOINT_MULTIPLIER,
+            "lambda": float(multiplier),
             "q": float(q_ratio * FIXED_R),
             "r": FIXED_R,
             "q_final": float(qf_ratio * FIXED_R),
@@ -75,7 +92,13 @@ def grid() -> list[dict[str, float | str]]:
     ]
 
 
-def _settings(model_key: str, q: float, r: float, q_final: float) -> dict[str, object]:
+def _settings(
+    model_key: str,
+    q: float,
+    r: float,
+    q_final: float,
+    multiplier: float = SETPOINT_MULTIPLIER,
+) -> dict[str, object]:
     model = MODELS[model_key]
     return {
         "behavior": BENCHMARK,
@@ -89,9 +112,9 @@ def _settings(model_key: str, q: float, r: float, q_final: float) -> dict[str, o
         "jacobian_vjp_chunk_size": model.jacobian_vjp_chunk_size,
         "state_rank": 8,
         "numerical_floor": 1e-4,
-        "alqr_setpoint_multiplier": SETPOINT_MULTIPLIER,
-        "spid_setpoint_multiplier": SETPOINT_MULTIPLIER,
-        "hinf_setpoint_multiplier": SETPOINT_MULTIPLIER,
+        "alqr_setpoint_multiplier": float(multiplier),
+        "spid_setpoint_multiplier": float(multiplier),
+        "hinf_setpoint_multiplier": float(multiplier),
         "q": float(q),
         "r": float(r),
         "q_final": float(q_final),
@@ -118,6 +141,8 @@ def fit_base(
     q: float = 0.1,
     r: float = 1.0,
     q_final: float = 0.1,
+    multiplier: float = SETPOINT_MULTIPLIER,
+    destination_root: Path | None = None,
 ) -> dict:
     data = artifacts.prepare(model_key)
     model, tokenizer = artifacts.load_model(model_key, device)
@@ -137,15 +162,16 @@ def fit_base(
             "tuning": "disjoint frozen 50 GSM8K train questions",
         },
     }
+    root = destination_root or _root(model_key, calibration_id)
     _artifact, metadata = calibrate_controller(
         model,
         tokenizer,
         model_label=MODELS[model_key].label,
         model_id=MODELS[model_key].model_id,
-        cache_path=_root(model_key, calibration_id) / "base/controller.pt",
+        cache_path=root / "base/controller.pt",
         nominal_dynamics_path=artifact_root(BENCHMARK, model_key) / "dynamics.pt",
         calibration_data=calibration_data,
-        settings=_settings(model_key, q, r, q_final),
+        settings=_settings(model_key, q, r, q_final, multiplier),
         controller_device=device,
         semantic_calibration={
             "contrast": setpoint["contrast"],
@@ -155,8 +181,271 @@ def fit_base(
     return metadata
 
 
+def lambda_candidates() -> list[dict[str, float | str]]:
+    """Return the configured first-phase setpoint sweep."""
+
+    return [
+        {
+            "configuration_id": f"lambda_{index:02d}",
+            "lambda": float(multiplier),
+            "q": float(LAMBDA_SWEEP.fixed_q_over_r * LAMBDA_SWEEP.fixed_r),
+            "r": float(LAMBDA_SWEEP.fixed_r),
+            "q_final": float(
+                LAMBDA_SWEEP.fixed_q_final_over_r * LAMBDA_SWEEP.fixed_r
+            ),
+            "q_over_r": float(LAMBDA_SWEEP.fixed_q_over_r),
+            "q_final_over_r": float(LAMBDA_SWEEP.fixed_q_final_over_r),
+        }
+        for index, multiplier in enumerate(LAMBDA_SWEEP.values)
+    ]
+
+
+def _lambda_candidate_root(
+    model_key: str, calibration_id: str, configuration_id: str
+) -> Path:
+    return (
+        _root(model_key, calibration_id)
+        / "lambda_sweep"
+        / "candidates"
+        / configuration_id
+    )
+
+
+def _lambda_selection_path(model_key: str, calibration_id: str) -> Path:
+    return _root(model_key, calibration_id) / "lambda_sweep" / "selection.json"
+
+
+def _lambda_generation_path(
+    model_key: str, calibration_id: str, configuration_id: str
+) -> Path:
+    return (
+        _root(model_key, calibration_id)
+        / "lambda_sweep"
+        / "generations"
+        / f"{configuration_id}.json"
+    )
+
+
+def selected_multiplier(model_key: str, calibration_id: str) -> float:
+    if not LAMBDA_SWEEP.enabled:
+        return SETPOINT_MULTIPLIER
+    payload = json.loads(_lambda_selection_path(model_key, calibration_id).read_text())
+    return float(payload["selected"]["lambda"])
+
+
+def _q_grid_root(model_key: str, calibration_id: str) -> Path:
+    root = _root(model_key, calibration_id)
+    if not LAMBDA_SWEEP.enabled:
+        return root / "grid"
+    selection = json.loads(_lambda_selection_path(model_key, calibration_id).read_text())
+    return root / "q_qf_sweep" / str(selection["selected"]["configuration_id"])
+
+
+def generate_lambda_candidate(
+    model_key: str,
+    device: str,
+    candidate_index: int,
+    calibration_id: str,
+    generation_batch_size: int | None,
+) -> None:
+    """Fit and evaluate one genuine H-infinity setpoint candidate."""
+
+    configuration = lambda_candidates()[candidate_index]
+    candidate_root = _lambda_candidate_root(
+        model_key, calibration_id, str(configuration["configuration_id"])
+    )
+    destination = _lambda_generation_path(
+        model_key, calibration_id, str(configuration["configuration_id"])
+    )
+    if runtime.generation_complete(destination):
+        return
+    fit_base(
+        model_key,
+        device,
+        calibration_id,
+        q=float(configuration["q"]),
+        r=float(configuration["r"]),
+        q_final=float(configuration["q_final"]),
+        multiplier=float(configuration["lambda"]),
+        destination_root=candidate_root,
+    )
+    release_cuda_memory(device)
+    data = artifacts.prepare(model_key)
+    model, tokenizer = artifacts.load_model(model_key, device)
+    base_payload = torch.load(
+        candidate_root / "base/controller.pt",
+        map_location="cpu",
+        weights_only=True,
+        mmap=True,
+    )
+    artifact = ControllerArtifact(**base_payload["artifact"])
+    policy = build_policy("hinf", artifact, kp=0.0, ki=0.0, kd=0.0)
+    prompts = [
+        runtime.format_calibration_prompt(tokenizer, str(row["text"]))
+        for row in data["calibration"]["tuning"]
+    ]
+    batch_size = generation_batch_size or MODELS[model_key].activation_batch_size
+    completions, generated = runtime.generate_completions(
+        model,
+        tokenizer,
+        prompts,
+        policy=policy,
+        use_cache=False,
+        batch_size=batch_size,
+        max_new_tokens=256,
+    )
+    rows = [
+        {
+            "prompt_id": row["prompt_id"],
+            "configuration_id": configuration["configuration_id"],
+            "text": row["text"],
+            "completion": completion,
+            "concept": artifacts.CONCEPT,
+            "generated_tokens": count,
+        }
+        for row, completion, count in zip(
+            data["calibration"]["tuning"], completions, generated, strict=True
+        )
+    ]
+    _write_json(
+        destination,
+        {
+            "identity": {
+                "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
+                "configuration": configuration,
+                "calibration_id": calibration_id,
+                "evaluated_model_kv_cache": False,
+                "generation_batch_size": batch_size,
+            },
+            "status": "complete",
+            "repetitions": [
+                {"repetition": 0, "sample_count": len(rows), "rows": rows}
+            ],
+        },
+    )
+
+
+def _score_axbench_generations(
+    generations: list[Path],
+    scorer_root: Path,
+    *,
+    api_concurrency: int,
+    api_batch_size: int,
+) -> None:
+    openai_scoring.score_generations(
+        generations,
+        scorer_root,
+        list(COMPONENT_SCORERS),
+        concurrency=api_concurrency,
+        batch_size=api_batch_size,
+    )
+    for generation in generations:
+        maps = []
+        for scorer in COMPONENT_SCORERS:
+            payload = json.loads(
+                scorer_cache_path(scorer_root, generation, scorer).read_text()
+            )
+            maps.append(
+                {row["prompt_id"]: float(row["score"]) for row in payload["rows"]}
+            )
+        rows = [
+            {
+                "prompt_id": prompt_id,
+                "score": harmonic_mean([mapping[prompt_id] for mapping in maps]),
+            }
+            for prompt_id in maps[0]
+        ]
+        _write_json(
+            scorer_cache_path(scorer_root, generation, OVERALL_SCORER),
+            {"status": "complete", "rows": rows},
+        )
+
+
+def score_lambda_sweep(
+    model_key: str,
+    calibration_id: str,
+    *,
+    api_concurrency: int,
+    api_batch_size: int,
+) -> None:
+    sweep_root = _root(model_key, calibration_id) / "lambda_sweep"
+    generations = [
+        _lambda_generation_path(
+            model_key, calibration_id, str(configuration["configuration_id"])
+        )
+        for configuration in lambda_candidates()
+    ]
+    if any(not runtime.generation_complete(path) for path in generations):
+        raise ValueError("MGSM H-infinity lambda sweep generations are incomplete")
+    _score_axbench_generations(
+        generations,
+        sweep_root,
+        api_concurrency=api_concurrency,
+        api_batch_size=api_batch_size,
+    )
+
+
+def select_lambda(model_key: str, calibration_id: str) -> dict:
+    root = _root(model_key, calibration_id)
+    sweep_root = root / "lambda_sweep"
+    summaries = []
+    for configuration in lambda_candidates():
+        generation = _lambda_generation_path(
+            model_key, calibration_id, str(configuration["configuration_id"])
+        )
+        means = {}
+        for scorer in (*COMPONENT_SCORERS, OVERALL_SCORER):
+            payload = json.loads(
+                scorer_cache_path(sweep_root, generation, scorer).read_text()
+            )
+            means[scorer] = float(
+                np.mean([float(row["score"]) for row in payload["rows"]])
+            )
+        summaries.append({**configuration, **means})
+    selected = sorted(
+        summaries,
+        key=lambda row: (-row[LAMBDA_SELECTION_SCORER], row["lambda"]),
+    )[0]
+    selected_root = _lambda_candidate_root(
+        model_key, calibration_id, str(selected["configuration_id"])
+    )
+    canonical_base = root / "base"
+    canonical_base.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(selected_root / "base/controller.pt", canonical_base / "controller.pt")
+    source_diagnostics = diagnostic_root(selected_root / "base/controller.pt")
+    destination_diagnostics = diagnostic_root(canonical_base / "controller.pt")
+    if destination_diagnostics.exists():
+        shutil.rmtree(destination_diagnostics)
+    shutil.copytree(source_diagnostics, destination_diagnostics)
+    payload = {
+        "schema_version": 1,
+        "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
+        "benchmark": BENCHMARK,
+        "calibration_id": calibration_id,
+        "protocol": {
+            "enabled": True,
+            "selection_metric": LAMBDA_SWEEP.selection_metric,
+            "values": list(LAMBDA_SWEEP.values),
+            "fixed_q_over_r": LAMBDA_SWEEP.fixed_q_over_r,
+            "fixed_q_final_over_r": LAMBDA_SWEEP.fixed_q_final_over_r,
+            "fixed_r": LAMBDA_SWEEP.fixed_r,
+            "tuning_samples": len(
+                artifacts.prepare(model_key)["calibration"]["tuning"]
+            ),
+            "tuning_repetitions": 1,
+            "evaluated_model_kv_cache": False,
+        },
+        "selected": selected,
+        "candidates": summaries,
+    }
+    _write_json(_lambda_selection_path(model_key, calibration_id), payload)
+    return payload
+
+
 def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
     root = _root(model_key, calibration_id)
+    multiplier = selected_multiplier(model_key, calibration_id)
+    grid_root = _q_grid_root(model_key, calibration_id)
     bundle = torch.load(
         diagnostic_root(root / "base/controller.pt") / "input.pt",
         map_location="cpu",
@@ -166,8 +455,8 @@ def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
     problem = FiniteHorizonControlProblem(**bundle["problem"])
     options = HInfinityOptions(**bundle["options"])
     settings = bundle["calibration"]["settings"]
-    for configuration in grid():
-        destination = root / "grid/controllers" / f"{configuration['grid_id']}.pt"
+    for configuration in grid(multiplier):
+        destination = grid_root / "controllers" / f"{configuration['grid_id']}.pt"
         if destination.exists():
             continue
         candidate = FiniteHorizonControlProblem(
@@ -216,6 +505,8 @@ def generate_worker(
     generation_batch_size: int | None,
 ) -> None:
     root = _root(model_key, calibration_id)
+    multiplier = selected_multiplier(model_key, calibration_id)
+    grid_root = _q_grid_root(model_key, calibration_id)
     data = artifacts.prepare(model_key)
     model, tokenizer = artifacts.load_model(model_key, device)
     base_payload = torch.load(
@@ -227,13 +518,13 @@ def generate_worker(
         for row in data["calibration"]["tuning"]
     ]
     batch_size = generation_batch_size or MODELS[model_key].activation_batch_size
-    for configuration in grid()[shard_index::shard_count]:
+    for configuration in grid(multiplier)[shard_index::shard_count]:
         grid_id = str(configuration["grid_id"])
-        destination = root / "grid/generations" / f"{grid_id}.json"
+        destination = grid_root / "generations" / f"{grid_id}.json"
         if runtime.generation_complete(destination):
             continue
         controller = torch.load(
-            root / "grid/controllers" / f"{grid_id}.pt",
+            grid_root / "controllers" / f"{grid_id}.pt",
             map_location="cpu",
             weights_only=True,
         )
@@ -260,6 +551,7 @@ def generate_worker(
                 "grid_id": grid_id,
                 "text": row["text"],
                 "completion": completion,
+                "concept": artifacts.CONCEPT,
                 "generated_tokens": count,
             }
             for row, completion, count in zip(
@@ -277,7 +569,9 @@ def generate_worker(
                     "generation_batch_size": batch_size,
                 },
                 "status": "complete",
-                "repetitions": [{"repetition": 0, "sample_count": 50, "rows": rows}],
+                "repetitions": [
+                    {"repetition": 0, "sample_count": len(rows), "rows": rows}
+                ],
             },
         )
 
@@ -289,47 +583,16 @@ def score_grid(
     api_concurrency: int,
     api_batch_size: int,
 ) -> None:
-    root = _root(model_key, calibration_id) / "grid"
+    root = _q_grid_root(model_key, calibration_id)
     generations = sorted((root / "generations").glob("*.json"))
-    if len(generations) != len(grid()):
+    if len(generations) != len(grid(selected_multiplier(model_key, calibration_id))):
         raise ValueError("MGSM H-infinity grid generations are incomplete")
-    for generation in generations:
-        payload = json.loads(generation.read_text())
-        rows = [
-            {
-                "prompt_id": row["prompt_id"],
-                **spanish_rule_score(str(row["completion"])),
-            }
-            for repetition in payload["repetitions"]
-            for row in repetition["rows"]
-        ]
-        _write_json(
-            scorer_cache_path(root, generation, "axbench_rule_spanish"),
-            {"status": "complete", "rows": rows},
-        )
-    openai_scoring.score_generations(
+    _score_axbench_generations(
         generations,
         root,
-        list(OPENAI_SCORERS),
-        concurrency=api_concurrency,
-        batch_size=api_batch_size,
+        api_concurrency=api_concurrency,
+        api_batch_size=api_batch_size,
     )
-    for generation in generations:
-        maps = []
-        for scorer in COMPONENT_SCORERS:
-            payload = json.loads(scorer_cache_path(root, generation, scorer).read_text())
-            maps.append({row["prompt_id"]: float(row["score"]) for row in payload["rows"]})
-        rows = [
-            {
-                "prompt_id": prompt_id,
-                "score": harmonic_mean([mapping[prompt_id] for mapping in maps]),
-            }
-            for prompt_id in maps[0]
-        ]
-        _write_json(
-            scorer_cache_path(root, generation, "mgsm_axbench_overall"),
-            {"status": "complete", "rows": rows},
-        )
 
 
 def _freeze_selected_diagnostics(
@@ -377,29 +640,29 @@ def _freeze_selected_diagnostics(
 
 def select(model_key: str, calibration_id: str) -> dict:
     root = _root(model_key, calibration_id)
+    multiplier = selected_multiplier(model_key, calibration_id)
+    grid_root = _q_grid_root(model_key, calibration_id)
     summaries = []
-    for configuration in grid():
-        generation = root / "grid/generations" / f"{configuration['grid_id']}.json"
+    for configuration in grid(multiplier):
+        generation = grid_root / "generations" / f"{configuration['grid_id']}.json"
         means = {}
-        for scorer in (*COMPONENT_SCORERS, "mgsm_axbench_overall"):
+        for scorer in (*COMPONENT_SCORERS, OVERALL_SCORER):
             payload = json.loads(
-                scorer_cache_path(root / "grid", generation, scorer).read_text()
+                scorer_cache_path(grid_root, generation, scorer).read_text()
             )
             means[scorer] = float(np.mean([float(row["score"]) for row in payload["rows"]]))
         summaries.append({**configuration, **means})
     selected = sorted(
         summaries,
         key=lambda row: (
-            -row["mgsm_axbench_overall"],
-            -row["axbench_instruction_relevance"],
-            -row["axbench_fluency"],
+            -row[GRID_SELECTION_SCORER],
             row["q"],
             row["q_final"],
         ),
     )[0]
     parameters = {key: float(selected[key]) for key in ("lambda", "q", "r", "q_final")}
     controller = torch.load(
-        root / "grid/controllers" / f"{selected['grid_id']}.pt",
+        grid_root / "controllers" / f"{selected['grid_id']}.pt",
         map_location="cpu",
         weights_only=True,
     )
@@ -412,21 +675,30 @@ def select(model_key: str, calibration_id: str) -> dict:
         "calibration_id": calibration_id,
         "protocol": {
             "selection_strategy": "grid",
-            "selection_metric": "mean per-response AXBench Spanish/relevance/fluency harmonic mean",
+            "selection_metric": COMPOSITION.calibration.selection_metric,
+            "selection_metric_description": (
+                "mean per-response AXBench three-judge harmonic mean"
+            ),
             "tuning_samples": 50,
             "tuning_repetitions": 1,
             "evaluated_model_kv_cache": False,
             "q_over_r": list(Q_OVER_R),
             "q_final_over_r": list(Q_FINAL_OVER_R),
             "fixed_r": FIXED_R,
-            "fixed_setpoint_multiplier": SETPOINT_MULTIPLIER,
+            "fixed_setpoint_multiplier": multiplier,
+            "lambda_sweep_enabled": LAMBDA_SWEEP.enabled,
+            "lambda_selection": (
+                str(_lambda_selection_path(model_key, calibration_id).relative_to(root))
+                if LAMBDA_SWEEP.enabled
+                else None
+            ),
         },
         "selected": {
             **selected,
             "configuration_id": selected["grid_id"],
             "parameters": parameters,
             "gamma_star": float(controller["gamma_star"]),
-            "source": "MGSM AXBench three-score harmonic-mean calibration argmax",
+            "source": "AXBench three-judge harmonic-mean calibration argmax",
         },
         "grid": summaries,
         "diagnostic_bundle": str(diagnostic.relative_to(root)),
@@ -501,13 +773,81 @@ def calibrate(
     fixed_parameters: dict[str, float] | None,
 ) -> None:
     root = _root(model_key, calibration_id)
-    if (root / "selection.json").exists() and (root / "controller.pt").exists():
-        return
     if fixed_parameters is not None:
+        if (root / "selection.json").exists() and (root / "controller.pt").exists():
+            return
         select_fixed(model_key, devices[0], calibration_id, **fixed_parameters)
         return
-    fit_base(model_key, devices[0], calibration_id)
-    release_cuda_memory(devices[0])
+    if (root / "selection.json").exists() and (root / "controller.pt").exists():
+        saved = json.loads((root / "selection.json").read_text())
+        protocol = saved.get("protocol", {})
+        if (
+            protocol.get("selection_metric")
+            == COMPOSITION.calibration.selection_metric
+            and bool(protocol.get("lambda_sweep_enabled", False))
+            == LAMBDA_SWEEP.enabled
+        ):
+            return
+    if LAMBDA_SWEEP.enabled:
+        lambda_selection = _lambda_selection_path(model_key, calibration_id)
+        if lambda_selection.exists():
+            saved_lambda = json.loads(lambda_selection.read_text())
+            expected_protocol = {
+                "selection_metric": LAMBDA_SWEEP.selection_metric,
+                "values": list(LAMBDA_SWEEP.values),
+                "fixed_q_over_r": LAMBDA_SWEEP.fixed_q_over_r,
+                "fixed_q_final_over_r": LAMBDA_SWEEP.fixed_q_final_over_r,
+                "fixed_r": LAMBDA_SWEEP.fixed_r,
+            }
+            actual_protocol = saved_lambda.get("protocol", {})
+            actual = {
+                key: actual_protocol.get(key) for key in expected_protocol
+            }
+            if actual != expected_protocol:
+                raise ValueError(
+                    f"Calibration ID {calibration_id!r} already contains a different "
+                    "lambda sweep; use a new calibration ID"
+                )
+            if not (root / "base/controller.pt").exists():
+                select_lambda(model_key, calibration_id)
+        else:
+            lambda_jobs = [
+                (
+                    f"hinf-lambda-{index:02d}",
+                    [
+                        sys.executable,
+                        "-m",
+                        "robust_steerability.benchmarks.mgsm_calibration",
+                        "--stage",
+                        "lambda-worker",
+                        "--model",
+                        model_key,
+                        "--device",
+                        "{device}",
+                        "--candidate-index",
+                        str(index),
+                        "--calibration-id",
+                        calibration_id,
+                        *(
+                            ["--generation-batch-size", str(generation_batch_size)]
+                            if generation_batch_size is not None
+                            else []
+                        ),
+                    ],
+                )
+                for index in range(len(lambda_candidates()))
+            ]
+            run_jobs(lambda_jobs, devices, log_root / "hinf-lambda-generation")
+            score_lambda_sweep(
+                model_key,
+                calibration_id,
+                api_concurrency=api_concurrency,
+                api_batch_size=api_batch_size,
+            )
+            select_lambda(model_key, calibration_id)
+    else:
+        fit_base(model_key, devices[0], calibration_id)
+        release_cuda_memory(devices[0])
     synthesize_grid(model_key, devices[0], calibration_id)
     jobs = [
         (
@@ -551,13 +891,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--stage",
-        choices=("base", "synthesize", "generate-worker", "score-grid", "select"),
+        choices=(
+            "base",
+            "lambda-worker",
+            "score-lambda",
+            "select-lambda",
+            "synthesize",
+            "generate-worker",
+            "score-grid",
+            "select",
+        ),
         required=True,
     )
     parser.add_argument("--model", choices=artifacts.MODEL_KEYS, required=True)
     parser.add_argument("--device")
     parser.add_argument("--shard-index", type=int)
     parser.add_argument("--shard-count", type=int)
+    parser.add_argument("--candidate-index", type=int)
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument("--api-concurrency", type=int, default=500)
@@ -565,6 +915,23 @@ def main() -> None:
     arguments = parser.parse_args()
     if arguments.stage == "base":
         fit_base(arguments.model, arguments.device, arguments.calibration_id)
+    elif arguments.stage == "lambda-worker":
+        generate_lambda_candidate(
+            arguments.model,
+            arguments.device,
+            arguments.candidate_index,
+            arguments.calibration_id,
+            arguments.generation_batch_size,
+        )
+    elif arguments.stage == "score-lambda":
+        score_lambda_sweep(
+            arguments.model,
+            arguments.calibration_id,
+            api_concurrency=arguments.api_concurrency,
+            api_batch_size=arguments.api_batch_size,
+        )
+    elif arguments.stage == "select-lambda":
+        select_lambda(arguments.model, arguments.calibration_id)
     elif arguments.stage == "synthesize":
         synthesize_grid(arguments.model, arguments.device, arguments.calibration_id)
     elif arguments.stage == "generate-worker":
