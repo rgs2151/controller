@@ -22,14 +22,13 @@ The remaining registered languages stay independently runnable with `--datasets`
 evaluation never refits the controller by language.
 
 Qwen3-4B is the completed first model. The next run uses
-Gemma-3-4B-Instruct and only S-PID, A-LQR, and H-infinity; Original remains an
-available method so the completed Qwen result stays reproducible.
+Llama-3.2-3B-Instruct with Original, S-PID, A-LQR, and H-infinity.
 
 ```bash
-python -m robust_steerability.benchmarks.mgsm artifacts --model gemma3_4b_it --methods spid,alqr,h_infinity --devices auto
-python -m robust_steerability.benchmarks.mgsm calibrate --model gemma3_4b_it --methods spid,alqr,h_infinity --devices auto
-python -m robust_steerability.benchmarks.mgsm evaluate --model gemma3_4b_it --methods spid,alqr,h_infinity --devices auto
-python -m robust_steerability.benchmarks.mgsm score --model gemma3_4b_it --methods spid,alqr,h_infinity --scorers default --devices auto
+python -m robust_steerability.benchmarks.mgsm artifacts --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --devices auto
+python -m robust_steerability.benchmarks.mgsm calibrate --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --devices auto
+python -m robust_steerability.benchmarks.mgsm evaluate --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --devices auto
+python -m robust_steerability.benchmarks.mgsm score --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --scorers default --devices auto
 ```
 
 Use `--datasets all` only for the deferred 11-language expansion.
