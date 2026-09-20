@@ -2,18 +2,18 @@
 
 | Context | Model | Method | Answer recall (%) ↑ | Citation F1 (%) ↑ | Concept relevance (0–2) ↑ | Instruction relevance (0–2) ↑ | Fluency (0–2) ↑ |
 |---|---|---|---:|---:|---:|---:|---:|
-| 8K | Qwen2.5-3B-Instruct | Original | 66.2 | 7.8 | 0.00 | 1.35 | 1.50 |
-| 8K | Qwen2.5-3B-Instruct | S-PID | 72.1 | 7.2 | 0.00 | 1.60 | 1.50 |
-| 8K | Qwen2.5-3B-Instruct | A-LQR | 70.1 | 5.6 | 0.05 | 1.48 | 1.48 |
-| 8K | Qwen2.5-3B-Instruct | H∞ (ours) | 66.4 | 6.4 | 0.00 | 1.55 | 1.55 |
-| 16K | Qwen2.5-3B-Instruct | Original | 65.2 | 5.8 | 0.20 | 1.40 | 1.52 |
-| 16K | Qwen2.5-3B-Instruct | S-PID | 61.9 | 7.2 | 0.00 | 1.38 | 1.48 |
-| 16K | Qwen2.5-3B-Instruct | A-LQR | 64.8 | 3.0 | 0.00 | 1.43 | 1.57 |
-| 16K | Qwen2.5-3B-Instruct | H∞ (ours) | 65.2 | 7.8 | 0.15 | 1.40 | 1.43 |
-| 32K | Qwen2.5-3B-Instruct | Original | 54.0 | 2.4 | 0.00 | 1.18 | 1.48 |
-| 32K | Qwen2.5-3B-Instruct | S-PID | 61.0 | 1.6 | 0.00 | 1.20 | 1.35 |
-| 32K | Qwen2.5-3B-Instruct | A-LQR | 56.2 | 4.1 | 0.00 | 1.23 | 1.35 |
-| 32K | Qwen2.5-3B-Instruct | H∞ (ours) | 52.6 | 1.8 | 0.05 | 1.20 | 1.38 |
+| 8K | Qwen2.5-3B-Instruct | Original | 66.2 ± 8.1 | 7.8 ± 1.6 | 0.00 ± 0.00 | 1.35 ± 0.14 | 1.50 ± 0.11 |
+| 8K | Qwen2.5-3B-Instruct | S-PID | 72.1 ± 9.3 | 7.2 ± 2.1 | 0.00 ± 0.00 | 1.60 ± 0.11 | 1.50 ± 0.07 |
+| 8K | Qwen2.5-3B-Instruct | A-LQR | 70.1 ± 8.9 | 5.6 ± 2.0 | 0.05 ± 0.05 | 1.48 ± 0.11 | 1.48 ± 0.09 |
+| 8K | Qwen2.5-3B-Instruct | H∞ (ours) | 66.4 ± 7.9 | 6.4 ± 2.0 | 0.00 ± 0.00 | 1.55 ± 0.09 | 1.55 ± 0.08 |
+| 16K | Qwen2.5-3B-Instruct | Original | 65.2 ± 7.6 | 5.8 ± 2.2 | 0.20 ± 0.08 | 1.40 ± 0.16 | 1.52 ± 0.13 |
+| 16K | Qwen2.5-3B-Instruct | S-PID | 61.9 ± 10.4 | 7.2 ± 3.2 | 0.00 ± 0.00 | 1.38 ± 0.13 | 1.48 ± 0.10 |
+| 16K | Qwen2.5-3B-Instruct | A-LQR | 64.8 ± 9.8 | 3.0 ± 1.5 | 0.00 ± 0.00 | 1.43 ± 0.15 | 1.57 ± 0.11 |
+| 16K | Qwen2.5-3B-Instruct | H∞ (ours) | 65.2 ± 8.6 | 7.8 ± 3.6 | 0.15 ± 0.08 | 1.40 ± 0.12 | 1.43 ± 0.09 |
+| 32K | Qwen2.5-3B-Instruct | Original | 54.0 ± 8.4 | 2.4 ± 1.3 | 0.00 ± 0.00 | 1.18 ± 0.17 | 1.48 ± 0.11 |
+| 32K | Qwen2.5-3B-Instruct | S-PID | 61.0 ± 9.1 | 1.6 ± 1.1 | 0.00 ± 0.00 | 1.20 ± 0.12 | 1.35 ± 0.09 |
+| 32K | Qwen2.5-3B-Instruct | A-LQR | 56.2 ± 6.7 | 4.1 ± 1.9 | 0.00 ± 0.00 | 1.23 ± 0.13 | 1.35 ± 0.08 |
+| 32K | Qwen2.5-3B-Instruct | H∞ (ours) | 52.6 ± 6.6 | 1.8 ± 1.2 | 0.05 ± 0.03 | 1.20 ± 0.12 | 1.38 ± 0.11 |
 
 ## Method
 
@@ -35,7 +35,7 @@
 | Instruction relevance (0–2) ↑ | Whether the response addresses the HotpotQA question and citation instruction. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Readability and language quality of the generated answer. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
-These are descriptive means on one deterministic generation for each of 40 matched questions per context length, not repeated trials; therefore the table does not report standard errors.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains four matched HotpotQA question identities; the same partition is used at 8K, 16K, and 32K. The uncertainty measures question-sampling variability, not decoding-run or judge variability.
 
 ## Hyperparameters
 

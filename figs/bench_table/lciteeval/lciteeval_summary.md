@@ -2,18 +2,18 @@
 
 | Model | Context | Method | Answer recall (%) ↑ | Citation F1 (%) ↑ | Overall steering (0–2) ↑ |
 |---|---|---|---:|---:|---:|
-| Qwen2.5-3B-Instruct | 8K | Original | 66.2 | 7.8 | 0.00 |
-| Qwen2.5-3B-Instruct | 8K | S-PID | 72.1 | 7.2 | 0.00 |
-| Qwen2.5-3B-Instruct | 8K | A-LQR | 70.1 | 5.6 | 0.05 |
-| Qwen2.5-3B-Instruct | 8K | H∞ (ours) | 66.4 | 6.4 | 0.00 |
-| Qwen2.5-3B-Instruct | 16K | Original | 65.2 | 5.8 | 0.15 |
-| Qwen2.5-3B-Instruct | 16K | S-PID | 61.9 | 7.2 | 0.00 |
-| Qwen2.5-3B-Instruct | 16K | A-LQR | 64.8 | 3.0 | 0.00 |
-| Qwen2.5-3B-Instruct | 16K | H∞ (ours) | 65.2 | 7.8 | 0.10 |
-| Qwen2.5-3B-Instruct | 32K | Original | 54.0 | 2.4 | 0.00 |
-| Qwen2.5-3B-Instruct | 32K | S-PID | 61.0 | 1.6 | 0.00 |
-| Qwen2.5-3B-Instruct | 32K | A-LQR | 56.2 | 4.1 | 0.00 |
-| Qwen2.5-3B-Instruct | 32K | H∞ (ours) | 52.6 | 1.8 | 0.00 |
+| Qwen2.5-3B-Instruct | 8K | Original | 66.2 ± 8.1 | 7.8 ± 1.6 | 0.00 ± 0.00 |
+| Qwen2.5-3B-Instruct | 8K | S-PID | 72.1 ± 9.3 | 7.2 ± 2.1 | 0.00 ± 0.00 |
+| Qwen2.5-3B-Instruct | 8K | A-LQR | 70.1 ± 8.9 | 5.6 ± 2.0 | 0.05 ± 0.05 |
+| Qwen2.5-3B-Instruct | 8K | H∞ (ours) | 66.4 ± 7.9 | 6.4 ± 2.0 | 0.00 ± 0.00 |
+| Qwen2.5-3B-Instruct | 16K | Original | 65.2 ± 7.6 | 5.8 ± 2.2 | 0.15 ± 0.08 |
+| Qwen2.5-3B-Instruct | 16K | S-PID | 61.9 ± 10.4 | 7.2 ± 3.2 | 0.00 ± 0.00 |
+| Qwen2.5-3B-Instruct | 16K | A-LQR | 64.8 ± 9.8 | 3.0 ± 1.5 | 0.00 ± 0.00 |
+| Qwen2.5-3B-Instruct | 16K | H∞ (ours) | 65.2 ± 8.6 | 7.8 ± 3.6 | 0.10 ± 0.07 |
+| Qwen2.5-3B-Instruct | 32K | Original | 54.0 ± 8.4 | 2.4 ± 1.3 | 0.00 ± 0.00 |
+| Qwen2.5-3B-Instruct | 32K | S-PID | 61.0 ± 9.1 | 1.6 ± 1.1 | 0.00 ± 0.00 |
+| Qwen2.5-3B-Instruct | 32K | A-LQR | 56.2 ± 6.7 | 4.1 ± 1.9 | 0.00 ± 0.00 |
+| Qwen2.5-3B-Instruct | 32K | H∞ (ours) | 52.6 ± 6.6 | 1.8 ± 1.2 | 0.00 ± 0.00 |
 
 ## Method
 
@@ -33,7 +33,7 @@
 | Citation F1 (%) ↑ | Balance between supported claims and necessary citations. | Pinned `tasksource/deberta-base-long-nli` at revision `04dcf11f844b07bc57015169fca2b7d6df8299d5`, applied only to each claim and its cited passages. |
 | Overall steering (0–2) ↑ | Joint target-concept presence, instruction relevance, and fluency. | Per-response harmonic mean of the three AXBench 0–2 scores; zero if any component is zero, then averaged over the 40 responses. |
 
-These are descriptive means on one deterministic generation for each of 40 matched questions per context length, not repeated trials; therefore the table does not report standard errors.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains four matched HotpotQA question identities; the same partition is used at 8K, 16K, and 32K. The uncertainty measures question-sampling variability, not decoding-run or judge variability.
 
 ## Hyperparameters
 
