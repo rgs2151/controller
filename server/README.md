@@ -32,7 +32,7 @@ every requested source method, estimates H-infinity disturbance geometry,
 synthesizes the fixed controller, and saves its diagnostics. Use `--methods
 all` when the run should contain every comparison method.
 
-Create or reuse the node-local environment before starting a run:
+Create a fresh node-local environment before every remote benchmark job:
 
 ```bash
 cd ~/controller
@@ -40,11 +40,13 @@ PYTHON=$(server/bootstrap_node_env.sh)
 $PYTHON -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
 ```
 
-The bootstrap installs packages under `/tmp`, avoiding slow imports through
-Teamspace Drive. It reuses the environment while the container lives and
-rebuilds it automatically after container migration or when `pyproject.toml`
-changes. The local workstation continues to use the `robust-steerability`
-Conda environment.
+The bootstrap deletes and recreates `/tmp/robust-steerability-venv` on every
+invocation, then installs the current checkout there. It never uses or creates
+a virtual environment on Teamspace Drive. The disposable uv download cache
+remains under `/tmp/robust-steerability-uv-cache` to avoid downloading unchanged
+packages repeatedly. Invoke the bootstrap once at the beginning of each Screen
+job and use the returned Python executable for all stages in that job. The local
+workstation continues to use the `robust-steerability` Conda environment.
 
 If the remote GPU has been checked with a smoke run and supports a larger
 generation batch, pass `--generation-batch-size <n>` to the calibration or
