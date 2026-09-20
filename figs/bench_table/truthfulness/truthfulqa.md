@@ -32,10 +32,10 @@
 | Qwen-2.5-14B | S-PID | 66.93 ± 0.93 | 96.52 ± 0.22 | 1.51 ± 0.01 | 1.26 ± 0.01 |
 | Qwen-2.5-14B | A-LQR | 71.82 ± 0.60 | 96.99 ± 0.28 | 1.53 ± 0.01 | 1.26 ± 0.01 |
 | Qwen-2.5-14B | H∞ (ours) | 85.31 ± 0.33 | 89.40 ± 0.35 | 1.34 ± 0.01 | 1.15 ± 0.00 |
-| Qwen-2.5-32B | Original | 61.86 | 98.53 | 1.49 | 1.27 |
-| Qwen-2.5-32B | S-PID | 73.84 | 96.82 | 1.40 | 1.26 |
-| Qwen-2.5-32B | A-LQR | 78.73 | 97.31 | 1.53 | 1.23 |
-| Qwen-2.5-32B | H∞ (ours) | 82.15 | 92.42 | 1.42 | 1.16 |
+| Qwen-2.5-32B | Original | 61.86 ± 2.08 | 98.53 ± 0.46 | 1.49 ± 0.02 | 1.27 ± 0.02 |
+| Qwen-2.5-32B | S-PID | 73.84 ± 1.87 | 96.82 ± 0.50 | 1.40 ± 0.04 | 1.26 ± 0.02 |
+| Qwen-2.5-32B | A-LQR | 78.73 ± 1.97 | 97.31 ± 0.60 | 1.53 ± 0.04 | 1.23 ± 0.01 |
+| Qwen-2.5-32B | H∞ (ours) | 82.15 ± 2.10 | 92.42 ± 1.25 | 1.42 ± 0.03 | 1.16 ± 0.01 |
 
 ## Method
 
@@ -60,7 +60,7 @@
 | Instruction relevance (0–2) ↑ | Whether the response directly addresses the question. | AXBench rubric through `gpt-4o-mini`: 0 = unrelated, 1 = minimally or indirectly related, 2 = directly addresses the question. |
 | Fluency (0–2) ↑ | Language quality independent of factuality and relevance. | AXBench rubric through `gpt-4o-mini`: 0 = incomprehensible, 1 = noticeable errors, 2 = fluent or nearly flawless. |
 
-Full-protocol rows are mean ± standard error across five repetitions. Qwen-2.5-32B rows are single-pass means and therefore have no standard error. AXBench API scorers return ordered `{item_index, score, explanation}` records; the local TruthfulQA judges retain raw judge text, token IDs, parsed score, and validity.
+Full-protocol rows are mean ± standard error across five decoding repetitions. Qwen-2.5-32B rows are the full 409-question mean ± five-group delete-one-group jackknife standard error. Its five fixed category-balanced groups have sizes 82, 82, 82, 82, and 81; the same partition is used for every method and for English and Spanish. This jackknife measures question-sampling variability, not decoding-run variability. AXBench API scorers return ordered `{item_index, score, explanation}` records; the local TruthfulQA judges retain raw judge text, token IDs, parsed score, and validity.
 
 ## Hyperparameters
 

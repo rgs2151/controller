@@ -32,10 +32,10 @@
 | Qwen-2.5-14B | S-PID | 82.82 ± 0.28 | 93.56 ± 0.47 | 1.64 ± 0.00 | 1.43 ± 0.01 |
 | Qwen-2.5-14B | A-LQR | 85.24 ± 0.50 | 94.32 ± 0.27 | 1.64 ± 0.01 | 1.41 ± 0.01 |
 | Qwen-2.5-14B | H∞ (ours) | 88.74 ± 0.28 | 93.05 ± 0.48 | 1.53 ± 0.01 | 1.29 ± 0.01 |
-| Qwen-2.5-32B | Original | 72.86 | 94.13 | 1.68 | 1.42 |
-| Qwen-2.5-32B | S-PID | 86.06 | 89.73 | 1.57 | 1.32 |
-| Qwen-2.5-32B | A-LQR | 84.84 | 92.42 | 1.60 | 1.39 |
-| Qwen-2.5-32B | H∞ (ours) | 84.84 | 89.24 | 1.45 | 1.30 |
+| Qwen-2.5-32B | Original | 72.86 ± 3.53 | 94.13 ± 0.45 | 1.68 ± 0.04 | 1.42 ± 0.02 |
+| Qwen-2.5-32B | S-PID | 86.06 ± 1.20 | 89.73 ± 2.05 | 1.57 ± 0.05 | 1.32 ± 0.03 |
+| Qwen-2.5-32B | A-LQR | 84.84 ± 2.13 | 92.42 ± 1.10 | 1.60 ± 0.04 | 1.39 ± 0.02 |
+| Qwen-2.5-32B | H∞ (ours) | 84.84 ± 0.85 | 89.24 ± 0.48 | 1.45 ± 0.04 | 1.30 ± 0.03 |
 
 ## Method
 
@@ -66,7 +66,7 @@
 | Instruction relevance (0–2) ↑ | Whether the response directly answers the question. | AXBench rubric through `gpt-4o-mini`: 0 = unrelated, 1 = minimally or indirectly related, 2 = directly addresses the question. |
 | Fluency (0–2) ↑ | Quality of the generated English. | AXBench rubric through `gpt-4o-mini`: 0 = incomprehensible, 1 = noticeable errors, 2 = fluent or nearly flawless. |
 
-Full-protocol rows are mean ± standard error across five repetitions. Qwen-2.5-32B rows are single-pass means and therefore have no standard error. The scorer models, revisions, output structures, and parsing rules are identical to the English TruthfulQA report.
+Full-protocol rows are mean ± standard error across five decoding repetitions. Qwen-2.5-32B rows are the full 409-question mean ± five-group delete-one-group jackknife standard error. The same fixed category-balanced question partition is used for English and Spanish; this jackknife measures question-sampling variability, not decoding-run variability. The scorer models, revisions, output structures, and parsing rules are identical to the English TruthfulQA report.
 
 ## Hyperparameters
 

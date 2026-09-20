@@ -1,0 +1,812 @@
+{
+  "schema_version": 1,
+  "model": "Qwen/Qwen2.5-32B",
+  "method": "five-group delete-one-group jackknife",
+  "partition_seed": 20260920,
+  "stratification": "TruthfulQA category-balanced deterministic partition",
+  "sample_count": 409,
+  "group_sizes": [
+    82,
+    82,
+    82,
+    82,
+    81
+  ],
+  "group_prompt_ids": [
+    [
+      "truthfulqa:1",
+      "truthfulqa:100",
+      "truthfulqa:122",
+      "truthfulqa:127",
+      "truthfulqa:139",
+      "truthfulqa:146",
+      "truthfulqa:156",
+      "truthfulqa:167",
+      "truthfulqa:168",
+      "truthfulqa:187",
+      "truthfulqa:189",
+      "truthfulqa:206",
+      "truthfulqa:220",
+      "truthfulqa:243",
+      "truthfulqa:25",
+      "truthfulqa:27",
+      "truthfulqa:270",
+      "truthfulqa:296",
+      "truthfulqa:298",
+      "truthfulqa:300",
+      "truthfulqa:334",
+      "truthfulqa:343",
+      "truthfulqa:348",
+      "truthfulqa:360",
+      "truthfulqa:37",
+      "truthfulqa:382",
+      "truthfulqa:387",
+      "truthfulqa:389",
+      "truthfulqa:410",
+      "truthfulqa:416",
+      "truthfulqa:432",
+      "truthfulqa:433",
+      "truthfulqa:448",
+      "truthfulqa:451",
+      "truthfulqa:46",
+      "truthfulqa:461",
+      "truthfulqa:464",
+      "truthfulqa:473",
+      "truthfulqa:484",
+      "truthfulqa:505",
+      "truthfulqa:511",
+      "truthfulqa:516",
+      "truthfulqa:521",
+      "truthfulqa:545",
+      "truthfulqa:551",
+      "truthfulqa:567",
+      "truthfulqa:570",
+      "truthfulqa:580",
+      "truthfulqa:581",
+      "truthfulqa:59",
+      "truthfulqa:591",
+      "truthfulqa:598",
+      "truthfulqa:6",
+      "truthfulqa:62",
+      "truthfulqa:626",
+      "truthfulqa:633",
+      "truthfulqa:655",
+      "truthfulqa:656",
+      "truthfulqa:658",
+      "truthfulqa:667",
+      "truthfulqa:681",
+      "truthfulqa:69",
+      "truthfulqa:70",
+      "truthfulqa:701",
+      "truthfulqa:713",
+      "truthfulqa:719",
+      "truthfulqa:72",
+      "truthfulqa:721",
+      "truthfulqa:725",
+      "truthfulqa:727",
+      "truthfulqa:733",
+      "truthfulqa:737",
+      "truthfulqa:757",
+      "truthfulqa:761",
+      "truthfulqa:765",
+      "truthfulqa:779",
+      "truthfulqa:789",
+      "truthfulqa:795",
+      "truthfulqa:798",
+      "truthfulqa:809",
+      "truthfulqa:87",
+      "truthfulqa:95"
+    ],
+    [
+      "truthfulqa:0",
+      "truthfulqa:104",
+      "truthfulqa:109",
+      "truthfulqa:11",
+      "truthfulqa:112",
+      "truthfulqa:117",
+      "truthfulqa:128",
+      "truthfulqa:141",
+      "truthfulqa:160",
+      "truthfulqa:161",
+      "truthfulqa:19",
+      "truthfulqa:190",
+      "truthfulqa:203",
+      "truthfulqa:205",
+      "truthfulqa:22",
+      "truthfulqa:228",
+      "truthfulqa:233",
+      "truthfulqa:235",
+      "truthfulqa:245",
+      "truthfulqa:250",
+      "truthfulqa:253",
+      "truthfulqa:257",
+      "truthfulqa:258",
+      "truthfulqa:276",
+      "truthfulqa:284",
+      "truthfulqa:305",
+      "truthfulqa:313",
+      "truthfulqa:314",
+      "truthfulqa:323",
+      "truthfulqa:342",
+      "truthfulqa:351",
+      "truthfulqa:367",
+      "truthfulqa:384",
+      "truthfulqa:390",
+      "truthfulqa:426",
+      "truthfulqa:455",
+      "truthfulqa:459",
+      "truthfulqa:465",
+      "truthfulqa:474",
+      "truthfulqa:479",
+      "truthfulqa:480",
+      "truthfulqa:482",
+      "truthfulqa:497",
+      "truthfulqa:509",
+      "truthfulqa:518",
+      "truthfulqa:529",
+      "truthfulqa:557",
+      "truthfulqa:558",
+      "truthfulqa:562",
+      "truthfulqa:568",
+      "truthfulqa:57",
+      "truthfulqa:578",
+      "truthfulqa:58",
+      "truthfulqa:604",
+      "truthfulqa:61",
+      "truthfulqa:616",
+      "truthfulqa:639",
+      "truthfulqa:647",
+      "truthfulqa:660",
+      "truthfulqa:665",
+      "truthfulqa:670",
+      "truthfulqa:672",
+      "truthfulqa:682",
+      "truthfulqa:686",
+      "truthfulqa:699",
+      "truthfulqa:708",
+      "truthfulqa:709",
+      "truthfulqa:715",
+      "truthfulqa:729",
+      "truthfulqa:744",
+      "truthfulqa:747",
+      "truthfulqa:752",
+      "truthfulqa:755",
+      "truthfulqa:767",
+      "truthfulqa:77",
+      "truthfulqa:776",
+      "truthfulqa:782",
+      "truthfulqa:785",
+      "truthfulqa:80",
+      "truthfulqa:800",
+      "truthfulqa:93",
+      "truthfulqa:94"
+    ],
+    [
+      "truthfulqa:103",
+      "truthfulqa:125",
+      "truthfulqa:126",
+      "truthfulqa:142",
+      "truthfulqa:144",
+      "truthfulqa:15",
+      "truthfulqa:158",
+      "truthfulqa:159",
+      "truthfulqa:165",
+      "truthfulqa:169",
+      "truthfulqa:194",
+      "truthfulqa:202",
+      "truthfulqa:217",
+      "truthfulqa:219",
+      "truthfulqa:223",
+      "truthfulqa:225",
+      "truthfulqa:238",
+      "truthfulqa:246",
+      "truthfulqa:252",
+      "truthfulqa:255",
+      "truthfulqa:267",
+      "truthfulqa:273",
+      "truthfulqa:285",
+      "truthfulqa:288",
+      "truthfulqa:309",
+      "truthfulqa:317",
+      "truthfulqa:318",
+      "truthfulqa:324",
+      "truthfulqa:331",
+      "truthfulqa:338",
+      "truthfulqa:34",
+      "truthfulqa:370",
+      "truthfulqa:388",
+      "truthfulqa:408",
+      "truthfulqa:412",
+      "truthfulqa:429",
+      "truthfulqa:434",
+      "truthfulqa:441",
+      "truthfulqa:445",
+      "truthfulqa:453",
+      "truthfulqa:462",
+      "truthfulqa:475",
+      "truthfulqa:478",
+      "truthfulqa:486",
+      "truthfulqa:487",
+      "truthfulqa:492",
+      "truthfulqa:514",
+      "truthfulqa:519",
+      "truthfulqa:526",
+      "truthfulqa:540",
+      "truthfulqa:549",
+      "truthfulqa:55",
+      "truthfulqa:565",
+      "truthfulqa:574",
+      "truthfulqa:577",
+      "truthfulqa:590",
+      "truthfulqa:595",
+      "truthfulqa:610",
+      "truthfulqa:618",
+      "truthfulqa:619",
+      "truthfulqa:640",
+      "truthfulqa:653",
+      "truthfulqa:671",
+      "truthfulqa:674",
+      "truthfulqa:68",
+      "truthfulqa:690",
+      "truthfulqa:696",
+      "truthfulqa:703",
+      "truthfulqa:706",
+      "truthfulqa:71",
+      "truthfulqa:758",
+      "truthfulqa:759",
+      "truthfulqa:760",
+      "truthfulqa:775",
+      "truthfulqa:777",
+      "truthfulqa:791",
+      "truthfulqa:801",
+      "truthfulqa:807",
+      "truthfulqa:811",
+      "truthfulqa:815",
+      "truthfulqa:96",
+      "truthfulqa:99"
+    ],
+    [
+      "truthfulqa:108",
+      "truthfulqa:120",
+      "truthfulqa:131",
+      "truthfulqa:133",
+      "truthfulqa:143",
+      "truthfulqa:145",
+      "truthfulqa:153",
+      "truthfulqa:166",
+      "truthfulqa:170",
+      "truthfulqa:182",
+      "truthfulqa:196",
+      "truthfulqa:2",
+      "truthfulqa:21",
+      "truthfulqa:216",
+      "truthfulqa:218",
+      "truthfulqa:259",
+      "truthfulqa:26",
+      "truthfulqa:275",
+      "truthfulqa:278",
+      "truthfulqa:283",
+      "truthfulqa:292",
+      "truthfulqa:3",
+      "truthfulqa:303",
+      "truthfulqa:304",
+      "truthfulqa:319",
+      "truthfulqa:32",
+      "truthfulqa:321",
+      "truthfulqa:339",
+      "truthfulqa:345",
+      "truthfulqa:347",
+      "truthfulqa:362",
+      "truthfulqa:363",
+      "truthfulqa:380",
+      "truthfulqa:4",
+      "truthfulqa:413",
+      "truthfulqa:420",
+      "truthfulqa:439",
+      "truthfulqa:47",
+      "truthfulqa:471",
+      "truthfulqa:48",
+      "truthfulqa:488",
+      "truthfulqa:500",
+      "truthfulqa:51",
+      "truthfulqa:512",
+      "truthfulqa:515",
+      "truthfulqa:517",
+      "truthfulqa:541",
+      "truthfulqa:543",
+      "truthfulqa:552",
+      "truthfulqa:563",
+      "truthfulqa:564",
+      "truthfulqa:566",
+      "truthfulqa:582",
+      "truthfulqa:589",
+      "truthfulqa:597",
+      "truthfulqa:60",
+      "truthfulqa:609",
+      "truthfulqa:611",
+      "truthfulqa:621",
+      "truthfulqa:623",
+      "truthfulqa:642",
+      "truthfulqa:65",
+      "truthfulqa:654",
+      "truthfulqa:663",
+      "truthfulqa:675",
+      "truthfulqa:677",
+      "truthfulqa:680",
+      "truthfulqa:693",
+      "truthfulqa:7",
+      "truthfulqa:702",
+      "truthfulqa:704",
+      "truthfulqa:723",
+      "truthfulqa:728",
+      "truthfulqa:732",
+      "truthfulqa:754",
+      "truthfulqa:768",
+      "truthfulqa:771",
+      "truthfulqa:780",
+      "truthfulqa:788",
+      "truthfulqa:79",
+      "truthfulqa:796",
+      "truthfulqa:804"
+    ],
+    [
+      "truthfulqa:107",
+      "truthfulqa:111",
+      "truthfulqa:114",
+      "truthfulqa:123",
+      "truthfulqa:135",
+      "truthfulqa:154",
+      "truthfulqa:163",
+      "truthfulqa:175",
+      "truthfulqa:178",
+      "truthfulqa:20",
+      "truthfulqa:214",
+      "truthfulqa:222",
+      "truthfulqa:224",
+      "truthfulqa:230",
+      "truthfulqa:234",
+      "truthfulqa:242",
+      "truthfulqa:248",
+      "truthfulqa:254",
+      "truthfulqa:269",
+      "truthfulqa:271",
+      "truthfulqa:274",
+      "truthfulqa:281",
+      "truthfulqa:289",
+      "truthfulqa:291",
+      "truthfulqa:30",
+      "truthfulqa:322",
+      "truthfulqa:330",
+      "truthfulqa:332",
+      "truthfulqa:336",
+      "truthfulqa:341",
+      "truthfulqa:344",
+      "truthfulqa:346",
+      "truthfulqa:35",
+      "truthfulqa:352",
+      "truthfulqa:366",
+      "truthfulqa:371",
+      "truthfulqa:373",
+      "truthfulqa:379",
+      "truthfulqa:394",
+      "truthfulqa:399",
+      "truthfulqa:405",
+      "truthfulqa:41",
+      "truthfulqa:418",
+      "truthfulqa:438",
+      "truthfulqa:44",
+      "truthfulqa:450",
+      "truthfulqa:469",
+      "truthfulqa:470",
+      "truthfulqa:485",
+      "truthfulqa:498",
+      "truthfulqa:510",
+      "truthfulqa:53",
+      "truthfulqa:54",
+      "truthfulqa:546",
+      "truthfulqa:573",
+      "truthfulqa:603",
+      "truthfulqa:613",
+      "truthfulqa:634",
+      "truthfulqa:637",
+      "truthfulqa:643",
+      "truthfulqa:650",
+      "truthfulqa:67",
+      "truthfulqa:684",
+      "truthfulqa:688",
+      "truthfulqa:692",
+      "truthfulqa:714",
+      "truthfulqa:718",
+      "truthfulqa:73",
+      "truthfulqa:730",
+      "truthfulqa:738",
+      "truthfulqa:749",
+      "truthfulqa:750",
+      "truthfulqa:751",
+      "truthfulqa:764",
+      "truthfulqa:769",
+      "truthfulqa:778",
+      "truthfulqa:784",
+      "truthfulqa:792",
+      "truthfulqa:81",
+      "truthfulqa:82",
+      "truthfulqa:89"
+    ]
+  ],
+  "partition_sha256": "8f7a8ff7db4e5ab4a136733405cadcc41d2533e471d8c3b1662166868010cc92",
+  "interpretation": "Question-sampling variability only; not decoding-run variability.",
+  "results": {
+    "truthfulness": {
+      "original": {
+        "truth": {
+          "full_mean": 61.858190709046454,
+          "jackknife_standard_error": 2.0762717133693323,
+          "leave_group_out_estimates": [
+            61.46788990825688,
+            63.608562691131496,
+            62.38532110091743,
+            61.162079510703364,
+            60.670731707317074
+          ]
+        },
+        "info": {
+          "full_mean": 98.53300733496333,
+          "jackknife_standard_error": 0.4572116704476936,
+          "leave_group_out_estimates": [
+            98.47094801223241,
+            98.77675840978593,
+            98.77675840978593,
+            98.1651376146789,
+            98.47560975609755
+          ]
+        },
+        "instruction_relevance": {
+          "full_mean": 1.4938875305623471,
+          "jackknife_standard_error": 0.01772774302136528,
+          "leave_group_out_estimates": [
+            1.492354740061162,
+            1.492354740061162,
+            1.4801223241590213,
+            1.507645259938838,
+            1.4969512195121952
+          ]
+        },
+        "fluency": {
+          "full_mean": 1.2689486552567237,
+          "jackknife_standard_error": 0.019632211635277824,
+          "leave_group_out_estimates": [
+            1.2660550458715596,
+            1.269113149847095,
+            1.253822629969419,
+            1.2844036697247707,
+            1.271341463414634
+          ]
+        }
+      },
+      "spid": {
+        "truth": {
+          "full_mean": 73.83863080684597,
+          "jackknife_standard_error": 1.8665376167667382,
+          "leave_group_out_estimates": [
+            74.00611620795107,
+            72.4770642201835,
+            74.92354740061162,
+            73.08868501529052,
+            74.6951219512195
+          ]
+        },
+        "info": {
+          "full_mean": 96.82151589242054,
+          "jackknife_standard_error": 0.4951810979345166,
+          "leave_group_out_estimates": [
+            96.63608562691131,
+            96.63608562691131,
+            96.63608562691131,
+            96.94189602446484,
+            97.2560975609756
+          ]
+        },
+        "instruction_relevance": {
+          "full_mean": 1.4009779951100245,
+          "jackknife_standard_error": 0.03694457743511079,
+          "leave_group_out_estimates": [
+            1.4036697247706422,
+            1.4097859327217126,
+            1.4250764525993884,
+            1.3975535168195719,
+            1.3689024390243902
+          ]
+        },
+        "fluency": {
+          "full_mean": 1.256723716381418,
+          "jackknife_standard_error": 0.01991409818386086,
+          "leave_group_out_estimates": [
+            1.238532110091743,
+            1.2629969418960245,
+            1.2660550458715596,
+            1.253822629969419,
+            1.2621951219512195
+          ]
+        }
+      },
+      "alqr": {
+        "truth": {
+          "full_mean": 78.72860635696821,
+          "jackknife_standard_error": 1.9672184046844616,
+          "leave_group_out_estimates": [
+            79.20489296636086,
+            77.37003058103976,
+            79.81651376146789,
+            79.51070336391437,
+            77.7439024390244
+          ]
+        },
+        "info": {
+          "full_mean": 97.31051344743277,
+          "jackknife_standard_error": 0.6040630066952054,
+          "leave_group_out_estimates": [
+            97.24770642201835,
+            96.94189602446484,
+            97.24770642201835,
+            97.24770642201835,
+            97.86585365853658
+          ]
+        },
+        "instruction_relevance": {
+          "full_mean": 1.528117359413203,
+          "jackknife_standard_error": 0.04125409853914782,
+          "leave_group_out_estimates": [
+            1.5351681957186545,
+            1.5412844036697249,
+            1.5321100917431192,
+            1.54434250764526,
+            1.4878048780487805
+          ]
+        },
+        "fluency": {
+          "full_mean": 1.2298288508557458,
+          "jackknife_standard_error": 0.007961516975091473,
+          "leave_group_out_estimates": [
+            1.2293577981651376,
+            1.2293577981651376,
+            1.2232415902140672,
+            1.235474006116208,
+            1.2317073170731707
+          ]
+        }
+      },
+      "h_infinity": {
+        "truth": {
+          "full_mean": 82.15158924205379,
+          "jackknife_standard_error": 2.1003811451900996,
+          "leave_group_out_estimates": [
+            81.03975535168196,
+            82.87461773700306,
+            81.65137614678899,
+            81.34556574923548,
+            83.84146341463415
+          ]
+        },
+        "info": {
+          "full_mean": 92.42053789731051,
+          "jackknife_standard_error": 1.246691430007017,
+          "leave_group_out_estimates": [
+            91.74311926605505,
+            92.35474006116208,
+            92.04892966360856,
+            93.57798165137615,
+            92.3780487804878
+          ]
+        },
+        "instruction_relevance": {
+          "full_mean": 1.4180929095354524,
+          "jackknife_standard_error": 0.03064953026111923,
+          "leave_group_out_estimates": [
+            1.415902140672783,
+            1.4067278287461773,
+            1.4250764525993884,
+            1.4434250764525993,
+            1.399390243902439
+          ]
+        },
+        "fluency": {
+          "full_mean": 1.156479217603912,
+          "jackknife_standard_error": 0.006043318757070257,
+          "leave_group_out_estimates": [
+            1.1529051987767585,
+            1.1559633027522935,
+            1.1559633027522935,
+            1.162079510703364,
+            1.1554878048780488
+          ]
+        }
+      }
+    },
+    "truthfulness_spanish": {
+      "original": {
+        "truth": {
+          "full_mean": 72.86063569682152,
+          "jackknife_standard_error": 3.5262651552344906,
+          "leave_group_out_estimates": [
+            76.14678899082568,
+            71.86544342507645,
+            72.78287461773701,
+            70.9480122324159,
+            72.5609756097561
+          ]
+        },
+        "info": {
+          "full_mean": 94.1320293398533,
+          "jackknife_standard_error": 0.4498980002571033,
+          "leave_group_out_estimates": [
+            93.88379204892966,
+            94.18960244648318,
+            94.18960244648318,
+            94.4954128440367,
+            93.90243902439025
+          ]
+        },
+        "instruction_relevance": {
+          "full_mean": 1.684596577017115,
+          "jackknife_standard_error": 0.04288734567033146,
+          "leave_group_out_estimates": [
+            1.709480122324159,
+            1.694189602446483,
+            1.6788990825688073,
+            1.694189602446483,
+            1.646341463414634
+          ]
+        },
+        "fluency": {
+          "full_mean": 1.4205378973105134,
+          "jackknife_standard_error": 0.015146568000245757,
+          "leave_group_out_estimates": [
+            1.4311926605504588,
+            1.4250764525993884,
+            1.4220183486238531,
+            1.4097859327217126,
+            1.4146341463414633
+          ]
+        }
+      },
+      "spid": {
+        "truth": {
+          "full_mean": 86.0635696821516,
+          "jackknife_standard_error": 1.2041225170680991,
+          "leave_group_out_estimates": [
+            85.62691131498471,
+            85.62691131498471,
+            87.1559633027523,
+            85.62691131498471,
+            86.28048780487805
+          ]
+        },
+        "info": {
+          "full_mean": 89.73105134474328,
+          "jackknife_standard_error": 2.0549567983768484,
+          "leave_group_out_estimates": [
+            91.43730886850153,
+            90.21406727828746,
+            88.68501529051987,
+            89.60244648318043,
+            88.71951219512195
+          ]
+        },
+        "instruction_relevance": {
+          "full_mean": 1.569682151589242,
+          "jackknife_standard_error": 0.05454014118560423,
+          "leave_group_out_estimates": [
+            1.617737003058104,
+            1.5688073394495412,
+            1.5596330275229358,
+            1.5688073394495412,
+            1.5335365853658536
+          ]
+        },
+        "fluency": {
+          "full_mean": 1.3202933985330074,
+          "jackknife_standard_error": 0.0257489925792875,
+          "leave_group_out_estimates": [
+            1.3302752293577982,
+            1.327217125382263,
+            1.2996941896024465,
+            1.3333333333333333,
+            1.3109756097560976
+          ]
+        }
+      },
+      "alqr": {
+        "truth": {
+          "full_mean": 84.84107579462103,
+          "jackknife_standard_error": 2.12712626175871,
+          "leave_group_out_estimates": [
+            85.62691131498471,
+            83.18042813455658,
+            84.40366972477064,
+            84.70948012232417,
+            86.28048780487805
+          ]
+        },
+        "info": {
+          "full_mean": 92.42053789731051,
+          "jackknife_standard_error": 1.1029369312815864,
+          "leave_group_out_estimates": [
+            92.96636085626912,
+            92.35474006116208,
+            92.35474006116208,
+            92.96636085626912,
+            91.46341463414635
+          ]
+        },
+        "instruction_relevance": {
+          "full_mean": 1.6039119804400979,
+          "jackknife_standard_error": 0.04197934673903313,
+          "leave_group_out_estimates": [
+            1.636085626911315,
+            1.6024464831804281,
+            1.6024464831804281,
+            1.6085626911314985,
+            1.5701219512195121
+          ]
+        },
+        "fluency": {
+          "full_mean": 1.3887530562347188,
+          "jackknife_standard_error": 0.020970473165820347,
+          "leave_group_out_estimates": [
+            1.4036697247706422,
+            1.3883792048929664,
+            1.385321100917431,
+            1.3944954128440368,
+            1.3719512195121952
+          ]
+        }
+      },
+      "h_infinity": {
+        "truth": {
+          "full_mean": 84.84107579462103,
+          "jackknife_standard_error": 0.851248951009301,
+          "leave_group_out_estimates": [
+            85.01529051987768,
+            84.70948012232417,
+            85.01529051987768,
+            84.09785932721712,
+            85.36585365853658
+          ]
+        },
+        "info": {
+          "full_mean": 89.24205378973105,
+          "jackknife_standard_error": 0.4782684214962686,
+          "leave_group_out_estimates": [
+            88.9908256880734,
+            89.29663608562691,
+            89.29663608562691,
+            88.9908256880734,
+            89.63414634146342
+          ]
+        },
+        "instruction_relevance": {
+          "full_mean": 1.452322738386308,
+          "jackknife_standard_error": 0.0390757012714413,
+          "leave_group_out_estimates": [
+            1.4648318042813455,
+            1.4617737003058104,
+            1.452599388379205,
+            1.4678899082568808,
+            1.4146341463414633
+          ]
+        },
+        "fluency": {
+          "full_mean": 1.2982885085574571,
+          "jackknife_standard_error": 0.02919500918267468,
+          "leave_group_out_estimates": [
+            1.2996941896024465,
+            1.305810397553517,
+            1.3149847094801224,
+            1.2996941896024465,
+            1.271341463414634
+          ]
+        }
+      }
+    }
+  }
+}
