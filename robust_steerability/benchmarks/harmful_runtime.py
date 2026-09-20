@@ -51,6 +51,27 @@ DEFAULT_BATCH_SIZE = {
 MAX_NEW_TOKENS = 512
 
 
+def evaluation_records(source: dict, condition: str, behavior_count: int | None) -> list[dict]:
+    """Select the same deterministic behavior identities across all conditions."""
+
+    direct = source["evaluation"]["direct"]
+    count = len(direct) if behavior_count is None else behavior_count
+    if not 1 <= count <= len(direct):
+        raise ValueError(f"Requested {count} behaviors from {len(direct)} available")
+    behavior_ids = {row["behavior_id"] for row in direct[:count]}
+    records = [
+        row for row in source["evaluation"][condition]
+        if row["behavior_id"] in behavior_ids
+    ]
+    expected_multiplier = len(source["evaluation"][condition]) // len(direct)
+    expected = count * expected_multiplier
+    if len(records) != expected:
+        raise ValueError(
+            f"Expected {expected} matched {condition} rows, found {len(records)}"
+        )
+    return records
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -238,9 +259,12 @@ def generate_shard(
     shard_index: int,
     shard_count: int,
     generation_batch_size: int | None,
+    behavior_count: int | None,
+    max_new_tokens: int,
 ) -> None:
     source = json.loads(data_path(model_key).read_text())
-    records = source["evaluation"][condition][shard_index::shard_count]
+    all_records = evaluation_records(source, condition, behavior_count)
+    records = all_records[shard_index::shard_count]
     destination = _shard_path(
         model_key,
         condition,
@@ -259,7 +283,8 @@ def generate_shard(
         "calibration_id": calibration_id,
         "evaluated_model_kv_cache": use_cache,
         "generation_batch_size": batch_size,
-        "max_new_tokens": MAX_NEW_TOKENS,
+        "evaluation_behavior_count": behavior_count or len(source["evaluation"]["direct"]),
+        "max_new_tokens": max_new_tokens,
         "model_loading": asdict(model_load_spec(model_key)),
         "shard": {"index": shard_index, "count": shard_count},
     }
@@ -298,6 +323,7 @@ def generate_shard(
                 steering_policy=steering_policy,
                 use_cache=use_cache,
                 batch_size=len(batch),
+                max_new_tokens=max_new_tokens,
             )
             payload["rows"].extend(
                 {
@@ -354,6 +380,7 @@ def merge_shards(
     shard_count: int,
     *,
     use_cache: bool,
+    behavior_count: int | None = None,
 ) -> Path:
     paths = [
         _shard_path(
@@ -364,7 +391,8 @@ def merge_shards(
     shards = [json.loads(path.read_text()) for path in paths]
     if any(shard.get("status") != "complete" for shard in shards):
         raise ValueError(f"Incomplete HarmBench shards for {condition}/{method}")
-    source = json.loads(data_path(model_key).read_text())["evaluation"][condition]
+    payload = json.loads(data_path(model_key).read_text())
+    source = evaluation_records(payload, condition, behavior_count)
     order = {row["prompt_id"]: index for index, row in enumerate(source)}
     rows = [row for shard in shards for row in shard["rows"]]
     rows.sort(key=lambda row: order[row["prompt_id"]])
@@ -491,6 +519,8 @@ def main() -> None:
     parser.add_argument("--shard-index", type=int, required=True)
     parser.add_argument("--shard-count", type=int, required=True)
     parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument("--evaluation-behaviors", type=int)
+    parser.add_argument("--max-new-tokens", type=int, default=MAX_NEW_TOKENS)
     arguments = parser.parse_args()
     generate_shard(
         arguments.model,
@@ -502,6 +532,8 @@ def main() -> None:
         arguments.shard_index,
         arguments.shard_count,
         arguments.generation_batch_size,
+        arguments.evaluation_behaviors,
+        arguments.max_new_tokens,
     )
 
 
