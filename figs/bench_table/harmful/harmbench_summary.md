@@ -2,15 +2,15 @@
 
 | Model | Method | Direct ASR (%) ↓ | John ASR (%) ↓ | DNE ASR (%) ↓ | Jailbreak Bot ASR (%) ↓ | YOJA/Nona ASR (%) ↓ | APM ASR (%) ↓ | Human-jailbreak average ASR (%) ↓ |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| Llama-3.2-1B-Instruct | Original | 10.00 | 5.83 | 6.25 | 4.58 | 8.33 | 2.92 | 5.58 |
-| Llama-3.2-1B-Instruct | A-LQR | 9.58 | 6.25 | 4.17 | 3.33 | 8.75 | 5.00 | 5.50 |
-| Llama-3.2-1B-Instruct | H∞ (ours) | 2.92 | 1.25 | 1.67 | 0.42 | 0.83 | 0.42 | 0.92 |
-| Llama-3.2-3B-Instruct | Original | 16.67 | 11.67 | 10.83 | 14.17 | 11.25 | 10.83 | 11.75 |
-| Llama-3.2-3B-Instruct | A-LQR | 20.00 | 11.67 | 10.42 | 12.92 | 11.67 | 11.25 | 11.58 |
-| Llama-3.2-3B-Instruct | H∞ (ours) | 8.33 | 4.17 | 3.75 | 3.75 | 4.17 | 2.50 | 3.67 |
-| Llama-3.1-8B-Instruct | Original | 15.83 | 23.33 | 14.17 | 9.17 | 15.00 | 11.67 | 14.67 |
-| Llama-3.1-8B-Instruct | A-LQR | 15.83 | 15.00 | 11.67 | 7.50 | 9.17 | 10.83 | 10.83 |
-| Llama-3.1-8B-Instruct | H∞ (ours) | 3.33 | 1.67 | 0.00 | 0.00 | 0.00 | 0.83 | 0.50 |
+| Llama-3.2-1B-Instruct | Original | 10.00 ± 2.08 | 5.83 ± 1.67 | 6.25 ± 1.55 | 4.58 ± 1.45 | 8.33 ± 1.08 | 2.92 ± 0.89 | 5.58 ± 0.77 |
+| Llama-3.2-1B-Instruct | A-LQR | 9.58 ± 1.76 | 6.25 ± 1.67 | 4.17 ± 1.08 | 3.33 ± 1.50 | 8.75 ± 1.45 | 5.00 ± 1.50 | 5.50 ± 0.25 |
+| Llama-3.2-1B-Instruct | H∞ (ours) | 2.92 ± 1.40 | 1.25 ± 0.89 | 1.67 ± 0.68 | 0.42 ± 0.42 | 0.83 ± 0.56 | 0.42 ± 0.42 | 0.92 ± 0.26 |
+| Llama-3.2-3B-Instruct | Original | 16.67 ± 2.48 | 11.67 ± 2.31 | 10.83 ± 2.08 | 14.17 ± 2.17 | 11.25 ± 1.53 | 10.83 ± 2.26 | 11.75 ± 1.07 |
+| Llama-3.2-3B-Instruct | A-LQR | 20.00 ± 2.90 | 11.67 ± 2.69 | 10.42 ± 2.17 | 12.92 ± 1.70 | 11.67 ± 1.04 | 11.25 ± 2.49 | 11.58 ± 1.32 |
+| Llama-3.2-3B-Instruct | H∞ (ours) | 8.33 ± 1.86 | 4.17 ± 1.08 | 3.75 ± 0.97 | 3.75 ± 1.15 | 4.17 ± 0.88 | 2.50 ± 1.11 | 3.67 ± 0.43 |
+| Llama-3.1-8B-Instruct | Original | 15.83 ± 4.02 | 23.33 ± 2.08 | 14.17 ± 4.31 | 9.17 ± 2.62 | 15.00 ± 4.78 | 11.67 ± 3.56 | 14.67 ± 2.03 |
+| Llama-3.1-8B-Instruct | A-LQR | 15.83 ± 3.82 | 15.00 ± 3.24 | 11.67 ± 4.68 | 7.50 ± 2.62 | 9.17 ± 3.15 | 10.83 ± 3.06 | 10.83 ± 1.99 |
+| Llama-3.1-8B-Instruct | H∞ (ours) | 3.33 ± 1.84 | 1.67 ± 1.11 | 0.00 ± 0.00 | 0.00 ± 0.00 | 0.00 ± 0.00 | 0.83 ± 0.83 | 0.50 ± 0.36 |
 
 ## Method
 
@@ -39,7 +39,7 @@
 | Fluency (0–2) ↑ | Readability and language quality. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`. |
 | Overall steering (0–2) ↑ | Joint safe-concept relevance, instruction relevance, and fluency. | Per-response harmonic mean of the three AXBench scores; zero when any component is zero, then averaged over prompts. |
 
-These are descriptive means over one fixed generation per prompt, not repeated trials; therefore no standard errors are reported. The summary table reports ASR for every template separately and includes the equal-weight human-jailbreak aggregate only for continuity with the earlier collapsed result.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Groups are fixed, category-balanced clusters of HarmBench behavior identities: 24 identities per group for the 240-behavior runs and 12 per group for the compact 120-behavior run. Deleting a group removes that behavior's direct request and all five jailbreak-template variants. The uncertainty therefore measures behavior-sampling variability, not decoding-run or judge variability. The summary table reports ASR for every template separately and includes the equal-weight human-jailbreak aggregate only for continuity with the earlier collapsed result.
 
 ## Hyperparameters
 

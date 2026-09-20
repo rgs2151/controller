@@ -498,6 +498,7 @@ HARMFUL_METRICS = (
     Metric("axbench_fluency", "Fluency (0–2) ↑", r"Fluency (0--2) $\uparrow$", 2, True),
     Metric("axbench_overall", "Overall steering (0–2) ↑", r"\shortstack{Overall\\steering (0--2) $\uparrow$}", 2, True),
 )
+HARMFUL_JACKKNIFE_PATH = UNIT / "harmful/harmbench_jackknife.json"
 
 
 HARMFUL_DOCUMENTATION = r"""## Method
@@ -527,7 +528,7 @@ HARMFUL_DOCUMENTATION = r"""## Method
 | Fluency (0–2) ↑ | Readability and language quality. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`. |
 | Overall steering (0–2) ↑ | Joint safe-concept relevance, instruction relevance, and fluency. | Per-response harmonic mean of the three AXBench scores; zero when any component is zero, then averaged over prompts. |
 
-These are descriptive means over one fixed generation per prompt, not repeated trials; therefore no standard errors are reported. The summary table reports ASR for every template separately and includes the equal-weight human-jailbreak aggregate only for continuity with the earlier collapsed result.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Groups are fixed, category-balanced clusters of HarmBench behavior identities: 24 identities per group for the 240-behavior runs and 12 per group for the compact 120-behavior run. Deleting a group removes that behavior's direct request and all five jailbreak-template variants. The uncertainty therefore measures behavior-sampling variability, not decoding-run or judge variability. The summary table reports ASR for every template separately and includes the equal-weight human-jailbreak aggregate only for continuity with the earlier collapsed result.
 
 ## Hyperparameters
 
@@ -1406,7 +1407,25 @@ def _harmful_result_values(
     )
 
 
+def _harmful_jackknife() -> dict:
+    return json.loads(HARMFUL_JACKKNIFE_PATH.read_text())
+
+
+def _harmful_standard_errors(
+    report: dict,
+    model_key: str,
+    condition_key: str | int,
+    method_key: str,
+) -> tuple[float, ...]:
+    metrics = report["models"][model_key]["conditions"][str(condition_key)][method_key]
+    return tuple(
+        float(metrics[metric.key]["jackknife_standard_error"])
+        for metric in HARMFUL_METRICS
+    )
+
+
 def _harmful_rows() -> list[dict]:
+    jackknife = _harmful_jackknife()
     rows = []
     for model_key, model_label in HARMFUL_MODELS:
         dataset_path = RESULTS_ROOT / "harmful/cache" / model_key / "datasets/harmbench.json"
@@ -1462,6 +1481,12 @@ def _harmful_rows() -> list[dict]:
                         "method_markdown": method_markdown,
                         "method_tex": method_tex,
                         "values": values,
+                        "standard_errors": _harmful_standard_errors(
+                            jackknife,
+                            model_key,
+                            condition_key,
+                            method_key,
+                        ),
                     }
                 )
             if not complete:
@@ -1482,13 +1507,26 @@ def _harmful_summary_rows(rows: list[dict]) -> list[dict]:
             }
             if len(method_rows) == len(HARMFUL_CONDITIONS):
                 template_asr = [method_rows[index]["values"][0] for index in range(5)]
+                template_se = [
+                    method_rows[index]["standard_errors"][0] for index in range(5)
+                ]
                 values: tuple[float | None, ...] = (
                     method_rows["direct"]["values"][0],
                     *template_asr,
                     sum(template_asr) / len(template_asr),
                 )
+                standard_errors: tuple[float | None, ...] = (
+                    method_rows["direct"]["standard_errors"][0],
+                    *template_se,
+                    float(
+                        _harmful_jackknife()["models"][model_key][
+                            "human_jailbreak_aggregate"
+                        ][method_key]["jackknife_standard_error"]
+                    ),
+                )
             else:
                 values = (None,) * (len(HARMFUL_CONDITIONS) + 1)
+                standard_errors = (None,) * (len(HARMFUL_CONDITIONS) + 1)
             summary.append(
                 {
                     "model_key": model_key,
@@ -1497,6 +1535,7 @@ def _harmful_summary_rows(rows: list[dict]) -> list[dict]:
                     "method_markdown": method_markdown,
                     "method_tex": method_tex,
                     "values": values,
+                    "standard_errors": standard_errors,
                 }
             )
     return summary
@@ -1513,8 +1552,13 @@ def render_harmful_markdown(rows: list[dict], *, full: bool) -> str:
         ]
         for row in rows:
             values = " | ".join(
-                f"{value:.{metric.decimals}f}"
-                for value, metric in zip(row["values"], HARMFUL_METRICS, strict=True)
+                f"{value:.{metric.decimals}f} ± {standard_error:.{metric.decimals}f}"
+                for value, standard_error, metric in zip(
+                    row["values"],
+                    row["standard_errors"],
+                    HARMFUL_METRICS,
+                    strict=True,
+                )
             )
             lines.append(
                 f"| {row['condition']} | {row['model']} | {row['method_markdown']} | {values} |"
@@ -1532,8 +1576,12 @@ def render_harmful_markdown(rows: list[dict], *, full: bool) -> str:
         ]
         for row in summary:
             values = " | ".join(
-                "TBD" if value is None else f"{value:.2f}"
-                for value in row["values"]
+                "TBD"
+                if value is None
+                else f"{value:.2f} ± {standard_error:.2f}"
+                for value, standard_error in zip(
+                    row["values"], row["standard_errors"], strict=True
+                )
             )
             lines.append(
                 f"| {row['model']} | {row['method_markdown']} | {values} |"
@@ -1544,6 +1592,7 @@ def render_harmful_markdown(rows: list[dict], *, full: bool) -> str:
 
 def _harmful_tex_value(
     value: float | None,
+    standard_error: float | None,
     metric: Metric,
     *,
     emphasis: str | None,
@@ -1553,6 +1602,8 @@ def _harmful_tex_value(
     if value is None:
         return background + r"\textcolor{gray}{TBD}"
     number = f"{value:.{metric.decimals}f}"
+    if standard_error is not None:
+        number += f"\\,\\pm\\,{standard_error:.{metric.decimals}f}"
     if emphasis == "bold":
         number = f"\\mathbf{{{number}}}"
     elif emphasis == "underline":
@@ -1574,9 +1625,9 @@ def _harmful_best_values(rows: list[dict]) -> tuple[float, ...]:
 
 def render_harmful_tex(rows: list[dict], *, full: bool) -> str:
     caption = (
-        "Full HarmBench robust-refusal results for each completed model scale. Direct requests and the five frozen human-jailbreak templates use matched behavior identities within each model: 240 for Llama-3.2-1B/3B and 120 for the compact Llama-3.1-8B run."
+        "Full HarmBench robust-refusal results for each completed model scale. Values are full-sample means $\\pm$ ten-group behavior-clustered jackknife standard errors. Direct requests and the five frozen human-jailbreak templates use matched behavior identities within each model: 240 for Llama-3.2-1B/3B and 120 for the compact Llama-3.1-8B run."
         if full
-        else "HarmBench attack success rate by model scale, reported separately for direct requests and each frozen human-jailbreak template. Human average is the equal-weight mean over the five templates; TBD denotes an incomplete model evaluation."
+        else "HarmBench attack success rate by model scale, reported as full-sample means $\\pm$ ten-group behavior-clustered jackknife standard errors. Human average is the equal-weight mean over the five frozen jailbreak templates; TBD denotes an incomplete model evaluation."
     )
     label = "tab:harmbench-full" if full else "tab:harmbench-summary"
     lines = [
@@ -1661,6 +1712,7 @@ def render_harmful_tex(rows: list[dict], *, full: bool) -> str:
                     values = " & ".join(
                         _harmful_tex_value(
                             value,
+                            row["standard_errors"][index],
                             metric,
                             emphasis=(
                                 "bold"
@@ -1735,6 +1787,7 @@ def render_harmful_tex(rows: list[dict], *, full: bool) -> str:
                 values = " & ".join(
                     _harmful_tex_value(
                         value,
+                        row["standard_errors"][index],
                         asr_metric,
                         emphasis=(
                             "bold"
