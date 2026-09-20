@@ -22,16 +22,16 @@
 | Llama-3-8B | S-PID | 57.55 ± 0.21 | 97.80 ± 0.27 | 1.41 ± 0.02 | 1.27 ± 0.01 |
 | Llama-3-8B | A-LQR | 58.95 ± 0.27 | 98.07 ± 0.20 | 1.44 ± 0.03 | 1.21 ± 0.01 |
 | Llama-3-8B | H∞ (ours) | 89.30 ± 0.47 | 60.81 ± 0.34 | 0.69 ± 0.02 | 0.91 ± 0.01 |
-| Qwen-2.5-14B | Original | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | ITI | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | ActAdd | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | Mean-AcT | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | Linear-AcT | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | PID-AcT | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | ODESteer | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | S-PID | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | A-LQR | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | H∞ (ours) | TBD | TBD | TBD | TBD |
+| Qwen-2.5-14B | Original | 55.89 ± 0.33 | 96.47 ± 0.15 | 1.46 ± 0.01 | 1.24 ± 0.01 |
+| Qwen-2.5-14B | ITI | 61.62 ± 0.62 | 95.32 ± 0.35 | 1.52 ± 0.01 | 1.25 ± 0.01 |
+| Qwen-2.5-14B | ActAdd | 64.04 ± 0.42 | 87.61 ± 0.61 | 1.17 ± 0.01 | 0.99 ± 0.01 |
+| Qwen-2.5-14B | Mean-AcT | 55.35 ± 1.09 | 96.03 ± 0.21 | 1.50 ± 0.01 | 1.24 ± 0.01 |
+| Qwen-2.5-14B | Linear-AcT | 56.28 ± 0.95 | 96.18 ± 0.28 | 1.50 ± 0.01 | 1.23 ± 0.01 |
+| Qwen-2.5-14B | PID-AcT | 56.08 ± 0.89 | 96.28 ± 0.15 | 1.49 ± 0.01 | 1.24 ± 0.01 |
+| Qwen-2.5-14B | ODESteer | 61.40 ± 0.60 | 94.00 ± 0.15 | 1.41 ± 0.01 | 1.21 ± 0.00 |
+| Qwen-2.5-14B | S-PID | 66.93 ± 0.93 | 96.52 ± 0.22 | 1.51 ± 0.01 | 1.26 ± 0.01 |
+| Qwen-2.5-14B | A-LQR | 71.82 ± 0.60 | 96.99 ± 0.28 | 1.53 ± 0.01 | 1.26 ± 0.01 |
+| Qwen-2.5-14B | H∞ (ours) | 85.31 ± 0.33 | 89.40 ± 0.35 | 1.34 ± 0.01 | 1.15 ± 0.00 |
 | Qwen-2.5-32B | Original | TBD | TBD | TBD | TBD |
 | Qwen-2.5-32B | ITI | TBD | TBD | TBD | TBD |
 | Qwen-2.5-32B | ActAdd | TBD | TBD | TBD | TBD |
@@ -82,5 +82,25 @@ Values are mean ± standard error across five repetitions. AXBench API scorers r
 | Gemma-2-2B | S-PID | λ = 1; Kp = 0.7; Ki = 0.01; Kd = 0.1 |
 | Gemma-2-2B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I |
 | Gemma-2-2B | H∞ | λ = 3; Q/R = 0.1; Qf/R = 0.316227766; R = 1; fixed selected configuration |
+| Llama-3-8B | Original | No intervention |
+| Llama-3-8B | ITI | 32 heads; α = 10 |
+| Llama-3-8B | ActAdd | Layer 13; strength 4 |
+| Llama-3-8B | Mean-AcT | Strength 1; frozen source-method defaults |
+| Llama-3-8B | Linear-AcT | Strength 1; frozen source-method defaults |
+| Llama-3-8B | PID-AcT | Strength 1; frozen source-method defaults |
+| Llama-3-8B | ODESteer | Layer 19; time 25; frozen source-method defaults |
+| Llama-3-8B | S-PID | λ = 1; Kp = 0.1; Ki = 0.1; Kd = 0 |
+| Llama-3-8B | A-LQR | λ = 2; Q = 0.1I; R = 10I; Qf = 10I |
+| Llama-3-8B | H∞ | λ = 2; Q/R = 10; Qf/R = 0.01; R = 1; selected by mean True percentage on the frozen calibration set |
+| Qwen-2.5-14B | Original | No intervention |
+| Qwen-2.5-14B | ITI | 32 heads; α = 10 |
+| Qwen-2.5-14B | ActAdd | Layer 21; strength 4 |
+| Qwen-2.5-14B | Mean-AcT | Strength 1; frozen source-method defaults |
+| Qwen-2.5-14B | Linear-AcT | Strength 1; frozen source-method defaults |
+| Qwen-2.5-14B | PID-AcT | Strength 1; frozen source-method defaults |
+| Qwen-2.5-14B | ODESteer | Layer 24; time 65; frozen source-method defaults |
+| Qwen-2.5-14B | S-PID | λ = 2; Kp = 0.5; Ki = 0.01; Kd = 0.01 |
+| Qwen-2.5-14B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I |
+| Qwen-2.5-14B | H∞ | λ = 3; Q/R = 0.316227766; Qf/R = 0.1; R = 1; selected by the True/instruction-relevance/fluency calibration composite |
 
 Controller fitting and evaluation use disjoint data. `TBD` result rows have no hyperparameter entry until that exact model-method evaluation is frozen.

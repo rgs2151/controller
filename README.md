@@ -6,11 +6,11 @@ Research code for measuring and controlling robust steerability in language-mode
 
 | Benchmark | Run owner | Current state |
 |---|---|---|
-| Truthfulness | Remote 1 | Completed runs and reusable cache live there. |
+| Truthfulness | Remote 1 | Gemma-2-2B, Llama-3-8B, and Qwen-2.5-14B are complete; Qwen-2.5-32B remains pending. Reusable caches live on Remote 1. |
 | L-CiteEval | Remote 1 | Completed runs and reusable cache live there. |
-| MGSM | Remote 2 | Completed runs and reusable cache live there. |
+| MGSM | Remote 2 | Qwen3-4B is complete; the corrected Llama H∞ row is running. Reusable caches live on Remote 2. |
 | Toxicity | Local 1 | Gemma-2-2B and Llama-3-8B runs and reusable caches live here. |
-| HarmBench | Local 1 | Completed run and reusable cache live here. |
+| HarmBench | Local 1 | Llama-3.2-1B and Llama-3.2-3B are complete; Llama-3.1-8B remains pending. Reusable caches live here. |
 
 The run owner is the machine that retains each benchmark's ignored scientific
 cache. Git synchronizes code, logs, result tables, and plots, but does not move

@@ -1,0 +1,26 @@
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 218.66it/s]
+Jacobian 1/25: harmbench-direction-desired-profane_insult_generation-1
+Jacobian 2/25: harmbench-direction-desired-glock_switch_instructions-0
+Jacobian 3/25: harmbench-direction-desired-biohazard_synthesis_lab_supplies_untraceable-1
+Jacobian 4/25: harmbench-direction-desired-moc_defamatory_child_porn-1
+Jacobian 5/25: harmbench-direction-desired-public_figure_hate_mail-1
+Jacobian 6/25: harmbench-direction-desired-outofband_sql_exfiltration_dns_queries-1
+Jacobian 7/25: harmbench-direction-desired-oracle_db_permissions_time_blind_sql_injection-1
+Jacobian 8/25: harmbench-direction-desired-hard_drive_corruption_script_xp-1
+Jacobian 9/25: harmbench-direction-desired-worm_code_obfuscation_2-0
+Jacobian 10/25: harmbench-direction-desired-keylogger_background_process_script-1
+Jacobian 11/25: harmbench-direction-desired-gabriel_convince_suicide-1
+Jacobian 12/25: harmbench-direction-desired-eu_medical_records_private_access-1
+Jacobian 13/25: harmbench-direction-desired-gene_synthesis_cloud_bypass-1
+Jacobian 14/25: harmbench-direction-desired-bsl4_lab_compromise_leak_plan-1
+Jacobian 15/25: harmbench-direction-desired-government_email_hack_instructions-1
+Jacobian 16/25: harmbench-direction-desired-vaccines_autism_twitter_thread-1
+Jacobian 17/25: harmbench-direction-desired-self_checkout_theft_guide-1
+Jacobian 18/25: harmbench-direction-desired-pirate_bay_torrents_anonymously-1
+Jacobian 19/25: harmbench-direction-desired-mustard_gas_detailed_instructions-1
+Jacobian 20/25: harmbench-direction-desired-covid19_vaccine_side_effects_edit-1
+Jacobian 21/25: harmbench-direction-desired-bleach_ammonia_mixing_enticement-1
+Jacobian 22/25: harmbench-direction-desired-mdma_precursors_acquisition_us-1
+Jacobian 23/25: harmbench-direction-desired-email_malware_persuasion_message-1
+Jacobian 24/25: harmbench-direction-desired-dirty_cow_takeover_instructions-1
+Jacobian 25/25: harmbench-direction-desired-glock_switch_instructions-1

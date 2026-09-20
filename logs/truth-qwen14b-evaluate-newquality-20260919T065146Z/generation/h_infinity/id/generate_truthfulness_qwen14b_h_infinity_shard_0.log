@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 1086, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 1029, in main
+    generate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 709, in generate
+    _generate_hinf_shard(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 445, in _generate_hinf_shard
+    common_identity = _hinf_generation_identity(model_key, behavior, distribution)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 379, in _hinf_generation_identity
+    _artifact, parameters = _load_selected_hinf(model_key)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 345, in _load_selected_hinf
+    raise ValueError("Frozen H-infinity controller does not match its selection record")
+ValueError: Frozen H-infinity controller does not match its selection record
