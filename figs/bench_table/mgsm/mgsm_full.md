@@ -73,4 +73,4 @@ These are descriptive means on one fixed evaluation set per language, not repeat
 | Llama-3.2-3B-Instruct | Original | No intervention |
 | Llama-3.2-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
 | Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
-| Llama-3.2-3B-Instruct | H∞ | λ = 0.75; Q/R = 0.01; Qf/R = 0.1; R = 1; γ★ = 0.554693; λ selected from the frozen six-point sweep and costs selected from the frozen 12-point grid on 50 disjoint GSM8K training prompts |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.284523; costs selected from the frozen 12-point grid on 50 disjoint GSM8K training prompts using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |
