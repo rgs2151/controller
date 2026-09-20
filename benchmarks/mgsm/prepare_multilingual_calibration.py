@@ -8,6 +8,7 @@ import json
 import os
 import re
 from collections import Counter
+from decimal import Decimal
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -53,7 +54,30 @@ def _question(record: dict) -> str:
 
 
 def _numbers(text: str) -> Counter[str]:
-    return Counter(re.findall(r"\d+(?:[.,]\d+)?", text))
+    """Compare numeric values across harmless locale/leading-zero formatting."""
+
+    tokens = re.findall(r"(?<![\w.])(?:\d+(?:[.,]\d+)*|[.,]\d+)", text)
+
+    def canonical(token: str) -> str:
+        separators = {separator for separator in ".," if separator in token}
+        if len(separators) == 1:
+            separator = next(iter(separators))
+            groups = token.split(separator)
+            if (
+                len(groups) > 1
+                and groups[0] not in {"", "0"}
+                and all(len(group) == 3 for group in groups[1:])
+            ):
+                token = "".join(groups)
+            elif separator == ",":
+                token = token.replace(",", ".")
+        elif len(separators) == 2:
+            decimal_separator = max((token.rfind("."), "."), (token.rfind(","), ","))[1]
+            thousands_separator = "," if decimal_separator == "." else "."
+            token = token.replace(thousands_separator, "").replace(decimal_separator, ".")
+        return format(Decimal(token).normalize(), "f")
+
+    return Counter(canonical(token) for token in tokens)
 
 
 async def _translate(
@@ -63,6 +87,28 @@ async def _translate(
     language: str,
 ) -> str:
     target = LANGUAGE_NAMES[language]
+    numeric_tokens: list[str] = []
+    numeric_placeholders: list[str] = []
+
+    def placeholder(index: int) -> str:
+        letters = ""
+        value = index
+        while True:
+            letters = chr(ord("A") + value % 26) + letters
+            value = value // 26 - 1
+            if value < 0:
+                break
+        return f"ZXQNUMTOKEN{letters}ENDZXQ"
+
+    def mask_numeric_token(match: re.Match[str]) -> str:
+        numeric_tokens.append(match.group(0))
+        token = placeholder(len(numeric_tokens) - 1)
+        numeric_placeholders.append(token)
+        return token
+
+    masked_question = re.sub(
+        r"(?:\d+(?:[.,]\d+)*|[.,]\d+)", mask_numeric_token, question
+    )
     payload = {
         "model": MODEL,
         "temperature": 0,
@@ -71,11 +117,11 @@ async def _translate(
                 "role": "system",
                 "content": (
                     f"Translate the English math word problem into {target}. Preserve "
-                    "its exact meaning, all proper nouns, units, and every Arabic-numeral "
-                    "token exactly. Do not solve it, explain it, or add instructions."
+                    "its exact meaning, all proper nouns, units, and every ZXQNUMTOKEN "
+                    "placeholder exactly. Do not solve it, explain it, or add instructions."
                 ),
             },
-            {"role": "user", "content": question},
+            {"role": "user", "content": masked_question},
         ],
         "response_format": {
             "type": "json_schema",
@@ -91,6 +137,7 @@ async def _translate(
             },
         },
     }
+    last_translation = ""
     async with semaphore:
         for attempt in range(8):
             async with session.post(ENDPOINT, json=payload) as response:
@@ -98,10 +145,34 @@ async def _translate(
                     body = await response.json()
                     content = body["choices"][0]["message"]["content"]
                     translated = str(json.loads(content)["translation"]).strip()
-                    if _numbers(question) != _numbers(translated):
-                        raise ValueError(
-                            f"Translation changed numeric tokens for {language}: {question!r}"
-                        )
+                    if any(
+                        translated.count(token) != 1
+                        for token in numeric_placeholders
+                    ):
+                        continue
+                    for token, numeric_value in zip(
+                        numeric_placeholders, numeric_tokens, strict=True
+                    ):
+                        translated = translated.replace(token, numeric_value)
+                    last_translation = translated
+                    # A target language may conventionally render an English number
+                    # word (for example, "four") as a digit. Require every source
+                    # Arabic-numeral value and multiplicity to survive, while allowing
+                    # those semantically equivalent additional digit tokens.
+                    if not _numbers(question) <= _numbers(translated):
+                        payload["messages"] = [
+                            payload["messages"][0],
+                            {
+                                "role": "user",
+                                "content": (
+                                    "Retry this translation. Preserve every numeric value "
+                                    "placeholder exactly once, including repeated grade numbers, "
+                                    "percentages, decimals, and currency values.\n\n"
+                                    + masked_question
+                                ),
+                            },
+                        ]
+                        continue
                     return translated
                 if response.status not in {408, 409, 429, 500, 502, 503, 504}:
                     raise RuntimeError(
@@ -109,7 +180,10 @@ async def _translate(
                         f"{(await response.text())[:500]}"
                     )
             await asyncio.sleep(2**attempt)
-    raise RuntimeError(f"Translation retries exhausted for {language}")
+    raise RuntimeError(
+        f"Translation retries exhausted or changed numeric values for {language}: "
+        f"source={question!r}; translation={last_translation!r}"
+    )
 
 
 async def _prepare(concurrency: int) -> dict:
