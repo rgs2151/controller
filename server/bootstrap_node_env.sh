@@ -9,6 +9,6 @@ uv_cache=${UV_CACHE_DIR:-/tmp/robust-steerability-uv-cache}
 
 rm -rf "$venv"
 mkdir -p "$uv_cache"
-uv venv --python /usr/bin/python3 "$venv"
+uv venv --clear --python /usr/bin/python3 "$venv"
 UV_CACHE_DIR="$uv_cache" uv pip install --python "$venv/bin/python" -e "$repo"
 printf '%s\n' "$venv/bin/python"
