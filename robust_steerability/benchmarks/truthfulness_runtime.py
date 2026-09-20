@@ -39,6 +39,7 @@ from robust_steerability.source_methods.id_benchmark import (
     _batch_size as source_generation_batch_size,
     fit_source_method_calibration,
     load_frozen_alqr_artifacts,
+    limit_evaluation_data,
     merge_generation_shards,
     run_generation_job,
     runtime_provenance,
@@ -76,6 +77,8 @@ TRUTHFULNESS_CONCEPT = "truthful, factually accurate, and non-misleading answers
 HINF_METHOD = "h_infinity"
 HINF_GENERATION_BATCH_SIZE = 8
 GENERATION_BATCH_SIZE_OVERRIDE: int | None = None
+EVALUATION_SAMPLES_OVERRIDE: int | None = None
+EVALUATION_REPETITIONS_OVERRIDE: int | None = None
 
 
 def _configure_runtime(
@@ -84,21 +87,30 @@ def _configure_runtime(
     generation_batch_size: int | None = None,
     *,
     use_cache: bool = False,
+    evaluation_samples: int | None = None,
+    evaluation_repetitions: int | None = None,
 ) -> None:
     """Select one model, calibration, and explicit decoding-cache condition."""
 
     global CACHE_ROOT, CURRENT_MODEL_KEY, CURRENT_CALIBRATION_ID
     global CURRENT_USE_CACHE, GENERATION_BATCH_SIZE_OVERRIDE
+    global EVALUATION_SAMPLES_OVERRIDE, EVALUATION_REPETITIONS_OVERRIDE
     if model_key not in MODELS:
         raise ValueError(f"Unknown model {model_key!r}")
     if not calibration_id or "/" in calibration_id:
         raise ValueError("calibration_id must be a simple name")
     if generation_batch_size is not None and generation_batch_size < 1:
         raise ValueError("generation_batch_size must be positive")
+    if evaluation_samples is not None and evaluation_samples < 1:
+        raise ValueError("evaluation_samples must be positive")
+    if evaluation_repetitions is not None and evaluation_repetitions < 1:
+        raise ValueError("evaluation_repetitions must be positive")
     CURRENT_MODEL_KEY = model_key
     CURRENT_CALIBRATION_ID = calibration_id
     CURRENT_USE_CACHE = use_cache
     GENERATION_BATCH_SIZE_OVERRIDE = generation_batch_size
+    EVALUATION_SAMPLES_OVERRIDE = evaluation_samples
+    EVALUATION_REPETITIONS_OVERRIDE = evaluation_repetitions
     CACHE_ROOT = evaluation_root("truthfulness", model_key, use_cache=use_cache)
 
 
@@ -313,6 +325,11 @@ def _load_selected_hinf(
         not in {
             "fixed configuration supplied at calibration launch",
             "AXBench three-score harmonic-mean calibration argmax",
+            "TruthfulQA True calibration-grid argmax",
+            (
+                "TruthfulQA True/instruction-relevance/fluency "
+                "weighted-harmonic calibration argmax"
+            ),
         }
     ):
         raise ValueError("Frozen H-infinity calibration metadata is invalid")
@@ -331,8 +348,6 @@ def _load_selected_hinf(
         != [MODELS[model_key].model_id, MODELS[model_key].revision]
         or controller_identity.get("task") != "truthfulness"
         or controller_identity.get("parameters") != parameters
-        or controller_identity.get("configuration_source")
-        != configuration.get("source")
         or controller_identity.get("configuration_id")
         != configuration.get("configuration_id")
         or not bool(controller.get("feasible"))
@@ -370,7 +385,12 @@ def _hinf_generation_identity(
     data_path, evaluation_key, cache_namespace = _distribution_spec(
         behavior, distribution
     )
-    data = json.loads(data_path.read_text())
+    data = limit_evaluation_data(
+        json.loads(data_path.read_text()),
+        evaluation_key,
+        samples=EVALUATION_SAMPLES_OVERRIDE,
+        repetitions=EVALUATION_REPETITIONS_OVERRIDE,
+    )
     _artifact, parameters = _load_selected_hinf(model_key)
     model = MODELS[model_key]
     return {
@@ -388,7 +408,7 @@ def _hinf_generation_identity(
             source_model_spec("alqr", behavior, model.model_id, model.revision)
         ),
         "protocol": {
-            "evaluation_repetitions": EVALUATION_REPETITIONS,
+            "evaluation_repetitions": len(data["evaluation"][evaluation_key]),
             "evaluation_samples_per_repetition": len(
                 data["evaluation"][evaluation_key]["0"]
             ),
@@ -441,7 +461,12 @@ def _generate_hinf_shard(
     data_path, evaluation_key, _cache_namespace = _distribution_spec(
         behavior, distribution
     )
-    data = json.loads(data_path.read_text())
+    data = limit_evaluation_data(
+        json.loads(data_path.read_text()),
+        evaluation_key,
+        samples=EVALUATION_SAMPLES_OVERRIDE,
+        repetitions=EVALUATION_REPETITIONS_OVERRIDE,
+    )
     batch_size = GENERATION_BATCH_SIZE_OVERRIDE or HINF_GENERATION_BATCH_SIZE
     assignments = _batch_assignments(data, evaluation_key, batch_size)
     assigned_batches = [
@@ -563,7 +588,12 @@ def merge_hinf_generation(
     data_path, evaluation_key, _cache_namespace = _distribution_spec(
         behavior, distribution
     )
-    data = json.loads(data_path.read_text())
+    data = limit_evaluation_data(
+        json.loads(data_path.read_text()),
+        evaluation_key,
+        samples=EVALUATION_SAMPLES_OVERRIDE,
+        repetitions=EVALUATION_REPETITIONS_OVERRIDE,
+    )
     batch_size = GENERATION_BATCH_SIZE_OVERRIDE or HINF_GENERATION_BATCH_SIZE
     expected = _batch_assignments(data, evaluation_key, batch_size)
     expected_keys = [(repetition, start) for repetition, start, _records in expected]
@@ -589,7 +619,7 @@ def merge_hinf_generation(
     if set(batches) != set(expected_keys):
         raise ValueError("Merged H-infinity batches are incomplete")
     repetitions = []
-    for repetition in range(EVALUATION_REPETITIONS):
+    for repetition in range(len(data["evaluation"][evaluation_key])):
         repetition_batches = [
             batches[key] for key in expected_keys if key[0] == repetition
         ]
@@ -671,6 +701,14 @@ def launch_hinf_generation(
                     ["--generation-batch-size", str(GENERATION_BATCH_SIZE_OVERRIDE)]
                     if GENERATION_BATCH_SIZE_OVERRIDE is not None
                     else []
+                ),
+                *(
+                    ["--evaluation-samples", str(EVALUATION_SAMPLES_OVERRIDE)]
+                    if EVALUATION_SAMPLES_OVERRIDE is not None else []
+                ),
+                *(
+                    ["--evaluation-repetitions", str(EVALUATION_REPETITIONS_OVERRIDE)]
+                    if EVALUATION_REPETITIONS_OVERRIDE is not None else []
                 ),
             ],
             cwd=REPO,
@@ -765,6 +803,8 @@ def generate(
         generation_batch_size=GENERATION_BATCH_SIZE_OVERRIDE,
         shard_index=shard_index,
         shard_count=shard_count,
+        evaluation_samples=EVALUATION_SAMPLES_OVERRIDE,
+        evaluation_repetitions=EVALUATION_REPETITIONS_OVERRIDE,
     )
 
 
@@ -791,6 +831,8 @@ def merge_source_generation(
         evaluation_key=evaluation_key,
         batch_size=batch_size,
         shard_count=shard_count,
+        evaluation_samples=EVALUATION_SAMPLES_OVERRIDE,
+        evaluation_repetitions=EVALUATION_REPETITIONS_OVERRIDE,
     )
 
 
@@ -921,8 +963,8 @@ def summarize_truthfulness(
             "kv_cache": CURRENT_USE_CACHE,
             "scorers": list(scorer_keys),
         },
-        "evaluation_samples_per_repetition": EVALUATION_SAMPLES["truthfulness"],
-        "evaluation_repetitions": EVALUATION_REPETITIONS,
+        "evaluation_samples_per_repetition": len(generation["repetitions"][0]["rows"]),
+        "evaluation_repetitions": len(generation["repetitions"]),
         "created_at_utc": _utc_now(),
         "per_repetition": per_repetition,
         "metrics": metrics,
@@ -989,6 +1031,8 @@ def main() -> None:
     parser.add_argument("--distribution", choices=("id", "spanish"), required=True)
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument("--evaluation-samples", type=int)
+    parser.add_argument("--evaluation-repetitions", type=int)
     parser.add_argument(
         "--scorer", choices=("truthfulqa_true", "truthfulqa_informative")
     )
@@ -1006,6 +1050,8 @@ def main() -> None:
         arguments.calibration_id,
         arguments.generation_batch_size,
         use_cache=arguments.kv_cache == "on",
+        evaluation_samples=arguments.evaluation_samples,
+        evaluation_repetitions=arguments.evaluation_repetitions,
     )
     if arguments.stage == "prepare":
         prepare(arguments.behavior, arguments.distribution)

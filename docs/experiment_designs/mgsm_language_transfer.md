@@ -2,7 +2,8 @@
 
 ## Pipeline card
 
-- **Status:** Implemented; Qwen3-4B is complete and Qwen3-8B is provisioned.
+- **Status:** Qwen3-4B is complete; the first Llama-3.2-3B-Instruct H∞ run is
+  superseded and awaits four-language H∞ recalibration.
 - **Task:** Solve MGSM arithmetic problems with native eight-shot examples.
 - **Distribution shift:** Input language changes across Chinese, French, Japanese,
   Swahili, and Telugu.
@@ -11,14 +12,17 @@
   paired Spanish-minus-English DiffMean.
 - **Shared dynamics:** 50 frozen Spanish-question Jacobians; one `A` per model
   shared by A-LQR and H∞.
-- **H∞ disturbance data:** 200 frozen GSM8K training questions.
+- **H∞ disturbance data:** 200 frozen GSM8K training questions translated and
+  balanced across Bengali, German, Russian, and Thai.
 - **Baseline settings:** Fixed S-PID and A-LQR settings; no sweep.
-- **H∞ selection:** 50 disjoint GSM8K questions; 12 cost configurations;
-  maximize the Spanish-adherence, instruction-relevance, and fluency harmonic mean.
+- **H∞ selection:** 50 additional translated GSM8K questions balanced across
+  Bengali, German, Russian, and Thai and shared by every candidate; `lambda=1.5`
+  is fixed to the same target as A-LQR, and the 12-point cost grid maximizes the
+  per-response accuracy/AXBench-Overall balanced additive score.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
-- **Models:** Qwen3-4B and Qwen3-8B.
-- **Methods:** Original, S-PID, A-LQR, and H∞.
+- **Models:** Qwen3-4B and Llama-3.2-3B-Instruct.
+- **Methods:** Original, S-PID, A-LQR, and H∞ for both models.
 - **Scoring:** Exact final-number accuracy, Spanish adherence, instruction
   relevance, fluency, and overall steering.
 - **Evaluation size:** Per model, 600 H∞ selection generations and 2,000 final
@@ -31,7 +35,7 @@ question itself moves into unseen input languages, while retaining correctness?
 
 ## Frozen scope
 
-- **Models:** Qwen3-4B and Qwen3-8B.
+- **Models:** Qwen3-4B and Llama-3.2-3B-Instruct.
 - **Methods:** Original, S-PID, A-LQR, and H∞.
 - **Steering rule:** `respond only in Spanish, and no other language is allowed`.
 - **Primary transfer languages:** Chinese, French, Japanese, Swahili, and Telugu.
@@ -56,7 +60,10 @@ question itself moves into unseen input languages, while retaining correctness?
 
 ## 3. H∞ disturbance fitting
 
-- Use 200 frozen GSM8K training questions outside MGSM evaluation.
+- Use 200 frozen GSM8K training questions outside MGSM evaluation, with 50
+  translated into each of Bengali, German, Russian, and Thai.
+- Wrap every translated question in that language's native MGSM eight-shot
+  chain-of-thought demonstrations.
 - Fit `D`, reduced coordinates, and the base H∞ problem once per model.
 
 ## 4. Controller selection
@@ -64,11 +71,17 @@ question itself moves into unseen input languages, while retaining correctness?
 - **S-PID:** fixed `lambda=1.5`, `Kp=0.5`, `Ki=0.5`, `Kd=0.01`.
 - **A-LQR:** fixed `lambda=1.5`, `Q=0.1`, `R=1`, `Qf=0.1`. No sweep.
 - **H∞ development set:** 50 additional GSM8K training questions, disjoint from
-  the 200 disturbance prompts.
+  the 200 disturbance prompts: 13 Bengali, 13 German, 12 Russian, and 12 Thai.
+- **Isolation:** Bengali, German, Russian, and Thai are calibration-only. Chinese,
+  French, Japanese, Swahili, and Telugu remain untouched final-test languages.
+- **H∞ target:** fixed `lambda=1.5`, exactly matching A-LQR. The generic optional
+  lambda-sweep implementation remains available but is disabled for every run.
 - **H∞ grid:** `R=1`, `Q/R in {0.01, 0.1, 1, 10}`, and
-  `Qf/R in {0.01, 0.1, 0.316...}`.
-- **Objective:** maximum harmonic mean of Spanish adherence, instruction
-  relevance, and fluency.
+  `Qf/R in {0.01, 0.1, 0.316...}` at the fixed target.
+- **Objective:** mean of the per-response score `0.5 × exact-answer accuracy +
+  0.5 × (AXBench Overall / 2)`. AXBench Overall is itself the harmonic mean of
+  Spanish adherence, instruction relevance, and fluency. A zero on either axis
+  removes only that axis's contribution rather than collapsing the entire score.
 
 ## 5. Final evaluation
 
@@ -88,8 +101,10 @@ question itself moves into unseen input languages, while retaining correctness?
 
 ## Evaluation size
 
-- Per model: `100 × 5 languages × 4 methods = 2,000` generations.
-- H∞ selection per model: `12 × 50 = 600` short generations.
+- Completed Qwen: `100 × 5 languages × 4 methods = 2,000` generations.
+- Planned Llama: `100 × 5 languages × 4 methods = 2,000` generations.
+- H∞ selection per model: `12 × 50 = 600` cost-grid generations. There is no
+  setpoint-multiplier sweep.
 - There are no repeated final-evaluation seeds.
 
 ## References
@@ -97,3 +112,4 @@ question itself moves into unseen input languages, while retaining correctness?
 - [MGSM paper](https://arxiv.org/abs/2210.03057)
 - [MGSM dataset](https://huggingface.co/datasets/juletxara/mgsm)
 - [AXBench paper](https://arxiv.org/abs/2501.17148)
+- [Llama 3.2 model card](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct)

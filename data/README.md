@@ -6,6 +6,8 @@
 
 ```text
 data/
+  mgsm/
+    h_infinity_multilingual_calibration.json
   lciteeval/
     direction.jsonl
     h_infinity_calibration.jsonl
@@ -24,6 +26,10 @@ data/
 ```
 
 - `prompts/`: disjoint prompt records used to fit semantic directions and nominal dynamics, calibrate disturbance geometry, and evaluate held-out steering.
+- `mgsm/`: frozen multilingual H∞ disturbance and tuning prompts translated
+  from disjoint GSM8K training questions and formatted with native MGSM
+  eight-shot demonstrations. Bengali, German, Russian, and Thai are used only
+  for calibration; the five reported MGSM evaluation languages are excluded.
 - `lciteeval/`: frozen AXBench concept-direction records and disjoint short
   instructions used to select H∞ for the L-CiteEval benchmark. These local
   JSONL artifacts are ignored by git; their exact sources, revisions, sampling
@@ -89,6 +95,7 @@ an independently sampled source dataset.
 
 | name | records | notes |
 | --- | ---: | --- |
+| `mgsm/h_infinity_multilingual_calibration.json` | 250 | Frozen H∞-only MGSM calibration data: 200 disturbance prompts (50 per Bengali/German/Russian/Thai) and 50 disjoint tuning prompts (13/13/12/12), translated from pinned GSM8K training questions and wrapped in native MGSM eight-shot prompts. |
 | `lciteeval/direction.jsonl` | 144 | AXBench concept 499: all 72 desired text examples and all 72 genre-matched undesired text examples used only to fit the model-specific semantic direction. |
 | `lciteeval/h_infinity_calibration.jsonl` | 50 | Fixed, unique AlpacaEval instructions used only to compare H∞ candidates; not direction-fitting examples. |
 | `lciteeval/manifest.json` | 1 | Pinned revisions, source hashes, deterministic selection rules, and the verified zero-overlap check. |

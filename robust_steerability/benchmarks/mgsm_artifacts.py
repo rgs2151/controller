@@ -44,6 +44,7 @@ CONCEPT = "respond only in Spanish, and no other language is allowed"
 DIRECTION_RECORDS_PER_CLASS = 250
 JACOBIAN_PROMPTS = 50
 MAX_CALIBRATION_LENGTH = 512
+MODEL_KEYS = ("qwen3_4b", "llama32_3b_instruct")
 
 
 def _utc_now() -> str:
@@ -65,7 +66,7 @@ def _save_torch(path: Path, payload: object) -> None:
 
 
 def model_load_spec(model_key: str) -> CausalModelLoadSpec:
-    if model_key not in {"qwen3_4b", "qwen3_8b"}:
+    if model_key not in MODEL_KEYS:
         raise ValueError(f"{model_key!r} is not an MGSM model")
     model = MODELS[model_key]
     return CausalModelLoadSpec(
@@ -415,7 +416,7 @@ def main() -> None:
         choices=("prepare", "setpoint", "jacobian-shard", "jacobians", "manifest"),
         required=True,
     )
-    parser.add_argument("--model", choices=("qwen3_4b", "qwen3_8b"), required=True)
+    parser.add_argument("--model", choices=MODEL_KEYS, required=True)
     parser.add_argument("--device")
     parser.add_argument("--devices", nargs="*")
     parser.add_argument("--shard-index", type=int)

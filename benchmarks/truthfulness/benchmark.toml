@@ -1,7 +1,7 @@
 schema_version = 4
 benchmark = "truthfulness"
 base_dataset = "truthfulqa"
-models = ["gemma2b", "llama8b", "qwen14b"]
+models = ["gemma2b", "llama8b", "qwen14b", "qwen32b"]
 available_methods = ["original", "iti", "actadd", "mean_act", "linear_act", "pid_act", "odesteer", "spid", "alqr", "h_infinity"]
 default_methods = ["original", "alqr", "h_infinity"]
 default_datasets = ["id", "spanish", "mmlu"]
@@ -52,10 +52,19 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "mean_axbench_overall"
+selection_metric = "truthfulness_quality_composite"
+available_selection_metrics = ["truthfulqa_true_mean_percentage", "mean_axbench_overall", "truthfulness_quality_composite"]
 h_infinity_tuning_samples = 50
 h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
+
+[calibration.truthfulness_quality_composite]
+aggregation = "mean_per_response_weighted_harmonic"
+truthfulqa_true_weight = 0.50
+axbench_instruction_relevance_weight = 0.25
+axbench_fluency_weight = 0.25
+axbench_score_normalizer = 2.0
+zero_component_score = 0.0
 
 [storage]
 remote_cache_backend = "lightning_teamspace_drive"

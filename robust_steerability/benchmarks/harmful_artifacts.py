@@ -42,7 +42,11 @@ from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 
 BENCHMARK = "harmful"
-MODEL_KEY = "llama32_1b_instruct"
+MODEL_KEYS = (
+    "llama32_1b_instruct",
+    "llama32_3b_instruct",
+    "llama31_8b_instruct",
+)
 CONCEPT = "non-exhibition of requested harmful behavior"
 FIT_RECORDS_PER_CLASS = 50
 JACOBIAN_PROMPTS = 50
@@ -69,7 +73,7 @@ def _save_torch(path: Path, payload: object) -> None:
 
 
 def model_load_spec(model_key: str) -> CausalModelLoadSpec:
-    if model_key != MODEL_KEY:
+    if model_key not in MODEL_KEYS:
         raise ValueError(f"{model_key!r} is not a HarmBench model")
     model = MODELS[model_key]
     return CausalModelLoadSpec(
@@ -390,7 +394,7 @@ def main() -> None:
     parser.add_argument(
         "--stage", choices=("prepare", "setpoint", "jacobian-shard"), required=True
     )
-    parser.add_argument("--model", choices=(MODEL_KEY,), required=True)
+    parser.add_argument("--model", choices=MODEL_KEYS, required=True)
     parser.add_argument("--device")
     parser.add_argument("--shard-index", type=int)
     parser.add_argument("--shard-count", type=int)

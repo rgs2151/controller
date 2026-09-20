@@ -10,16 +10,20 @@
 | 16K | Qwen2.5-3B-Instruct | S-PID | 61.9 | 7.2 | 0.00 | 1.38 | 1.48 |
 | 16K | Qwen2.5-3B-Instruct | A-LQR | 64.8 | 3.0 | 0.00 | 1.43 | 1.57 |
 | 16K | Qwen2.5-3B-Instruct | H∞ (ours) | 65.2 | 7.8 | 0.15 | 1.40 | 1.43 |
+| 32K | Qwen2.5-3B-Instruct | Original | 54.0 | 2.4 | 0.00 | 1.18 | 1.48 |
+| 32K | Qwen2.5-3B-Instruct | S-PID | 61.0 | 1.6 | 0.00 | 1.20 | 1.35 |
+| 32K | Qwen2.5-3B-Instruct | A-LQR | 56.2 | 4.1 | 0.00 | 1.23 | 1.35 |
+| 32K | Qwen2.5-3B-Instruct | H∞ (ours) | 52.6 | 1.8 | 0.05 | 1.20 | 1.38 |
 
 ## Method
 
-- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K and 16K tokens, citing the minimum supporting passages after every answer sentence.
-- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across both context lengths.
+- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K, 16K, and 32K tokens, citing the minimum supporting passages after every answer sentence.
+- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across all three context lengths.
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`. The direction uses all 72 released positive responses and 72 genre-matched negative responses from `pyvene/axbench-concept500` variant `prod_9b_l20_v1`.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller without changing that shared dynamics matrix.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at both lengths.
-- The summary report is the equal-weight macro-average of the 8K and 16K means. The full report exposes all eight context-length–method cells.
+- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths.
+- The summary keeps 8K, 16K, and 32K separate. The full report exposes all 12 context-length–method cells.
 
 ## Measures
 

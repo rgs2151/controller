@@ -3,6 +3,8 @@
 Every benchmark exposes `artifacts`, `calibrate`, `evaluate`, and `score`.
 Evaluation only generates responses. Score consumes those responses through
 benchmark-selected scorer definitions and never reruns the evaluated model.
+Every candidate-based calibration hard-fails without writing a selection when
+all candidates score zero on its configured selection metric.
 
 Each `benchmarks/<name>/benchmark.toml` composes one base dataset with any
 number of independent evaluation datasets. The base dataset owns controller
@@ -23,9 +25,10 @@ No dataset adapter or scorer changes, and completed methods remain untouched.
   MMLU capability retention.
 - `truthfulness.py`: TruthfulQA as the base dataset, Spanish transfer, and MMLU
   capability retention.
-- `lciteeval.py`: MGSM English-to-Spanish steering transferred across the 40
-  matched L-CiteEval HotpotQA cases at approximately 8K and 16K; historical
-  concept-499 results remain isolated under `benchmarks/lciteeval`.
+- `lciteeval.py`: AXBench concept-499 positive-sentiment steering transferred
+  across the 40 matched L-CiteEval HotpotQA cases at 8K, 16K, and 32K.
+- `lciteeval_spanish.py`: the separate MGSM English-to-Spanish steering
+  pipeline over the same L-CiteEval length conditions.
 - `mgsm.py`: one paired English-to-Spanish MGSM direction transferred across
   nine held-out input languages while preserving exact numerical accuracy.
 - `harmful.py`: HarmBench non-exhibition/refusal steering evaluated on direct

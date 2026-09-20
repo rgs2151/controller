@@ -1,7 +1,7 @@
 schema_version = 2
 benchmark = "mgsm"
 base_dataset = "mgsm_en_es_direction"
-models = ["qwen3_4b", "qwen3_8b"]
+models = ["qwen3_4b", "llama32_3b_instruct"]
 available_methods = ["original", "spid", "alqr", "h_infinity"]
 default_methods = ["original", "spid", "alqr", "h_infinity"]
 default_datasets = ["zh", "fr", "ja", "sw", "te"]
@@ -140,11 +140,27 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "mean_mgsm_axbench_overall"
+selection_metric = "mgsm_quality_composite"
+available_selection_metrics = ["mean_axbench_overall", "mgsm_quality_composite"]
 h_infinity_disturbance_samples = 200
 h_infinity_tuning_samples = 50
 h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
+h_infinity_calibration_languages = ["bn", "de", "ru", "th"]
+
+[calibration.mgsm_quality_composite]
+aggregation = "mean_per_response_weighted_additive"
+mgsm_exact_match_weight = 0.50
+axbench_overall_weight = 0.50
+axbench_score_normalizer = 2.0
+
+[calibration.h_infinity_lambda_sweep]
+enabled = false
+values = [0.1, 0.25, 0.5, 0.75, 1.0, 1.5]
+fixed_q_over_r = 0.1
+fixed_q_final_over_r = 0.1
+fixed_r = 1.0
+selection_metric = "mean_axbench_overall"
 
 [storage]
 remote_cache_backend = "lightning_teamspace_drive"

@@ -138,6 +138,33 @@ def _records(data: dict, evaluation_key: str, repetition: int) -> list[dict]:
     return data["evaluation"][evaluation_key][str(repetition)]
 
 
+def limit_evaluation_data(
+    data: dict,
+    evaluation_key: str,
+    *,
+    samples: int | None = None,
+    repetitions: int | None = None,
+) -> dict:
+    """Return an in-memory evaluation view without changing the frozen dataset."""
+
+    available = data["evaluation"][evaluation_key]
+    repetition_count = len(available) if repetitions is None else repetitions
+    if not 1 <= repetition_count <= len(available):
+        raise ValueError(
+            f"Requested {repetition_count} repetitions from {len(available)} available"
+        )
+    selected: dict[str, list[dict]] = {}
+    for repetition in range(repetition_count):
+        records = available[str(repetition)]
+        sample_count = len(records) if samples is None else samples
+        if not 1 <= sample_count <= len(records):
+            raise ValueError(
+                f"Requested {sample_count} samples from {len(records)} available"
+            )
+        selected[str(repetition)] = records[:sample_count]
+    return {**data, "evaluation": {**data["evaluation"], evaluation_key: selected}}
+
+
 def _texts(records: list[dict]) -> list[str]:
     return [str(row["text"]) for row in records]
 
@@ -385,10 +412,17 @@ def merge_generation_shards(
     evaluation_key: str,
     batch_size: int,
     shard_count: int,
+    evaluation_samples: int | None = None,
+    evaluation_repetitions: int | None = None,
 ) -> Path:
     """Merge data-parallel generation shards into the established final cache."""
 
-    data = json.loads(data_path.read_text())
+    data = limit_evaluation_data(
+        json.loads(data_path.read_text()),
+        evaluation_key,
+        samples=evaluation_samples,
+        repetitions=evaluation_repetitions,
+    )
     expected = _batch_assignments(data, evaluation_key, batch_size)
     expected_keys = [(repetition, start) for repetition, start, _records in expected]
     batches: dict[tuple[int, int], dict] = {}
@@ -757,6 +791,8 @@ def run_generation_job(
     generation_batch_size: int | None = None,
     shard_index: int | None = None,
     shard_count: int | None = None,
+    evaluation_samples: int | None = None,
+    evaluation_repetitions: int | None = None,
 ) -> None:
     """Run one source method on an explicit frozen evaluation dataset."""
 
@@ -764,7 +800,12 @@ def run_generation_job(
         raise ValueError(f"Unsupported method {method!r}")
     if not device.startswith("cuda:"):
         raise ValueError("Source benchmark jobs require an explicit CUDA device")
-    data = json.loads(data_path.read_text())
+    data = limit_evaluation_data(
+        json.loads(data_path.read_text()),
+        evaluation_key,
+        samples=evaluation_samples,
+        repetitions=evaluation_repetitions,
+    )
     evaluation_samples = len(_records(data, evaluation_key, 0))
     parameters = resolve_selected_parameters(
         method, behavior, model_id, selected_parameters
