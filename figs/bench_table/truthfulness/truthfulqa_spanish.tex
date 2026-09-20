@@ -2,63 +2,57 @@
 \begin{table*}[!htbp]
 \centering
 \definecolor{projectdarkred}{RGB}{128,0,0}
-\caption{Spanish-input, English-output TruthfulQA transfer results using English-calibrated controllers. Repeated rows report mean $\pm$ standard error; compact single-pass rows report means without an error term. TBD marks unrun model-method pairs.}
+\caption{Spanish-input, English-output TruthfulQA transfer results using English-calibrated controllers. Repeated rows report mean $\pm$ standard error; compact single-pass rows report means without an error term.}
 \label{tab:truthfulqa-spanish}
 \small
 \renewcommand{\arraystretch}{1.08}
 \setlength{\tabcolsep}{6pt}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{rlccccc}
+\begin{tabular}{rlcccc}
 \toprule
- & Method & \cellcolor{projectdarkred!10}True (\%) $\uparrow$ & Informative (\%) $\uparrow$ & \shortstack{Truthful-concept\\relevance (0--2) $\uparrow$} & Instruction relevance (0--2) $\uparrow$ & Fluency (0--2) $\uparrow$ \\
+ & Method & \cellcolor{projectdarkred!10}True (\%) $\uparrow$ & Informative (\%) $\uparrow$ & Instruction relevance (0--2) $\uparrow$ & Fluency (0--2) $\uparrow$ \\
 \midrule
-\multirow{10}{*}{\rotatebox[origin=c]{90}{Gemma-2-2B}} & Original & \cellcolor{projectdarkred!10}$51.41\,\pm\,0.90$ & $86.44\,\pm\,0.58$ & \textcolor{gray}{TBD} & $1.32\,\pm\,0.02$ & $1.17\,\pm\,0.00$ \\
-\cmidrule(l){2-7}
- & ITI & \cellcolor{projectdarkred!10}$53.56\,\pm\,0.47$ & $88.59\,\pm\,0.45$ & \textcolor{gray}{TBD} & $1.42\,\pm\,0.01$ & $1.21\,\pm\,0.01$ \\
- & ActAdd & \cellcolor{projectdarkred!10}$63.57\,\pm\,0.39$ & $67.15\,\pm\,0.34$ & \textcolor{gray}{TBD} & $0.99\,\pm\,0.01$ & $0.88\,\pm\,0.01$ \\
- & Mean-AcT & \cellcolor{projectdarkred!10}$48.13\,\pm\,0.52$ & $90.40\,\pm\,0.46$ & \textcolor{gray}{TBD} & $1.42\,\pm\,0.01$ & $\underline{1.23\,\pm\,0.01}$ \\
- & Linear-AcT & \cellcolor{projectdarkred!10}$47.83\,\pm\,0.78$ & $90.60\,\pm\,0.78$ & \textcolor{gray}{TBD} & $\underline{1.44\,\pm\,0.01}$ & $1.23\,\pm\,0.01$ \\
- & PID-AcT & \cellcolor{projectdarkred!10}$48.79\,\pm\,0.61$ & $\underline{90.89\,\pm\,0.49}$ & \textcolor{gray}{TBD} & $1.43\,\pm\,0.01$ & $1.22\,\pm\,0.01$ \\
- & ODESteer & \cellcolor{projectdarkred!10}$57.01\,\pm\,0.20$ & $86.27\,\pm\,0.28$ & \textcolor{gray}{TBD} & $1.32\,\pm\,0.01$ & $1.14\,\pm\,0.01$ \\
- & S-PID & \cellcolor{projectdarkred!10}$55.15\,\pm\,0.37$ & $86.41\,\pm\,0.34$ & \textcolor{gray}{TBD} & $1.29\,\pm\,0.01$ & $1.12\,\pm\,0.00$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$73.81\,\pm\,0.71$ & $76.55\,\pm\,0.65$ & \textcolor{gray}{TBD} & $1.12\,\pm\,0.01$ & $1.06\,\pm\,0.00$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{77.45\,\pm\,0.52}$ & $64.16\,\pm\,0.85$ & \textcolor{gray}{TBD} & $1.04\,\pm\,0.01$ & $1.02\,\pm\,0.01$ \\
+\multirow{10}{*}{\rotatebox[origin=c]{90}{Gemma-2-2B}} & Original & \cellcolor{projectdarkred!10}$51.41\,\pm\,0.90$ & $86.44\,\pm\,0.58$ & $1.32\,\pm\,0.02$ & $1.17\,\pm\,0.00$ \\
+\cmidrule(l){2-6}
+ & ITI & \cellcolor{projectdarkred!10}$53.56\,\pm\,0.47$ & $88.59\,\pm\,0.45$ & $1.42\,\pm\,0.01$ & $1.21\,\pm\,0.01$ \\
+ & ActAdd & \cellcolor{projectdarkred!10}$63.57\,\pm\,0.39$ & $67.15\,\pm\,0.34$ & $0.99\,\pm\,0.01$ & $0.88\,\pm\,0.01$ \\
+ & Mean-AcT & \cellcolor{projectdarkred!10}$48.13\,\pm\,0.52$ & $90.40\,\pm\,0.46$ & $1.42\,\pm\,0.01$ & $\underline{1.23\,\pm\,0.01}$ \\
+ & Linear-AcT & \cellcolor{projectdarkred!10}$47.83\,\pm\,0.78$ & $90.60\,\pm\,0.78$ & $\underline{1.44\,\pm\,0.01}$ & $1.23\,\pm\,0.01$ \\
+ & PID-AcT & \cellcolor{projectdarkred!10}$48.79\,\pm\,0.61$ & $\underline{90.89\,\pm\,0.49}$ & $1.43\,\pm\,0.01$ & $1.22\,\pm\,0.01$ \\
+ & ODESteer & \cellcolor{projectdarkred!10}$57.01\,\pm\,0.20$ & $86.27\,\pm\,0.28$ & $1.32\,\pm\,0.01$ & $1.14\,\pm\,0.01$ \\
+ & S-PID & \cellcolor{projectdarkred!10}$55.15\,\pm\,0.37$ & $86.41\,\pm\,0.34$ & $1.29\,\pm\,0.01$ & $1.12\,\pm\,0.00$ \\
+ & A-LQR & \cellcolor{projectdarkred!10}$73.81\,\pm\,0.71$ & $76.55\,\pm\,0.65$ & $1.12\,\pm\,0.01$ & $1.06\,\pm\,0.00$ \\
+ & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{77.45\,\pm\,0.52}$ & $64.16\,\pm\,0.85$ & $1.04\,\pm\,0.01$ & $1.02\,\pm\,0.01$ \\
 \midrule
-\multirow{10}{*}{\rotatebox[origin=c]{90}{Llama-3-8B}} & Original & \cellcolor{projectdarkred!10}$42.86\,\pm\,0.49$ & $94.52\,\pm\,0.24$ & \textcolor{gray}{TBD} & $1.59\,\pm\,0.01$ & $1.39\,\pm\,0.01$ \\
-\cmidrule(l){2-7}
- & ITI & \cellcolor{projectdarkred!10}$55.47\,\pm\,0.88$ & $94.37\,\pm\,0.20$ & \textcolor{gray}{TBD} & $1.61\,\pm\,0.02$ & $1.39\,\pm\,0.01$ \\
- & ActAdd & \cellcolor{projectdarkred!10}$43.94\,\pm\,0.53$ & $93.78\,\pm\,0.29$ & \textcolor{gray}{TBD} & $1.57\,\pm\,0.01$ & $1.35\,\pm\,0.01$ \\
- & Mean-AcT & \cellcolor{projectdarkred!10}$46.61\,\pm\,0.69$ & $94.83\,\pm\,0.49$ & \textcolor{gray}{TBD} & $1.61\,\pm\,0.01$ & $1.41\,\pm\,0.01$ \\
- & Linear-AcT & \cellcolor{projectdarkred!10}$47.15\,\pm\,0.41$ & $94.96\,\pm\,0.39$ & \textcolor{gray}{TBD} & $1.61\,\pm\,0.01$ & $\underline{1.42\,\pm\,0.02}$ \\
- & PID-AcT & \cellcolor{projectdarkred!10}$47.12\,\pm\,0.63$ & $\underline{95.08\,\pm\,0.51}$ & \textcolor{gray}{TBD} & $\underline{1.62\,\pm\,0.01}$ & $1.41\,\pm\,0.01$ \\
- & ODESteer & \cellcolor{projectdarkred!10}$\underline{95.67\,\pm\,0.15}$ & $11.21\,\pm\,0.45$ & \textcolor{gray}{TBD} & $0.00\,\pm\,0.00$ & $0.02\,\pm\,0.00$ \\
- & S-PID & \cellcolor{projectdarkred!10}$52.09\,\pm\,0.56$ & $94.37\,\pm\,0.22$ & \textcolor{gray}{TBD} & $1.59\,\pm\,0.01$ & $1.33\,\pm\,0.01$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$55.57\,\pm\,0.71$ & $95.03\,\pm\,0.25$ & \textcolor{gray}{TBD} & $1.56\,\pm\,0.01$ & $1.27\,\pm\,0.01$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$85.21\,\pm\,0.40$ & $64.70\,\pm\,0.48$ & \textcolor{gray}{TBD} & $0.97\,\pm\,0.03$ & $0.97\,\pm\,0.02$ \\
+\multirow{10}{*}{\rotatebox[origin=c]{90}{Llama-3-8B}} & Original & \cellcolor{projectdarkred!10}$42.86\,\pm\,0.49$ & $94.52\,\pm\,0.24$ & $1.59\,\pm\,0.01$ & $1.39\,\pm\,0.01$ \\
+\cmidrule(l){2-6}
+ & ITI & \cellcolor{projectdarkred!10}$55.47\,\pm\,0.88$ & $94.37\,\pm\,0.20$ & $1.61\,\pm\,0.02$ & $1.39\,\pm\,0.01$ \\
+ & ActAdd & \cellcolor{projectdarkred!10}$43.94\,\pm\,0.53$ & $93.78\,\pm\,0.29$ & $1.57\,\pm\,0.01$ & $1.35\,\pm\,0.01$ \\
+ & Mean-AcT & \cellcolor{projectdarkred!10}$46.61\,\pm\,0.69$ & $94.83\,\pm\,0.49$ & $1.61\,\pm\,0.01$ & $1.41\,\pm\,0.01$ \\
+ & Linear-AcT & \cellcolor{projectdarkred!10}$47.15\,\pm\,0.41$ & $94.96\,\pm\,0.39$ & $1.61\,\pm\,0.01$ & $\underline{1.42\,\pm\,0.02}$ \\
+ & PID-AcT & \cellcolor{projectdarkred!10}$47.12\,\pm\,0.63$ & $\underline{95.08\,\pm\,0.51}$ & $\underline{1.62\,\pm\,0.01}$ & $1.41\,\pm\,0.01$ \\
+ & ODESteer & \cellcolor{projectdarkred!10}$\underline{95.67\,\pm\,0.15}$ & $11.21\,\pm\,0.45$ & $0.00\,\pm\,0.00$ & $0.02\,\pm\,0.00$ \\
+ & S-PID & \cellcolor{projectdarkred!10}$52.09\,\pm\,0.56$ & $94.37\,\pm\,0.22$ & $1.59\,\pm\,0.01$ & $1.33\,\pm\,0.01$ \\
+ & A-LQR & \cellcolor{projectdarkred!10}$55.57\,\pm\,0.71$ & $95.03\,\pm\,0.25$ & $1.56\,\pm\,0.01$ & $1.27\,\pm\,0.01$ \\
+ & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$85.21\,\pm\,0.40$ & $64.70\,\pm\,0.48$ & $0.97\,\pm\,0.03$ & $0.97\,\pm\,0.02$ \\
 \midrule
-\multirow{10}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-14B}} & Original & \cellcolor{projectdarkred!10}$68.13\,\pm\,0.28$ & $97.31\,\pm\,0.13$ & $1.82\,\pm\,0.01$ & $1.82\,\pm\,0.00$ & $1.51\,\pm\,0.01$ \\
-\cmidrule(l){2-7}
- & ITI & \cellcolor{projectdarkred!10}$67.91\,\pm\,0.33$ & $97.36\,\pm\,0.07$ & $1.82\,\pm\,0.01$ & $1.82\,\pm\,0.00$ & $1.53\,\pm\,0.01$ \\
- & ActAdd & \cellcolor{projectdarkred!10}$72.09\,\pm\,0.90$ & $89.62\,\pm\,1.54$ & $1.66\,\pm\,0.03$ & $1.63\,\pm\,0.04$ & $1.37\,\pm\,0.04$ \\
- & Mean-AcT & \cellcolor{projectdarkred!10}$68.27\,\pm\,0.26$ & $97.48\,\pm\,0.08$ & $1.82\,\pm\,0.00$ & $1.82\,\pm\,0.01$ & $\underline{1.55\,\pm\,0.01}$ \\
- & Linear-AcT & \cellcolor{projectdarkred!10}$68.25\,\pm\,0.21$ & $\underline{97.55\,\pm\,0.19}$ & $\underline{1.83\,\pm\,0.01}$ & $\underline{1.83\,\pm\,0.01}$ & $1.55\,\pm\,0.01$ \\
- & PID-AcT & \cellcolor{projectdarkred!10}$68.27\,\pm\,0.22$ & $97.28\,\pm\,0.20$ & $1.83\,\pm\,0.00$ & $1.82\,\pm\,0.01$ & $1.55\,\pm\,0.02$ \\
- & ODESteer & \cellcolor{projectdarkred!10}$74.88\,\pm\,0.46$ & $92.83\,\pm\,0.26$ & $1.73\,\pm\,0.00$ & $1.67\,\pm\,0.01$ & $1.44\,\pm\,0.01$ \\
- & S-PID & \cellcolor{projectdarkred!10}$82.82\,\pm\,0.28$ & $93.56\,\pm\,0.47$ & $1.74\,\pm\,0.01$ & $1.64\,\pm\,0.00$ & $1.43\,\pm\,0.01$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$85.24\,\pm\,0.50$ & $94.32\,\pm\,0.27$ & $1.73\,\pm\,0.01$ & $1.64\,\pm\,0.01$ & $1.41\,\pm\,0.01$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{88.74\,\pm\,0.28}$ & $93.05\,\pm\,0.48$ & $1.65\,\pm\,0.01$ & $1.53\,\pm\,0.01$ & $1.29\,\pm\,0.01$ \\
+\multirow{10}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-14B}} & Original & \cellcolor{projectdarkred!10}$68.13\,\pm\,0.28$ & $97.31\,\pm\,0.13$ & $1.82\,\pm\,0.00$ & $1.51\,\pm\,0.01$ \\
+\cmidrule(l){2-6}
+ & ITI & \cellcolor{projectdarkred!10}$67.91\,\pm\,0.33$ & $97.36\,\pm\,0.07$ & $1.82\,\pm\,0.00$ & $1.53\,\pm\,0.01$ \\
+ & ActAdd & \cellcolor{projectdarkred!10}$72.09\,\pm\,0.90$ & $89.62\,\pm\,1.54$ & $1.63\,\pm\,0.04$ & $1.37\,\pm\,0.04$ \\
+ & Mean-AcT & \cellcolor{projectdarkred!10}$68.27\,\pm\,0.26$ & $97.48\,\pm\,0.08$ & $1.82\,\pm\,0.01$ & $\underline{1.55\,\pm\,0.01}$ \\
+ & Linear-AcT & \cellcolor{projectdarkred!10}$68.25\,\pm\,0.21$ & $\underline{97.55\,\pm\,0.19}$ & $\underline{1.83\,\pm\,0.01}$ & $1.55\,\pm\,0.01$ \\
+ & PID-AcT & \cellcolor{projectdarkred!10}$68.27\,\pm\,0.22$ & $97.28\,\pm\,0.20$ & $1.82\,\pm\,0.01$ & $1.55\,\pm\,0.02$ \\
+ & ODESteer & \cellcolor{projectdarkred!10}$74.88\,\pm\,0.46$ & $92.83\,\pm\,0.26$ & $1.67\,\pm\,0.01$ & $1.44\,\pm\,0.01$ \\
+ & S-PID & \cellcolor{projectdarkred!10}$82.82\,\pm\,0.28$ & $93.56\,\pm\,0.47$ & $1.64\,\pm\,0.00$ & $1.43\,\pm\,0.01$ \\
+ & A-LQR & \cellcolor{projectdarkred!10}$85.24\,\pm\,0.50$ & $94.32\,\pm\,0.27$ & $1.64\,\pm\,0.01$ & $1.41\,\pm\,0.01$ \\
+ & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{88.74\,\pm\,0.28}$ & $93.05\,\pm\,0.48$ & $1.53\,\pm\,0.01$ & $1.29\,\pm\,0.01$ \\
 \midrule
-\multirow{10}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-32B}} & Original & \cellcolor{projectdarkred!10}$72.86$ & $94.13$ & $1.75$ & $1.68$ & $1.42$ \\
-\cmidrule(l){2-7}
- & ITI & \cellcolor{projectdarkred!10}\textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} \\
- & ActAdd & \cellcolor{projectdarkred!10}\textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} \\
- & Mean-AcT & \cellcolor{projectdarkred!10}\textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} \\
- & Linear-AcT & \cellcolor{projectdarkred!10}\textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} \\
- & PID-AcT & \cellcolor{projectdarkred!10}\textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} \\
- & ODESteer & \cellcolor{projectdarkred!10}\textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} \\
- & S-PID & \cellcolor{projectdarkred!10}$\underline{86.06}$ & $89.73$ & $\underline{1.71}$ & $1.57$ & $1.32$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$84.84$ & $\underline{92.42}$ & $1.69$ & $\underline{1.60}$ & $\underline{1.39}$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$84.84$ & $89.24$ & $1.57$ & $1.45$ & $1.30$ \\
+\multirow{4}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-32B}} & Original & \cellcolor{projectdarkred!10}$72.86$ & $94.13$ & $1.68$ & $1.42$ \\
+\cmidrule(l){2-6}
+ & S-PID & \cellcolor{projectdarkred!10}$\underline{86.06}$ & $89.73$ & $1.57$ & $1.32$ \\
+ & A-LQR & \cellcolor{projectdarkred!10}$84.84$ & $\underline{92.42}$ & $\underline{1.60}$ & $\underline{1.39}$ \\
+ & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$84.84$ & $89.24$ & $1.45$ & $1.30$ \\
 \bottomrule
 \end{tabular}%
 }
