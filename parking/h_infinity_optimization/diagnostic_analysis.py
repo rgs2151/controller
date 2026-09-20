@@ -8,7 +8,12 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GroupShuffleSplit
 from scipy.stats import spearmanr
+
+from robust_steerability.control.lqr import LQRController
+from robust_steerability.control.types import FiniteHorizonControlProblem
 
 from robust_steerability.experiments.diagnostics import (
     PREDICTORS, evaluate, load_run, pack_run, read_json, safe_id, score as freeze_score,
@@ -21,16 +26,45 @@ SKETCH_PREDICTORS = (
 )
 
 
+def calculate_probe_accuracy(calibration: dict, seed: int) -> float:
+    """Recreate the fit-only ITI head ranking from the tensors in the bundle."""
+    heads = calibration["fit_attention_heads"].detach().cpu().float()
+    labels = np.asarray(calibration["fit_labels"], dtype=int)
+    records = calibration["fit_records"]
+    head_count = int(calibration["attention_head_count"])
+    horizon = heads.shape[1]
+    heads = heads.reshape(len(heads), horizon, head_count, -1)
+    groups = np.asarray([
+        row.get("source_prompt_id", row["prompt_id"]) for row in records
+    ])
+    train, validation = next(
+        GroupShuffleSplit(
+            n_splits=1,
+            test_size=0.2,
+            random_state=seed,
+        ).split(heads, labels, groups)
+    )
+    if len(np.unique(labels[train])) != 2 or len(np.unique(labels[validation])) != 2:
+        raise ValueError("Grouped probe split must contain both classes")
+    accuracies = []
+    for layer in range(horizon):
+        for head in range(head_count):
+            values = heads[:, layer, head].numpy()
+            probe = LogisticRegression(
+                random_state=seed,
+                max_iter=1000,
+            ).fit(values[train], labels[train])
+            accuracies.append(float(probe.score(values[validation], labels[validation])))
+    selected = np.argsort(accuracies)[::-1][:min(48, len(accuracies))]
+    return float(np.asarray(accuracies)[selected].mean())
+
+
 def calculate_panel_predictors(bundle: dict) -> dict[str, dict[str, object]]:
     """Calculate the calibration-only predictors required by the sketch panels."""
     calibration = bundle["calibration"]
     problem = bundle["problem"]
-    iti = calibration["baseline_parameters"]["iti"]
-    selected = np.asarray(iti["selected_heads"], dtype=int)
-    accuracies = np.asarray(iti["head_accuracy"], dtype=float)
-    if selected.size == 0 or selected.min() < 0 or selected.max() >= len(accuracies):
-        raise ValueError("ITI selected-head indices do not match saved head accuracies")
-    probe_accuracy = float(accuracies[selected].mean())
+    seed = int(calibration["settings"]["seed"])
+    probe_accuracy = calculate_probe_accuracy(calibration, seed)
 
     residuals = calibration["residuals"].detach().cpu().double()
     linearization_error = float(
@@ -39,7 +73,9 @@ def calculate_panel_predictors(bundle: dict) -> dict[str, dict[str, object]]:
 
     states = calibration["calibration_reduced_states"].detach().cpu().double()
     reference = calibration["reference_states"].detach().cpu().double()
-    gains = calibration["lqr_solution"]["gains"].detach().cpu().double()
+    gains = LQRController.synthesize(
+        FiniteHorizonControlProblem(**problem)
+    ).gains.detach().cpu().double()
     dynamics = problem["dynamics"].detach().cpu().double()
     channels = problem["control_channels"].detach().cpu().double()
     state_costs = problem["state_costs"].detach().cpu().double()
@@ -61,12 +97,12 @@ def calculate_panel_predictors(bundle: dict) -> dict[str, dict[str, object]]:
         "probe_accuracy": {
             "value": probe_accuracy,
             "split": "fit",
-            "definition": "Mean validation accuracy of the 48 fit-split ITI head probes selected by saved validation accuracy.",
+            "definition": "Mean grouped-validation accuracy of the top 48 fit-split ITI head probes, recomputed from saved fit activations with the calibration seed.",
         },
         "linearization_error": {
             "value": linearization_error,
             "split": "calibration",
-            "definition": "Root mean squared Euclidean norm of one-step residuals in the raw target-preserving reduced coordinates.",
+            "definition": f"Root mean squared Euclidean norm of one-step residuals in {bundle['normalization']['coordinates']} reduced coordinates.",
         },
         "nominal_lqr_objective": {
             "value": nominal_lqr_objective,
@@ -107,7 +143,7 @@ def score_with_panel_predictors(bundle_path: Path, device: str, *, cache_root: P
 def audit_panels(cache_root: Path) -> Path:
     """Write a readiness report and fail if the prospective plots lack inputs."""
     runs = []
-    for score_path in sorted((cache_root / "runs").glob("*/score.json")):
+    for score_path in sorted((cache_root / "runs").rglob("score.json")):
         score_record = read_json(score_path)
         missing_predictors = [
             name for name in SKETCH_PREDICTORS
@@ -160,7 +196,7 @@ def prepare_panels(analysis_id: str, controller: str, shift: str, protocol: str,
     if destination.exists():
         raise ValueError("Analysis ID exists; use a new analysis_id to preserve prior results")
     rows, exclusions, sources = [], [], {}
-    for path in sorted((cache_root / "runs").glob("*/score.json")):
+    for path in sorted((cache_root / "runs").rglob("score.json")):
         load_run(path.parent)
         record = read_json(path)
         if record["protocol_id"] != protocol or record["normalization_protocol_id"] != normalization:
@@ -171,8 +207,8 @@ def prepare_panels(analysis_id: str, controller: str, shift: str, protocol: str,
             reason = "infeasible or unconverged synthesis"
         elif record["synthetic"] != include_synthetic:
             reason = "synthetic/empirical cohort mismatch"
-        elif record["coordinates"] != "raw" or record["stage_costs_depth_weighted"] is not False:
-            reason = "Kaz-aligned raw reduced coordinates required"
+        elif record["coordinates"] != "normalized" or record["stage_costs_depth_weighted"] is not True:
+            reason = "cross-model normalized coordinates required"
         evaluations = []
         for candidate in sorted((path.parent / "evaluations").glob("*/summary.json")):
             result = read_json(candidate)
