@@ -146,6 +146,7 @@ h_infinity_disturbance_samples = 200
 h_infinity_tuning_samples = 50
 h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
+h_infinity_calibration_languages = ["bn", "de", "ru", "th"]
 
 [calibration.mgsm_quality_composite]
 aggregation = "mean_per_response_weighted_additive"

@@ -2,8 +2,8 @@
 
 ## Pipeline card
 
-- **Status:** Qwen3-4B is complete; the first Llama-3.2-3B-Instruct run is
-  superseded and awaits fixed-target H∞ recalibration.
+- **Status:** Qwen3-4B is complete; the first Llama-3.2-3B-Instruct H∞ run is
+  superseded and awaits four-language H∞ recalibration.
 - **Task:** Solve MGSM arithmetic problems with native eight-shot examples.
 - **Distribution shift:** Input language changes across Chinese, French, Japanese,
   Swahili, and Telugu.
@@ -12,11 +12,13 @@
   paired Spanish-minus-English DiffMean.
 - **Shared dynamics:** 50 frozen Spanish-question Jacobians; one `A` per model
   shared by A-LQR and H∞.
-- **H∞ disturbance data:** 200 frozen GSM8K training questions.
+- **H∞ disturbance data:** 200 frozen GSM8K training questions translated and
+  balanced across Bengali, German, Russian, and Thai.
 - **Baseline settings:** Fixed S-PID and A-LQR settings; no sweep.
-- **H∞ selection:** 50 disjoint GSM8K questions shared by every candidate;
-  `lambda=1.5` is fixed to the same target as A-LQR, and the 12-point cost grid
-  maximizes the per-response accuracy/AXBench-Overall balanced additive score.
+- **H∞ selection:** 50 additional translated GSM8K questions balanced across
+  Bengali, German, Russian, and Thai and shared by every candidate; `lambda=1.5`
+  is fixed to the same target as A-LQR, and the 12-point cost grid maximizes the
+  per-response accuracy/AXBench-Overall balanced additive score.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
 - **Models:** Qwen3-4B and Llama-3.2-3B-Instruct.
@@ -58,7 +60,10 @@ question itself moves into unseen input languages, while retaining correctness?
 
 ## 3. H∞ disturbance fitting
 
-- Use 200 frozen GSM8K training questions outside MGSM evaluation.
+- Use 200 frozen GSM8K training questions outside MGSM evaluation, with 50
+  translated into each of Bengali, German, Russian, and Thai.
+- Wrap every translated question in that language's native MGSM eight-shot
+  chain-of-thought demonstrations.
 - Fit `D`, reduced coordinates, and the base H∞ problem once per model.
 
 ## 4. Controller selection
@@ -66,7 +71,9 @@ question itself moves into unseen input languages, while retaining correctness?
 - **S-PID:** fixed `lambda=1.5`, `Kp=0.5`, `Ki=0.5`, `Kd=0.01`.
 - **A-LQR:** fixed `lambda=1.5`, `Q=0.1`, `R=1`, `Qf=0.1`. No sweep.
 - **H∞ development set:** 50 additional GSM8K training questions, disjoint from
-  the 200 disturbance prompts.
+  the 200 disturbance prompts: 13 Bengali, 13 German, 12 Russian, and 12 Thai.
+- **Isolation:** Bengali, German, Russian, and Thai are calibration-only. Chinese,
+  French, Japanese, Swahili, and Telugu remain untouched final-test languages.
 - **H∞ target:** fixed `lambda=1.5`, exactly matching A-LQR. The generic optional
   lambda-sweep implementation remains available but is disabled for every run.
 - **H∞ grid:** `R=1`, `Q/R in {0.01, 0.1, 1, 10}`, and

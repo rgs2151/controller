@@ -34,6 +34,7 @@ from robust_steerability.judges.exact import harmonic_mean
 from robust_steerability.judges.mgsm import exact_match, extract_final_number
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.huggingface import release_cuda_memory
+from robust_steerability.datasets.mgsm import multilingual_calibration_splits
 
 
 BENCHMARK = artifacts.BENCHMARK
@@ -167,15 +168,16 @@ def fit_base(
         map_location="cpu",
         weights_only=True,
     )
+    multilingual = multilingual_calibration_splits()
     calibration_data = {
         "negative": data["calibration"]["undesired"],
         "positive": data["calibration"]["desired"],
         "jacobian": data["calibration"]["jacobian"],
-        "disturbance": data["calibration"]["disturbance"],
+        "disturbance": multilingual["disturbance"],
         "dataset": {
             "direction": "all 250 matched MGSM English/Spanish test questions",
-            "disturbance": "frozen 200 GSM8K train questions",
-            "tuning": "disjoint frozen 50 GSM8K train questions",
+            "disturbance": "frozen 200 translated GSM8K train questions balanced across Bengali, German, Russian, and Thai",
+            "tuning": "disjoint frozen 50 translated GSM8K train questions balanced across Bengali, German, Russian, and Thai",
         },
     }
     root = destination_root or _root(model_key, calibration_id)
@@ -286,7 +288,7 @@ def generate_lambda_candidate(
         destination_root=candidate_root,
     )
     release_cuda_memory(device)
-    data = artifacts.prepare(model_key)
+    tuning = multilingual_calibration_splits()["tuning"]
     model, tokenizer = artifacts.load_model(model_key, device)
     base_payload = torch.load(
         candidate_root / "base/controller.pt",
@@ -298,7 +300,7 @@ def generate_lambda_candidate(
     policy = build_policy("hinf", artifact, kp=0.0, ki=0.0, kd=0.0)
     prompts = [
         runtime.format_calibration_prompt(tokenizer, str(row["text"]))
-        for row in data["calibration"]["tuning"]
+        for row in tuning
     ]
     batch_size = generation_batch_size or MODELS[model_key].activation_batch_size
     completions, generated = runtime.generate_completions(
@@ -320,7 +322,7 @@ def generate_lambda_candidate(
             "generated_tokens": count,
         }
         for row, completion, count in zip(
-            data["calibration"]["tuning"], completions, generated, strict=True
+            tuning, completions, generated, strict=True
         )
     ]
     _write_json(
@@ -384,7 +386,7 @@ def _score_exact_generations(
 ) -> None:
     """Score calibration answers with the same exact-number rule as evaluation."""
 
-    tuning = artifacts.prepare(model_key)["calibration"]["tuning"]
+    tuning = multilingual_calibration_splits()["tuning"]
     answers = {}
     for row in tuning:
         answer = extract_final_number(str(row["answer"]))
@@ -485,7 +487,7 @@ def select_lambda(model_key: str, calibration_id: str) -> dict:
             "fixed_q_final_over_r": LAMBDA_SWEEP.fixed_q_final_over_r,
             "fixed_r": LAMBDA_SWEEP.fixed_r,
             "tuning_samples": len(
-                artifacts.prepare(model_key)["calibration"]["tuning"]
+                multilingual_calibration_splits()["tuning"]
             ),
             "tuning_repetitions": 1,
             "evaluated_model_kv_cache": False,
@@ -562,7 +564,7 @@ def generate_worker(
     root = _root(model_key, calibration_id)
     multiplier = selected_multiplier(model_key, calibration_id)
     grid_root = _q_grid_root(model_key, calibration_id)
-    data = artifacts.prepare(model_key)
+    tuning = multilingual_calibration_splits()["tuning"]
     model, tokenizer = artifacts.load_model(model_key, device)
     base_payload = torch.load(
         root / "base/controller.pt", map_location="cpu", weights_only=True, mmap=True
@@ -570,7 +572,7 @@ def generate_worker(
     base = ControllerArtifact(**base_payload["artifact"])
     prompts = [
         runtime.format_calibration_prompt(tokenizer, str(row["text"]))
-        for row in data["calibration"]["tuning"]
+        for row in tuning
     ]
     batch_size = generation_batch_size or MODELS[model_key].activation_batch_size
     for configuration in grid(multiplier)[shard_index::shard_count]:
@@ -610,7 +612,7 @@ def generate_worker(
                 "generated_tokens": count,
             }
             for row, completion, count in zip(
-                data["calibration"]["tuning"], completions, generated, strict=True
+                tuning, completions, generated, strict=True
             )
         ]
         _write_json(
