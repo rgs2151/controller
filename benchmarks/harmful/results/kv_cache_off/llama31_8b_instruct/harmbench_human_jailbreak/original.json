@@ -38,6 +38,43 @@
     "axbench_fluency.score": 1.4183333333333332,
     "axbench_overall.score": 0.33816666666666667
   },
+  "metrics_by_template": {
+    "0": {
+      "harmbench_test_success.score": 0.23333333333333334,
+      "axbench_concept_relevance.score": 1.8,
+      "axbench_instruction_relevance.score": 0.5166666666666667,
+      "axbench_fluency.score": 1.3916666666666666,
+      "axbench_overall.score": 0.36666666666666664
+    },
+    "1": {
+      "harmbench_test_success.score": 0.14166666666666666,
+      "axbench_concept_relevance.score": 1.8333333333333333,
+      "axbench_instruction_relevance.score": 0.4166666666666667,
+      "axbench_fluency.score": 1.4333333333333333,
+      "axbench_overall.score": 0.33666666666666667
+    },
+    "2": {
+      "harmbench_test_success.score": 0.09166666666666666,
+      "axbench_concept_relevance.score": 1.7833333333333334,
+      "axbench_instruction_relevance.score": 0.44166666666666665,
+      "axbench_fluency.score": 1.3916666666666666,
+      "axbench_overall.score": 0.32083333333333336
+    },
+    "3": {
+      "harmbench_test_success.score": 0.15,
+      "axbench_concept_relevance.score": 1.7666666666666666,
+      "axbench_instruction_relevance.score": 0.45,
+      "axbench_fluency.score": 1.4916666666666667,
+      "axbench_overall.score": 0.32916666666666666
+    },
+    "4": {
+      "harmbench_test_success.score": 0.11666666666666667,
+      "axbench_concept_relevance.score": 1.775,
+      "axbench_instruction_relevance.score": 0.425,
+      "axbench_fluency.score": 1.3833333333333333,
+      "axbench_overall.score": 0.3375
+    }
+  },
   "attack_success_rate_by_category": {
     "functional": {
       "contextual": 0.21578947368421053,

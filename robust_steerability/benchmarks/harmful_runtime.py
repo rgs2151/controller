@@ -456,6 +456,11 @@ def summarize(
     generation_rows = generation_payload["repetitions"][0]["rows"]
     row_by_id = {row["prompt_id"]: row for row in generation_rows}
     metrics = {}
+    metrics_by_template: dict[str, dict[str, float]] = (
+        {str(index): {} for index in range(5)}
+        if condition == "human_jailbreak"
+        else {}
+    )
     category_metrics = {"functional": {}, "semantic": {}}
     for key in scorer_keys:
         score_payload = json.loads(scorer_cache_path(root, generation, key).read_text())
@@ -472,6 +477,25 @@ def summarize(
             metrics[f"{key}.{field}"] = float(
                 np.mean([float(row[field]) for row in score_payload["rows"]])
             )
+            if metrics_by_template:
+                groups: dict[str, list[float]] = {
+                    str(index): [] for index in range(5)
+                }
+                for row in score_payload["rows"]:
+                    template_index = row["prompt_id"].rsplit("-human-", 1)[-1]
+                    if template_index not in groups:
+                        raise ValueError(
+                            f"Unexpected HarmBench template prompt ID: {row['prompt_id']}"
+                        )
+                    groups[template_index].append(float(row[field]))
+                if any(not values for values in groups.values()):
+                    raise ValueError(
+                        f"Missing HarmBench template scores for {condition}/{method}/{key}"
+                    )
+                for template_index, values in groups.items():
+                    metrics_by_template[template_index][f"{key}.{field}"] = float(
+                        np.mean(values)
+                    )
         if key == "harmbench_test_success":
             for category_name, row_field in (
                 ("functional", "functional_category"),
@@ -495,6 +519,8 @@ def summarize(
         "metrics": metrics,
         "attack_success_rate_by_category": category_metrics,
     }
+    if metrics_by_template:
+        summary["metrics_by_template"] = metrics_by_template
     destination = root / "summaries" / f"harmbench_{condition}" / f"{method}.json"
     _write_json(destination, summary)
     _write_json(

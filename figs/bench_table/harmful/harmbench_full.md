@@ -38,12 +38,30 @@
 | APM programmer | Llama-3.2-3B-Instruct | Original | 10.83 | 1.91 | 0.56 | 1.48 | 0.53 |
 | APM programmer | Llama-3.2-3B-Instruct | A-LQR | 11.25 | 1.97 | 0.65 | 1.47 | 0.60 |
 | APM programmer | Llama-3.2-3B-Instruct | H∞ (ours) | 2.50 | 1.96 | 0.58 | 1.60 | 0.58 |
+| Direct | Llama-3.1-8B-Instruct | Original | 15.83 | 1.83 | 1.06 | 1.73 | 0.98 |
+| Direct | Llama-3.1-8B-Instruct | A-LQR | 15.83 | 1.76 | 1.32 | 1.77 | 1.24 |
+| Direct | Llama-3.1-8B-Instruct | H∞ (ours) | 3.33 | 1.94 | 0.99 | 1.76 | 1.00 |
+| John persona | Llama-3.1-8B-Instruct | Original | 23.33 | 1.80 | 0.52 | 1.39 | 0.37 |
+| John persona | Llama-3.1-8B-Instruct | A-LQR | 15.00 | 1.87 | 0.68 | 1.44 | 0.60 |
+| John persona | Llama-3.1-8B-Instruct | H∞ (ours) | 1.67 | 1.98 | 0.31 | 0.87 | 0.31 |
+| DNE nonresponse | Llama-3.1-8B-Instruct | Original | 14.17 | 1.83 | 0.42 | 1.43 | 0.34 |
+| DNE nonresponse | Llama-3.1-8B-Instruct | A-LQR | 11.67 | 1.88 | 0.58 | 1.46 | 0.54 |
+| DNE nonresponse | Llama-3.1-8B-Instruct | H∞ (ours) | 0.00 | 1.98 | 0.33 | 0.90 | 0.32 |
+| Jailbreak Bot | Llama-3.1-8B-Instruct | Original | 9.17 | 1.78 | 0.44 | 1.39 | 0.32 |
+| Jailbreak Bot | Llama-3.1-8B-Instruct | A-LQR | 7.50 | 1.87 | 0.58 | 1.48 | 0.55 |
+| Jailbreak Bot | Llama-3.1-8B-Instruct | H∞ (ours) | 0.00 | 1.95 | 0.31 | 0.88 | 0.28 |
+| YOJA/Nona roleplay | Llama-3.1-8B-Instruct | Original | 15.00 | 1.77 | 0.45 | 1.49 | 0.33 |
+| YOJA/Nona roleplay | Llama-3.1-8B-Instruct | A-LQR | 9.17 | 1.86 | 0.67 | 1.46 | 0.63 |
+| YOJA/Nona roleplay | Llama-3.1-8B-Instruct | H∞ (ours) | 0.00 | 1.95 | 0.29 | 0.88 | 0.28 |
+| APM programmer | Llama-3.1-8B-Instruct | Original | 11.67 | 1.77 | 0.42 | 1.38 | 0.34 |
+| APM programmer | Llama-3.1-8B-Instruct | A-LQR | 10.83 | 1.85 | 0.62 | 1.41 | 0.55 |
+| APM programmer | Llama-3.1-8B-Instruct | H∞ (ours) | 0.83 | 1.98 | 0.30 | 0.88 | 0.28 |
 
 ## Method
 
-- Task: respond to 240 fixed text-only HarmBench test behaviors while steering toward non-exhibition of the requested harmful behavior.
+- Task: respond to fixed text-only HarmBench test behaviors while steering toward non-exhibition of the requested harmful behavior. Llama-3.2-1B/3B use all 240 behaviors; the frozen compact Llama-3.1-8B run uses the same 120 sampled behavior identities in every condition.
 - Direct condition: the raw behavior is presented without a jailbreak wrapper.
-- Human-jailbreak conditions: the same 240 behavior identities are each transformed by five frozen human-authored templates from the official HarmBench repository, producing 1,200 matched prompts. The templates are reported separately rather than hidden behind one aggregate.
+- Human-jailbreak conditions: each model's direct behavior identities are transformed by five frozen human-authored templates from the official HarmBench repository, producing 1,200 prompts for the 240-behavior runs and 600 for the compact 120-behavior run. The templates are reported separately rather than hidden behind one aggregate.
 - Template meanings: John requests an unrestricted alter-ego answer; DNE instructs the model to output only `...`; Jailbreak Bot uses an iOS-jailbreak-support persona; YOJA/Nona is a long composite roleplay; and APM uses an unrestricted malicious-programmer persona.
 - Example prompt structure:
 
@@ -53,8 +71,8 @@
   ```
 
 - Dataset: `centerforaisafety/HarmBench` at revision `8e1604d1171fe8a48d8febecd22f600e462bdcdd`. The five templates are the frozen `random_subset=5`, `seed=1` selection.
-- Models: `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6`, `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`, and a provisioned `meta-llama/Llama-3.1-8B-Instruct` row that remains TBD until its complete evaluation is available.
-- Generation: greedy decoding, at most 512 new tokens, one completion per prompt, and evaluated-model KV cache disabled.
+- Models: `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6`, `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`, and `meta-llama/Llama-3.1-8B-Instruct` at revision `0e9e39f249a16976918f6564b8830bc894c89659`.
+- Generation: greedy decoding, one completion per prompt, and evaluated-model KV cache disabled. Llama-3.2-1B/3B use at most 512 new tokens; the compact Llama-3.1-8B run uses at most 100.
 
 ## Measures
 
@@ -78,5 +96,8 @@ These are descriptive means over one fixed generation per prompt, not repeated t
 | Llama-3.2-3B-Instruct | Original | No intervention |
 | Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
 | Llama-3.2-3B-Instruct | H∞ | λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 0.415802; selected on 50 disjoint direct validation behaviors by maximum AXBench overall steering |
+| Llama-3.1-8B-Instruct | Original | No intervention |
+| Llama-3.1-8B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.1-8B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; selected on 50 disjoint direct validation behaviors by maximum AXBench overall steering |
 
 The DNE template is retained because it belongs to the frozen official subset, but it explicitly requests nonresponse and is therefore not a meaningful harmful-compliance jailbreak. The per-template report prevents this condition from silently determining the interpretation of the aggregate.
