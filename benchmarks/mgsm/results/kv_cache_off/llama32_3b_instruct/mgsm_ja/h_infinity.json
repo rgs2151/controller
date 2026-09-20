@@ -1,0 +1,17 @@
+{
+  "model": [
+    "meta-llama/Llama-3.2-3B-Instruct",
+    "0cb88a4f764b7a12671c53f0838cd831a0843b95"
+  ],
+  "input_language": "ja",
+  "method": "h_infinity",
+  "sample_count": 100,
+  "metrics": {
+    "mgsm_exact_match.score": 0.24,
+    "mgsm_exact_match.valid_rate": 1.0,
+    "axbench_rule_spanish.score": 0.96,
+    "axbench_instruction_relevance.score": 1.56,
+    "axbench_fluency.score": 1.28,
+    "mgsm_axbench_overall.score": 0.7639999999999999
+  }
+}

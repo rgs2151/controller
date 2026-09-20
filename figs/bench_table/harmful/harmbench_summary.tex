@@ -2,21 +2,31 @@
 \begin{table*}[!htbp]
 \centering
 \definecolor{projectdarkred}{RGB}{128,0,0}
-\caption{HarmBench attack success rate for Llama-3.2-1B-Instruct, reported separately for direct requests and each frozen human-jailbreak template. Human average is the equal-weight mean over the five templates.}
+\caption{HarmBench attack success rate by model scale, reported separately for direct requests and each frozen human-jailbreak template. Human average is the equal-weight mean over the five templates; TBD denotes an incomplete model evaluation.}
 \label{tab:harmbench-summary}
 \small
 \renewcommand{\arraystretch}{1.08}
 \setlength{\tabcolsep}{4pt}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lccccccc}
-Method & \multicolumn{7}{c}{Attack success rate (\%) $\downarrow$} \\ 
-\cmidrule(l){2-8}
- & Direct & John & DNE & Jailbreak Bot & YOJA/Nona & APM & \shortstack{Human jailbreak\\average} \\
+\begin{tabular}{rlccccccc}
+ & Method & \multicolumn{7}{c}{Attack success rate (\%) $\downarrow$} \\
+\cmidrule(l){3-9}
+ & & Direct & John & DNE & Jailbreak Bot & YOJA/Nona & APM & \shortstack{Human jailbreak\\average} \\
 \midrule
-Original & $10.00$ & $5.83$ & $6.25$ & $4.58$ & $8.33$ & $2.92$ & $5.58$ \\ 
-\cmidrule(l){1-8}
-A-LQR & $9.58$ & $6.25$ & $4.17$ & $3.33$ & $8.75$ & $5.00$ & $5.50$ \\ 
-$\mathbf{H_\infty}$ (ours) & $\mathbf{2.92}$ & $\mathbf{1.25}$ & $\mathbf{1.67}$ & $\mathbf{0.42}$ & $\mathbf{0.83}$ & $\mathbf{0.42}$ & $\mathbf{0.92}$ \\ 
+\multirow{3}{*}{Llama-3.2-1B-Instruct} & Original & $10.00$ & $5.83$ & $6.25$ & $4.58$ & $8.33$ & $2.92$ & $5.58$ \\
+\cmidrule(l){2-9}
+ & A-LQR & $9.58$ & $6.25$ & $4.17$ & $3.33$ & $8.75$ & $5.00$ & $5.50$ \\
+ & $\mathbf{H_\infty}$ (ours) & $\mathbf{2.92}$ & $\mathbf{1.25}$ & $\mathbf{1.67}$ & $\mathbf{0.42}$ & $\mathbf{0.83}$ & $\mathbf{0.42}$ & $\mathbf{0.92}$ \\
+\midrule
+\multirow{3}{*}{Llama-3.2-3B-Instruct} & Original & $16.67$ & $11.67$ & $10.83$ & $14.17$ & $11.25$ & $10.83$ & $11.75$ \\
+\cmidrule(l){2-9}
+ & A-LQR & $20.00$ & $11.67$ & $10.42$ & $12.92$ & $11.67$ & $11.25$ & $11.58$ \\
+ & $\mathbf{H_\infty}$ (ours) & $\mathbf{8.33}$ & $\mathbf{4.17}$ & $\mathbf{3.75}$ & $\mathbf{3.75}$ & $\mathbf{4.17}$ & $\mathbf{2.50}$ & $\mathbf{3.67}$ \\
+\midrule
+\multirow{3}{*}{Llama-3.1-8B-Instruct} & Original & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} \\
+\cmidrule(l){2-9}
+ & A-LQR & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} \\
+ & $\mathbf{H_\infty}$ (ours) & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} & \textcolor{gray}{TBD} \\
 \bottomrule
 \end{tabular}%
 }

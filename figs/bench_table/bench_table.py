@@ -18,6 +18,7 @@ MODELS = (
     ("gemma2b", "Gemma-2-2B"),
     ("llama8b", "Llama-3-8B"),
     ("qwen14b", "Qwen-2.5-14B"),
+    ("qwen32b", "Qwen-2.5-32B"),
 )
 METHODS = (
     ("original", "Original", "Original"),
@@ -110,6 +111,26 @@ Values are mean ± standard error across five repetitions. AXBench API scorers r
 | Gemma-2-2B | S-PID | λ = 1; Kp = 0.7; Ki = 0.01; Kd = 0.1 |
 | Gemma-2-2B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I |
 | Gemma-2-2B | H∞ | λ = 3; Q/R = 0.1; Qf/R = 0.316227766; R = 1; fixed selected configuration |
+| Llama-3-8B | Original | No intervention |
+| Llama-3-8B | ITI | 32 heads; α = 10 |
+| Llama-3-8B | ActAdd | Layer 13; strength 4 |
+| Llama-3-8B | Mean-AcT | Strength 1; frozen source-method defaults |
+| Llama-3-8B | Linear-AcT | Strength 1; frozen source-method defaults |
+| Llama-3-8B | PID-AcT | Strength 1; frozen source-method defaults |
+| Llama-3-8B | ODESteer | Layer 19; time 25; frozen source-method defaults |
+| Llama-3-8B | S-PID | λ = 1; Kp = 0.1; Ki = 0.1; Kd = 0 |
+| Llama-3-8B | A-LQR | λ = 2; Q = 0.1I; R = 10I; Qf = 10I |
+| Llama-3-8B | H∞ | λ = 2; Q/R = 10; Qf/R = 0.01; R = 1; selected by mean True percentage on the frozen calibration set |
+| Qwen-2.5-14B | Original | No intervention |
+| Qwen-2.5-14B | ITI | 32 heads; α = 10 |
+| Qwen-2.5-14B | ActAdd | Layer 21; strength 4 |
+| Qwen-2.5-14B | Mean-AcT | Strength 1; frozen source-method defaults |
+| Qwen-2.5-14B | Linear-AcT | Strength 1; frozen source-method defaults |
+| Qwen-2.5-14B | PID-AcT | Strength 1; frozen source-method defaults |
+| Qwen-2.5-14B | ODESteer | Layer 24; time 65; frozen source-method defaults |
+| Qwen-2.5-14B | S-PID | λ = 2; Kp = 0.5; Ki = 0.01; Kd = 0.01 |
+| Qwen-2.5-14B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I |
+| Qwen-2.5-14B | H∞ | λ = 3; Q/R = 0.316227766; Qf/R = 0.1; R = 1; selected by the True/instruction-relevance/fluency calibration composite |
 
 Controller fitting and evaluation use disjoint data. `TBD` result rows have no hyperparameter entry until that exact model-method evaluation is frozen.
 """
@@ -160,6 +181,26 @@ Values are mean ± standard error across five repetitions. The scorer models, re
 | Gemma-2-2B | S-PID | λ = 1; Kp = 0.7; Ki = 0.01; Kd = 0.1; inherited unchanged from English TruthfulQA |
 | Gemma-2-2B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; inherited unchanged from English TruthfulQA |
 | Gemma-2-2B | H∞ | λ = 3; Q/R = 0.1; Qf/R = 0.316227766; R = 1; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | Original | No intervention; Spanish evaluation-only transfer |
+| Llama-3-8B | ITI | 32 heads; α = 10; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | ActAdd | Layer 13; strength 4; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | Mean-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | Linear-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | PID-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | ODESteer | Layer 19; time 25; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | S-PID | λ = 1; Kp = 0.1; Ki = 0.1; Kd = 0; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | A-LQR | λ = 2; Q = 0.1I; R = 10I; Qf = 10I; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | H∞ | λ = 2; Q/R = 10; Qf/R = 0.01; R = 1; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | Original | No intervention; Spanish evaluation-only transfer |
+| Qwen-2.5-14B | ITI | 32 heads; α = 10; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | ActAdd | Layer 21; strength 4; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | Mean-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | Linear-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | PID-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | ODESteer | Layer 24; time 65; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | S-PID | λ = 2; Kp = 0.5; Ki = 0.01; Kd = 0.01; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | H∞ | λ = 3; Q/R = 0.316227766; Qf/R = 0.1; R = 1; inherited unchanged from English TruthfulQA |
 
 Spanish is evaluation-only: no controller is refit or reselected. `TBD` result rows have no hyperparameter entry until that exact model-method evaluation is frozen.
 """
@@ -218,8 +259,6 @@ PAGES = (
 )
 
 
-MGSM_MODEL = "Qwen3-4B"
-MGSM_MODEL_KEY = "qwen3_4b"
 MGSM_LANGUAGES = (
     ("zh", "Chinese"),
     ("fr", "French"),
@@ -233,6 +272,14 @@ MGSM_METHODS = (
     ("alqr", "A-LQR", "A-LQR"),
     ("h_infinity", "H∞ (ours)", r"$\mathbf{H_\infty}$ (ours)"),
 )
+MGSM_MODELS = (
+    ("qwen3_4b", "Qwen3-4B", ("original", "spid", "alqr", "h_infinity")),
+    (
+        "llama32_3b_instruct",
+        "Llama-3.2-3B",
+        ("original", "spid", "alqr", "h_infinity"),
+    ),
+)
 MGSM_METRICS = (
     Metric("mgsm_exact_match.score", "Accuracy (%) ↑", r"Accuracy (\%) $\uparrow$", 1, True),
     Metric("axbench_rule_spanish.score", "Spanish relevance (0–2) ↑", r"\shortstack{Spanish\\relevance (0--2) $\uparrow$}", 2, True),
@@ -243,11 +290,11 @@ MGSM_METRICS = (
 
 MGSM_DOCUMENTATION = r"""## Method
 
-- Task: solve the same 250 MGSM arithmetic problems in Chinese, French, Japanese, Swahili, and Telugu while steering every response toward Spanish. English and Spanish are excluded from evaluation.
+- Task: solve matched MGSM arithmetic problems in Chinese, French, Japanese, Swahili, and Telugu while steering every response toward Spanish. English and Spanish are excluded from evaluation.
 - Direction: all 250 matched English–Spanish MGSM pairs define the Spanish steering direction. A-LQR and H∞ share the same 50-Jacobian dynamics estimate. H∞ additionally fits its disturbance geometry and robust controller without changing the shared dynamics matrix.
 - Prompting: each language uses its native eight-shot worked-example prompt. Generation is deterministic, limited to 256 new tokens, and runs with evaluated-model KV cache disabled.
-- Model: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c`, with thinking mode disabled.
-- The summary report is the equal-weight macro-average of the five language-level means. The full report exposes all 20 language–method cells.
+- Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, and `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`.
+- Evaluation size: Qwen uses all 250 problems per language and Llama uses the frozen 100-problem subset per language. Both models report Original, S-PID, A-LQR, and H∞ on identical problem identities within each model. The summary macro-averages the five language means independently within each model.
 
 ## Measures
 
@@ -258,7 +305,7 @@ MGSM_DOCUMENTATION = r"""## Method
 | Instruction relevance (0–2) ↑ | Whether the response addresses and attempts the arithmetic task. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Language quality of the generated response. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
-These are descriptive means on one fixed 250-problem evaluation set per language, not repeated trials; therefore the table does not report standard errors. Every method uses the same problem identities within a language.
+These are descriptive means on one fixed evaluation set per language, not repeated trials; therefore the table does not report standard errors. Qwen uses 250 problems per language and Llama uses the frozen 100-problem subset; every method within a model uses identical problem identities.
 
 ## Hyperparameters
 
@@ -268,12 +315,16 @@ These are descriptive means on one fixed 250-problem evaluation set per language
 | Qwen3-4B | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
 | Qwen3-4B | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
 | Qwen3-4B | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.316227766; R = 1; γ★ = 11.0736; selected on 50 disjoint GSM8K training prompts |
+| Llama-3.2-3B-Instruct | Original | No intervention |
+| Llama-3.2-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
+| Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.284523; costs selected from the frozen 12-point grid on 50 disjoint GSM8K training prompts using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |
 """
 
 
 LCITE_MODEL = "Qwen2.5-3B-Instruct"
 LCITE_MODEL_KEY = "qwen25_3b_instruct"
-LCITE_CONDITIONS = (("8k", "8K"), ("16k", "16K"))
+LCITE_CONDITIONS = (("8k", "8K"), ("16k", "16K"), ("32k", "32K"))
 LCITE_METHODS = MGSM_METHODS
 LCITE_METRICS = (
     Metric("lcite_answer_overlap.answer_recall", "Answer recall (%) ↑", r"\shortstack{Answer\\recall (\%) $\uparrow$}", 1, True),
@@ -291,13 +342,13 @@ LCITE_SUMMARY_METRICS = (
 
 LCITE_DOCUMENTATION = r"""## Method
 
-- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K and 16K tokens, citing the minimum supporting passages after every answer sentence.
-- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across both context lengths.
+- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K, 16K, and 32K tokens, citing the minimum supporting passages after every answer sentence.
+- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across all three context lengths.
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`. The direction uses all 72 released positive responses and 72 genre-matched negative responses from `pyvene/axbench-concept500` variant `prod_9b_l20_v1`.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller without changing that shared dynamics matrix.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at both lengths.
-- The summary report is the equal-weight macro-average of the 8K and 16K means. The full report exposes all eight context-length–method cells.
+- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths.
+- The summary keeps 8K, 16K, and 32K separate. The full report exposes all 12 context-length–method cells.
 
 ## Measures
 
@@ -324,13 +375,13 @@ These are descriptive means on one deterministic generation for each of 40 match
 
 LCITE_SUMMARY_DOCUMENTATION = r"""## Method
 
-- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K and 16K tokens, citing the minimum supporting passages after every answer sentence.
-- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across both context lengths.
+- Task: answer the same 40 HotpotQA questions from numbered evidence passages at approximately 8K, 16K, and 32K tokens, citing the minimum supporting passages after every answer sentence.
+- Dataset: `Jonaszky123/L-CiteEval`, pinned revision `c79c928529593f478e6573c969cf73d22f0cf0f9`, L-CiteEval-Length HotpotQA slice. The 40 question identities and gold answers are matched across all three context lengths.
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`, using all 72 released positive responses and 72 genre-matched negative responses.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at both lengths.
-- The 8K and 16K conditions remain separate; no cross-length average is reported.
+- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths.
+- The 8K, 16K, and 32K conditions remain separate; no cross-length average is reported.
 
 ## Measures
 
@@ -355,6 +406,7 @@ These are descriptive means on one deterministic generation for each of 40 match
 
 LCITE_SPANISH_MODEL = "Llama-3.1-8B-Instruct"
 LCITE_SPANISH_MODEL_KEY = "llama31_8b_instruct"
+LCITE_SPANISH_CONDITIONS = (("8k", "8K"), ("16k", "16K"))
 LCITE_SPANISH_METHODS = (
     ("original", "Original", "Original"),
     ("alqr", "A-LQR", "A-LQR"),
@@ -412,8 +464,11 @@ These are descriptive means over one deterministic generation for each of 40 mat
 """
 
 
-HARMFUL_MODEL = "Llama-3.2-1B-Instruct"
-HARMFUL_MODEL_KEY = "llama32_1b_instruct"
+HARMFUL_MODELS = (
+    ("llama32_1b_instruct", "Llama-3.2-1B-Instruct"),
+    ("llama32_3b_instruct", "Llama-3.2-3B-Instruct"),
+    ("llama31_8b_instruct", "Llama-3.1-8B-Instruct"),
+)
 HARMFUL_METHODS = (
     ("original", "Original", "Original"),
     ("alqr", "A-LQR", "A-LQR"),
@@ -450,7 +505,7 @@ HARMFUL_DOCUMENTATION = r"""## Method
   ```
 
 - Dataset: `centerforaisafety/HarmBench` at revision `8e1604d1171fe8a48d8febecd22f600e462bdcdd`. The five templates are the frozen `random_subset=5`, `seed=1` selection.
-- Model: `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6`.
+- Models: `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6`, `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`, and a provisioned `meta-llama/Llama-3.1-8B-Instruct` row that remains TBD until its complete evaluation is available.
 - Generation: greedy decoding, at most 512 new tokens, one completion per prompt, and evaluated-model KV cache disabled.
 
 ## Measures
@@ -472,6 +527,9 @@ These are descriptive means over one fixed generation per prompt, not repeated t
 | Llama-3.2-1B-Instruct | Original | No intervention |
 | Llama-3.2-1B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
 | Llama-3.2-1B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.130075; selected on 50 disjoint direct validation behaviors by maximum AXBench overall steering |
+| Llama-3.2-3B-Instruct | Original | No intervention |
+| Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 0.415802; selected on 50 disjoint direct validation behaviors by maximum AXBench overall steering |
 
 The DNE template is retained because it belongs to the frozen official subset, but it explicitly requests nonresponse and is therefore not a meaningful harmful-compliance jailbreak. The per-template report prevents this condition from silently determining the interpretation of the aggregate.
 """
@@ -659,11 +717,11 @@ def render_pdf(tex: str, destination: Path) -> None:
         shutil.copy2(build / "report.pdf", destination)
 
 
-def _load_mgsm_result(language: str, method: str) -> dict:
+def _load_mgsm_result(model_key: str, language: str, method: str) -> dict:
     path = (
         RESULTS_ROOT
         / "mgsm/results/kv_cache_off"
-        / MGSM_MODEL_KEY
+        / model_key
         / f"mgsm_{language}"
         / f"{method}.json"
     )
@@ -677,39 +735,53 @@ def _mgsm_value(result: dict, metric: Metric) -> float:
 
 def _mgsm_rows() -> list[dict]:
     rows = []
-    for language_key, language_label in MGSM_LANGUAGES:
-        for method_key, markdown_label, tex_label in MGSM_METHODS:
-            result = _load_mgsm_result(language_key, method_key)
-            rows.append(
-                {
-                    "language": language_label,
-                    "method_key": method_key,
-                    "method_markdown": markdown_label,
-                    "method_tex": tex_label,
-                    "values": tuple(
-                        _mgsm_value(result, metric) for metric in MGSM_METRICS
-                    ),
-                }
-            )
+    method_specs = {method[0]: method for method in MGSM_METHODS}
+    for model_key, model_label, model_methods in MGSM_MODELS:
+        for language_key, language_label in MGSM_LANGUAGES:
+            for method_key in model_methods:
+                _, markdown_label, tex_label = method_specs[method_key]
+                result = _load_mgsm_result(model_key, language_key, method_key)
+                rows.append(
+                    {
+                        "model_key": model_key,
+                        "model": model_label,
+                        "language": language_label,
+                        "method_key": method_key,
+                        "method_markdown": markdown_label,
+                        "method_tex": tex_label,
+                        "values": tuple(
+                            _mgsm_value(result, metric) for metric in MGSM_METRICS
+                        ),
+                    }
+                )
     return rows
 
 
 def _mgsm_overall_rows(rows: list[dict]) -> list[dict]:
     overall = []
-    for method_key, markdown_label, tex_label in MGSM_METHODS:
-        method_rows = [row for row in rows if row["method_key"] == method_key]
-        overall.append(
-            {
-                "method_key": method_key,
-                "method_markdown": markdown_label,
-                "method_tex": tex_label,
-                "values": tuple(
-                    sum(row["values"][index] for row in method_rows)
-                    / len(method_rows)
-                    for index in range(len(MGSM_METRICS))
-                ),
-            }
-        )
+    method_specs = {method[0]: method for method in MGSM_METHODS}
+    for model_key, model_label, model_methods in MGSM_MODELS:
+        for method_key in model_methods:
+            _, markdown_label, tex_label = method_specs[method_key]
+            method_rows = [
+                row
+                for row in rows
+                if row["model_key"] == model_key and row["method_key"] == method_key
+            ]
+            overall.append(
+                {
+                    "model_key": model_key,
+                    "model": model_label,
+                    "method_key": method_key,
+                    "method_markdown": markdown_label,
+                    "method_tex": tex_label,
+                    "values": tuple(
+                        sum(row["values"][index] for row in method_rows)
+                        / len(method_rows)
+                        for index in range(len(MGSM_METRICS))
+                    ),
+                }
+            )
     return overall
 
 
@@ -721,7 +793,7 @@ def render_mgsm_markdown(rows: list[dict], *, full: bool) -> str:
     title = "MGSM multilingual transfer — full results" if full else "MGSM multilingual transfer — summary"
     headers = " | ".join(metric.markdown for metric in MGSM_METRICS)
     if full:
-        lines = [f"# {title}", "", f"| Language | Model | Method | {headers} |", "|---|---|---|" + "---:|" * len(MGSM_METRICS)]
+        lines = [f"# {title}", "", f"| Model | Language | Method | {headers} |", "|---|---|---|" + "---:|" * len(MGSM_METRICS)]
         display_rows = rows
     else:
         lines = [f"# {title}", "", f"| Model | Method | {headers} |", "|---|---|" + "---:|" * len(MGSM_METRICS)]
@@ -731,7 +803,7 @@ def render_mgsm_markdown(rows: list[dict], *, full: bool) -> str:
             _mgsm_markdown_value(value, metric)
             for value, metric in zip(row["values"], MGSM_METRICS, strict=True)
         )
-        prefix = f"| {row['language']} | {MGSM_MODEL}" if full else f"| {MGSM_MODEL}"
+        prefix = f"| {row['model']} | {row['language']}" if full else f"| {row['model']}"
         lines.append(f"{prefix} | {row['method_markdown']} | {values} |")
     lines.extend(["", MGSM_DOCUMENTATION.strip(), ""])
     return "\n".join(lines)
@@ -764,9 +836,9 @@ def _mgsm_best_values(rows: list[dict]) -> tuple[float, ...]:
 def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
     column_count = len(MGSM_METRICS)
     caption = (
-        "Full MGSM multilingual-transfer results for Qwen3-4B. Each language uses the same 250 problem identities."
+        "Full MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct. Qwen uses 250 problems per language; Llama uses the frozen 100-problem subset."
         if full
-        else "Summary MGSM multilingual-transfer results for Qwen3-4B, macro-averaged equally across five languages with 250 problems per language."
+        else "Summary MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct, macro-averaged equally across five languages within each model."
     )
     label = "tab:mgsm-full" if full else "tab:mgsm-overall"
     lines = [
@@ -782,9 +854,9 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
         r"\resizebox{\textwidth}{!}{%",
     ]
     if full:
-        lines.append(f"\\begin{{tabular}}{{rl{'c' * column_count}}}")
+        lines.append(f"\\begin{{tabular}}{{rrl{'c' * column_count}}}")
         lines.append(
-            "Language & Method & "
+            "Model & Language & Method & "
             + " & ".join(
                 (r"\cellcolor{projectdarkred!10}" if index == 0 else "") + metric.tex
                 for index, metric in enumerate(MGSM_METRICS)
@@ -792,11 +864,63 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
             + r" \\"
         )
         lines.append(r"\midrule")
-        for language_index, (_, language_label) in enumerate(MGSM_LANGUAGES):
-            group = [row for row in rows if row["language"] == language_label]
-            best_values = _mgsm_best_values(group)
-            for method_index, row in enumerate(group):
-                language = f"\\multirow{{{len(group)}}}{{*}}{{{language_label}}}" if method_index == 0 else ""
+        for model_index, (model_key, model_label, model_methods) in enumerate(MGSM_MODELS):
+            model_row_count = len(MGSM_LANGUAGES) * len(model_methods)
+            model_row_index = 0
+            for language_index, (_, language_label) in enumerate(MGSM_LANGUAGES):
+                group = [
+                    row
+                    for row in rows
+                    if row["model_key"] == model_key and row["language"] == language_label
+                ]
+                best_values = _mgsm_best_values(group)
+                for method_index, row in enumerate(group):
+                    model = (
+                        f"\\multirow{{{model_row_count}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{model_label}}}}}"
+                        if model_row_index == 0
+                        else ""
+                    )
+                    language = f"\\multirow{{{len(group)}}}{{*}}{{{language_label}}}" if method_index == 0 else ""
+                    values = " & ".join(
+                        _mgsm_tex_value(
+                            value,
+                            metric,
+                            emphasis=(
+                                "bold"
+                                if row["method_key"] == "h_infinity" and value == best_values[index]
+                                else "underline"
+                                if row["method_key"] != "original" and value == best_values[index]
+                                else None
+                            ),
+                            primary=index == 0,
+                        )
+                        for index, (value, metric) in enumerate(zip(row["values"], MGSM_METRICS, strict=True))
+                    )
+                    lines.append(f"{model} & {language} & {row['method_tex']} & {values} \\\\")
+                    model_row_index += 1
+                    if row["method_key"] == "original":
+                        lines.append(f"\\cmidrule(l){{3-{column_count + 3}}}")
+                if language_index != len(MGSM_LANGUAGES) - 1:
+                    lines.append(f"\\cmidrule(l){{2-{column_count + 3}}}")
+            if model_index != len(MGSM_MODELS) - 1:
+                lines.append(r"\midrule")
+    else:
+        overall = _mgsm_overall_rows(rows)
+        lines.append(f"\\begin{{tabular}}{{rl{'c' * column_count}}}")
+        lines.append(
+            "Model & Method & "
+            + " & ".join(
+                (r"\cellcolor{projectdarkred!10}" if index == 0 else "") + metric.tex
+                for index, metric in enumerate(MGSM_METRICS)
+            )
+            + r" \\"
+        )
+        lines.append(r"\midrule")
+        for model_index, (model_key, model_label, _model_methods) in enumerate(MGSM_MODELS):
+            model_rows = [row for row in overall if row["model_key"] == model_key]
+            best_values = _mgsm_best_values(model_rows)
+            for method_index, row in enumerate(model_rows):
+                model = f"\\multirow{{{len(model_rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{\\scriptsize {model_label}}}}}" if method_index == 0 else ""
                 values = " & ".join(
                     _mgsm_tex_value(
                         value,
@@ -812,44 +936,11 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
                     )
                     for index, (value, metric) in enumerate(zip(row["values"], MGSM_METRICS, strict=True))
                 )
-                lines.append(f"{language} & {row['method_tex']} & {values} \\\\")
-                if method_index == 0:
+                lines.append(f"{model} & {row['method_tex']} & {values} \\\\")
+                if row["method_key"] == "original":
                     lines.append(f"\\cmidrule(l){{2-{column_count + 2}}}")
-            if language_index != len(MGSM_LANGUAGES) - 1:
+            if model_index != len(MGSM_MODELS) - 1:
                 lines.append(r"\midrule")
-    else:
-        overall = _mgsm_overall_rows(rows)
-        best_values = _mgsm_best_values(overall)
-        lines.append(f"\\begin{{tabular}}{{rl{'c' * column_count}}}")
-        lines.append(
-            " & Method & "
-            + " & ".join(
-                (r"\cellcolor{projectdarkred!10}" if index == 0 else "") + metric.tex
-                for index, metric in enumerate(MGSM_METRICS)
-            )
-            + r" \\"
-        )
-        lines.append(r"\midrule")
-        for method_index, row in enumerate(overall):
-            model = f"\\multirow{{{len(overall)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{MGSM_MODEL}}}}}" if method_index == 0 else ""
-            values = " & ".join(
-                _mgsm_tex_value(
-                    value,
-                    metric,
-                    emphasis=(
-                        "bold"
-                        if row["method_key"] == "h_infinity" and value == best_values[index]
-                        else "underline"
-                        if row["method_key"] != "original" and value == best_values[index]
-                        else None
-                    ),
-                    primary=index == 0,
-                )
-                for index, (value, metric) in enumerate(zip(row["values"], MGSM_METRICS, strict=True))
-            )
-            lines.append(f"{model} & {row['method_tex']} & {values} \\\\")
-            if method_index == 0:
-                lines.append(f"\\cmidrule(l){{2-{column_count + 2}}}")
     lines.extend([r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""])
     return "\n".join(lines)
 
@@ -955,9 +1046,9 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
     metrics = LCITE_METRICS if full else LCITE_SUMMARY_METRICS
     column_count = len(metrics)
     caption = (
-        "Full L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. Each context length uses the same 40 question identities."
+        "Full L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. The 8K, 16K, and 32K conditions use the same 40 question identities."
         if full
-        else "Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. The matched 8K and 16K conditions are reported separately."
+        else "Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. The matched 8K, 16K, and 32K conditions are reported separately."
     )
     label = "tab:lciteeval-full" if full else "tab:lciteeval-summary"
     lines = [
@@ -1061,7 +1152,7 @@ def _lcite_spanish_value(result: dict, metric: Metric) -> float:
 
 def _lcite_spanish_rows(metrics: tuple[Metric, ...]) -> list[dict]:
     rows = []
-    for condition_key, condition_label in LCITE_CONDITIONS:
+    for condition_key, condition_label in LCITE_SPANISH_CONDITIONS:
         for method_key, markdown_label, tex_label in LCITE_SPANISH_METHODS:
             result = _load_lcite_spanish_result(condition_key, method_key)
             rows.append(
@@ -1139,7 +1230,7 @@ def render_lcite_spanish_tex(rows: list[dict], *, full: bool) -> str:
         + r" \\",
         r"\midrule",
     ]
-    for condition_index, (_, condition_label) in enumerate(LCITE_CONDITIONS):
+    for condition_index, (_, condition_label) in enumerate(LCITE_SPANISH_CONDITIONS):
         group = [row for row in rows if row["condition"] == condition_label]
         best_values = _lcite_best_values(group, metrics)
         for method_index, row in enumerate(group):
@@ -1177,7 +1268,7 @@ def render_lcite_spanish_tex(rows: list[dict], *, full: bool) -> str:
             )
             if method_index == 0:
                 lines.append(f"\\cmidrule(l){{3-{column_count + 3}}}")
-        if condition_index != len(LCITE_CONDITIONS) - 1:
+        if condition_index != len(LCITE_SPANISH_CONDITIONS) - 1:
             lines.append(f"\\cmidrule(l){{2-{column_count + 3}}}")
     lines.extend(
         [r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""]
@@ -1204,11 +1295,11 @@ def render_lcite_spanish_reports() -> None:
         render_pdf(tex, destination / f"{stem}.pdf")
 
 
-def _harmful_prompt_groups() -> dict[str | int, list[str]]:
+def _harmful_prompt_groups(model_key: str) -> dict[str | int, list[str]]:
     dataset_path = (
         RESULTS_ROOT
         / "harmful/cache"
-        / HARMFUL_MODEL_KEY
+        / model_key
         / "datasets/harmbench.json"
     )
     dataset = json.loads(dataset_path.read_text())
@@ -1220,17 +1311,21 @@ def _harmful_prompt_groups() -> dict[str | int, list[str]]:
     return groups
 
 
-def _harmful_score_map(condition: str, method: str, scorer: str) -> dict[str, float]:
+def _harmful_score_map(
+    model_key: str, condition: str, method: str, scorer: str
+) -> dict[str, float] | None:
     path = (
         RESULTS_ROOT
         / "harmful/cache"
-        / HARMFUL_MODEL_KEY
+        / model_key
         / "evaluations/kv_cache_off/scores"
         / scorer
         / condition
         / method
         / "final.json"
     )
+    if not path.exists():
+        return None
     rows = json.loads(path.read_text())["rows"]
     return {
         row["prompt_id"]: float(row["score"])
@@ -1240,59 +1335,87 @@ def _harmful_score_map(condition: str, method: str, scorer: str) -> dict[str, fl
 
 
 def _harmful_rows() -> list[dict]:
-    groups = _harmful_prompt_groups()
     rows = []
-    for condition_key, condition_label, condition_short in HARMFUL_CONDITIONS:
-        score_condition = (
-            "harmbench_direct"
-            if condition_key == "direct"
-            else "harmbench_human_jailbreak"
-        )
-        prompt_ids = groups[condition_key]
-        for method_key, method_markdown, method_tex in HARMFUL_METHODS:
-            values = []
-            for metric in HARMFUL_METRICS:
-                scores = _harmful_score_map(
-                    score_condition, method_key, metric.key
-                )
-                selected = [scores[prompt_id] for prompt_id in prompt_ids]
-                value = sum(selected) / len(selected)
-                values.append(100.0 * value if metric.key == "harmbench_test_success" else value)
-            rows.append(
-                {
-                    "condition_key": condition_key,
-                    "condition": condition_label,
-                    "condition_short": condition_short,
-                    "method_key": method_key,
-                    "method_markdown": method_markdown,
-                    "method_tex": method_tex,
-                    "values": tuple(values),
-                }
+    for model_key, model_label in HARMFUL_MODELS:
+        dataset_path = RESULTS_ROOT / "harmful/cache" / model_key / "datasets/harmbench.json"
+        if not dataset_path.exists():
+            continue
+        groups = _harmful_prompt_groups(model_key)
+        model_rows = []
+        complete = True
+        for condition_key, condition_label, condition_short in HARMFUL_CONDITIONS:
+            score_condition = (
+                "harmbench_direct"
+                if condition_key == "direct"
+                else "harmbench_human_jailbreak"
             )
+            prompt_ids = groups[condition_key]
+            for method_key, method_markdown, method_tex in HARMFUL_METHODS:
+                values = []
+                for metric in HARMFUL_METRICS:
+                    scores = _harmful_score_map(
+                        model_key, score_condition, method_key, metric.key
+                    )
+                    if scores is None:
+                        complete = False
+                        break
+                    selected = [scores[prompt_id] for prompt_id in prompt_ids]
+                    value = sum(selected) / len(selected)
+                    values.append(
+                        100.0 * value
+                        if metric.key == "harmbench_test_success"
+                        else value
+                    )
+                if not complete:
+                    break
+                model_rows.append(
+                    {
+                        "model_key": model_key,
+                        "model": model_label,
+                        "condition_key": condition_key,
+                        "condition": condition_label,
+                        "condition_short": condition_short,
+                        "method_key": method_key,
+                        "method_markdown": method_markdown,
+                        "method_tex": method_tex,
+                        "values": tuple(values),
+                    }
+                )
+            if not complete:
+                break
+        if complete:
+            rows.extend(model_rows)
     return rows
 
 
 def _harmful_summary_rows(rows: list[dict]) -> list[dict]:
     summary = []
-    for method_key, method_markdown, method_tex in HARMFUL_METHODS:
-        method_rows = {
-            row["condition_key"]: row
-            for row in rows
-            if row["method_key"] == method_key
-        }
-        template_asr = [method_rows[index]["values"][0] for index in range(5)]
-        summary.append(
-            {
-                "method_key": method_key,
-                "method_markdown": method_markdown,
-                "method_tex": method_tex,
-                "values": (
+    for model_key, model_label in HARMFUL_MODELS:
+        for method_key, method_markdown, method_tex in HARMFUL_METHODS:
+            method_rows = {
+                row["condition_key"]: row
+                for row in rows
+                if row["model_key"] == model_key and row["method_key"] == method_key
+            }
+            if len(method_rows) == len(HARMFUL_CONDITIONS):
+                template_asr = [method_rows[index]["values"][0] for index in range(5)]
+                values: tuple[float | None, ...] = (
                     method_rows["direct"]["values"][0],
                     *template_asr,
                     sum(template_asr) / len(template_asr),
-                ),
-            }
-        )
+                )
+            else:
+                values = (None,) * (len(HARMFUL_CONDITIONS) + 1)
+            summary.append(
+                {
+                    "model_key": model_key,
+                    "model": model_label,
+                    "method_key": method_key,
+                    "method_markdown": method_markdown,
+                    "method_tex": method_tex,
+                    "values": values,
+                }
+            )
     return summary
 
 
@@ -1311,7 +1434,7 @@ def render_harmful_markdown(rows: list[dict], *, full: bool) -> str:
                 for value, metric in zip(row["values"], HARMFUL_METRICS, strict=True)
             )
             lines.append(
-                f"| {row['condition']} | {HARMFUL_MODEL} | {row['method_markdown']} | {values} |"
+                f"| {row['condition']} | {row['model']} | {row['method_markdown']} | {values} |"
             )
     else:
         summary = _harmful_summary_rows(rows)
@@ -1319,26 +1442,33 @@ def render_harmful_markdown(rows: list[dict], *, full: bool) -> str:
         lines = [
             "# HarmBench robust refusal — ASR summary",
             "",
-            "| Method | "
+            "| Model | Method | "
             + " | ".join(f"{label} ASR (%) ↓" for label in condition_headers)
             + " | Human-jailbreak average ASR (%) ↓ |",
-            "|---|" + "---:|" * (len(condition_headers) + 1),
+            "|---|---|" + "---:|" * (len(condition_headers) + 1),
         ]
         for row in summary:
-            values = " | ".join(f"{value:.2f}" for value in row["values"])
-            lines.append(f"| {row['method_markdown']} | {values} |")
+            values = " | ".join(
+                "TBD" if value is None else f"{value:.2f}"
+                for value in row["values"]
+            )
+            lines.append(
+                f"| {row['model']} | {row['method_markdown']} | {values} |"
+            )
     lines.extend(["", HARMFUL_DOCUMENTATION.strip(), ""])
     return "\n".join(lines)
 
 
 def _harmful_tex_value(
-    value: float,
+    value: float | None,
     metric: Metric,
     *,
     emphasis: str | None,
     primary: bool,
 ) -> str:
     background = r"\cellcolor{projectdarkred!10}" if primary else ""
+    if value is None:
+        return background + r"\textcolor{gray}{TBD}"
     number = f"{value:.{metric.decimals}f}"
     if emphasis == "bold":
         number = f"\\mathbf{{{number}}}"
@@ -1361,9 +1491,9 @@ def _harmful_best_values(rows: list[dict]) -> tuple[float, ...]:
 
 def render_harmful_tex(rows: list[dict], *, full: bool) -> str:
     caption = (
-        "Full HarmBench robust-refusal results for Llama-3.2-1B-Instruct. Direct requests and each of the five frozen human-jailbreak templates contain the same 240 behavior identities."
+        "Full HarmBench robust-refusal results for each completed model scale. Direct requests and each of the five frozen human-jailbreak templates contain the same 240 behavior identities."
         if full
-        else "HarmBench attack success rate for Llama-3.2-1B-Instruct, reported separately for direct requests and each frozen human-jailbreak template. Human average is the equal-weight mean over the five templates."
+        else "HarmBench attack success rate by model scale, reported separately for direct requests and each frozen human-jailbreak template. Human average is the equal-weight mean over the five templates; TBD denotes an incomplete model evaluation."
     )
     label = "tab:harmbench-full" if full else "tab:harmbench-summary"
     lines = [
@@ -1392,94 +1522,133 @@ def render_harmful_tex(rows: list[dict], *, full: bool) -> str:
                 r"\midrule",
             ]
         )
-        for condition_index, (_, condition_label, _) in enumerate(HARMFUL_CONDITIONS):
-            group = [row for row in rows if row["condition"] == condition_label]
-            best_values = _harmful_best_values(group)
-            for method_index, row in enumerate(group):
-                model = (
-                    f"\\multirow{{{len(rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{HARMFUL_MODEL}}}}}"
-                    if condition_index == 0 and method_index == 0
-                    else ""
-                )
-                condition = (
-                    f"\\multirow{{{len(group)}}}{{*}}{{{condition_label}}}"
-                    if method_index == 0
-                    else ""
-                )
-                values = " & ".join(
-                    _harmful_tex_value(
-                        value,
-                        metric,
-                        emphasis=(
-                            "bold"
-                            if row["method_key"] == "h_infinity"
-                            and value == best_values[index]
-                            else "underline"
-                            if row["method_key"] != "original"
-                            and value == best_values[index]
-                            else None
-                        ),
-                        primary=index == 0,
+        completed_models = [
+            model
+            for model in HARMFUL_MODELS
+            if any(row["model_key"] == model[0] for row in rows)
+        ]
+        for model_index, (model_key, model_label) in enumerate(completed_models):
+            model_rows = [row for row in rows if row["model_key"] == model_key]
+            for condition_index, (_, condition_label, _) in enumerate(
+                HARMFUL_CONDITIONS
+            ):
+                group = [
+                    row for row in model_rows if row["condition"] == condition_label
+                ]
+                best_values = _harmful_best_values(group)
+                for method_index, row in enumerate(group):
+                    model = (
+                        f"\\multirow{{{len(model_rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{model_label}}}}}"
+                        if condition_index == 0 and method_index == 0
+                        else ""
                     )
-                    for index, (value, metric) in enumerate(
-                        zip(row["values"], HARMFUL_METRICS, strict=True)
+                    condition = (
+                        f"\\multirow{{{len(group)}}}{{*}}{{{condition_label}}}"
+                        if method_index == 0
+                        else ""
                     )
-                )
-                lines.append(
-                    f"{model} & {condition} & {row['method_tex']} & {values} \\\\"
-                )
-                if method_index == 0:
-                    lines.append(f"\\cmidrule(l){{3-{len(HARMFUL_METRICS) + 3}}}")
-            if condition_index != len(HARMFUL_CONDITIONS) - 1:
-                lines.append(f"\\cmidrule(l){{2-{len(HARMFUL_METRICS) + 3}}}")
+                    values = " & ".join(
+                        _harmful_tex_value(
+                            value,
+                            metric,
+                            emphasis=(
+                                "bold"
+                                if row["method_key"] == "h_infinity"
+                                and value == best_values[index]
+                                else "underline"
+                                if row["method_key"] != "original"
+                                and value == best_values[index]
+                                else None
+                            ),
+                            primary=index == 0,
+                        )
+                        for index, (value, metric) in enumerate(
+                            zip(row["values"], HARMFUL_METRICS, strict=True)
+                        )
+                    )
+                    lines.append(
+                        f"{model} & {condition} & {row['method_tex']} & {values} \\\\"
+                    )
+                    if method_index == 0:
+                        lines.append(
+                            f"\\cmidrule(l){{3-{len(HARMFUL_METRICS) + 3}}}"
+                        )
+                if condition_index != len(HARMFUL_CONDITIONS) - 1:
+                    lines.append(
+                        f"\\cmidrule(l){{2-{len(HARMFUL_METRICS) + 3}}}"
+                    )
+            if model_index != len(completed_models) - 1:
+                lines.append(r"\midrule")
     else:
         summary = _harmful_summary_rows(rows)
         condition_labels = [condition[2] for condition in HARMFUL_CONDITIONS]
         metric_count = len(condition_labels) + 1
-        best_values = tuple(
-            min(
-                row["values"][index]
-                for row in summary
-                if row["method_key"] != "original"
-            )
-            for index in range(metric_count)
-        )
         lines.extend(
             [
                 r"\setlength{\tabcolsep}{4pt}",
                 r"\resizebox{\textwidth}{!}{%",
-                f"\\begin{{tabular}}{{l{'c' * metric_count}}}",
-                "Method & "
-                + f"\\multicolumn{{{metric_count}}}{{c}}{{Attack success rate (\\%) $\\downarrow$}} \\\\ ",
-                r"\cmidrule(l){2-" + str(metric_count + 1) + "}",
-                " & "
+                f"\\begin{{tabular}}{{rl{'c' * metric_count}}}",
+                " & Method & "
+                + f"\\multicolumn{{{metric_count}}}{{c}}{{Attack success rate (\\%) $\\downarrow$}} \\\\",
+                r"\cmidrule(l){3-" + str(metric_count + 2) + "}",
+                " & & "
                 + " & ".join(condition_labels)
                 + " & \\shortstack{Human jailbreak\\\\average} \\\\",
                 r"\midrule",
             ]
         )
         asr_metric = HARMFUL_METRICS[0]
-        for method_index, row in enumerate(summary):
-            values = " & ".join(
-                _harmful_tex_value(
-                    value,
-                    asr_metric,
-                    emphasis=(
-                        "bold"
-                        if row["method_key"] == "h_infinity"
-                        and value == best_values[index]
-                        else "underline"
-                        if row["method_key"] != "original"
-                        and value == best_values[index]
-                        else None
-                    ),
-                    primary=False,
+        for model_index, (model_key, model_label) in enumerate(HARMFUL_MODELS):
+            model_rows = [row for row in summary if row["model_key"] == model_key]
+            best_values = tuple(
+                min(
+                    row["values"][index]
+                    for row in model_rows
+                    if row["method_key"] != "original"
+                    and row["values"][index] is not None
                 )
-                for index, value in enumerate(row["values"])
+                if any(
+                    row["method_key"] != "original"
+                    and row["values"][index] is not None
+                    for row in model_rows
+                )
+                else None
+                for index in range(metric_count)
             )
-            lines.append(f"{row['method_tex']} & {values} \\\\ ")
-            if method_index == 0:
-                lines.append(f"\\cmidrule(l){{1-{metric_count + 1}}}")
+            for method_index, row in enumerate(model_rows):
+                model = (
+                    f"\\multirow{{{len(model_rows)}}}{{*}}{{{model_label}}}"
+                    if method_index == 0
+                    else ""
+                )
+                values = " & ".join(
+                    _harmful_tex_value(
+                        value,
+                        asr_metric,
+                        emphasis=(
+                            "bold"
+                            if value is not None
+                            and row["method_key"] == "h_infinity"
+                            and value == best_values[index]
+                            else "underline"
+                            if value is not None
+                            and row["method_key"] != "original"
+                            and value == best_values[index]
+                            else None
+                        ),
+                        primary=False,
+                    )
+                    for index, value in enumerate(row["values"])
+                )
+                lines.append(
+                    f"{model} & {row['method_tex']} & {values} \\\\"
+                )
+                if method_index == 0:
+                    lines.append(
+                        f"\\cmidrule(l){{2-{metric_count + 2}}}"
+                    )
+            if model_index != len(HARMFUL_MODELS) - 1:
+                lines.append(r"\midrule")
     lines.extend([r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""])
     return "\n".join(lines)
 

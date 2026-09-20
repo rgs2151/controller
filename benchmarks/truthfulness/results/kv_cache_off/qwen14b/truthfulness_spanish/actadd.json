@@ -1,0 +1,106 @@
+{
+  "identity": {
+    "model_id": "Qwen/Qwen2.5-14B",
+    "model_revision": "97e1e76335b7017d8f67c08a19d103c0504298c9",
+    "method": "actadd",
+    "distribution": "spanish",
+    "dataset": [
+      "truthful_qa",
+      "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
+    ],
+    "evaluation_key": "truthfulness_spanish",
+    "kv_cache": false,
+    "scorers": [
+      "truthfulqa_true",
+      "truthfulqa_informative",
+      "axbench_concept_relevance",
+      "axbench_instruction_relevance",
+      "axbench_fluency",
+      "axbench_overall"
+    ]
+  },
+  "evaluation_samples_per_repetition": 817,
+  "evaluation_repetitions": 5,
+  "created_at_utc": "2026-09-20T00:58:35.628212+00:00",
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "truth": 72.58261933904528,
+      "info": 90.33047735618115,
+      "concept_relevance": 1.7197062423500613,
+      "instruction_relevance": 1.6988984088127295,
+      "fluency": 1.4761321909424725,
+      "axbench_overall": 1.3452876376988983
+    },
+    {
+      "repetition": 1,
+      "truth": 70.37943696450428,
+      "info": 91.06487148102815,
+      "concept_relevance": 1.6646266829865362,
+      "instruction_relevance": 1.6425948592411261,
+      "fluency": 1.3782129742962057,
+      "axbench_overall": NaN
+    },
+    {
+      "repetition": 2,
+      "truth": 69.88984088127295,
+      "info": 93.63525091799265,
+      "concept_relevance": 1.7172582619339045,
+      "instruction_relevance": 1.7135862913096696,
+      "fluency": 1.4149326805385556,
+      "axbench_overall": NaN
+    },
+    {
+      "repetition": 3,
+      "truth": 72.70501835985313,
+      "info": 88.73929008567931,
+      "concept_relevance": 1.624235006119951,
+      "instruction_relevance": 1.5997552019583843,
+      "fluency": 1.3194614443084456,
+      "axbench_overall": NaN
+    },
+    {
+      "repetition": 4,
+      "truth": 74.90820073439413,
+      "info": 84.33292533659731,
+      "concept_relevance": 1.5495716034271725,
+      "instruction_relevance": 1.4957160342717257,
+      "fluency": 1.2729498164014688,
+      "axbench_overall": NaN
+    }
+  ],
+  "metrics": {
+    "truth": {
+      "mean": 72.09302325581396,
+      "standard_error": 0.9035999424867458
+    },
+    "info": {
+      "mean": 89.62056303549572,
+      "standard_error": 1.540186327515408
+    },
+    "concept_relevance": {
+      "mean": 1.655079559363525,
+      "standard_error": 0.031794073352838896
+    },
+    "instruction_relevance": {
+      "mean": 1.6301101591187268,
+      "standard_error": 0.039267772980058326
+    },
+    "fluency": {
+      "mean": 1.3723378212974295,
+      "standard_error": 0.035564024931960994
+    },
+    "axbench_overall": {
+      "mean": NaN,
+      "standard_error": NaN
+    }
+  },
+  "invalid_scorer_outputs": {
+    "truthfulqa_true": [],
+    "truthfulqa_informative": [],
+    "axbench_concept_relevance": [],
+    "axbench_instruction_relevance": [],
+    "axbench_fluency": [],
+    "axbench_overall": []
+  }
+}

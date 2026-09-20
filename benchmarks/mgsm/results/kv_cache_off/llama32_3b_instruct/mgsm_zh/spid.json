@@ -1,0 +1,17 @@
+{
+  "model": [
+    "meta-llama/Llama-3.2-3B-Instruct",
+    "0cb88a4f764b7a12671c53f0838cd831a0843b95"
+  ],
+  "input_language": "zh",
+  "method": "spid",
+  "sample_count": 100,
+  "metrics": {
+    "mgsm_exact_match.score": 0.09,
+    "mgsm_exact_match.valid_rate": 0.91,
+    "axbench_rule_spanish.score": 1.96,
+    "axbench_instruction_relevance.score": 1.23,
+    "axbench_fluency.score": 0.87,
+    "mgsm_axbench_overall.score": 1.031
+  }
+}

@@ -18,6 +18,11 @@ from typing import Iterator
 import torch
 
 from robust_steerability.benchmarks.layout import REPO_ROOT, cache_backend, model_root
+from robust_steerability.benchmarks.specs import MODELS
+from robust_steerability.modeling.model_cache import (
+    configure_node_local_hf_cache,
+    stage_model_snapshot,
+)
 
 
 def utc_now() -> str:
@@ -54,7 +59,8 @@ def machine_provenance() -> dict[str, object]:
         ]
     return {
         "hostname": socket.gethostname(),
-        "lightning_cloudspace_id": os.environ.get("LIGHTNING_CLOUDSPACE_ID"),
+        "lightning_cloudspace_id": os.environ.get("LIGHTNING_CLOUD_SPACE_ID")
+        or os.environ.get("LIGHTNING_CLOUDSPACE_ID"),
         "lightning_cloudspace_host": os.environ.get("LIGHTNING_CLOUDSPACE_HOST"),
         "platform": platform.platform(),
         "python": platform.python_version(),
@@ -83,6 +89,7 @@ def tracked_stage(
     record_path = run_root / "run.json"
     if record_path.exists():
         raise FileExistsError(f"Run id {run_id!r} already exists")
+    local_hf_cache = configure_node_local_hf_cache()
     record = {
         "schema_version": 2, "run_id": run_id, "status": "running",
         "started_at_utc": utc_now(), "benchmark": benchmark, "model": model,
@@ -99,11 +106,24 @@ def tracked_stage(
         "storage": {
             "backend": cache_backend(),
             "benchmark_cache_root": str(model_root(benchmark, model)),
+            "huggingface_model_cache": (
+                str(local_hf_cache) if local_hf_cache is not None else "default"
+            ),
         },
     }
     started = time.perf_counter()
     _write_json(record_path, record)
     try:
+        if stage in {"artifacts", "calibrate", "evaluate"}:
+            model_spec = MODELS[model]
+            snapshot = stage_model_snapshot(
+                model_id=model_spec.model_id,
+                revision=model_spec.revision,
+                repo_root=REPO_ROOT,
+            )
+            if snapshot is not None:
+                record["storage"]["staged_model_snapshot"] = str(snapshot)
+                _write_json(record_path, record)
         yield run_root
     except BaseException as error:
         record.update({

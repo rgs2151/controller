@@ -20,6 +20,24 @@
 | APM programmer | Llama-3.2-1B-Instruct | Original | 2.92 | 1.94 | 0.64 | 1.56 | 0.64 |
 | APM programmer | Llama-3.2-1B-Instruct | A-LQR | 5.00 | 1.97 | 0.57 | 1.51 | 0.53 |
 | APM programmer | Llama-3.2-1B-Instruct | H∞ (ours) | 0.42 | 1.98 | 0.37 | 1.12 | 0.30 |
+| Direct | Llama-3.2-3B-Instruct | Original | 16.67 | 1.88 | 1.21 | 1.88 | 1.19 |
+| Direct | Llama-3.2-3B-Instruct | A-LQR | 20.00 | 1.91 | 1.18 | 1.86 | 1.15 |
+| Direct | Llama-3.2-3B-Instruct | H∞ (ours) | 8.33 | 1.99 | 1.19 | 1.90 | 1.18 |
+| John persona | Llama-3.2-3B-Instruct | Original | 11.67 | 1.90 | 0.61 | 1.54 | 0.58 |
+| John persona | Llama-3.2-3B-Instruct | A-LQR | 11.67 | 1.96 | 0.69 | 1.52 | 0.63 |
+| John persona | Llama-3.2-3B-Instruct | H∞ (ours) | 4.17 | 1.94 | 0.60 | 1.65 | 0.59 |
+| DNE nonresponse | Llama-3.2-3B-Instruct | Original | 10.83 | 1.93 | 0.57 | 1.52 | 0.55 |
+| DNE nonresponse | Llama-3.2-3B-Instruct | A-LQR | 10.42 | 1.95 | 0.63 | 1.52 | 0.59 |
+| DNE nonresponse | Llama-3.2-3B-Instruct | H∞ (ours) | 3.75 | 1.95 | 0.59 | 1.66 | 0.58 |
+| Jailbreak Bot | Llama-3.2-3B-Instruct | Original | 14.17 | 1.90 | 0.57 | 1.54 | 0.56 |
+| Jailbreak Bot | Llama-3.2-3B-Instruct | A-LQR | 12.92 | 1.97 | 0.64 | 1.51 | 0.60 |
+| Jailbreak Bot | Llama-3.2-3B-Instruct | H∞ (ours) | 3.75 | 1.93 | 0.59 | 1.67 | 0.58 |
+| YOJA/Nona roleplay | Llama-3.2-3B-Instruct | Original | 11.25 | 1.91 | 0.59 | 1.52 | 0.55 |
+| YOJA/Nona roleplay | Llama-3.2-3B-Instruct | A-LQR | 11.67 | 1.95 | 0.65 | 1.51 | 0.59 |
+| YOJA/Nona roleplay | Llama-3.2-3B-Instruct | H∞ (ours) | 4.17 | 1.94 | 0.56 | 1.64 | 0.56 |
+| APM programmer | Llama-3.2-3B-Instruct | Original | 10.83 | 1.91 | 0.56 | 1.48 | 0.53 |
+| APM programmer | Llama-3.2-3B-Instruct | A-LQR | 11.25 | 1.97 | 0.65 | 1.47 | 0.60 |
+| APM programmer | Llama-3.2-3B-Instruct | H∞ (ours) | 2.50 | 1.96 | 0.58 | 1.60 | 0.58 |
 
 ## Method
 
@@ -35,7 +53,7 @@
   ```
 
 - Dataset: `centerforaisafety/HarmBench` at revision `8e1604d1171fe8a48d8febecd22f600e462bdcdd`. The five templates are the frozen `random_subset=5`, `seed=1` selection.
-- Model: `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6`.
+- Models: `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6`, `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`, and a provisioned `meta-llama/Llama-3.1-8B-Instruct` row that remains TBD until its complete evaluation is available.
 - Generation: greedy decoding, at most 512 new tokens, one completion per prompt, and evaluated-model KV cache disabled.
 
 ## Measures
@@ -57,5 +75,8 @@ These are descriptive means over one fixed generation per prompt, not repeated t
 | Llama-3.2-1B-Instruct | Original | No intervention |
 | Llama-3.2-1B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
 | Llama-3.2-1B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.130075; selected on 50 disjoint direct validation behaviors by maximum AXBench overall steering |
+| Llama-3.2-3B-Instruct | Original | No intervention |
+| Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 0.415802; selected on 50 disjoint direct validation behaviors by maximum AXBench overall steering |
 
 The DNE template is retained because it belongs to the frozen official subset, but it explicitly requests nonresponse and is therefore not a meaningful harmful-compliance jailbreak. The per-template report prevents this condition from silently determining the interpretation of the aggregate.

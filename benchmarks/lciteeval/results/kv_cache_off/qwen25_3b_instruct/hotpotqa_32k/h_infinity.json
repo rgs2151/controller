@@ -1,0 +1,57 @@
+{
+  "identity": {
+    "schema_version": 1,
+    "model": [
+      "Qwen/Qwen2.5-3B-Instruct",
+      "aa8e72537993ba99e69dfaafa59ed015b17504d1"
+    ],
+    "condition": "32k",
+    "method": "h_infinity",
+    "parameters": {
+      "lambda": 1.5,
+      "q": 0.01,
+      "r": 1.0,
+      "q_final": 0.01
+    },
+    "calibration_id": "selected",
+    "evaluated_model_kv_cache": false,
+    "generation_batch_size": 5,
+    "model_loading": {
+      "model_id": "Qwen/Qwen2.5-3B-Instruct",
+      "revision": "aa8e72537993ba99e69dfaafa59ed015b17504d1",
+      "quantized": false,
+      "dtype": "bfloat16",
+      "attention_implementation": "sdpa",
+      "quantization_compute_dtype": "float16",
+      "rope_scaling": {
+        "rope_type": "yarn",
+        "factor": 4.0,
+        "original_max_position_embeddings": 32768
+      }
+    }
+  },
+  "model": [
+    "Qwen/Qwen2.5-3B-Instruct",
+    "aa8e72537993ba99e69dfaafa59ed015b17504d1"
+  ],
+  "condition": "32k",
+  "method": "h_infinity",
+  "sample_count": 40,
+  "created_at_utc": "2026-09-19T05:45:02.068532+00:00",
+  "metrics": {
+    "lcite_answer_overlap.answer_f1": 0.05930556025915673,
+    "lcite_answer_overlap.answer_precision": 0.03268998148816499,
+    "lcite_answer_overlap.answer_recall": 0.5260416666666666,
+    "lcite_citation_nli.citation_recall": 0.014583333333333332,
+    "lcite_citation_nli.citation_precision": 0.025,
+    "lcite_citation_nli.citation_f1": 0.018333333333333333,
+    "lcite_citation_nli.citation_count": 1.7,
+    "axbench_concept_relevance.score": 0.05,
+    "axbench_concept_relevance.item_index": 19.5,
+    "axbench_instruction_relevance.score": 1.2,
+    "axbench_instruction_relevance.item_index": 19.5,
+    "axbench_fluency.score": 1.375,
+    "axbench_fluency.item_index": 19.5,
+    "axbench_overall.score": 0.0
+  }
+}

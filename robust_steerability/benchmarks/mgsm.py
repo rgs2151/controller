@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import json
 import sys
 
@@ -288,6 +289,9 @@ def main() -> None:
             "api_concurrency": arguments.api_concurrency,
             "api_batch_size": arguments.api_batch_size,
             "h_infinity_fixed_parameters": fixed,
+            "h_infinity_lambda_sweep": asdict(
+                COMPOSITION.calibration.h_infinity_lambda_sweep
+            ),
         },
     ) as log_root:
         if arguments.stage == "artifacts":

@@ -23,20 +23,22 @@ The steering target is non-exhibition/refusal, not an unrelated orthogonal
 concept. The test metric is attack success rate, where lower is better. Validation
 and test behaviors and classifiers remain separate.
 
-The comparison is Original, A-LQR, and H-infinity only. The initial fast model
-is `meta-llama/Llama-3.2-1B-Instruct`.
+The comparison is Original, A-LQR, and H-infinity on three Llama-family scales:
+`meta-llama/Llama-3.2-1B-Instruct`, `meta-llama/Llama-3.2-3B-Instruct`, and
+`meta-llama/Llama-3.1-8B-Instruct`.
 
 Run each stage independently:
 
 ```bash
+MODEL=llama32_3b_instruct  # or llama31_8b_instruct
 python -m robust_steerability.benchmarks.harmful artifacts \
-  --model llama32_1b_instruct --devices auto
+  --model "$MODEL" --devices auto
 python -m robust_steerability.benchmarks.harmful calibrate \
-  --model llama32_1b_instruct --devices auto
+  --model "$MODEL" --devices auto
 python -m robust_steerability.benchmarks.harmful evaluate \
-  --model llama32_1b_instruct --devices auto
+  --model "$MODEL" --devices auto
 python -m robust_steerability.benchmarks.harmful score \
-  --model llama32_1b_instruct --devices auto
+  --model "$MODEL" --devices auto
 ```
 
 Evaluation defaults to KV-cache off. A fixed H-infinity selection can replace

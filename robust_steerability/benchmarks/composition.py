@@ -28,6 +28,25 @@ class EvaluationDataset:
 
 
 @dataclass(frozen=True)
+class HInfinityLambdaSweep:
+    """Optional first phase of H-infinity hyperparameter calibration."""
+
+    enabled: bool
+    values: tuple[float, ...]
+    fixed_q_over_r: float
+    fixed_q_final_over_r: float
+    fixed_r: float
+    selection_metric: str
+
+
+@dataclass(frozen=True)
+class CalibrationComposition:
+    selection_metric: str
+    available_selection_metrics: tuple[str, ...]
+    h_infinity_lambda_sweep: HInfinityLambdaSweep
+
+
+@dataclass(frozen=True)
 class BenchmarkComposition:
     benchmark: str
     base_dataset: str
@@ -36,6 +55,7 @@ class BenchmarkComposition:
     default_methods: tuple[str, ...]
     default_datasets: tuple[str, ...]
     datasets: tuple[EvaluationDataset, ...]
+    calibration: CalibrationComposition
 
     def dataset(self, key: str) -> EvaluationDataset:
         matches = [dataset for dataset in self.datasets if dataset.key == key]
@@ -97,6 +117,47 @@ def load_composition(benchmark: str) -> BenchmarkComposition:
     base = [dataset for dataset in datasets if dataset.role == "base"]
     if len(base) != 1 or base[0].dataset != str(payload["base_dataset"]):
         raise ValueError(f"{path} must define exactly one matching base dataset")
+    calibration_payload = payload.get("calibration", {})
+    selection_metric = str(
+        calibration_payload.get("selection_metric", "mean_axbench_overall")
+    )
+    available_selection_metrics = tuple(
+        str(value)
+        for value in calibration_payload.get(
+            "available_selection_metrics", (selection_metric,)
+        )
+    )
+    if (
+        not available_selection_metrics
+        or len(available_selection_metrics) != len(set(available_selection_metrics))
+        or selection_metric not in available_selection_metrics
+    ):
+        raise ValueError(
+            f"{path} calibration selection metric must appear exactly once in "
+            "available_selection_metrics"
+        )
+    lambda_payload = calibration_payload.get("h_infinity_lambda_sweep", {})
+    lambda_enabled = bool(lambda_payload.get("enabled", False))
+    lambda_values = tuple(float(value) for value in lambda_payload.get("values", ()))
+    lambda_q_over_r = float(lambda_payload.get("fixed_q_over_r", 0.1))
+    lambda_q_final_over_r = float(
+        lambda_payload.get("fixed_q_final_over_r", 0.1)
+    )
+    lambda_r = float(lambda_payload.get("fixed_r", 1.0))
+    lambda_metric = str(
+        lambda_payload.get(
+            "selection_metric",
+            calibration_payload.get("selection_metric", "mean_axbench_overall"),
+        )
+    )
+    if lambda_enabled and not lambda_values:
+        raise ValueError(f"{path} enables the H-infinity lambda sweep without values")
+    if any(value <= 0 for value in lambda_values):
+        raise ValueError(f"{path} requires positive H-infinity lambda values")
+    if len(lambda_values) != len(set(lambda_values)):
+        raise ValueError(f"{path} contains duplicate H-infinity lambda values")
+    if min(lambda_q_over_r, lambda_q_final_over_r, lambda_r) <= 0:
+        raise ValueError(f"{path} requires positive fixed lambda-sweep Q, Qf, and R")
     return BenchmarkComposition(
         benchmark=benchmark,
         base_dataset=str(payload["base_dataset"]),
@@ -105,6 +166,18 @@ def load_composition(benchmark: str) -> BenchmarkComposition:
         default_methods=default_methods,
         default_datasets=default_datasets,
         datasets=datasets,
+        calibration=CalibrationComposition(
+            selection_metric=selection_metric,
+            available_selection_metrics=available_selection_metrics,
+            h_infinity_lambda_sweep=HInfinityLambdaSweep(
+                enabled=lambda_enabled,
+                values=lambda_values,
+                fixed_q_over_r=lambda_q_over_r,
+                fixed_q_final_over_r=lambda_q_final_over_r,
+                fixed_r=lambda_r,
+                selection_metric=lambda_metric,
+            ),
+        ),
     )
 
 

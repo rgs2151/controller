@@ -5,18 +5,7 @@ from __future__ import annotations
 import torch
 from transformers import AutoModelForCausalLM
 
-
-def _decoder_layers(model: AutoModelForCausalLM) -> list[torch.nn.Module]:
-    if hasattr(model, "model") and hasattr(model.model, "layers"):
-        return list(model.model.layers)
-    if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
-        return list(model.transformer.h)
-    if hasattr(model, "gpt_neox") and hasattr(model.gpt_neox, "layers"):
-        return list(model.gpt_neox.layers)
-    raise ValueError(
-        "Unsupported CausalLM architecture: could not locate decoder layers "
-        "(expected model.layers, transformer.h, or gpt_neox.layers)."
-    )
+from robust_steerability.modeling.interventions import _decoder_layers
 
 
 def capture_layer_inputs(
@@ -37,6 +26,8 @@ def capture_layer_inputs(
                 "position_ids",
                 "cache_position",
                 "position_embeddings",
+                "position_embeddings_global",
+                "position_embeddings_local",
             ]:
                 value = kwargs.get(name)
                 if isinstance(value, tuple):

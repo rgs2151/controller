@@ -114,6 +114,7 @@ def calibration_stage(
     generation_batch_size: int | None,
     api_concurrency: int,
     api_batch_size: int,
+    selection_metric: str,
     h_infinity_parameters: dict[str, float] | None,
 ) -> None:
     if "alqr" in methods:
@@ -127,6 +128,7 @@ def calibration_stage(
             generation_batch_size,
             api_concurrency=api_concurrency,
             api_batch_size=api_batch_size,
+            selection_metric=selection_metric,
             fixed_parameters=h_infinity_parameters,
         )
     runtime._configure_runtime(model_key, calibration_id)
@@ -172,11 +174,18 @@ def evaluation_stage(
     calibration_id: str,
     generation_batch_size: int | None,
     use_cache: bool,
+    evaluation_samples: int | None,
+    evaluation_repetitions: int | None,
 ) -> None:
     """Generate and cache model responses without running any judge."""
 
     runtime._configure_runtime(
-        model_key, calibration_id, generation_batch_size, use_cache=use_cache
+        model_key,
+        calibration_id,
+        generation_batch_size,
+        use_cache=use_cache,
+        evaluation_samples=evaluation_samples,
+        evaluation_repetitions=evaluation_repetitions,
     )
     native_datasets = [
         dataset for dataset in datasets
@@ -222,6 +231,14 @@ def evaluation_stage(
                     if generation_batch_size is not None
                     else []
                 ),
+                *(
+                    ["--evaluation-samples", str(evaluation_samples)]
+                    if evaluation_samples is not None else []
+                ),
+                *(
+                    ["--evaluation-repetitions", str(evaluation_repetitions)]
+                    if evaluation_repetitions is not None else []
+                ),
             ]
             run_data_shards(
                 f"generate-{dataset}-{method}",
@@ -266,10 +283,18 @@ def score_stage(
     api_concurrency: int,
     api_batch_size: int,
     use_cache: bool,
+    evaluation_samples: int | None,
+    evaluation_repetitions: int | None,
 ) -> None:
     """Run selected scorers against existing generations, then summarize them."""
 
-    runtime._configure_runtime(model_key, calibration_id, use_cache=use_cache)
+    runtime._configure_runtime(
+        model_key,
+        calibration_id,
+        use_cache=use_cache,
+        evaluation_samples=evaluation_samples,
+        evaluation_repetitions=evaluation_repetitions,
+    )
     native_datasets = [
         dataset for dataset in datasets
         if COMPOSITION.dataset(dataset).runtime == "truthfulness"
@@ -397,7 +422,14 @@ def main() -> None:
     parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
+    parser.add_argument(
+        "--selection-metric",
+        choices=COMPOSITION.calibration.available_selection_metrics,
+        default=COMPOSITION.calibration.selection_metric,
+    )
     parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument("--evaluation-samples", type=int)
+    parser.add_argument("--evaluation-repetitions", type=int)
     parser.add_argument("--h-infinity-q-over-r", type=float)
     parser.add_argument("--h-infinity-q-final-over-r", type=float)
     parser.add_argument("--h-infinity-r", type=float)
@@ -469,9 +501,12 @@ def main() -> None:
         calibration_id=arguments.calibration_id,
         parameters={
             "generation_batch_size": arguments.generation_batch_size,
+            "evaluation_samples": arguments.evaluation_samples,
+            "evaluation_repetitions": arguments.evaluation_repetitions,
             "scorers": sorted(selected_score_keys) if arguments.stage == "score" else [],
             "api_concurrency": arguments.api_concurrency,
             "api_batch_size": arguments.api_batch_size,
+            "selection_metric": arguments.selection_metric,
             "h_infinity_fixed_parameters": h_infinity_parameters,
         },
     ) as log_root:
@@ -487,6 +522,7 @@ def main() -> None:
                 arguments.generation_batch_size,
                 arguments.api_concurrency,
                 arguments.api_batch_size,
+                arguments.selection_metric,
                 h_infinity_parameters,
             )
         elif arguments.stage == "evaluate":
@@ -499,6 +535,8 @@ def main() -> None:
                 arguments.calibration_id,
                 arguments.generation_batch_size,
                 use_cache,
+                arguments.evaluation_samples,
+                arguments.evaluation_repetitions,
             )
         else:
             score_stage(
@@ -512,6 +550,8 @@ def main() -> None:
                 arguments.api_concurrency,
                 arguments.api_batch_size,
                 use_cache,
+                arguments.evaluation_samples,
+                arguments.evaluation_repetitions,
             )
 
 

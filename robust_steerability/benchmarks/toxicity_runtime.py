@@ -19,6 +19,7 @@ import numpy as np
 import torch
 
 from robust_steerability.calibration.nominal_artifact import nominal_dynamics_signature
+from robust_steerability.benchmarks.calibration import require_nonzero_selection_metric
 from robust_steerability.benchmarks.composition import load_composition
 from robust_steerability.benchmarks.launcher import run_data_shards
 from robust_steerability.benchmarks.layout import (
@@ -951,6 +952,11 @@ def calibration_profile(selection_metric: str) -> dict:
     baseline = None
     comparators = None
     if selection_metric == "mean_axbench_overall":
+        require_nonzero_selection_metric(
+            summaries,
+            "axbench_overall",
+            context="Toxicity H-infinity calibration",
+        )
         ranked = sorted(
             summaries,
             key=lambda row: (
@@ -978,6 +984,11 @@ def calibration_profile(selection_metric: str) -> dict:
         eligible = [row for row in summaries if row["quality_gates_passed"]]
         if not eligible:
             raise ValueError("No H-infinity candidate passed the toxicity-quality gates")
+        require_nonzero_selection_metric(
+            eligible,
+            "toxicity_quality_composite",
+            context="Toxicity H-infinity calibration",
+        )
         ranked = sorted(
             eligible,
             key=lambda row: (

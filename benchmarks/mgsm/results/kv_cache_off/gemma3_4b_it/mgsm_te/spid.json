@@ -1,0 +1,17 @@
+{
+  "model": [
+    "google/gemma-3-4b-it",
+    "093f9f388b31de276ce2de164bdc2081324b9767"
+  ],
+  "input_language": "te",
+  "method": "spid",
+  "sample_count": 100,
+  "metrics": {
+    "mgsm_exact_match.score": 0.0,
+    "mgsm_exact_match.valid_rate": 0.0,
+    "axbench_rule_spanish.score": 0.0,
+    "axbench_instruction_relevance.score": 0.0,
+    "axbench_fluency.score": 0.0,
+    "mgsm_axbench_overall.score": 0.0
+  }
+}

@@ -1,0 +1,50 @@
+[1;24rMGSM Gemma-3-4B start 2026-09-18T21:26:43Z
+tokenizer_config.json: 0.00B [00:00, ?B/s]tokenizer_config.json: 1.16MB [00:00, 41.8MB/s]
+tokenizer.model:   0%|                             | 0.00/4.69M [00:00<?, ?B/s]tokenizer.model: 100%|████████████████████| 4.69M/4.69M [00:00<00:00, 7.82MB/s]tokenizer.model: 100%|████████████████████| 4.69M/4.69M [00:00<00:00, 7.81MB/s]
+tokenizer.json:   0%|                              | 0.00/33.4M [00:00<?, ?B/s]tokenizer.json: 100%|██████████████████████| 33.4M/33.4M [00:00<00:00, 155MB/s]tokenizer.json: 100%|██████████████████████| 33.4M/33.4M [00:00<00:00, 155MB/s]
+added_tokens.json:   0%|                            | 0.00/35.0 [00:00<?, ?B/s]added_tokens.json: 100%|█████████████████████| 35.0/35.0 [00:00<00:00, 510kB/s]
+special_tokens_map.json:   0%|                       | 0.00/662 [00:00<?, ?B/s]special_tokens_map.json: 100%|████████████████| 662/662 [00:00<00:00, 11.8MB/s]
+config.json:   0%|                                   | 0.00/855 [00:00<?, ?B/s]config.json: 100%|████████████████████████████| 855/855 [00:00<00:00, 9.85MB/s]
+model.safetensors.index.json: 0.00B [00:00, ?B/s]model.safetensors.index.json: 90.6kB [00:00, 225MB/s]
+Fetching 2 files:   0%|                                  | 0/2 [00:00<?, ?it/s]
+model-00001-of-00002.safetensors:   0%|            | 0.00/4.96G [00:00<?, ?B/s][A
+
+model-00002-of-00002.safetensors:   0%|            | 0.00/3.64G [00:00<?, ?B/s][A[A
+model-00001-of-00002.safetensors:   1%|   | 67.1M/4.96G [00:01<01:13, 66.8MB/s][A
+model-00001-of-00002.safetensors:   5%|▎    | 268M/4.96G [00:01<00:27, 171MB/s][A
+model-00001-of-00002.safetensors:   7%|▎    | 335M/4.96G [00:02<00:24, 190MB/s][A
+
+model-00002-of-00002.safetensors:   2%|   | 67.0M/3.64G [00:02<02:13, 26.8MB/s][A[A
+
+model-00002-of-00002.safetensors:   7%|▎    | 268M/3.64G [00:02<00:27, 124MB/s][A[A
+
+model-00002-of-00002.safetensors:  13%|▋    | 469M/3.64G [00:03<00:13, 227MB/s][A[A
+
+model-00002-of-00002.safetensors:  17%|▊    | 604M/3.64G [00:03<00:10, 282MB/s][A[A
+
+model-00002-of-00002.safetensors:  22%|█    | 805M/3.64G [00:03<00:07, 388MB/s][A[A
+
+model-00002-of-00002.safetensors:  28%|█   | 1.01G/3.64G [00:03<00:05, 481MB/s][A[A
+
+model-00002-of-00002.safetensors:  31%|█▎  | 1.14G/3.64G [00:05<00:09, 251MB/s][A[A
+
+model-00002-of-00002.safetensors:  35%|█▍  | 1.27G/3.64G [00:05<00:08, 294MB/s][A[A
+model-00001-of-00002.safetensors:  36%|█▍  | 1.81G/4.96G [00:07<00:12, 248MB/s][A
+model-00001-of-00002.safetensors:  50%|██  | 2.48G/4.96G [00:08<00:06, 372MB/s][A
+model-00001-of-00002.safetensors:  54%|██▏ | 2.68G/4.96G [00:08<00:06, 353MB/s][A
+model-00001-of-00002.safetensors:  64%|██▌ | 3.15G/4.96G [00:09<00:03, 473MB/s][A
+model-00001-of-00002.safetensors:  66%|██▋ | 3.29G/4.96G [00:09<00:04, 399MB/s][A
+model-00001-of-00002.safetensors:  85%|███▍| 4.23G/4.96G [00:10<00:01, 686MB/s][A
+model-00001-of-00002.safetensors:  97%|███▉| 4.83G/4.96G [00:11<00:00, 721MB/s][A
+model-00001-of-00002.safetensors: 100%|████| 4.96G/4.96G [00:11<00:00, 560MB/s][A
+
+model-00002-of-00002.safetensors:  61%|██▍ | 2.21G/3.64G [00:12<00:08, 162MB/s][A[Amodel-00001-of-00002.safetensors: 100%|████| 4.96G/4.96G [00:12<00:00, 384MB/s]
+Fetching 2 files:  50%|█████████████             | 1/2 [00:13<00:13, 13.05s/it]
+
+model-00002-of-00002.safetensors:  68%|██▋ | 2.48G/3.64G [00:13<00:06, 172MB/s][A[A
+
+model-00002-of-00002.safetensors: 100%|████| 3.64G/3.64G [00:14<00:00, 314MB/s][A[Amodel-00002-of-00002.safetensors: 100%|████| 3.64G/3.64G [00:14<00:00, 246MB/s]
+Fetching 2 files: 100%|██████████████████████████| 2/2 [00:14<00:00,  7.48s/it]Fetching 2 files: 100%|██████████████████████████| 2/2 [00:14<00:00,  7.48s/it]
+Loading checkpoint shards:   0%|                         | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|█████████████████| 2/2 [00:00<00:00, 68.38it/s]
+generation_config.json:   0%|                        | 0.00/215 [00:00<?, ?B/s]generation_config.json: 100%|█████████████████| 215/215 [00:00<00:00, 3.92MB/s]
+Loading checkpoint shards:   0%|                         | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|█████████████████| 2/2 [00:00<00:00, 72.50it/s]

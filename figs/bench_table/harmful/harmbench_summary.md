@@ -1,10 +1,16 @@
 # HarmBench robust refusal — ASR summary
 
-| Method | Direct ASR (%) ↓ | John ASR (%) ↓ | DNE ASR (%) ↓ | Jailbreak Bot ASR (%) ↓ | YOJA/Nona ASR (%) ↓ | APM ASR (%) ↓ | Human-jailbreak average ASR (%) ↓ |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Original | 10.00 | 5.83 | 6.25 | 4.58 | 8.33 | 2.92 | 5.58 |
-| A-LQR | 9.58 | 6.25 | 4.17 | 3.33 | 8.75 | 5.00 | 5.50 |
-| H∞ (ours) | 2.92 | 1.25 | 1.67 | 0.42 | 0.83 | 0.42 | 0.92 |
+| Model | Method | Direct ASR (%) ↓ | John ASR (%) ↓ | DNE ASR (%) ↓ | Jailbreak Bot ASR (%) ↓ | YOJA/Nona ASR (%) ↓ | APM ASR (%) ↓ | Human-jailbreak average ASR (%) ↓ |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Llama-3.2-1B-Instruct | Original | 10.00 | 5.83 | 6.25 | 4.58 | 8.33 | 2.92 | 5.58 |
+| Llama-3.2-1B-Instruct | A-LQR | 9.58 | 6.25 | 4.17 | 3.33 | 8.75 | 5.00 | 5.50 |
+| Llama-3.2-1B-Instruct | H∞ (ours) | 2.92 | 1.25 | 1.67 | 0.42 | 0.83 | 0.42 | 0.92 |
+| Llama-3.2-3B-Instruct | Original | 16.67 | 11.67 | 10.83 | 14.17 | 11.25 | 10.83 | 11.75 |
+| Llama-3.2-3B-Instruct | A-LQR | 20.00 | 11.67 | 10.42 | 12.92 | 11.67 | 11.25 | 11.58 |
+| Llama-3.2-3B-Instruct | H∞ (ours) | 8.33 | 4.17 | 3.75 | 3.75 | 4.17 | 2.50 | 3.67 |
+| Llama-3.1-8B-Instruct | Original | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Llama-3.1-8B-Instruct | A-LQR | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Llama-3.1-8B-Instruct | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
 ## Method
 
@@ -20,7 +26,7 @@
   ```
 
 - Dataset: `centerforaisafety/HarmBench` at revision `8e1604d1171fe8a48d8febecd22f600e462bdcdd`. The five templates are the frozen `random_subset=5`, `seed=1` selection.
-- Model: `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6`.
+- Models: `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6`, `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`, and a provisioned `meta-llama/Llama-3.1-8B-Instruct` row that remains TBD until its complete evaluation is available.
 - Generation: greedy decoding, at most 512 new tokens, one completion per prompt, and evaluated-model KV cache disabled.
 
 ## Measures
@@ -42,5 +48,8 @@ These are descriptive means over one fixed generation per prompt, not repeated t
 | Llama-3.2-1B-Instruct | Original | No intervention |
 | Llama-3.2-1B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
 | Llama-3.2-1B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.130075; selected on 50 disjoint direct validation behaviors by maximum AXBench overall steering |
+| Llama-3.2-3B-Instruct | Original | No intervention |
+| Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 0.415802; selected on 50 disjoint direct validation behaviors by maximum AXBench overall steering |
 
 The DNE template is retained because it belongs to the frozen official subset, but it explicitly requests nonresponse and is therefore not a meaningful harmful-compliance jailbreak. The per-template report prevents this condition from silently determining the interpretation of the aggregate.

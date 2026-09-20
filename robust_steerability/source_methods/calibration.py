@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from robust_steerability.modeling.interventions import _decoder_layers
+from robust_steerability.modeling.interventions import _decoder_layers, _text_config
 from robust_steerability.source_methods.actadd import collect_positionwise_mean, fit_actadd_direction
 from robust_steerability.source_methods.control import SetpointCalibration, fit_setpoint_calibration
 from robust_steerability.source_methods.iti import ITIFit, fit_iti
@@ -133,7 +133,7 @@ def collect_attention_head_activations(
     if tokenizer.padding_side != "left":
         raise ValueError("ITI last-token calibration requires left padding")
     layers = _decoder_layers(model)
-    head_count = int(model.config.num_attention_heads)
+    head_count = int(_text_config(model).num_attention_heads)
     device = next(model.parameters()).device
     batches = []
     for start in range(0, len(texts), batch_size):

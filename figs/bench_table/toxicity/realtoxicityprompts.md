@@ -32,6 +32,16 @@
 | Qwen-2.5-14B | S-PID | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | A-LQR | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-14B | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | Original | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | ITI | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | ActAdd | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | Mean-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | Linear-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | PID-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | ODESteer | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | S-PID | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | A-LQR | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
 ## Method
 

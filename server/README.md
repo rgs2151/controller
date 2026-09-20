@@ -32,18 +32,21 @@ every requested source method, estimates H-infinity disturbance geometry,
 synthesizes the fixed controller, and saves its diagnostics. Use `--methods
 all` when the run should contain every comparison method.
 
-Create the persistent Studio environment once per checkout before starting a
-run:
+Create a fresh node-local environment before every remote benchmark job:
 
 ```bash
 cd ~/controller
-uv venv --python /usr/bin/python3 .venv
-uv pip install --python .venv/bin/python -e .
-.venv/bin/python -m nltk.downloader punkt_tab
+PYTHON=$(server/bootstrap_node_env.sh)
+$PYTHON -m robust_steerability.benchmarks.truthfulness artifacts --model llama8b --devices auto
 ```
 
-The local workstation continues to use the `robust-steerability` Conda
-environment; Lightning Studios use the checkout-local `.venv` above.
+The bootstrap deletes and recreates `/tmp/robust-steerability-venv` on every
+invocation, then installs the current checkout there. It never uses or creates
+a virtual environment on Teamspace Drive. The disposable uv download cache
+remains under `/tmp/robust-steerability-uv-cache` to avoid downloading unchanged
+packages repeatedly. Invoke the bootstrap once at the beginning of each Screen
+job and use the returned Python executable for all stages in that job. The local
+workstation continues to use the `robust-steerability` Conda environment.
 
 If the remote GPU has been checked with a smoke run and supports a larger
 generation batch, pass `--generation-batch-size <n>` to the calibration or
@@ -78,6 +81,13 @@ pipeline. Use the same commands on every machine; no host name is encoded in cod
 - Each model/benchmark remains owned by the Studio that ran it. Peer Studios can
   inspect its cache at
   `/teamspace/studios/<producer-studio>/robust-steering-cache/`.
+- Before artifact fitting, calibration, or evaluation, a Lightning run stages
+  the model's exact pinned Hugging Face revision once in
+  `/tmp/robust-steerability/huggingface/`. All workers inherit that node-local
+  cache, avoiding repeated weight reads through Teamspace Drive. This snapshot
+  is disposable and is downloaded again after Lightning moves the Studio to a
+  new container; benchmark artifacts and results remain in Teamspace. An
+  explicitly exported `HF_HUB_CACHE` overrides the automatic local path.
 - The local workstation uses `benchmarks/<benchmark>/cache/<model>/` and does
   not access remote Teamspace storage.
 

@@ -16,7 +16,6 @@ from pathlib import Path
 import torch
 
 from robust_steerability.artifacts import configuration_hash
-from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.calibration.disturbances import fit_disturbance_geometry
 from robust_steerability.calibration.nominal import project_dynamics
 from robust_steerability.calibration.nominal_artifact import (
@@ -32,6 +31,7 @@ from robust_steerability.control import (
 )
 from robust_steerability.experiments.methods import ControllerArtifact
 from robust_steerability.experiments.diagnostics import cpu_tensors, score
+from robust_steerability.modeling.interventions import _decoder_layers, _text_config
 
 
 def _record_identity(record: dict[str, object]) -> dict[str, str]:
@@ -144,16 +144,25 @@ def collect_last_token_states(
         def terminal_hook(_module, _args, output):
             hidden = output[0] if isinstance(output, tuple) else output
             states[-1] = hidden[:, -1, :].detach().float()
+        model_type = _text_config(model).model_type
         for index, layer in enumerate(layers):
             handles.append(layer.register_forward_pre_hook(input_hook(index)))
-            if model.config.model_type == "gpt2":
+            if model_type == "gpt2":
                 projection = layer.attn.c_proj
-            elif model.config.model_type in {
-                "llama", "qwen2", "qwen3", "mistral", "gemma", "gemma2"
+            elif model_type in {
+                "llama",
+                "qwen2",
+                "qwen3",
+                "mistral",
+                "gemma",
+                "gemma2",
+                "gemma3_text",
             }:
                 projection = layer.self_attn.o_proj
             else:
-                raise ValueError(f"Attention-head capture unsupported for {model.config.model_type}")
+                raise ValueError(
+                    f"Attention-head capture unsupported for {model_type}"
+                )
             handles.append(projection.register_forward_pre_hook(head_hook(index)))
         handles.append(layers[-1].register_forward_hook(terminal_hook))
         try:
@@ -393,7 +402,7 @@ def _fit_controller_inputs(
             "fit_records": fit_records, "calibration_records": calibration_records_list,
             "fit_hidden_states": fit_states, "calibration_hidden_states": calibration_states,
             "fit_attention_heads": fit_heads, "calibration_attention_heads": calibration_heads,
-            "attention_head_count": int(model.config.num_attention_heads),
+            "attention_head_count": int(_text_config(model).num_attention_heads),
             "target_readouts": readouts[:, :1],
             "protected_readouts": readouts[:, 1:],
             "reference_states": reference_states,

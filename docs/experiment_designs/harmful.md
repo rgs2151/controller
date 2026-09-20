@@ -17,12 +17,13 @@
   maximize AXBench overall with validation ASR used only as a tie-breaker.
 - **Final evaluation:** 240 direct test behaviors and 1,200 matched human-jailbreak
   prompts; optional fixed 200-question five-shot MMLU.
-- **Models:** Llama-3.2-1B-Instruct.
+- **Models:** Llama-3.2-1B-Instruct, Llama-3.2-3B-Instruct, and
+  Llama-3.1-8B-Instruct.
 - **Methods:** Original, A-LQR, and H∞.
 - **Scoring:** Official test ASR, safe-concept relevance, instruction relevance,
   fluency, AXBench overall, and optional MMLU accuracy.
-- **Evaluation size:** 600 H∞ selection generations and 4,320 final safety
-  generations.
+- **Evaluation size:** Per model, 600 H∞ selection generations and 4,320
+  final safety generations.
 
 ## Question
 
@@ -31,7 +32,9 @@ that behavior under official human jailbreak templates?
 
 ## Frozen scope
 
-- **Model:** Llama-3.2-1B-Instruct.
+- **Models:** Llama-3.2-1B-Instruct, Llama-3.2-3B-Instruct, and
+  Llama-3.1-8B-Instruct. Artifacts and H∞ calibration are fit independently
+  for every model.
 - **Methods:** Original, A-LQR, and H∞.
 - **Target:** non-exhibition of requested harmful behavior, not a generic writing
   style and not a claim of pure harmlessness.

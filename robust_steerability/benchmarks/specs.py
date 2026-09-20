@@ -24,6 +24,14 @@ MODELS = {
         32,
         32,
     ),
+    "llama32_3b_instruct": ModelSpec(
+        "llama32_3b_instruct",
+        "Llama-3.2-3B-Instruct",
+        "meta-llama/Llama-3.2-3B-Instruct",
+        "0cb88a4f764b7a12671c53f0838cd831a0843b95",
+        16,
+        16,
+    ),
     "gemma2b": ModelSpec(
         "gemma2b", "Gemma-2-2B", "google/gemma-2-2b",
         "c5ebcd40d208330abc697524c919956e692655cf", 16, 32,
@@ -35,6 +43,10 @@ MODELS = {
     "qwen14b": ModelSpec(
         "qwen14b", "Qwen-2.5-14B", "Qwen/Qwen2.5-14B",
         "97e1e76335b7017d8f67c08a19d103c0504298c9", 4, 8,
+    ),
+    "qwen32b": ModelSpec(
+        "qwen32b", "Qwen-2.5-32B", "Qwen/Qwen2.5-32B",
+        "1818d35814b8319459f4bd55ed1ac8709630f003", 2, 4,
     ),
     "qwen25_3b_instruct": ModelSpec(
         "qwen25_3b_instruct",
@@ -60,12 +72,12 @@ MODELS = {
         8,
         16,
     ),
-    "qwen3_8b": ModelSpec(
-        "qwen3_8b",
-        "Qwen3-8B",
-        "Qwen/Qwen3-8B",
-        "b968826d9c46dd6066d109eabc6255188de91218",
-        4,
+    "gemma3_4b_it": ModelSpec(
+        "gemma3_4b_it",
+        "Gemma-3-4B-Instruct",
+        "google/gemma-3-4b-it",
+        "093f9f388b31de276ce2de164bdc2081324b9767",
         8,
+        16,
     ),
 }

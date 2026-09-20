@@ -14,6 +14,7 @@ import torch
 from robust_steerability.artifacts import configuration_hash
 from robust_steerability.benchmarks import harmful_artifacts as artifacts
 from robust_steerability.benchmarks import harmful_runtime as runtime
+from robust_steerability.benchmarks.calibration import require_nonzero_selection_metric
 from robust_steerability.benchmarks.launcher import run_jobs
 from robust_steerability.benchmarks.layout import artifact_root, calibration_root
 from robust_steerability.benchmarks.specs import MODELS
@@ -43,6 +44,11 @@ API_SCORERS = (
     "axbench_instruction_relevance",
     "axbench_fluency",
 )
+DEFAULT_GENERATION_BATCH_SIZE = {
+    "llama32_1b_instruct": 32,
+    "llama32_3b_instruct": 16,
+    "llama31_8b_instruct": 8,
+}
 
 
 def _root(model_key: str, calibration_id: str) -> Path:
@@ -227,7 +233,7 @@ def generate_worker(
     )
     base = ControllerArtifact(**base_payload["artifact"])
     records = data["calibration"]["tuning"]
-    batch_size = generation_batch_size or MODELS[model_key].activation_batch_size
+    batch_size = generation_batch_size or DEFAULT_GENERATION_BATCH_SIZE[model_key]
     for configuration in grid()[shard_index::shard_count]:
         grid_id = str(configuration["grid_id"])
         destination = root / "grid/generations" / f"{grid_id}.json"
@@ -427,6 +433,11 @@ def select(model_key: str, calibration_id: str) -> dict:
                 np.mean([float(row["score"]) for row in payload["rows"]])
             )
         summaries.append({**configuration, **means})
+    require_nonzero_selection_metric(
+        summaries,
+        "axbench_overall",
+        context="HarmBench H-infinity calibration",
+    )
     selected = sorted(
         summaries,
         key=lambda row: (
@@ -638,7 +649,7 @@ def main() -> None:
     parser.add_argument(
         "--stage", choices=("base", "synthesize", "generate-worker", "score-grid", "select"), required=True
     )
-    parser.add_argument("--model", choices=(artifacts.MODEL_KEY,), required=True)
+    parser.add_argument("--model", choices=artifacts.MODEL_KEYS, required=True)
     parser.add_argument("--device")
     parser.add_argument("--shard-index", type=int)
     parser.add_argument("--shard-count", type=int)

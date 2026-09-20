@@ -22,16 +22,26 @@
 | Llama-3-8B | S-PID | 52.09 ± 0.56 | 94.37 ± 0.22 | 1.59 ± 0.01 | 1.33 ± 0.01 |
 | Llama-3-8B | A-LQR | 55.57 ± 0.71 | 95.03 ± 0.25 | 1.56 ± 0.01 | 1.27 ± 0.01 |
 | Llama-3-8B | H∞ (ours) | 85.21 ± 0.40 | 64.70 ± 0.48 | 0.97 ± 0.03 | 0.97 ± 0.02 |
-| Qwen-2.5-14B | Original | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | ITI | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | ActAdd | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | Mean-AcT | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | Linear-AcT | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | PID-AcT | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | ODESteer | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | S-PID | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | A-LQR | TBD | TBD | TBD | TBD |
-| Qwen-2.5-14B | H∞ (ours) | TBD | TBD | TBD | TBD |
+| Qwen-2.5-14B | Original | 68.13 ± 0.28 | 97.31 ± 0.13 | 1.82 ± 0.00 | 1.51 ± 0.01 |
+| Qwen-2.5-14B | ITI | 67.91 ± 0.33 | 97.36 ± 0.07 | 1.82 ± 0.00 | 1.53 ± 0.01 |
+| Qwen-2.5-14B | ActAdd | 72.09 ± 0.90 | 89.62 ± 1.54 | 1.63 ± 0.04 | 1.37 ± 0.04 |
+| Qwen-2.5-14B | Mean-AcT | 68.27 ± 0.26 | 97.48 ± 0.08 | 1.82 ± 0.01 | 1.55 ± 0.01 |
+| Qwen-2.5-14B | Linear-AcT | 68.25 ± 0.21 | 97.55 ± 0.19 | 1.83 ± 0.01 | 1.55 ± 0.01 |
+| Qwen-2.5-14B | PID-AcT | 68.27 ± 0.22 | 97.28 ± 0.20 | 1.82 ± 0.01 | 1.55 ± 0.02 |
+| Qwen-2.5-14B | ODESteer | 74.88 ± 0.46 | 92.83 ± 0.26 | 1.67 ± 0.01 | 1.44 ± 0.01 |
+| Qwen-2.5-14B | S-PID | 82.82 ± 0.28 | 93.56 ± 0.47 | 1.64 ± 0.00 | 1.43 ± 0.01 |
+| Qwen-2.5-14B | A-LQR | 85.24 ± 0.50 | 94.32 ± 0.27 | 1.64 ± 0.01 | 1.41 ± 0.01 |
+| Qwen-2.5-14B | H∞ (ours) | 88.74 ± 0.28 | 93.05 ± 0.48 | 1.53 ± 0.01 | 1.29 ± 0.01 |
+| Qwen-2.5-32B | Original | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | ITI | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | ActAdd | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | Mean-AcT | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | Linear-AcT | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | PID-AcT | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | ODESteer | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | S-PID | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | A-LQR | TBD | TBD | TBD | TBD |
+| Qwen-2.5-32B | H∞ (ours) | TBD | TBD | TBD | TBD |
 
 ## Method
 
@@ -78,5 +88,25 @@ Values are mean ± standard error across five repetitions. The scorer models, re
 | Gemma-2-2B | S-PID | λ = 1; Kp = 0.7; Ki = 0.01; Kd = 0.1; inherited unchanged from English TruthfulQA |
 | Gemma-2-2B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; inherited unchanged from English TruthfulQA |
 | Gemma-2-2B | H∞ | λ = 3; Q/R = 0.1; Qf/R = 0.316227766; R = 1; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | Original | No intervention; Spanish evaluation-only transfer |
+| Llama-3-8B | ITI | 32 heads; α = 10; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | ActAdd | Layer 13; strength 4; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | Mean-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | Linear-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | PID-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | ODESteer | Layer 19; time 25; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | S-PID | λ = 1; Kp = 0.1; Ki = 0.1; Kd = 0; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | A-LQR | λ = 2; Q = 0.1I; R = 10I; Qf = 10I; inherited unchanged from English TruthfulQA |
+| Llama-3-8B | H∞ | λ = 2; Q/R = 10; Qf/R = 0.01; R = 1; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | Original | No intervention; Spanish evaluation-only transfer |
+| Qwen-2.5-14B | ITI | 32 heads; α = 10; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | ActAdd | Layer 21; strength 4; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | Mean-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | Linear-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | PID-AcT | Strength 1; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | ODESteer | Layer 24; time 65; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | S-PID | λ = 2; Kp = 0.5; Ki = 0.01; Kd = 0.01; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; inherited unchanged from English TruthfulQA |
+| Qwen-2.5-14B | H∞ | λ = 3; Q/R = 0.316227766; Qf/R = 0.1; R = 1; inherited unchanged from English TruthfulQA |
 
 Spanish is evaluation-only: no controller is refit or reselected. `TBD` result rows have no hyperparameter entry until that exact model-method evaluation is frozen.

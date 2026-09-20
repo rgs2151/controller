@@ -1,0 +1,119 @@
+{
+  "schema_version": 2,
+  "run_id": "mgsm-gemma3-4b-evaluate-resume-20260918T233540Z",
+  "status": "complete",
+  "started_at_utc": "2026-09-18T23:35:52.335586+00:00",
+  "benchmark": "mgsm",
+  "model": "gemma3_4b_it",
+  "stage": "evaluate",
+  "methods": [
+    "spid",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "zh",
+    "fr",
+    "ja",
+    "sw",
+    "te"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "cuda:0,cuda:1,cuda:2,cuda:3,cuda:4,cuda:5,cuda:6,cuda:7",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": 32,
+    "scorers": "default",
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py",
+    "evaluate",
+    "--model",
+    "gemma3_4b_it",
+    "--methods",
+    "spid,alqr,h_infinity",
+    "--datasets",
+    "zh,fr,ja,sw,te",
+    "--devices",
+    "cuda:0,cuda:1,cuda:2,cuda:3,cuda:4,cuda:5,cuda:6,cuda:7",
+    "--kv-cache",
+    "off",
+    "--generation-batch-size",
+    "32",
+    "--run-id",
+    "mgsm-gemma3-4b-evaluate-resume-20260918T233540Z"
+  ],
+  "working_directory": "/teamspace/studios/this_studio/controller",
+  "git": {
+    "commit": "d4d6811e98d7a1acf7fc975c55eb005c5757642c",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "cs-01m2vczfdqabhmec2kkcpp9jgz-n8xk",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": "01m2ghmtb6yhfgyjh1s1pxt5g3.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-1067-gcp-x86_64-with-glibc2.39",
+    "python": "3.12.11",
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 3,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 4,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 5,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 6,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 7,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      }
+    ],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/mgsm/gemma3_4b_it"
+  },
+  "finished_at_utc": "2026-09-19T00:00:57.522888+00:00",
+  "elapsed_seconds": 1503.870912498
+}

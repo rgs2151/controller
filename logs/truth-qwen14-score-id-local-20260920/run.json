@@ -1,0 +1,98 @@
+{
+  "schema_version": 2,
+  "run_id": "truth-qwen14-score-id-local-20260920",
+  "status": "complete",
+  "started_at_utc": "2026-09-20T00:41:21.096309+00:00",
+  "benchmark": "truthfulness",
+  "model": "qwen14b",
+  "stage": "score",
+  "methods": [
+    "original",
+    "iti",
+    "actadd",
+    "mean_act",
+    "linear_act",
+    "pid_act",
+    "odesteer",
+    "spid",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "id"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "auto",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "scorers": [
+      "axbench_concept_relevance",
+      "axbench_fluency",
+      "axbench_instruction_relevance",
+      "axbench_overall",
+      "truthfulqa_informative",
+      "truthfulqa_true"
+    ],
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "selection_metric": "truthfulness_quality_composite",
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "/home/dev/controller/code/robust_steerability/benchmarks/truthfulness.py",
+    "score",
+    "--model",
+    "qwen14b",
+    "--methods",
+    "all",
+    "--datasets",
+    "id",
+    "--scorers",
+    "default",
+    "--devices",
+    "auto",
+    "--api-concurrency",
+    "500",
+    "--api-batch-size",
+    "20",
+    "--run-id",
+    "truth-qwen14-score-id-local-20260920"
+  ],
+  "working_directory": "/home/dev/controller/code",
+  "git": {
+    "commit": "1395c70c73b7020a726d9fb2db6da6e63860a875",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "dev",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": null,
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python": "3.11.16",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": "1",
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 5090",
+        "total_memory_bytes": 33667612672
+      }
+    ],
+    "packages": {
+      "accelerate": "1.14.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "local",
+    "benchmark_cache_root": "/home/dev/controller/code/benchmarks/truthfulness/cache/qwen14b",
+    "huggingface_model_cache": "default"
+  },
+  "finished_at_utc": "2026-09-20T00:56:05.574523+00:00",
+  "elapsed_seconds": 884.1367317020195
+}
