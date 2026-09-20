@@ -1,0 +1,70 @@
+{
+  "identity": {
+    "model_id": "Qwen/Qwen2.5-32B",
+    "model_revision": "1818d35814b8319459f4bd55ed1ac8709630f003",
+    "method": "h_infinity",
+    "distribution": "id",
+    "dataset": [
+      "truthful_qa",
+      "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
+    ],
+    "evaluation_key": "truthfulness",
+    "kv_cache": false,
+    "scorers": [
+      "truthfulqa_true",
+      "truthfulqa_informative",
+      "axbench_concept_relevance",
+      "axbench_instruction_relevance",
+      "axbench_fluency",
+      "axbench_overall"
+    ]
+  },
+  "evaluation_samples_per_repetition": 409,
+  "evaluation_repetitions": 1,
+  "created_at_utc": "2026-09-20T07:50:16.574617+00:00",
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "truth": 82.15158924205379,
+      "info": 92.42053789731052,
+      "concept_relevance": 1.4327628361858191,
+      "instruction_relevance": 1.4180929095354524,
+      "fluency": 1.156479217603912,
+      "axbench_overall": 1.228850855745721
+    }
+  ],
+  "metrics": {
+    "truth": {
+      "mean": 82.15158924205379,
+      "standard_error": NaN
+    },
+    "info": {
+      "mean": 92.42053789731052,
+      "standard_error": NaN
+    },
+    "concept_relevance": {
+      "mean": 1.4327628361858191,
+      "standard_error": NaN
+    },
+    "instruction_relevance": {
+      "mean": 1.4180929095354524,
+      "standard_error": NaN
+    },
+    "fluency": {
+      "mean": 1.156479217603912,
+      "standard_error": NaN
+    },
+    "axbench_overall": {
+      "mean": 1.228850855745721,
+      "standard_error": NaN
+    }
+  },
+  "invalid_scorer_outputs": {
+    "truthfulqa_true": [],
+    "truthfulqa_informative": [],
+    "axbench_concept_relevance": [],
+    "axbench_instruction_relevance": [],
+    "axbench_fluency": [],
+    "axbench_overall": []
+  }
+}
