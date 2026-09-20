@@ -2,7 +2,7 @@
 \begin{table*}[!htbp]
 \centering
 \definecolor{projectdarkred}{RGB}{128,0,0}
-\caption{Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. The matched 8K, 16K, and 32K conditions are reported separately. Higher is better for every column.}
+\caption{Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. Values are full-sample means $\pm$ ten-group matched-question jackknife standard errors; the matched 8K, 16K, and 32K conditions are reported separately. Higher is better for every column.}
 \label{tab:lciteeval-summary}
 \small
 \renewcommand{\arraystretch}{1.08}
@@ -11,23 +11,23 @@
 \begin{tabular}{rrlccc}
 Model & Context & Method & \cellcolor{projectdarkred!10}\shortstack{Answer\\recall (\%) $\uparrow$} & Citation F1 (\%) $\uparrow$ & \shortstack{Overall\\steering (0--2) $\uparrow$} \\
 \midrule
-\multirow{12}{*}{\rotatebox[origin=c]{90}{Qwen2.5-3B-Instruct}} & \multirow{4}{*}{8K} & Original & \cellcolor{projectdarkred!10}$66.2$ & $7.8$ & $0.00$ \\
+\multirow{12}{*}{\rotatebox[origin=c]{90}{Qwen2.5-3B-Instruct}} & \multirow{4}{*}{8K} & Original & \cellcolor{projectdarkred!10}$66.2\,\pm\,8.1$ & $7.8\,\pm\,1.6$ & $0.00\,\pm\,0.00$ \\
 \cmidrule(l){3-6}
- &  & S-PID & \cellcolor{projectdarkred!10}$\underline{72.1}$ & $\underline{7.2}$ & $0.00$ \\
- &  & A-LQR & \cellcolor{projectdarkred!10}$70.1$ & $5.6$ & $\underline{0.05}$ \\
- &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$66.4$ & $6.4$ & $0.00$ \\
+ &  & S-PID & \cellcolor{projectdarkred!10}$\underline{72.1\,\pm\,9.3}$ & $\underline{7.2\,\pm\,2.1}$ & $0.00\,\pm\,0.00$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$70.1\,\pm\,8.9$ & $5.6\,\pm\,2.0$ & $\underline{0.05\,\pm\,0.05}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$66.4\,\pm\,7.9$ & $6.4\,\pm\,2.0$ & $0.00\,\pm\,0.00$ \\
 \cmidrule(l){2-6}
- & \multirow{4}{*}{16K} & Original & \cellcolor{projectdarkred!10}$65.2$ & $5.8$ & $0.15$ \\
+ & \multirow{4}{*}{16K} & Original & \cellcolor{projectdarkred!10}$65.2\,\pm\,7.6$ & $5.8\,\pm\,2.2$ & $0.15\,\pm\,0.08$ \\
 \cmidrule(l){3-6}
- &  & S-PID & \cellcolor{projectdarkred!10}$61.9$ & $7.2$ & $0.00$ \\
- &  & A-LQR & \cellcolor{projectdarkred!10}$64.8$ & $3.0$ & $0.00$ \\
- &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{65.2}$ & $\mathbf{7.8}$ & $\mathbf{0.10}$ \\
+ &  & S-PID & \cellcolor{projectdarkred!10}$61.9\,\pm\,10.4$ & $7.2\,\pm\,3.2$ & $0.00\,\pm\,0.00$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$64.8\,\pm\,9.8$ & $3.0\,\pm\,1.5$ & $0.00\,\pm\,0.00$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{65.2\,\pm\,8.6}$ & $\mathbf{7.8\,\pm\,3.6}$ & $\mathbf{0.10\,\pm\,0.07}$ \\
 \cmidrule(l){2-6}
- & \multirow{4}{*}{32K} & Original & \cellcolor{projectdarkred!10}$54.0$ & $2.4$ & $0.00$ \\
+ & \multirow{4}{*}{32K} & Original & \cellcolor{projectdarkred!10}$54.0\,\pm\,8.4$ & $2.4\,\pm\,1.3$ & $0.00\,\pm\,0.00$ \\
 \cmidrule(l){3-6}
- &  & S-PID & \cellcolor{projectdarkred!10}$\underline{61.0}$ & $1.6$ & $\underline{0.00}$ \\
- &  & A-LQR & \cellcolor{projectdarkred!10}$56.2$ & $\underline{4.1}$ & $\underline{0.00}$ \\
- &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$52.6$ & $1.8$ & $\mathbf{0.00}$ \\
+ &  & S-PID & \cellcolor{projectdarkred!10}$\underline{61.0\,\pm\,9.1}$ & $1.6\,\pm\,1.1$ & $\underline{0.00\,\pm\,0.00}$ \\
+ &  & A-LQR & \cellcolor{projectdarkred!10}$56.2\,\pm\,6.7$ & $\underline{4.1\,\pm\,1.9}$ & $\underline{0.00\,\pm\,0.00}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$52.6\,\pm\,6.6$ & $1.8\,\pm\,1.2$ & $\mathbf{0.00\,\pm\,0.00}$ \\
 \bottomrule
 \end{tabular}%
 }

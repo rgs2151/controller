@@ -295,6 +295,7 @@ MGSM_METRICS = (
     Metric("axbench_instruction_relevance.score", "Instruction relevance (0–2) ↑", r"\shortstack{Instruction\\relevance (0--2) $\uparrow$}", 2, True),
     Metric("axbench_fluency.score", "Fluency (0–2) ↑", r"Fluency (0--2) $\uparrow$", 2, True),
 )
+MGSM_JACKKNIFE_PATH = UNIT / "mgsm/mgsm_jackknife.json"
 
 
 MGSM_DOCUMENTATION = r"""## Method
@@ -303,7 +304,7 @@ MGSM_DOCUMENTATION = r"""## Method
 - Direction: all 250 matched English–Spanish MGSM pairs define the Spanish steering direction. A-LQR and H∞ share the same 50-Jacobian dynamics estimate. H∞ additionally fits its disturbance geometry and robust controller without changing the shared dynamics matrix.
 - Prompting: each language uses its native eight-shot worked-example prompt. Generation is deterministic, limited to 256 new tokens, and runs with evaluated-model KV cache disabled.
 - Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, and `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`.
-- Evaluation size: Qwen uses all 250 problems per language and Llama uses the frozen 100-problem subset per language. Both models report Original, S-PID, A-LQR, and H∞ on identical problem identities within each model. The summary macro-averages the five language means independently within each model.
+- Evaluation size: both models use the same frozen 100-problem subset per language. Both report Original, S-PID, A-LQR, and H∞ on identical problem identities within each model. The summary macro-averages the five language means independently within each model.
 
 ## Measures
 
@@ -314,7 +315,7 @@ MGSM_DOCUMENTATION = r"""## Method
 | Instruction relevance (0–2) ↑ | Whether the response addresses and attempts the arithmetic task. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Language quality of the generated response. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
-These are descriptive means on one fixed evaluation set per language, not repeated trials; therefore the table does not report standard errors. Qwen uses 250 problems per language and Llama uses the frozen 100-problem subset; every method within a model uses identical problem identities.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains 10 matched MGSM question identities; deleting a group removes the same questions from all five languages. The uncertainty measures question-sampling variability, not decoding-run or judge variability. Every method within a model uses identical problem identities. The per-response records required for the Llama H∞ jackknife were not retained, so that block remains without an uncertainty term rather than receiving an estimated or fabricated one.
 
 ## Hyperparameters
 
@@ -347,6 +348,7 @@ LCITE_SUMMARY_METRICS = (
     Metric("lcite_citation_nli.citation_f1", "Citation F1 (%) ↑", r"Citation F1 (\%) $\uparrow$", 1, True),
     Metric("axbench_overall.score", "Overall steering (0–2) ↑", r"\shortstack{Overall\\steering (0--2) $\uparrow$}", 2, True),
 )
+LCITE_JACKKNIFE_PATH = UNIT / "lciteeval/lciteeval_jackknife.json"
 
 
 LCITE_DOCUMENTATION = r"""## Method
@@ -369,7 +371,7 @@ LCITE_DOCUMENTATION = r"""## Method
 | Instruction relevance (0–2) ↑ | Whether the response addresses the HotpotQA question and citation instruction. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Readability and language quality of the generated answer. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
-These are descriptive means on one deterministic generation for each of 40 matched questions per context length, not repeated trials; therefore the table does not report standard errors.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains four matched HotpotQA question identities; the same partition is used at 8K, 16K, and 32K. The uncertainty measures question-sampling variability, not decoding-run or judge variability.
 
 ## Hyperparameters
 
@@ -400,7 +402,7 @@ LCITE_SUMMARY_DOCUMENTATION = r"""## Method
 | Citation F1 (%) ↑ | Balance between supported claims and necessary citations. | Pinned `tasksource/deberta-base-long-nli` at revision `04dcf11f844b07bc57015169fca2b7d6df8299d5`, applied only to each claim and its cited passages. |
 | Overall steering (0–2) ↑ | Joint target-concept presence, instruction relevance, and fluency. | Per-response harmonic mean of the three AXBench 0–2 scores; zero if any component is zero, then averaged over the 40 responses. |
 
-These are descriptive means on one deterministic generation for each of 40 matched questions per context length, not repeated trials; therefore the table does not report standard errors.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains four matched HotpotQA question identities; the same partition is used at 8K, 16K, and 32K. The uncertainty measures question-sampling variability, not decoding-run or judge variability.
 
 ## Hyperparameters
 
@@ -772,7 +774,26 @@ def _mgsm_value(result: dict, metric: Metric) -> float:
     return 100.0 * value if metric.key == "mgsm_exact_match.score" else value
 
 
+def _mgsm_jackknife() -> dict:
+    return json.loads(MGSM_JACKKNIFE_PATH.read_text())
+
+
+def _mgsm_standard_errors(
+    report: dict, model_key: str, language_key: str, method_key: str
+) -> tuple[float | None, ...]:
+    method = report["models"][model_key]["languages"][language_key][method_key]
+    return tuple(
+        (
+            float(method[metric.key.removesuffix(".score")]["jackknife_standard_error"])
+            if metric.key.removesuffix(".score") in method
+            else None
+        )
+        for metric in MGSM_METRICS
+    )
+
+
 def _mgsm_rows() -> list[dict]:
+    jackknife = _mgsm_jackknife()
     rows = []
     method_specs = {method[0]: method for method in MGSM_METHODS}
     for model_key, model_label, model_methods in MGSM_MODELS:
@@ -791,12 +812,19 @@ def _mgsm_rows() -> list[dict]:
                         "values": tuple(
                             _mgsm_value(result, metric) for metric in MGSM_METRICS
                         ),
+                        "standard_errors": _mgsm_standard_errors(
+                            jackknife,
+                            model_key,
+                            language_key,
+                            method_key,
+                        ),
                     }
                 )
     return rows
 
 
 def _mgsm_overall_rows(rows: list[dict]) -> list[dict]:
+    jackknife = _mgsm_jackknife()
     overall = []
     method_specs = {method[0]: method for method in MGSM_METHODS}
     for model_key, model_label, model_methods in MGSM_MODELS:
@@ -819,13 +847,31 @@ def _mgsm_overall_rows(rows: list[dict]) -> list[dict]:
                         / len(method_rows)
                         for index in range(len(MGSM_METRICS))
                     ),
+                    "standard_errors": tuple(
+                        (
+                            float(
+                                jackknife["models"][model_key]["summary"][method_key][
+                                    metric.key.removesuffix(".score")
+                                ]["jackknife_standard_error"]
+                            )
+                            if metric.key.removesuffix(".score")
+                            in jackknife["models"][model_key]["summary"][method_key]
+                            else None
+                        )
+                        for metric in MGSM_METRICS
+                    ),
                 }
             )
     return overall
 
 
-def _mgsm_markdown_value(value: float, metric: Metric) -> str:
-    return f"{value:.{metric.decimals}f}"
+def _mgsm_markdown_value(
+    value: float, standard_error: float | None, metric: Metric
+) -> str:
+    rendered = f"{value:.{metric.decimals}f}"
+    if standard_error is not None:
+        rendered += f" ± {standard_error:.{metric.decimals}f}"
+    return rendered
 
 
 def render_mgsm_markdown(rows: list[dict], *, full: bool) -> str:
@@ -839,8 +885,10 @@ def render_mgsm_markdown(rows: list[dict], *, full: bool) -> str:
         display_rows = _mgsm_overall_rows(rows)
     for row in display_rows:
         values = " | ".join(
-            _mgsm_markdown_value(value, metric)
-            for value, metric in zip(row["values"], MGSM_METRICS, strict=True)
+            _mgsm_markdown_value(value, standard_error, metric)
+            for value, standard_error, metric in zip(
+                row["values"], row["standard_errors"], MGSM_METRICS, strict=True
+            )
         )
         prefix = f"| {row['model']} | {row['language']}" if full else f"| {row['model']}"
         lines.append(f"{prefix} | {row['method_markdown']} | {values} |")
@@ -850,6 +898,7 @@ def render_mgsm_markdown(rows: list[dict], *, full: bool) -> str:
 
 def _mgsm_tex_value(
     value: float,
+    standard_error: float | None,
     metric: Metric,
     *,
     emphasis: str | None,
@@ -857,6 +906,8 @@ def _mgsm_tex_value(
 ) -> str:
     background = r"\cellcolor{projectdarkred!10}" if primary else ""
     number = f"{value:.{metric.decimals}f}"
+    if standard_error is not None:
+        number += f"\\,\\pm\\,{standard_error:.{metric.decimals}f}"
     if emphasis == "bold":
         number = f"\\mathbf{{{number}}}"
     elif emphasis == "underline":
@@ -875,9 +926,9 @@ def _mgsm_best_values(rows: list[dict]) -> tuple[float, ...]:
 def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
     column_count = len(MGSM_METRICS)
     caption = (
-        "Full MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct. Qwen uses 250 problems per language; Llama uses the frozen 100-problem subset."
+        "Full MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct on 100 matched questions per language. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors where retained per-response records permit computation."
         if full
-        else "Summary MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct, macro-averaged equally across five languages within each model."
+        else "Summary MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct, macro-averaged equally across five languages. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors where retained per-response records permit computation."
     )
     label = "tab:mgsm-full" if full else "tab:mgsm-overall"
     lines = [
@@ -923,6 +974,7 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
                     values = " & ".join(
                         _mgsm_tex_value(
                             value,
+                            row["standard_errors"][index],
                             metric,
                             emphasis=(
                                 "bold"
@@ -963,6 +1015,7 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
                 values = " & ".join(
                     _mgsm_tex_value(
                         value,
+                        row["standard_errors"][index],
                         metric,
                         emphasis=(
                             "bold"
@@ -1016,19 +1069,33 @@ def _lcite_value(result: dict, metric: Metric) -> float:
     return value
 
 
+def _lcite_jackknife() -> dict:
+    return json.loads(LCITE_JACKKNIFE_PATH.read_text())
+
+
 def _lcite_rows(metrics: tuple[Metric, ...]) -> list[dict]:
+    jackknife = _lcite_jackknife()
     rows = []
     for condition_key, condition_label in LCITE_CONDITIONS:
         for method_key, markdown_label, tex_label in LCITE_METHODS:
             result = _load_lcite_result(condition_key, method_key)
             rows.append(
                 {
+                    "condition_key": condition_key,
                     "condition": condition_label,
                     "method_key": method_key,
                     "method_markdown": markdown_label,
                     "method_tex": tex_label,
                     "values": tuple(
                         _lcite_value(result, metric) for metric in metrics
+                    ),
+                    "standard_errors": tuple(
+                        float(
+                            jackknife["conditions"][condition_key][method_key][
+                                metric.key
+                            ]["jackknife_standard_error"]
+                        )
+                        for metric in metrics
                     ),
                 }
             )
@@ -1043,8 +1110,10 @@ def render_lcite_markdown(rows: list[dict], *, full: bool) -> str:
     lines = [f"# {title}", "", f"| {leading_headers} | {headers} |", "|---|---|---|" + "---:|" * len(metrics)]
     for row in rows:
         values = " | ".join(
-            f"{value:.{metric.decimals}f}"
-            for value, metric in zip(row["values"], metrics, strict=True)
+            f"{value:.{metric.decimals}f} ± {standard_error:.{metric.decimals}f}"
+            for value, standard_error, metric in zip(
+                row["values"], row["standard_errors"], metrics, strict=True
+            )
         )
         leading_values = (
             f"{row['condition']} | {LCITE_MODEL} | {row['method_markdown']}"
@@ -1069,11 +1138,14 @@ def _lcite_tex_value(
     value: float,
     metric: Metric,
     *,
+    standard_error: float | None = None,
     emphasis: str | None,
     primary: bool,
 ) -> str:
     background = r"\cellcolor{projectdarkred!10}" if primary else ""
     number = f"{value:.{metric.decimals}f}"
+    if standard_error is not None:
+        number += f"\\,\\pm\\,{standard_error:.{metric.decimals}f}"
     if emphasis == "bold":
         number = f"\\mathbf{{{number}}}"
     elif emphasis == "underline":
@@ -1085,9 +1157,9 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
     metrics = LCITE_METRICS if full else LCITE_SUMMARY_METRICS
     column_count = len(metrics)
     caption = (
-        "Full L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. The 8K, 16K, and 32K conditions use the same 40 question identities."
+        "Full L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors. The 8K, 16K, and 32K conditions use the same 40 question identities."
         if full
-        else "Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. The matched 8K, 16K, and 32K conditions are reported separately."
+        else "Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors; the matched 8K, 16K, and 32K conditions are reported separately."
     )
     label = "tab:lciteeval-full" if full else "tab:lciteeval-summary"
     lines = [
@@ -1131,6 +1203,7 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
                 _lcite_tex_value(
                     value,
                     metric,
+                    standard_error=row["standard_errors"][index],
                     emphasis=(
                         "bold"
                         if row["method_key"] == "h_infinity" and value == best_values[index]
