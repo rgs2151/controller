@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import random
+import json
+from pathlib import Path
 
 from datasets import load_dataset
 
@@ -26,6 +28,10 @@ LANGUAGE_NAMES = {
     "te": "Telugu",
     "th": "Thai",
 }
+MULTILINGUAL_CALIBRATION_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "data/mgsm/h_infinity_multilingual_calibration.json"
+)
 ANSWER_LABELS = {
     "en": "Step-by-Step Answer:",
     "es": "Respuesta paso a paso:",
@@ -184,3 +190,13 @@ def gsm8k_calibration_splits(seed: int = 42) -> dict[str, list[dict]]:
         "disturbance": records("disturbance", disturbance_indices),
         "tuning": records("tuning", tuning_indices),
     }
+
+
+def multilingual_calibration_splits() -> dict[str, list[dict]]:
+    """Load the frozen four-language H-infinity calibration prompts."""
+
+    payload = json.loads(MULTILINGUAL_CALIBRATION_PATH.read_text())
+    splits = payload["splits"]
+    if len(splits["disturbance"]) != 200 or len(splits["tuning"]) != 50:
+        raise ValueError("Frozen multilingual MGSM calibration counts changed")
+    return splits
