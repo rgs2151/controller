@@ -25,23 +25,23 @@
 | Llama-3.2-3B | Chinese | Original | 43.0 | 0.00 | 1.79 | 1.59 |
 | Llama-3.2-3B | Chinese | S-PID | 9.0 | 1.96 | 1.23 | 0.87 |
 | Llama-3.2-3B | Chinese | A-LQR | 26.0 | 1.80 | 1.49 | 1.21 |
-| Llama-3.2-3B | Chinese | H∞ (ours) | 37.0 | 0.00 | 1.79 | 1.60 |
+| Llama-3.2-3B | Chinese | H∞ (ours) | 34.0 | 0.92 | 1.50 | 1.17 |
 | Llama-3.2-3B | French | Original | 49.0 | 0.00 | 1.83 | 1.71 |
 | Llama-3.2-3B | French | S-PID | 14.0 | 1.98 | 1.21 | 0.67 |
 | Llama-3.2-3B | French | A-LQR | 43.0 | 1.24 | 1.76 | 1.09 |
-| Llama-3.2-3B | French | H∞ (ours) | 38.0 | 0.00 | 1.75 | 1.59 |
+| Llama-3.2-3B | French | H∞ (ours) | 42.0 | 0.80 | 1.77 | 1.10 |
 | Llama-3.2-3B | Japanese | Original | 27.0 | 0.00 | 1.56 | 1.34 |
 | Llama-3.2-3B | Japanese | S-PID | 10.0 | 1.96 | 0.67 | 0.63 |
 | Llama-3.2-3B | Japanese | A-LQR | 26.0 | 1.94 | 1.68 | 1.31 |
-| Llama-3.2-3B | Japanese | H∞ (ours) | 25.0 | 0.02 | 1.53 | 1.35 |
+| Llama-3.2-3B | Japanese | H∞ (ours) | 24.0 | 0.96 | 1.56 | 1.28 |
 | Llama-3.2-3B | Swahili | Original | 40.0 | 0.00 | 1.79 | 1.49 |
 | Llama-3.2-3B | Swahili | S-PID | 2.0 | 1.90 | 0.47 | 0.38 |
 | Llama-3.2-3B | Swahili | A-LQR | 22.0 | 0.68 | 1.47 | 0.98 |
-| Llama-3.2-3B | Swahili | H∞ (ours) | 31.0 | 0.02 | 1.70 | 1.39 |
+| Llama-3.2-3B | Swahili | H∞ (ours) | 19.0 | 0.52 | 1.38 | 0.95 |
 | Llama-3.2-3B | Telugu | Original | 6.0 | 0.00 | 1.43 | 1.07 |
 | Llama-3.2-3B | Telugu | S-PID | 6.0 | 1.90 | 0.79 | 0.46 |
 | Llama-3.2-3B | Telugu | A-LQR | 21.0 | 1.86 | 1.44 | 1.25 |
-| Llama-3.2-3B | Telugu | H∞ (ours) | 6.0 | 0.00 | 1.42 | 1.11 |
+| Llama-3.2-3B | Telugu | H∞ (ours) | 10.0 | 0.96 | 1.08 | 0.92 |
 
 ## Method
 

@@ -7,11 +7,11 @@
   "method": "h_infinity",
   "sample_count": 100,
   "metrics": {
-    "mgsm_exact_match.score": 0.38,
-    "mgsm_exact_match.valid_rate": 1.0,
-    "axbench_rule_spanish.score": 0.0,
-    "axbench_instruction_relevance.score": 1.75,
-    "axbench_fluency.score": 1.59,
-    "mgsm_axbench_overall.score": 0.0
+    "mgsm_exact_match.score": 0.42,
+    "mgsm_exact_match.valid_rate": 0.99,
+    "axbench_rule_spanish.score": 0.8,
+    "axbench_instruction_relevance.score": 1.77,
+    "axbench_fluency.score": 1.1,
+    "mgsm_axbench_overall.score": 0.564
   }
 }
