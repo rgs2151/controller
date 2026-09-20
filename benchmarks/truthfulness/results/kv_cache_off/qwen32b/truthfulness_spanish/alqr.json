@@ -36,27 +36,27 @@
   "metrics": {
     "truth": {
       "mean": 84.84107579462102,
-      "standard_error": NaN
+      "standard_error": 2.12712626175871
     },
     "info": {
       "mean": 92.42053789731052,
-      "standard_error": NaN
+      "standard_error": 1.1029369312815864
     },
     "concept_relevance": {
       "mean": 1.6894865525672371,
-      "standard_error": NaN
+      "standard_error": null
     },
     "instruction_relevance": {
       "mean": 1.6039119804400979,
-      "standard_error": NaN
+      "standard_error": 0.04197934673903313
     },
     "fluency": {
       "mean": 1.3887530562347188,
-      "standard_error": NaN
+      "standard_error": 0.020970473165820347
     },
     "axbench_overall": {
       "mean": 1.4819070904645477,
-      "standard_error": NaN
+      "standard_error": null
     }
   },
   "invalid_scorer_outputs": {
@@ -66,5 +66,13 @@
     "axbench_instruction_relevance": [],
     "axbench_fluency": [],
     "axbench_overall": []
+  },
+  "uncertainty": {
+    "method": "five-group delete-one-group jackknife",
+    "group_count": 5,
+    "partition_seed": 20260920,
+    "partition_sha256": "8f7a8ff7db4e5ab4a136733405cadcc41d2533e471d8c3b1662166868010cc92",
+    "stratification": "TruthfulQA category-balanced deterministic partition",
+    "captures": "Question-sampling variability only; not decoding-run variability."
   }
 }

@@ -2,7 +2,7 @@
 \begin{table*}[!htbp]
 \centering
 \definecolor{projectdarkred}{RGB}{128,0,0}
-\caption{Spanish-input, English-output TruthfulQA transfer results using English-calibrated controllers. Repeated rows report mean $\pm$ standard error; compact single-pass rows report means without an error term.}
+\caption{Spanish-input, English-output TruthfulQA transfer results using English-calibrated controllers. Full-protocol rows report mean $\pm$ standard error across five decoding repetitions; Qwen-2.5-32B reports the full 409-question mean $\pm$ five-group delete-one-group question-jackknife standard error.}
 \label{tab:truthfulqa-spanish}
 \small
 \renewcommand{\arraystretch}{1.08}
@@ -48,11 +48,11 @@
  & A-LQR & \cellcolor{projectdarkred!10}$85.24\,\pm\,0.50$ & $94.32\,\pm\,0.27$ & $1.64\,\pm\,0.01$ & $1.41\,\pm\,0.01$ \\
  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{88.74\,\pm\,0.28}$ & $93.05\,\pm\,0.48$ & $1.53\,\pm\,0.01$ & $1.29\,\pm\,0.01$ \\
 \midrule
-\multirow{4}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-32B}} & Original & \cellcolor{projectdarkred!10}$72.86$ & $94.13$ & $1.68$ & $1.42$ \\
+\multirow{4}{*}{\rotatebox[origin=c]{90}{Qwen-2.5-32B}} & Original & \cellcolor{projectdarkred!10}$72.86\,\pm\,3.53$ & $94.13\,\pm\,0.45$ & $1.68\,\pm\,0.04$ & $1.42\,\pm\,0.02$ \\
 \cmidrule(l){2-6}
- & S-PID & \cellcolor{projectdarkred!10}$\underline{86.06}$ & $89.73$ & $1.57$ & $1.32$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$84.84$ & $\underline{92.42}$ & $\underline{1.60}$ & $\underline{1.39}$ \\
- & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$84.84$ & $89.24$ & $1.45$ & $1.30$ \\
+ & S-PID & \cellcolor{projectdarkred!10}$\underline{86.06\,\pm\,1.20}$ & $89.73\,\pm\,2.05$ & $1.57\,\pm\,0.05$ & $1.32\,\pm\,0.03$ \\
+ & A-LQR & \cellcolor{projectdarkred!10}$84.84\,\pm\,2.13$ & $\underline{92.42\,\pm\,1.10}$ & $\underline{1.60\,\pm\,0.04}$ & $\underline{1.39\,\pm\,0.02}$ \\
+ & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$84.84\,\pm\,0.85$ & $89.24\,\pm\,0.48$ & $1.45\,\pm\,0.04$ & $1.30\,\pm\,0.03$ \\
 \bottomrule
 \end{tabular}%
 }
