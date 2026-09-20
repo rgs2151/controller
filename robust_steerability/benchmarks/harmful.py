@@ -114,6 +114,8 @@ def evaluation_stage(
     calibration_id: str,
     generation_batch_size: int | None,
     use_cache: bool,
+    evaluation_behaviors: int | None,
+    max_new_tokens: int,
 ) -> None:
     artifacts.prepare(model_key)
     native = [key for key in datasets if COMPOSITION.dataset(key).runtime == "harmful"]
@@ -151,6 +153,11 @@ def evaluation_stage(
                     if generation_batch_size is not None
                     else []
                 ),
+                *(
+                    ["--evaluation-behaviors", str(evaluation_behaviors)]
+                    if evaluation_behaviors is not None else []
+                ),
+                "--max-new-tokens", str(max_new_tokens),
             ]
             run_data_shards(
                 f"generate-{condition}-{method}",
@@ -164,6 +171,7 @@ def evaluation_stage(
                 method,
                 len(devices),
                 use_cache=use_cache,
+                behavior_count=evaluation_behaviors,
             )
     for method in ordered_methods:
         for dataset_key in capability:
@@ -283,6 +291,8 @@ def main() -> None:
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument("--generation-batch-size", type=int)
+    parser.add_argument("--evaluation-behaviors", type=int)
+    parser.add_argument("--max-new-tokens", type=int, default=runtime.MAX_NEW_TOKENS)
     parser.add_argument("--classifier-batch-size", type=int, default=8)
     parser.add_argument("--h-infinity-q-over-r", type=float)
     parser.add_argument("--h-infinity-q-final-over-r", type=float)
@@ -335,6 +345,8 @@ def main() -> None:
         calibration_id=arguments.calibration_id,
         parameters={
             "generation_batch_size": arguments.generation_batch_size,
+            "evaluation_behaviors": arguments.evaluation_behaviors,
+            "max_new_tokens": arguments.max_new_tokens,
             "classifier_batch_size": arguments.classifier_batch_size,
             "scorers": list(scorers) if scorers is not None else "default",
             "api_concurrency": arguments.api_concurrency,
@@ -367,6 +379,8 @@ def main() -> None:
                 arguments.calibration_id,
                 arguments.generation_batch_size,
                 use_cache,
+                arguments.evaluation_behaviors,
+                arguments.max_new_tokens,
             )
         else:
             score_stage(
