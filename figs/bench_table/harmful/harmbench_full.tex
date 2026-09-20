@@ -2,7 +2,7 @@
 \begin{table*}[!htbp]
 \centering
 \definecolor{projectdarkred}{RGB}{128,0,0}
-\caption{Full HarmBench robust-refusal results for each completed model scale. Direct requests and each of the five frozen human-jailbreak templates contain the same 240 behavior identities.}
+\caption{Full HarmBench robust-refusal results for each completed model scale. Direct requests and the five frozen human-jailbreak templates use matched behavior identities within each model: 240 for Llama-3.2-1B/3B and 120 for the compact Llama-3.1-8B run.}
 \label{tab:harmbench-full}
 \small
 \renewcommand{\arraystretch}{1.08}
@@ -70,6 +70,52 @@ Model & Template & Method & \cellcolor{projectdarkred!10}ASR (\%) $\downarrow$ &
 \cmidrule(l){3-8}
  &  & A-LQR & \cellcolor{projectdarkred!10}$11.25$ & $\underline{1.97}$ & $\underline{0.65}$ & $1.47$ & $\underline{0.60}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{2.50}$ & $1.96$ & $0.58$ & $\mathbf{1.60}$ & $0.58$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+\clearpage
+\begin{table*}[!htbp]
+\ContinuedFloat
+\centering
+\definecolor{projectdarkred}{RGB}{128,0,0}
+\caption{Full HarmBench robust-refusal results (continued).}
+\small
+\renewcommand{\arraystretch}{1.08}
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{rrlccccc}
+Model & Template & Method & \cellcolor{projectdarkred!10}ASR (\%) $\downarrow$ & \shortstack{Safe-concept\\relevance (0--2) $\uparrow$} & \shortstack{Instruction\\relevance (0--2) $\uparrow$} & Fluency (0--2) $\uparrow$ & \shortstack{Overall\\steering (0--2) $\uparrow$} \\
+\midrule
+\multirow{18}{*}{\rotatebox[origin=c]{90}{Llama-3.1-8B-Instruct}} & \multirow{3}{*}{Direct} & Original & \cellcolor{projectdarkred!10}$15.83$ & $1.83$ & $1.06$ & $1.73$ & $0.98$ \\
+\cmidrule(l){3-8}
+ &  & A-LQR & \cellcolor{projectdarkred!10}$15.83$ & $1.76$ & $\underline{1.32}$ & $\underline{1.77}$ & $\underline{1.24}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{3.33}$ & $\mathbf{1.94}$ & $0.99$ & $1.76$ & $1.00$ \\
+\cmidrule(l){2-8}
+ & \multirow{3}{*}{John persona} & Original & \cellcolor{projectdarkred!10}$23.33$ & $1.80$ & $0.52$ & $1.39$ & $0.37$ \\
+\cmidrule(l){3-8}
+ &  & A-LQR & \cellcolor{projectdarkred!10}$15.00$ & $1.87$ & $\underline{0.68}$ & $\underline{1.44}$ & $\underline{0.60}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{1.67}$ & $\mathbf{1.98}$ & $0.31$ & $0.87$ & $0.31$ \\
+\cmidrule(l){2-8}
+ & \multirow{3}{*}{DNE nonresponse} & Original & \cellcolor{projectdarkred!10}$14.17$ & $1.83$ & $0.42$ & $1.43$ & $0.34$ \\
+\cmidrule(l){3-8}
+ &  & A-LQR & \cellcolor{projectdarkred!10}$11.67$ & $1.88$ & $\underline{0.58}$ & $\underline{1.46}$ & $\underline{0.54}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{0.00}$ & $\mathbf{1.98}$ & $0.33$ & $0.90$ & $0.32$ \\
+\cmidrule(l){2-8}
+ & \multirow{3}{*}{Jailbreak Bot} & Original & \cellcolor{projectdarkred!10}$9.17$ & $1.78$ & $0.44$ & $1.39$ & $0.32$ \\
+\cmidrule(l){3-8}
+ &  & A-LQR & \cellcolor{projectdarkred!10}$7.50$ & $1.87$ & $\underline{0.58}$ & $\underline{1.48}$ & $\underline{0.55}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{0.00}$ & $\mathbf{1.95}$ & $0.31$ & $0.88$ & $0.28$ \\
+\cmidrule(l){2-8}
+ & \multirow{3}{*}{YOJA/Nona roleplay} & Original & \cellcolor{projectdarkred!10}$15.00$ & $1.77$ & $0.45$ & $1.49$ & $0.33$ \\
+\cmidrule(l){3-8}
+ &  & A-LQR & \cellcolor{projectdarkred!10}$9.17$ & $1.86$ & $\underline{0.67}$ & $\underline{1.46}$ & $\underline{0.63}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{0.00}$ & $\mathbf{1.95}$ & $0.29$ & $0.88$ & $0.28$ \\
+\cmidrule(l){2-8}
+ & \multirow{3}{*}{APM programmer} & Original & \cellcolor{projectdarkred!10}$11.67$ & $1.77$ & $0.42$ & $1.38$ & $0.34$ \\
+\cmidrule(l){3-8}
+ &  & A-LQR & \cellcolor{projectdarkred!10}$10.83$ & $1.85$ & $\underline{0.62}$ & $\underline{1.41}$ & $\underline{0.55}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{0.83}$ & $\mathbf{1.98}$ & $0.30$ & $0.88$ & $0.28$ \\
 \bottomrule
 \end{tabular}%
 }
