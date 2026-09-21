@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import csv
 import math
+import re
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,6 +24,8 @@ mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
+from matplotlib.path import Path as MplPath
+from matplotlib.patches import PathPatch
 from matplotlib.patches import Circle, Polygon
 
 
@@ -30,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "cache" / "truthfulqa_figure_data.csv"
 PDF_DIR = ROOT / "plots" / "pdf"
 PNG_DIR = ROOT / "plots" / "figures"
+QWEN_LOGO = ROOT / "assets" / "logos" / "qwen-icon.svg"
 
 METHOD_ORDER = [
     "H-infinity",
@@ -323,6 +327,64 @@ def draw_vector_model_mark(
             transform=ax.transAxes,
             clip_on=False,
         )
+    elif model.startswith("Qwen"):
+        svg_text = QWEN_LOGO.read_text(encoding="utf-8")
+        path_strings = re.findall(r'<path\s+d="([^"]+)"', svg_text)
+        token_pattern = re.compile(r"[MLCZ]|-?\d+(?:\.\d+)?")
+        for path_string in path_strings:
+            tokens = token_pattern.findall(path_string)
+            vertices: list[tuple[float, float]] = []
+            codes: list[int] = []
+            index = 0
+            start = (0.0, 0.0)
+            while index < len(tokens):
+                command = tokens[index]
+                index += 1
+                if command == "M":
+                    raw = (float(tokens[index]), float(tokens[index + 1]))
+                    index += 2
+                    point = (
+                        x + (raw[0] / 233.0 - 0.5) * 0.074,
+                        y + (0.5 - raw[1] / 236.0) * 0.074,
+                    )
+                    start = point
+                    vertices.append(point)
+                    codes.append(MplPath.MOVETO)
+                elif command == "L":
+                    raw = (float(tokens[index]), float(tokens[index + 1]))
+                    index += 2
+                    vertices.append(
+                        (
+                            x + (raw[0] / 233.0 - 0.5) * 0.074,
+                            y + (0.5 - raw[1] / 236.0) * 0.074,
+                        )
+                    )
+                    codes.append(MplPath.LINETO)
+                elif command == "C":
+                    for _ in range(3):
+                        raw = (float(tokens[index]), float(tokens[index + 1]))
+                        index += 2
+                        vertices.append(
+                            (
+                                x + (raw[0] / 233.0 - 0.5) * 0.074,
+                                y + (0.5 - raw[1] / 236.0) * 0.074,
+                            )
+                        )
+                        codes.append(MplPath.CURVE4)
+                elif command == "Z":
+                    vertices.append(start)
+                    codes.append(MplPath.CLOSEPOLY)
+                else:
+                    raise ValueError(f"Unsupported Qwen SVG path command: {command}")
+            ax.add_patch(
+                PathPatch(
+                    MplPath(vertices, codes),
+                    facecolor=color,
+                    edgecolor="none",
+                    transform=ax.transAxes,
+                    clip_on=False,
+                )
+            )
     else:
         ax.add_patch(
             Circle(
