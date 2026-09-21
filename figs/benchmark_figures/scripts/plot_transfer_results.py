@@ -487,6 +487,7 @@ def create_lcite_figure(
     rows: list[dict[str, object]],
     context_subset: tuple[int, ...] | None = None,
 ) -> plt.Figure:
+    compact_context_layout = context_subset is not None
     if context_subset is not None:
         allowed_contexts = set(context_subset)
         rows = [
@@ -510,7 +511,10 @@ def create_lcite_figure(
     fig, axes = plt.subplots(
         nrows,
         3,
-        figsize=(12.4, 4.15 + 2.95 * (nrows - 1)),
+        figsize=(
+            12.4,
+            (4.75 if compact_context_layout else 4.15) + 2.95 * (nrows - 1),
+        ),
         squeeze=False,
         sharex=True,
     )
@@ -532,6 +536,8 @@ def create_lcite_figure(
             style_axis(ax)
             metric_values = [float(row[metric]) for row in model_rows]
             y_limits = context_metric_limits(metric, metric_values)
+            if compact_context_layout and metric == "answer_recall":
+                y_limits = (y_limits[0], y_limits[1] + 1.2)
             ax.set_ylim(*y_limits)
             ax.set_xscale("log", base=2)
             ax.set_xlim(
@@ -635,17 +641,24 @@ def create_lcite_figure(
                     else f"{METHOD_LABEL[winner_method]} {descriptor}"
                 )
                 is_short_context = context == min(available_contexts)
-                place_below = is_short_context and metric == "answer_recall"
+                if compact_context_layout:
+                    if is_short_context and metric == "citation_f1":
+                        annotation_offset = (48, -42)
+                        annotation_va = "top"
+                    else:
+                        annotation_offset = (5, 9)
+                        annotation_va = "bottom"
+                else:
+                    place_below = is_short_context and metric == "answer_recall"
+                    annotation_offset = (4, -13 if place_below else 9)
+                    annotation_va = "top" if place_below else "bottom"
                 ax.annotate(
                     label,
                     (context, winner_value),
-                    xytext=(
-                        4,
-                        -13 if place_below else 9,
-                    ),
+                    xytext=annotation_offset,
                     textcoords="offset points",
                     ha="left",
-                    va="top" if place_below else "bottom",
+                    va=annotation_va,
                     fontsize=9.1,
                     fontweight="bold" if winner_method == "H-infinity" else "normal",
                     color=(
@@ -674,7 +687,7 @@ def create_lcite_figure(
     fig.legend(
         handles=line_handles,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.018),
+        bbox_to_anchor=(0.5, 0.022 if compact_context_layout else 0.018),
         ncol=4,
         frameon=False,
         fontsize=15.5,
@@ -719,7 +732,7 @@ def create_lcite_figure(
         left=0.095,
         right=0.985,
         top=0.82,
-        bottom=0.225,
+        bottom=0.275 if compact_context_layout else 0.225,
         wspace=0.27,
         hspace=0.30,
     )
