@@ -7,11 +7,16 @@ import torch
 
 from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.modeling.jacobians import capture_layer_inputs, layer_last_token_jacobian
+from robust_steerability.modeling.tokenization import (
+    RAW_TEXT_TOKENIZATION,
+    tokenize_prompts,
+)
 
 
 def average_prompt_jacobians(model, tokenizer, records, *, cache_dir: Path,
                              max_length: int, vjp_chunk_size: int,
-                             model_revision: str) -> torch.Tensor:
+                             model_revision: str,
+                             prompt_tokenization: str = RAW_TEXT_TOKENIZATION) -> torch.Tensor:
     """Average last-token block derivatives with prefix states held fixed.
 
     A resumable float64 sum and count are checkpointed per worker. Individual
@@ -36,13 +41,32 @@ def average_prompt_jacobians(model, tokenizer, records, *, cache_dir: Path,
             for record in records
         ],
     }
+    if prompt_tokenization != RAW_TEXT_TOKENIZATION:
+        identity["prompt_tokenization"] = prompt_tokenization
     checkpoint_path = cache_dir / "partial.pt"
     metadata_path = cache_dir / "partial.json"
     total = None
     processed = 0
     if checkpoint_path.exists():
+        if not metadata_path.exists():
+            raise ValueError(f"Jacobian checkpoint is missing its identity: {cache_dir}")
+        saved_identity = json.loads(metadata_path.read_text()).get("identity", {})
+        saved_mode = saved_identity.pop(
+            "prompt_tokenization", RAW_TEXT_TOKENIZATION
+        )
+        expected_identity = dict(identity)
+        expected_mode = expected_identity.pop(
+            "prompt_tokenization", RAW_TEXT_TOKENIZATION
+        )
+        if saved_identity != expected_identity or saved_mode != expected_mode:
+            raise ValueError(
+                "Jacobian checkpoint has a different immutable prompt/tokenization identity: "
+                f"{cache_dir}"
+            )
         payload = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
         processed = int(payload["count"])
+        if processed < 0 or processed > len(records):
+            raise ValueError(f"Invalid Jacobian checkpoint count in {cache_dir}")
         total = payload["sum"]
 
     def checkpoint() -> None:
@@ -58,8 +82,14 @@ def average_prompt_jacobians(model, tokenizer, records, *, cache_dir: Path,
         temporary_metadata.replace(metadata_path)
 
     for index, record in enumerate(records[processed:], start=processed):
-        encoded = tokenizer(record["text"], return_tensors="pt", truncation=True,
-                            max_length=max_length).to(device)
+        encoded = tokenize_prompts(
+            tokenizer,
+            record["text"],
+            prompt_tokenization=prompt_tokenization,
+            return_tensors="pt",
+            truncation=True,
+            max_length=max_length,
+        ).to(device)
         captured = capture_layer_inputs(model, encoded)
         for layer_index in range(len(layers)):
             hidden, kwargs = captured[layer_index]

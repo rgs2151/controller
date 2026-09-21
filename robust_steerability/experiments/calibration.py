@@ -32,6 +32,10 @@ from robust_steerability.control import (
 from robust_steerability.experiments.methods import ControllerArtifact
 from robust_steerability.experiments.diagnostics import cpu_tensors, score
 from robust_steerability.modeling.interventions import _decoder_layers, _text_config
+from robust_steerability.modeling.tokenization import (
+    RAW_TEXT_TOKENIZATION,
+    tokenize_prompts,
+)
 
 
 def _record_identity(record: dict[str, object]) -> dict[str, str]:
@@ -115,6 +119,7 @@ def collect_last_token_states(
     *,
     max_length: int,
     batch_size: int,
+    prompt_tokenization: str = RAW_TEXT_TOKENIZATION,
 ) -> dict[str, torch.Tensor]:
     """Collect decoder input/output states as ``(records, L+1, hidden)``."""
 
@@ -123,8 +128,10 @@ def collect_last_token_states(
     layers = _decoder_layers(model)
     model_device = next(model.parameters()).device
     for start in range(0, len(texts), batch_size):
-        encoded = tokenizer(
+        encoded = tokenize_prompts(
+            tokenizer,
             texts[start : start + batch_size],
+            prompt_tokenization=prompt_tokenization,
             return_tensors="pt",
             padding=True,
             truncation=True,
@@ -229,6 +236,9 @@ def _fit_controller_inputs(
         "cuda_runtime": torch.version.cuda,
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
     }
+    prompt_tokenization = str(
+        settings.get("prompt_tokenization", RAW_TEXT_TOKENIZATION)
+    )
     if model_device.type == "cuda":
         properties = torch.cuda.get_device_properties(model_device)
         runtime["gpu"] = {
@@ -257,6 +267,7 @@ def _fit_controller_inputs(
         max_length=int(settings["jacobian_max_length"]),
         vjp_chunk_size=int(settings["jacobian_vjp_chunk_size"]),
         runtime=runtime,
+        prompt_tokenization=prompt_tokenization,
     )
     nominal_signature = nominal_dynamics_signature(nominal_dynamics_path)
     fit_states = collect_last_token_states(
@@ -265,6 +276,7 @@ def _fit_controller_inputs(
         [str(row["text"]) for row in fit_records],
         max_length=int(settings["calibration_max_length"]),
         batch_size=int(settings["activation_batch_size"]),
+        prompt_tokenization=prompt_tokenization,
     )
     calibration_states = collect_last_token_states(
         model,
@@ -272,6 +284,7 @@ def _fit_controller_inputs(
         [str(row["text"]) for row in calibration_records_list],
         max_length=int(settings["calibration_max_length"]),
         batch_size=int(settings["activation_batch_size"]),
+        prompt_tokenization=prompt_tokenization,
     )
     device = model_device
     fit_heads, calibration_heads = fit_states["attention_heads"], calibration_states["attention_heads"]

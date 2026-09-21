@@ -40,6 +40,10 @@ from robust_steerability.modeling.huggingface import (
     release_cuda_memory,
 )
 from robust_steerability.modeling.interventions import _decoder_layers
+from robust_steerability.modeling.tokenization import (
+    PREFORMATTED_CHAT_TOKENIZATION,
+    tokenize_prompts,
+)
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 
@@ -47,6 +51,7 @@ BENCHMARK = "lciteeval_small"
 AXBENCH_CONCEPT = SPANISH_CONCEPT
 JACOBIAN_MAX_LENGTH = 10_000
 CONTEXT_WINDOW = 131_072
+PROMPT_TOKENIZATION = PREFORMATTED_CHAT_TOKENIZATION
 
 
 def _utc_now() -> str:
@@ -145,7 +150,11 @@ def prepare(model_key: str, tokenizer=None) -> dict:
     artifact_path = artifact_root(BENCHMARK, model_key) / "data.json"
     evaluation_path = dataset_root(BENCHMARK, model_key) / "lciteeval.json"
     if artifact_path.exists() and evaluation_path.exists():
-        return json.loads(artifact_path.read_text())
+        payload = json.loads(artifact_path.read_text())
+        if payload.get("prompt_tokenization") != PROMPT_TOKENIZATION:
+            payload["prompt_tokenization"] = PROMPT_TOKENIZATION
+            _write_json(artifact_path, payload)
+        return payload
     if tokenizer is None:
         from transformers import AutoTokenizer
 
@@ -168,6 +177,7 @@ def prepare(model_key: str, tokenizer=None) -> dict:
         "benchmark": BENCHMARK,
         "model": [model.model_id, model.revision],
         "concept": SPANISH_CONCEPT,
+        "prompt_tokenization": PROMPT_TOKENIZATION,
         "direction_estimator": "paired MGSM Spanish-minus-English question DiffMean",
         "calibration": {
             **direction,
@@ -191,8 +201,10 @@ def _class_token_mean(model, tokenizer, texts: list[str], batch_size: int) -> to
     total = None
     count = 0
     for start in range(0, len(texts), batch_size):
-        encoded = tokenizer(
+        encoded = tokenize_prompts(
+            tokenizer,
             texts[start : start + batch_size],
+            prompt_tokenization=PROMPT_TOKENIZATION,
             return_tensors="pt",
             padding=True,
             truncation=True,
@@ -242,6 +254,12 @@ def _class_token_mean(model, tokenizer, texts: list[str], batch_size: int) -> to
 def fit_setpoint(model_key: str, device: str) -> None:
     destination = artifact_root(BENCHMARK, model_key) / "setpoint.pt"
     if destination.exists():
+        payload = torch.load(destination, map_location="cpu", weights_only=True)
+        if payload.get("identity", {}).get("prompt_tokenization") != PROMPT_TOKENIZATION:
+            raise ValueError(
+                "The existing L-CiteEval Small setpoint used the obsolete "
+                "duplicate-BOS tokenization. Remove this derived artifact before rerunning."
+            )
         return
     model, tokenizer = load_model(model_key, device)
     data = prepare(model_key, tokenizer)
@@ -270,6 +288,7 @@ def fit_setpoint(model_key: str, device: str) -> None:
                 "estimator": "paired MGSM Spanish-minus-English question DiffMean",
                 "desired_records": 250,
                 "undesired_records": 250,
+                "prompt_tokenization": PROMPT_TOKENIZATION,
             },
             "contrast": contrast,
             "feature_norm": feature_norm,
@@ -306,6 +325,7 @@ def fit_jacobian_shard(
         max_length=JACOBIAN_MAX_LENGTH,
         vjp_chunk_size=MODELS[model_key].jacobian_vjp_chunk_size,
         model_revision=MODELS[model_key].revision,
+        prompt_tokenization=PROMPT_TOKENIZATION,
     )
     _write_json(
         cache / "runs" / f"jacobian_shard_{shard_index:02d}.json",
@@ -326,6 +346,18 @@ def fit_jacobians(
     cache = artifact_root(BENCHMARK, model_key)
     destination = cache / "dynamics.pt"
     if destination.exists():
+        metadata_path = destination.with_suffix(".json")
+        identity = (
+            json.loads(metadata_path.read_text()).get("identity", {})
+            if metadata_path.exists()
+            else {}
+        )
+        if identity.get("prompt_tokenization") != PROMPT_TOKENIZATION:
+            raise ValueError(
+                "The existing L-CiteEval Small dynamics used the obsolete "
+                "duplicate-BOS tokenization. Remove this derived artifact and its "
+                "Jacobian partials before rerunning."
+            )
         return
     data = prepare(model_key)
     records = data["calibration"]["jacobian"]
@@ -380,6 +412,7 @@ def fit_jacobians(
         records=records,
         max_length=JACOBIAN_MAX_LENGTH,
         vjp_chunk_size=MODELS[model_key].jacobian_vjp_chunk_size,
+        prompt_tokenization=PROMPT_TOKENIZATION,
     )
     save_nominal_dynamics(
         destination,
@@ -400,6 +433,7 @@ def write_manifest(model_key: str) -> None:
             "schema_version": 1,
             "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
             "concept": AXBENCH_CONCEPT,
+            "prompt_tokenization": PROMPT_TOKENIZATION,
             "shared_by": ["alqr", "h_infinity"],
             "status": {
                 name: "complete" if (root / name).exists() else "missing"

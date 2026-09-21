@@ -22,6 +22,7 @@ from robust_steerability.benchmarks.layout import (
 from robust_steerability.benchmarks.lciteeval_small_artifacts import (
     BENCHMARK,
     CONTEXT_WINDOW,
+    PROMPT_TOKENIZATION,
     load_model,
     model_load_spec,
 )
@@ -37,6 +38,7 @@ from robust_steerability.experiments.methods import ControllerArtifact, build_po
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.huggingface import cuda_device_index
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
+from robust_steerability.modeling.tokenization import tokenize_prompts
 from robust_steerability.source_methods.control import (
     SetpointCalibration,
     build_alqr_policy,
@@ -78,7 +80,22 @@ def generation_path(
 
 
 def generation_complete(path: Path) -> bool:
-    return path.exists() and json.loads(path.read_text()).get("status") == "complete"
+    if not path.exists():
+        return False
+    payload = json.loads(path.read_text())
+    return (
+        payload.get("status") == "complete"
+        and payload.get("identity", {}).get("prompt_tokenization")
+        == PROMPT_TOKENIZATION
+    )
+
+
+def _remove_generation_scores(root: Path, generation: Path) -> None:
+    """Discard judge caches when an obsolete generation is replaced."""
+
+    relative = generation.relative_to(root / "generations")
+    for path in (root / "scores").glob(f"*/{relative.as_posix()}"):
+        path.unlink(missing_ok=True)
 
 
 def _selection_parameters(model_key: str, method: str, calibration_id: str) -> dict:
@@ -90,6 +107,11 @@ def _selection_parameters(model_key: str, method: str, calibration_id: str) -> d
     payload = json.loads(path.read_text())
     if payload.get("model") != [MODELS[model_key].model_id, MODELS[model_key].revision]:
         raise ValueError(f"L-CiteEval selection model mismatch: {path}")
+    if payload.get("protocol", {}).get("prompt_tokenization") != PROMPT_TOKENIZATION:
+        raise ValueError(
+            "The selected L-CiteEval Small calibration predates the duplicate-BOS fix. "
+            "Remove the derived calibration and rerun it before evaluation."
+        )
     return dict(payload["selected"]["parameters"] if method == "h_infinity" else payload["parameters"])
 
 
@@ -181,8 +203,10 @@ def generate_completions(
     generated_counts = []
     for start in range(0, len(prompts), batch_size):
         batch = prompts[start : start + batch_size]
-        encoded = tokenizer(
+        encoded = tokenize_prompts(
+            tokenizer,
             batch,
+            prompt_tokenization=PROMPT_TOKENIZATION,
             return_tensors="pt",
             padding=True,
             truncation=False,
@@ -265,15 +289,22 @@ def generate_shard(
         "evaluated_model_kv_cache": use_cache,
         "generation_batch_size": batch_size,
         "model_loading": asdict(model_load_spec(model_key)),
+        "prompt_tokenization": PROMPT_TOKENIZATION,
         "shard": {"index": shard_index, "count": shard_count},
     }
     if generation_complete(destination):
         return
-    payload = (
-        json.loads(destination.read_text())
-        if destination.exists()
-        else {"identity": identity, "status": "partial", "attempts": [], "rows": []}
-    )
+    payload = json.loads(destination.read_text()) if destination.exists() else None
+    if payload is not None and payload.get("identity", {}).get(
+        "prompt_tokenization"
+    ) != PROMPT_TOKENIZATION:
+        payload = None
+    payload = payload or {
+        "identity": identity,
+        "status": "partial",
+        "attempts": [],
+        "rows": [],
+    }
     if payload["identity"] != identity:
         raise ValueError(f"Existing shard has a different immutable identity: {destination}")
     completed = len(payload["rows"])
@@ -380,6 +411,8 @@ def merge_shards(
     common = dict(shards[0]["identity"])
     common.pop("shard")
     destination = generation_path(model_key, condition, method, use_cache=use_cache)
+    if destination.exists() and not generation_complete(destination):
+        _remove_generation_scores(cache_root(model_key, use_cache), destination)
     _write_json(
         destination,
         {

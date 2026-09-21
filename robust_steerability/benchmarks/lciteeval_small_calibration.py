@@ -108,6 +108,7 @@ def _settings(model_key: str, q: float, r: float, q_final: float) -> dict[str, o
         "fit_prompts_per_class": 250,
         "disturbance_prompts": 200,
         "calibration_max_length": 10_000,
+        "prompt_tokenization": artifacts.PROMPT_TOKENIZATION,
         "activation_batch_size": model.activation_batch_size,
         "jacobian_prompts": artifacts.JACOBIAN_PROMPTS,
         "jacobian_max_length": artifacts.JACOBIAN_MAX_LENGTH,
@@ -197,7 +198,16 @@ def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
     for configuration in _grid():
         destination = root / "grid/controllers" / f"{configuration['grid_id']}.pt"
         if destination.exists():
-            continue
+            saved = torch.load(destination, map_location="cpu", weights_only=True)
+            if (
+                saved.get("identity", {}).get("prompt_tokenization")
+                == artifacts.PROMPT_TOKENIZATION
+            ):
+                continue
+            raise ValueError(
+                "The existing L-CiteEval Small controller grid predates the "
+                "duplicate-BOS fix. Remove the derived calibration before rerunning."
+            )
         candidate = FiniteHorizonControlProblem(
             dynamics=problem.dynamics,
             control_channels=problem.control_channels,
@@ -223,6 +233,7 @@ def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
                         for key in ("lambda", "q", "r", "q_final")
                     },
                     "configuration_id": configuration["grid_id"],
+                    "prompt_tokenization": artifacts.PROMPT_TOKENIZATION,
                 },
                 "gains": solution.gains.cpu(),
                 "feasible": solution.feasible,
@@ -257,6 +268,11 @@ def generate_worker(
         destination = root / "grid/generations" / f"{grid_id}.json"
         if runtime.generation_complete(destination):
             continue
+        if destination.exists():
+            for scorer in (*API_SCORERS, *BILINGUAL_SCORERS, SELECTION_METRIC):
+                scorer_cache_path(root / "grid", destination, scorer).unlink(
+                    missing_ok=True
+                )
         controller = torch.load(
             root / "grid/controllers" / f"{grid_id}.pt",
             map_location="cpu",
@@ -304,6 +320,7 @@ def generate_worker(
                     "calibration_id": calibration_id,
                     "evaluated_model_kv_cache": False,
                     "generation_batch_size": batch_size,
+                    "prompt_tokenization": artifacts.PROMPT_TOKENIZATION,
                 },
                 "status": "complete",
                 "attempts": [
@@ -339,6 +356,10 @@ def score_grid(
     generations = sorted((grid_root / "generations").glob("*.json"))
     if len(generations) != len(_grid()):
         raise ValueError("L-CiteEval Small H-infinity grid generations are incomplete")
+    if any(not runtime.generation_complete(path) for path in generations):
+        raise ValueError(
+            "L-CiteEval Small grid contains stale or incomplete generations"
+        )
     openai_scoring.score_generations(
         generations,
         grid_root,
@@ -482,6 +503,17 @@ def select(model_key: str, calibration_id: str) -> dict:
         SELECTION_METRIC,
         context="L-CiteEval Small H-infinity calibration",
     )
+    for component in (
+        "answer_recall",
+        "citation_f1",
+        "fluency_normalized",
+        "concept_relevance_normalized",
+    ):
+        require_nonzero_selection_metric(
+            summaries,
+            component,
+            context=f"L-CiteEval Small H-infinity calibration component {component}",
+        )
     selected = sorted(
         summaries,
         key=lambda row: (
@@ -527,6 +559,7 @@ def select(model_key: str, calibration_id: str) -> dict:
             "q_final_over_r": list(Q_FINAL_OVER_R),
             "fixed_r": FIXED_R,
             "fixed_setpoint_multiplier": SETPOINT_MULTIPLIER,
+            "prompt_tokenization": artifacts.PROMPT_TOKENIZATION,
         },
         "selected": {
             **selected,
@@ -570,7 +603,11 @@ def select_fixed(
         "q_final": float(q_final),
     }
     controller = {
-        "identity": {"configuration_id": "fixed", "parameters": parameters},
+        "identity": {
+            "configuration_id": "fixed",
+            "parameters": parameters,
+            "prompt_tokenization": artifacts.PROMPT_TOKENIZATION,
+        },
         "gains": artifact.hinf_gains,
         "feasible": artifact.hinf_feasible,
         "gamma_star": artifact.gamma_star,
@@ -589,7 +626,11 @@ def select_fixed(
         "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
         "benchmark": BENCHMARK,
         "calibration_id": calibration_id,
-        "protocol": {"selection_strategy": "fixed", "evaluated_model_kv_cache": False},
+        "protocol": {
+            "selection_strategy": "fixed",
+            "evaluated_model_kv_cache": False,
+            "prompt_tokenization": artifacts.PROMPT_TOKENIZATION,
+        },
         "selected": {
             "configuration_id": "fixed",
             "q_over_r": float(q_over_r),
@@ -618,6 +659,14 @@ def calibrate(
     root = _root(model_key, calibration_id)
     if (root / "selection.json").exists() and (root / "controller.pt").exists():
         saved = json.loads((root / "selection.json").read_text())
+        if (
+            saved.get("protocol", {}).get("prompt_tokenization")
+            != artifacts.PROMPT_TOKENIZATION
+        ):
+            raise ValueError(
+                "The existing L-CiteEval Small calibration predates the "
+                "duplicate-BOS fix. Remove the derived calibration before rerunning."
+            )
         diagnostic = root / saved["diagnostic_bundle"]
         if not diagnostic.exists():
             raise FileNotFoundError(
