@@ -24,6 +24,17 @@ scorers = ["lcite_answer_overlap", "lcite_citation_nli", "axbench_concept_releva
 runtime = "lciteeval_small"
 
 [[evaluation_datasets]]
+key = "16k"
+dataset = "lciteeval_length_hotpotqa_small"
+role = "transfer"
+cache_namespace = "hotpotqa_16k"
+generation_profile = "lciteeval"
+samples = 10
+repetitions = 1
+scorers = ["lcite_answer_overlap", "lcite_citation_nli", "axbench_concept_relevance", "axbench_instruction_relevance", "axbench_fluency", "axbench_overall"]
+runtime = "lciteeval_small"
+
+[[evaluation_datasets]]
 key = "32k"
 dataset = "lciteeval_length_hotpotqa_small"
 role = "transfer"
