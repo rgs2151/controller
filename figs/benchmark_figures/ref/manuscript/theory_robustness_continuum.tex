@@ -1,0 +1,465 @@
+% Main-text insertion and appendix derivations for the gamma continuation and
+% integral-state extension.  Suggested placement: after the finite-horizon
+% robust-steering certificate and before the nonlinear-transfer result.
+
+% ============================================================================
+% MAIN TEXT
+% ============================================================================
+
+\subsection{Nominal and Robust Steering Form a Continuum}
+\label{sec:robustness-continuum}
+
+The attenuation level $\gamma$ is not only a feasibility certificate; it also
+indexes a family of controllers between nominal and worst-case steering.  For
+any $\gamma>\gamma^\star$, let
+$\steervar{K}^{(\gamma)}=\{\Kk^{(\gamma)}\}_{k=1}^{L}$ denote the controller
+returned by the fixed-$\gamma$ backward game recursion.  Let
+$\steervar{K}^{\mathrm{LQR}}$ be the finite-horizon LQR controller constructed
+from the same $\{\Ak,\Bk,Q_k,R_k\}$ and terminal cost, but without an
+adversarial disturbance.
+
+The discrete-time finite-horizon disturbance-attenuation recursion and its
+qualitative reduction to the ordinary linear regulator as
+$\gamma\to\infty$ are classical
+\citep{basar1991dynamic,hassibi1999indefinite}. The next result starts from
+that recursion and records the quantitative, layer-uniform specialization
+needed here.
+
+\begin{proposition}[Quantitative finite-horizon LQR limit]
+\label{prop:lqr-limit}
+Suppose the horizon is finite,
+$Q_k\succeq0$, $Q_f\succeq0$, and $R_k\succeq rI$ for some $r>0$.
+Assume that the system and cost matrices are finite-dimensional, bounded, and
+independent of $\gamma$. Starting from the standard fixed-$\gamma$ minimax
+Riccati recursion of \citet{basar1991dynamic} (see also
+\citet[Ch.~9]{hassibi1999indefinite}), there exist a finite threshold
+$\Gamma$ and finite constants $C_k^P,C_k^K$, independent of $\gamma$, such
+that the recursion is feasible for every $\gamma\geq\Gamma$ and
+$$
+\norm{P_k^{(\gamma)}-P_k^{\mathrm{LQR}}}_2
+\leq
+\frac{C_k^P}{\gamma^2},
+\qquad
+\norm{\Kk^{(\gamma)}-\Kk^{\mathrm{LQR}}}_2
+\leq
+\frac{C_k^K}{\gamma^2}
+$$
+for every layer $k$.  In particular,
+$P_k^{(\gamma)}\to P_k^{\mathrm{LQR}}$ and
+$\Kk^{(\gamma)}\to\Kk^{\mathrm{LQR}}$ at rate
+$\mathcal{O}(\gamma^{-2})$. Thus, this bound quantitatively refines the
+classical qualitative $\mathrm{H}_{\infty}$-to-LQR limit for the present
+finite-horizon, time-varying formulation.
+\end{proposition}
+
+This result suggests the normalized robustness coordinate
+$$
+\rho
+=
+\frac{\gamma^\star}{\gamma}
+\in[0,1),
+$$
+where $\rho=0$ is the LQR limit and $\rho\uparrow1$ approaches the smallest
+feasible attenuation level.  Intermediate values trade nominal efficiency for
+greater protection against calibrated model mismatch.  This continuation is
+closely related to classical minimum-entropy $\mathrm{H}_{\infty}$ control,
+which connects $\mathrm{H}_2$ and worst-case synthesis
+\citep{doyle1989state,iglesias1990discrete,peters1995connections}.
+Importantly, the proposition does
+not assert that downstream task metrics vary monotonically with $\rho$; which
+point on the path is preferred is an empirical property of the deployment
+shift.
+
+The same framework also permits accumulated-error feedback through a standard
+state augmentation.  Because transformer depth is finite, we interpret this
+extension as correction of persistent layerwise bias rather than a literal
+zero-steady-state guarantee; its formulation and ablation are deferred to
+Appendix~\ref{app:integral-steering}.
+
+
+% ============================================================================
+% APPENDIX
+% ============================================================================
+
+\section{Robustness Continuation and Integral Augmentation}
+\label{app:robustness-continuum}
+
+\subsection{Fixed-$\gamma$ backward recursion}
+
+We take as our starting point the standard dynamic-game solution of the
+finite-horizon discrete-time disturbance-attenuation problem
+\citep{basar1991dynamic,hassibi1999indefinite}. Specialized to our notation,
+its fixed-$\gamma$ backward recursion is as follows.
+
+For notational clarity, write $P_{k+1}^{(\gamma)}$ for the value matrix at
+layer $k+1$ and define
+$$
+M_k^{(\gamma)}
+=
+\gamma^2 I
+-
+\Dk^\top P_{k+1}^{(\gamma)}\Dk.
+$$
+Whenever $M_k^{(\gamma)}\succ0$, maximizing over the disturbance yields the
+robustified value matrix
+$$
+\widehat P_{k+1}^{(\gamma)}
+=
+P_{k+1}^{(\gamma)}
++
+P_{k+1}^{(\gamma)}\Dk
+\left(M_k^{(\gamma)}\right)^{-1}
+\Dk^\top P_{k+1}^{(\gamma)}.
+$$
+The controller and value recursion are
+$$
+\Kk^{(\gamma)}
+=
+\left(
+R_k+\Bk^\top\widehat P_{k+1}^{(\gamma)}\Bk
+\right)^{-1}
+\Bk^\top\widehat P_{k+1}^{(\gamma)}\Ak,
+$$
+$$
+P_k^{(\gamma)}
+=
+Q_k
++
+\Ak^\top\widehat P_{k+1}^{(\gamma)}\Ak
+-
+\Ak^\top\widehat P_{k+1}^{(\gamma)}\Bk
+\left(
+R_k+\Bk^\top\widehat P_{k+1}^{(\gamma)}\Bk
+\right)^{-1}
+\Bk^\top\widehat P_{k+1}^{(\gamma)}\Ak.
+$$
+
+\begin{proof}[Proof of Proposition~\ref{prop:lqr-limit}]
+Theorems~3.1 and~4.1 of \citet{basar1991dynamic} give the normalized
+finite-horizon dynamic-game recursion above; the general $R_k\succ0$ form
+follows by the standard input change of coordinates
+$\tilde u_k=R_k^{1/2}u_k$ and is also given in
+\citet[Ch.~9]{hassibi1999indefinite}. We therefore take this recursion as the
+starting point. The classical argument observes qualitatively that the game
+reduces to the linear regulator when $\gamma\to\infty$
+\citep[proof of Thm.~5.2]{basar1991dynamic}. We strengthen that observation by
+bounding the perturbation uniformly over the finite horizon.
+
+Define the LQR gain and Riccati maps
+$$
+\mathscr K_k(X)
+=
+\left(R_k+\Bk^\top X\Bk\right)^{-1}\Bk^\top X\Ak,
+$$
+$$
+\mathscr R_k(X)
+=
+Q_k+\Ak^\top X\Ak
+-\Ak^\top X\Bk
+\left(R_k+\Bk^\top X\Bk\right)^{-1}
+\Bk^\top X\Ak.
+$$
+Thus
+$\Kk^{\mathrm{LQR}}=\mathscr K_k(P_{k+1}^{\mathrm{LQR}})$ and
+$P_k^{\mathrm{LQR}}=\mathscr R_k(P_{k+1}^{\mathrm{LQR}})$.
+For the robust recursion, define
+$$
+\mathscr H_{k,\gamma}(P)
+=
+P+P\Dk
+\left(\gamma^2I-\Dk^\top P\Dk\right)^{-1}
+\Dk^\top P.
+$$
+Then
+$$
+\Kk^{(\gamma)}
+=
+\mathscr K_k\!\left(
+\mathscr H_{k,\gamma}(P_{k+1}^{(\gamma)})
+\right),
+\qquad
+P_k^{(\gamma)}
+=
+\mathscr R_k\!\left(
+\mathscr H_{k,\gamma}(P_{k+1}^{(\gamma)})
+\right).
+$$
+
+We prove the claim by backward induction.  At the terminal layer,
+$P_{L+1}^{(\gamma)}=P_{L+1}^{\mathrm{LQR}}=Q_f$, so the claim holds.
+We first note that every value matrix appearing in either recursion is
+positive semidefinite whenever the robust recursion is feasible.  Indeed, if
+$P\succeq0$ and
+$\gamma^2I-\Dk^\top P\Dk\succ0$, then
+$\mathscr H_{k,\gamma}(P)\succeq0$.  Moreover, for any $X\succeq0$,
+the block factorization
+$$
+\begin{bmatrix}
+X & X\Bk\\
+\Bk^\top X & R_k+\Bk^\top X\Bk
+\end{bmatrix}
+=
+\begin{bmatrix}
+I&0\\
+\Bk^\top&I
+\end{bmatrix}
+\begin{bmatrix}
+X&0\\
+0&R_k
+\end{bmatrix}
+\begin{bmatrix}
+I&\Bk\\
+0&I
+\end{bmatrix}
+\succeq0
+$$
+and $R_k+\Bk^\top X\Bk\succ0$ imply, by the Schur complement, that
+$$
+X-X\Bk
+\left(R_k+\Bk^\top X\Bk\right)^{-1}
+\Bk^\top X
+\succeq0.
+$$
+Hence $\mathscr R_k(X)\succeq0$.  Starting from $Q_f\succeq0$, backward
+induction therefore gives
+$P_k^{(\gamma)}\succeq0$ and $P_k^{\mathrm{LQR}}\succeq0$ at every
+well-defined layer.
+
+Assume that, for some $k<L+1$,
+$$
+\norm{P_{k+1}^{(\gamma)}-P_{k+1}^{\mathrm{LQR}}}_2
+\leq
+C_{k+1}\gamma^{-2}
+$$
+for all sufficiently large $\gamma$.  In particular,
+$P_{k+1}^{(\gamma)}$ is uniformly bounded: there is a constant
+$\bar p_{k+1}$
+such that
+$\norm{P_{k+1}^{(\gamma)}}_2\leq\bar p_{k+1}$.
+Consequently,
+$$
+\norm{
+\Dk^\top P_{k+1}^{(\gamma)}\Dk
+}_2
+\leq
+\norm{\Dk}_2^2\bar p_{k+1}
+=:
+d_k.
+$$
+Choose $\gamma$ large enough that $\gamma^2\geq2d_k$.  Then
+$$
+\gamma^2I-\Dk^\top P_{k+1}^{(\gamma)}\Dk
+\succeq
+\frac{\gamma^2}{2}I,
+$$
+so the disturbance Hessian is positive definite and
+$$
+\norm{
+\left(
+\gamma^2I-\Dk^\top P_{k+1}^{(\gamma)}\Dk
+\right)^{-1}
+}_2
+\leq
+\frac{2}{\gamma^2}.
+$$
+Using the definition of $\mathscr H_{k,\gamma}$ and submultiplicativity of the
+spectral norm,
+$$
+\norm{
+\mathscr H_{k,\gamma}(P_{k+1}^{(\gamma)})
+-P_{k+1}^{(\gamma)}
+}_2
+\leq
+\norm{P_{k+1}^{(\gamma)}}_2^2
+\norm{\Dk}_2^2
+\norm{
+\left(
+\gamma^2I-\Dk^\top P_{k+1}^{(\gamma)}\Dk
+\right)^{-1}
+}_2
+\leq
+\frac{
+2\bar p_{k+1}^2\norm{\Dk}_2^2
+}{\gamma^2}.
+$$
+Combining this estimate with the induction hypothesis gives
+$$
+\norm{
+\mathscr H_{k,\gamma}(P_{k+1}^{(\gamma)})
+-P_{k+1}^{\mathrm{LQR}}
+}_2
+=
+\mathcal O(\gamma^{-2}).
+$$
+
+Because $R_k\succeq rI$ and all value matrices above are positive
+semidefinite,
+$$
+\norm{
+\left(R_k+\Bk^\top X\Bk\right)^{-1}
+}_2
+\leq
+r^{-1}.
+$$
+For completeness, we now make the required Lipschitz constants explicit.
+Let
+$$
+S_k(X)=R_k+\Bk^\top X\Bk,
+$$
+and take $m_k<\infty$ such that $\norm{X}_2,\norm{Y}_2\leq m_k$ on a bounded
+set containing $P_{k+1}^{\mathrm{LQR}}$ and
+$\mathscr H_{k,\gamma}(P_{k+1}^{(\gamma)})$ for all sufficiently large
+$\gamma$. For $X,Y\succeq0$, the inverse-difference identity gives
+$$
+S_k(X)^{-1}-S_k(Y)^{-1}
+=
+S_k(X)^{-1}\Bk^\top(Y-X)\Bk S_k(Y)^{-1},
+$$
+and therefore
+$$
+\norm{S_k(X)^{-1}-S_k(Y)^{-1}}_2
+\leq
+r^{-2}\norm{\Bk}_2^2\norm{X-Y}_2.
+$$
+Writing $a_k=\norm{\Ak}_2$ and $b_k=\norm{\Bk}_2$, it follows directly that
+$$
+\norm{\mathscr K_k(X)-\mathscr K_k(Y)}_2
+\leq
+L_k^K\norm{X-Y}_2,
+\qquad
+L_k^K
+=
+a_kb_k\left(r^{-1}+r^{-2}b_k^2m_k\right).
+$$
+Moreover,
+$\norm{\mathscr K_k(X)}_2\leq r^{-1}a_kb_km_k$, and the identity
+$$
+\mathscr R_k(X)-\mathscr R_k(Y)
+=
+\Ak^\top(X-Y)\Ak
+-\Ak^\top(X-Y)\Bk\mathscr K_k(X)
+-\Ak^\top Y\Bk
+\left[\mathscr K_k(X)-\mathscr K_k(Y)\right]
+$$
+implies
+$$
+\norm{\mathscr R_k(X)-\mathscr R_k(Y)}_2
+\leq
+L_k^P\norm{X-Y}_2,
+$$
+where, for example, one may take
+$$
+L_k^P
+=
+a_k^2
++a_kb_km_k
+\left(r^{-1}a_kb_k+L_k^K\right).
+$$
+These constants are finite and independent of $\gamma$. Applying these two
+bounds with
+$X=\mathscr H_{k,\gamma}(P_{k+1}^{(\gamma)})$ and
+$Y=P_{k+1}^{\mathrm{LQR}}$ yields
+$$
+\norm{\Kk^{(\gamma)}-\Kk^{\mathrm{LQR}}}_2
+\leq
+L_k^K
+\norm{
+\mathscr H_{k,\gamma}(P_{k+1}^{(\gamma)})
+-P_{k+1}^{\mathrm{LQR}}
+}_2
+=
+\mathcal O(\gamma^{-2}),
+$$
+and
+$$
+\norm{P_k^{(\gamma)}-P_k^{\mathrm{LQR}}}_2
+\leq
+L_k^P
+\norm{
+\mathscr H_{k,\gamma}(P_{k+1}^{(\gamma)})
+-P_{k+1}^{\mathrm{LQR}}
+}_2
+=
+\mathcal O(\gamma^{-2}).
+$$
+This closes the induction.  Since the horizon is finite, one may take the
+maximum of the finitely many layerwise feasibility thresholds and constants,
+which proves both eventual feasibility and the stated convergence at every
+layer.
+\end{proof}
+
+\subsection{Finite-horizon entropy interpretation}
+
+Let $\mathcal{T}_{\steervar{K}}$ be the lifted finite-horizon map from the
+stacked disturbance to the regulated output.  For
+$\gamma>\norm{\mathcal{T}_{\steervar{K}}}_2$, define
+$$
+\mathcal{E}_\gamma
+\left(\mathcal{T}_{\steervar{K}}\right)
+=
+-\gamma^2
+\log\det\left(
+I-\gamma^{-2}
+\mathcal{T}_{\steervar{K}}^\top
+\mathcal{T}_{\steervar{K}}
+\right).
+$$
+If $\{\sigma_i\}$ are the singular values of
+$\mathcal{T}_{\steervar{K}}$, then
+$$
+\mathcal{E}_\gamma
+=
+\sum_i
+-\gamma^2\log\left(1-\frac{\sigma_i^2}{\gamma^2}\right)
+=
+\norm{\mathcal{T}_{\steervar{K}}}_F^2
++
+\frac{1}{2\gamma^2}\sum_i\sigma_i^4
++
+\mathcal{O}(\gamma^{-4}).
+$$
+Thus, at large $\gamma$, the entropy reduces to the finite-horizon
+$\mathrm{H}_2$ energy.  As $\gamma$ approaches the largest singular value,
+the contribution of the worst amplified direction diverges.  This provides a
+spectral interpretation of the continuation: decreasing $\gamma$ gradually
+shifts emphasis from aggregate disturbance energy toward the most damaging
+disturbance direction.  The classical minimum-entropy controller makes this
+connection precise for standard $\mathrm{H}_{\infty}$ control problems
+\citep{doyle1989state,iglesias1990discrete}.
+
+\subsection{Integral augmentation}
+\label{app:integral-steering}
+
+Let
+$\tilde{x}_k=\operatorname{col}(x_k,i_k)$ and define
+$$
+\tilde A_k
+=
+\begin{bmatrix}
+A_k&0\\C_{\mathrm{tar}}&\lambda_I I
+\end{bmatrix},
+\qquad
+\tilde B_k
+=
+\begin{bmatrix}B_k\\0\end{bmatrix},
+\qquad
+\tilde D_k
+=
+\begin{bmatrix}D_k\\0\end{bmatrix}.
+$$
+Choosing, for example,
+$\tilde Q_k=\operatorname{blkdiag}(Q_k,Q_k^I)$ and applying the original
+backward recursion to
+$(\tilde A_k,\tilde B_k,\tilde D_k,\tilde Q_k,R_k)$ yields an augmented
+controller and the same finite-horizon disturbance-attenuation certificate.
+When $\lambda_I=1$,
+$i_k=\sum_{j<k}C_{\mathrm{tar}}x_j$ records cumulative semantic error; choosing
+$\lambda_I<1$ discounts early-layer errors and limits finite-horizon windup.
+
+For an infinite-horizon, time-invariant system with a constant reference, the
+usual zero-offset statement requires additional assumptions: if the augmented
+closed loop is asymptotically stable and $i_k$ converges, then
+$C_{\mathrm{tar}}x_k=i_{k+1}-i_k\rightarrow0$.  These assumptions do not hold
+literally for a finite transformer depth.  Accordingly, our experiments test
+whether integral augmentation reduces persistent layerwise bias; they do not
+claim asymptotic zero tracking error for the transformer.

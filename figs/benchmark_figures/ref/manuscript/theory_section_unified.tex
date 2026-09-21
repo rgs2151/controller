@@ -1,0 +1,148 @@
+\section{What Does Robust Steerability Tell Us?}
+\label{sec:theory}
+
+We now give a unified interpretation of robust steerability.  The result below
+shows that the score identifies the most consequential disturbance direction,
+certifies its attenuation, places LQR and $\mathrm{H}_{\infty}$ steering on a
+single robustness path, and quantifies when the certificate transfers to the
+nonlinear transformer.  Proofs are deferred to Appendix~\ref{app:proofs}.
+
+Let
+$\statevar{w}=\operatorname{col}(\wk)_{k=1}^{L}$ and
+$\statevar{z}=\operatorname{col}(\zk)_{k=1}^{L}$.  For a controller
+$\steervar{K}$, denote by $\mathcal{T}_{\steervar{K}}$ the lifted linear map
+such that
+$\statevar{z}=\mathcal{T}_{\steervar{K}}\statevar{w}$, and let
+$\steervar{K}^{(\gamma)}$ be the controller returned by the fixed-$\gamma$
+backward recursion.  We write $\steervar{K}^{\mathrm{LQR}}$ for the
+finite-horizon LQR controller with the same state, control channel, quadratic
+weights, and terminal cost.
+
+\begin{theorem}[Robust-steering path and local certificate]
+\label{thm:unified-robust-steering}
+Assume $R_k\succ0$ and that the standard finite-horizon full-state
+$\mathrm{H}_{\infty}$ recursion is used.  Let $\gamma^\star$ be its smallest
+feasible attenuation level.  Then:
+
+\begin{enumerate}
+    \item[(i)] \textbf{Exact linear meaning.}
+    For every admissible controller $\steervar{K}$,
+    $$
+    \steervar{\gamma}(\steervar{K})
+    =
+    \norm{\mathcal{T}_{\steervar{K}}}_2
+    =
+    \sigma_{\max}(\mathcal{T}_{\steervar{K}}).
+    $$
+    Hence, a worst unit-energy disturbance is any principal right singular
+    vector of $\mathcal{T}_{\steervar{K}}$.  Moreover, for every
+    $\gamma>\gamma^\star$, the controller
+    $\steervar{K}^{(\gamma)}$ satisfies
+    $$
+    \norm{\statevar{z}}_2
+    \leq
+    \gamma\norm{\statevar{w}}_2
+    $$
+    for every disturbance sequence entering through $\{\Dk\}$, with
+    $\statevar{x}_1=0$.  If the optimum is attained, then
+    $$
+    \gamma^\star
+    =
+    \inf_{\steervar{K}\in\steervar{\mathcal K}}
+    \norm{\mathcal{T}_{\steervar{K}}}_2
+    =
+    \frac{1}{\Srob}.
+    $$
+
+    \item[(ii)] \textbf{Nominal-to-robust continuation.}
+    For every layer $k$,
+    $$
+    \Kk^{(\gamma)}
+    =
+    \Kk^{\mathrm{LQR}}
+    +
+    \mathcal{O}(\gamma^{-2}),
+    \qquad
+    \gamma\rightarrow\infty.
+    $$
+    Thus, LQR and near-optimal $\mathrm{H}_{\infty}$ steering are the nominal
+    and robust endpoints of the same finite-horizon Riccati family.
+
+    \item[(iii)] \textbf{Local nonlinear transfer.}
+    Suppose that, whenever $\norm{\xk}_2\leq\rho$,
+    $$
+    \norm{\statevar{r}_k(\xk,-\Kk\xk)}_2
+    \leq
+    \steervar{c}_k(\Kk)\norm{\xk}_2^2,
+    $$
+    and define
+    $\bar c_{\steervar{K}}=\max_k\steervar{c}_k(\Kk)$ and
+    $\eta_\rho(\steervar{K})=\rho\bar c_{\steervar{K}}$.
+    Let $\mathcal{G}_{xw}$ and $\mathcal{G}_{zw}$ be the linear closed-loop
+    maps from $\statevar{w}$ to the stacked state and regulated output, and let
+    $\mathcal{G}_{xr}$ and $\mathcal{G}_{zr}$ be the corresponding maps from an
+    additive transition error $\statevar{r}$.  If
+    $$
+    \norm{\mathcal{G}_{xr}}_2
+    \eta_\rho(\steervar{K})
+    <1,
+    $$
+    then, with
+    $$
+    \Delta_\rho(\steervar{K})
+    =
+    \frac{
+        \norm{\mathcal{G}_{zr}}_2
+        \eta_\rho(\steervar{K})
+        \norm{\mathcal{G}_{xw}}_2
+    }{
+        1-
+        \norm{\mathcal{G}_{xr}}_2
+        \eta_\rho(\steervar{K})
+    },
+    $$
+    every disturbance small enough to keep the trajectory in the
+    radius-$\rho$ neighborhood then satisfies
+    $$
+    \norm{\statevar{z}_{\mathrm{nl}}}_2
+    \leq
+    \left[
+    \steervar{\gamma}(\steervar{K})
+    +\Delta_\rho(\steervar{K})
+    \right]
+    \norm{\statevar{w}}_2.
+    $$
+\end{enumerate}
+\end{theorem}
+
+Part (i) gives $\Srob$ an exact operational meaning: it is controlled by
+the disturbance sequence that is most amplified through depth toward the
+regulated semantic outputs, not necessarily by the largest residual in
+Euclidean norm.  A large residual may be suppressed by later layers, whereas a
+smaller but behaviorally aligned residual may determine the certificate.
+
+Part (ii) strengthens the comparison with A-LQR.  The two controllers are not
+isolated alternatives; they belong to a common family indexed by
+$$
+\rho_{\mathrm{rob}}
+=
+\frac{\gamma^\star}{\gamma}
+\in[0,1),
+$$
+where $\rho_{\mathrm{rob}}=0$ is the LQR limit and
+$\rho_{\mathrm{rob}}\uparrow1$ approaches the strongest feasible worst-case
+attenuation.  This is the finite-horizon analogue of the classical
+minimum-entropy connection between $\mathrm{H}_2$ and
+$\mathrm{H}_{\infty}$ control
+\citep{doyle1989state,iglesias1990discrete}.  The theorem does not imply that
+downstream LLM metrics vary monotonically along this path; rather, it predicts
+that stronger distribution shifts should favor more robust operating points.
+
+Part (iii) states precisely when the linear score can remain informative for
+the original transformer.  Transfer requires both a local small-gain margin
+and coverage of realized mismatch by the calibrated channels $\{\Dk\}$.
+The curvature constant is controller- and placement-dependent: post-block
+affine interventions add no current-block curvature, whereas pre- and
+intra-block interventions can shrink the validity region.  Explicit placement
+constants are given in Appendix~\ref{app:intervention-placement}; both local
+conditions are evaluated in Section~\ref{sec:experiments}.

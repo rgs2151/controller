@@ -43,6 +43,8 @@ debug/*/cache/*
 
 figs/fig*/cache/*
 !figs/fig*/cache/.gitkeep
+figs/benchmark_figures/cache/*
+!figs/benchmark_figures/cache/.gitkeep
 
 debug/*/runs/*
 

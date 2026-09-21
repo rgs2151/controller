@@ -1,0 +1,557 @@
+% Preamble requirements:
+% \usepackage[section]{placeins}
+% \usepackage[table]{xcolor}
+% \usepackage{tabularx}
+% \usepackage{array}
+% \usepackage{multirow}
+% \usepackage{graphicx}
+% The barriers below keep each table group inside its benchmark subsection.
+\definecolor{AlignedAccent}{HTML}{9E4650}
+\definecolor{AlignedShade}{HTML}{F8ECEE}
+\definecolor{OrthogonalAccent}{HTML}{3F5F9F}
+\definecolor{OrthogonalShade}{HTML}{EDF1F9}
+\definecolor{TableHeader}{HTML}{F1F2F4}
+\section{Datasets, Evaluation Protocols, and Full Results}
+\label{app:datasets}
+\label{app:full-results}
+
+This appendix documents each evaluation suite and reports the corresponding
+full results.  All controllers are calibrated once and frozen before
+evaluation: no held-out language, jailbreak template, translated prompt, or
+long-context trajectory is used to identify the dynamics, estimate the
+disturbance channel, select controller gains, or tune intervention strength.
+IR, fluency, and task-specific relevance use fixed prompts and the same judge
+configuration for every method.  The camera-ready version should specify the
+judge model, prompt-template identifiers, decoding parameters, and parsing
+rules here: \emph{[insert judge configuration]}.  Unless stated otherwise,
+bold denotes the best steering method for a fixed model and condition.
+
+\paragraph{Steering--evaluation alignment.}
+We distinguish two experimental regimes.  In \emph{evaluation-aligned}
+settings, the principal benchmark outcome directly measures the behavior being
+steered: truthfulness on TruthfulQA and refusal success on HarmBench.  Success
+therefore requires improving the target outcome while avoiding degenerate or
+low-quality generations.  In \emph{evaluation-orthogonal} settings, the
+steered attribute is distinct from the benchmark capability: we steer the
+output language on MGSM and sentiment on L-CiteEval, while mathematical
+accuracy, answer recall, and citation quality should be preserved.  Success in
+this regime requires both target attainment and capability retention.  Here,
+``orthogonal'' describes the roles of the evaluation objectives; it does not
+assert geometric orthogonality between their representation directions.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{
+Evaluation protocol under distribution shift.  In the \emph{aligned} regime,
+the benchmark directly scores the steered behavior.  In the
+\emph{orthogonal} regime, successful steering must realize a separate target
+while preserving the benchmark capability.  The shaded column states the
+primary criterion used to judge success.
+}
+\label{tab:evaluation-overview}
+\setlength{\tabcolsep}{5.2pt}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{
+    @{}c
+    >{\raggedright\arraybackslash}p{2.35cm}
+    >{\raggedright\arraybackslash}p{3.35cm}
+    >{\raggedright\arraybackslash}p{2.75cm}
+    >{\columncolor{AlignedShade}\raggedright\arraybackslash}X@{}
+}
+\toprule
+& \textbf{Benchmark}
+& \textbf{Distribution shift}
+& \textbf{Steered property}
+& \textbf{Criterion for successful steering}
+\\
+\midrule
+
+\multirow{2}{*}{\rotatebox[origin=c]{90}{\textsc{Aligned}}}
+& \textbf{TruthfulQA}~\citep{lin2022truthfulqa}
+& English $\rightarrow$ Spanish-input
+& Truthfulness
+& $\uparrow$ True and QAT; preserve instruction relevance and fluency.
+\\
+& \textbf{HarmBench}~\citep{mazeika2024harmbench}
+& Direct requests $\rightarrow$ jailbreak templates
+& Safe refusal
+& $\downarrow$ ASR; preserve safe-concept relevance.
+\\
+
+\midrule
+
+\multirow{2}{*}{\rotatebox[origin=c]{90}{\textsc{Orthogonal}}}
+& \textbf{MGSM}~\citep{shi2023language}
+& English calibration $\rightarrow$ five unseen languages
+& Spanish-language output
+& Achieve the language target while preserving exact-answer accuracy.
+\\
+& \textbf{L-CiteEval}~\citep{tang2024lciteeval}
+& 8K calibration $\rightarrow$ 16K/32K contexts
+& Positive sentiment
+& Achieve the sentiment target while preserving answer recall and citation F1.
+\\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\FloatBarrier
+
+
+% ============================================================
+% TRUTHFULQA
+% ============================================================
+
+\subsection{TruthfulQA: Prompt-Distribution Shift}
+\label{app:truthfulqa-full}
+
+TruthfulQA contains 817 questions designed to elicit common misconceptions
+and imitative falsehoods \citep{lin2022truthfulqa}.  We use English prompts for
+matched evaluation and a Spanish-input, English-output variant for shift.  The
+controller is calibrated only in English.  We report truthful and informative
+responses, instruction relevance (IR), and fluency (F), with the latter two on
+a $0$--$2$ scale.  Quality-adjusted truthfulness is
+$\mathrm{QAT}=\mathrm{True}(\%)\min\{\mathrm{IR}/2,\mathrm{F}/2\}$.
+Results are means over five repetitions; uncertainty is the standard error.
+The original informativeness score is retained for completeness but excluded
+from QAT because manual inspection found it unstable across steering methods.
+
+\begin{table*}[!htbp]
+\centering
+\scriptsize
+\caption{
+TruthfulQA under matched English evaluation (ID) and Spanish-input,
+English-output transfer (OOD).  Info denotes the original informativeness
+judge and is reported for completeness but is not used in QAT.  QAT is
+computed from the reported means.  Higher is better for every column.
+ODESteer is omitted because the available implementation did not yield a valid
+comparison.  Qwen2.5-14B and Qwen2.5-32B blocks are reserved for ongoing runs.
+}
+\label{tab:truthfulqa-full}
+\setlength{\tabcolsep}{4.0pt}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llccccc|ccccc}
+\toprule
+& & \multicolumn{5}{c|}{\textbf{ID}}
+& \multicolumn{5}{c}{\textbf{OOD: Spanish $\rightarrow$ English}} \\
+\cmidrule(lr){3-7}\cmidrule(lr){8-12}
+Model & Method
+& True (\%) $\uparrow$ & Info (\%) $\uparrow$ & IR $\uparrow$ & F $\uparrow$ & QAT $\uparrow$
+& True (\%) $\uparrow$ & Info (\%) $\uparrow$ & IR $\uparrow$ & F $\uparrow$ & QAT $\uparrow$ \\
+\midrule
+
+\multicolumn{12}{l}{\textit{Gemma-2-2B}} \\
+& Original
+& $49.79\!\pm\!0.22$ & 95.35 & 1.353 & 1.227 & 30.55
+& $51.41\!\pm\!0.90$ & 86.44 & 1.32 & 1.17 & 30.07 \\
+& ITI
+& $50.65\!\pm\!0.39$ & 95.01 & 1.389 & 1.285 & 32.54
+& $53.56\!\pm\!0.47$ & 88.59 & 1.42 & 1.21 & 32.40 \\
+& ActAdd
+& $60.37\!\pm\!0.66$ & 86.49 & 1.221 & 1.076 & 32.48
+& $63.57\!\pm\!0.39$ & 67.15 & 0.99 & 0.88 & 27.97 \\
+& Mean-AcT
+& $48.00\!\pm\!0.51$ & 93.76 & 1.387 & \textbf{1.293} & 31.03
+& $48.13\!\pm\!0.52$ & 90.40 & 1.42 & \textbf{1.23} & 29.60 \\
+& Linear-AcT
+& $46.71\!\pm\!0.76$ & 94.15 & \textbf{1.406} & 1.283 & 29.96
+& $47.83\!\pm\!0.78$ & 90.60 & \textbf{1.44} & \textbf{1.23} & 29.42 \\
+& PID-AcT
+& $47.07\!\pm\!0.52$ & 93.83 & 1.375 & 1.286 & 30.27
+& $48.79\!\pm\!0.61$ & 90.89 & 1.43 & 1.22 & 29.76 \\
+& S-PID
+& $52.51\!\pm\!0.44$ & 94.59 & 1.391 & 1.216 & 31.93
+& $55.15\!\pm\!0.37$ & 86.41 & 1.29 & 1.12 & 30.88 \\
+& A-LQR
+& $62.33\!\pm\!0.25$ & 91.65 & 1.291 & 1.149 & 35.81
+& $73.81\!\pm\!0.71$ & 76.55 & 1.12 & 1.06 & 39.12 \\
+& $\mathrm{H}_{\infty}$ (ours)
+& $\mathbf{70.11\!\pm\!0.70}$ & 79.34 & 1.144 & 1.075 & \textbf{37.68}
+& $\mathbf{77.45\!\pm\!0.52}$ & 64.16 & 1.04 & 1.02 & \textbf{39.50} \\
+
+\midrule
+\multicolumn{12}{l}{\textit{Llama-3-8B}} \\
+& Original
+& $49.28\!\pm\!0.98$ & 96.99 & 1.330 & 1.300 & 32.03
+& $42.86\!\pm\!0.49$ & 94.52 & 1.59 & 1.39 & 29.79 \\
+& ITI
+& $57.14\!\pm\!0.79$ & 97.53 & 1.380 & 1.300 & \textbf{37.14}
+& $55.47\!\pm\!0.88$ & 94.37 & 1.61 & 1.39 & 38.55 \\
+& ActAdd
+& $56.72\!\pm\!0.99$ & 88.69 & 1.230 & 1.170 & 33.18
+& $43.94\!\pm\!0.53$ & 93.78 & 1.57 & 1.35 & 29.66 \\
+& Mean-AcT
+& $47.47\!\pm\!0.71$ & 97.55 & 1.360 & 1.310 & 31.09
+& $46.61\!\pm\!0.69$ & 94.83 & 1.61 & 1.41 & 32.86 \\
+& Linear-AcT
+& $48.20\!\pm\!0.69$ & 97.50 & 1.350 & \textbf{1.330} & 32.05
+& $47.15\!\pm\!0.41$ & 94.96 & 1.61 & \textbf{1.42} & 33.48 \\
+& PID-AcT
+& $47.69\!\pm\!0.21$ & 97.60 & 1.340 & 1.310 & 31.24
+& $47.12\!\pm\!0.63$ & 95.08 & \textbf{1.62} & 1.41 & 33.22 \\
+& S-PID
+& $57.55\!\pm\!0.21$ & 97.80 & 1.410 & 1.270 & 36.54
+& $52.09\!\pm\!0.56$ & 94.37 & 1.59 & 1.33 & 34.64 \\
+& A-LQR
+& $58.95\!\pm\!0.27$ & 98.07 & \textbf{1.440} & 1.210 & 35.66
+& $55.57\!\pm\!0.71$ & 95.03 & 1.56 & 1.27 & 35.29 \\
+& $\mathrm{H}_{\infty}$ (ours)
+& $\mathbf{89.30\!\pm\!0.47}$ & 60.81 & 0.690 & 0.910 & 30.81
+& $\mathbf{85.21\!\pm\!0.40}$ & 64.70 & 0.97 & 0.97 & \textbf{41.33} \\
+\midrule
+\multicolumn{12}{l}{\textit{Qwen2.5-14B}} \\
+& Original & \multicolumn{10}{c}{\textit{TBD}} \\
+& ITI & \multicolumn{10}{c}{\textit{TBD}} \\
+& ActAdd & \multicolumn{10}{c}{\textit{TBD}} \\
+& Mean-AcT & \multicolumn{10}{c}{\textit{TBD}} \\
+& Linear-AcT & \multicolumn{10}{c}{\textit{TBD}} \\
+& PID-AcT & \multicolumn{10}{c}{\textit{TBD}} \\
+& S-PID & \multicolumn{10}{c}{\textit{TBD}} \\
+& A-LQR & \multicolumn{10}{c}{\textit{TBD}} \\
+& $\mathrm{H}_{\infty}$ (ours) & \multicolumn{10}{c}{\textit{TBD}} \\
+\midrule
+\multicolumn{12}{l}{\textit{Qwen2.5-32B}} \\
+& Original & \multicolumn{10}{c}{\textit{TBD}} \\
+& ITI & \multicolumn{10}{c}{\textit{TBD}} \\
+& ActAdd & \multicolumn{10}{c}{\textit{TBD}} \\
+& Mean-AcT & \multicolumn{10}{c}{\textit{TBD}} \\
+& Linear-AcT & \multicolumn{10}{c}{\textit{TBD}} \\
+& PID-AcT & \multicolumn{10}{c}{\textit{TBD}} \\
+& S-PID & \multicolumn{10}{c}{\textit{TBD}} \\
+& A-LQR & \multicolumn{10}{c}{\textit{TBD}} \\
+& $\mathrm{H}_{\infty}$ (ours) & \multicolumn{10}{c}{\textit{TBD}} \\
+\bottomrule
+\end{tabular}}
+\end{table*}
+
+\paragraph{Analysis.}
+Table~\ref{tab:truthfulqa-full} shows that, on Gemma-2-2B,
+$\mathrm{H}_{\infty}$ improves the joint
+truthfulness--quality trade-off in both regimes: relative to A-LQR, QAT rises
+from $35.81$ to $37.68$ ID and from $39.12$ to $39.50$ OOD.  On Llama-3-8B,
+the robust controller produces the largest truthfulness increase but sacrifices
+quality under matched evaluation; under Spanish-to-English transfer it instead
+achieves the best QAT ($41.33$).  This distinction supports our central claim:
+robust synthesis is most useful when deployment dynamics depart from
+calibration, rather than as a uniformly superior nominal controller.  The
+Qwen2.5-14B and Qwen2.5-32B blocks will test whether this pattern persists with
+model scale.
+
+\FloatBarrier
+
+
+% ============================================================
+% HARMBENCH FULL RESULTS
+% ============================================================
+
+\subsection{HarmBench: Adversarial Prompt Shift}
+\label{app:harmbench-full}
+
+HarmBench standardizes adversarial red teaming and robust-refusal evaluation
+\citep{mazeika2024harmbench}.  We apply five frozen human-jailbreak templates
+to the same 240 behavior identities used for direct requests: John persona,
+DNE nonresponse, Jailbreak Bot, YOJA/Nona roleplay, and APM programmer.  Attack
+success rate (ASR; lower is better) is the primary safety endpoint.  We also
+report safe-concept relevance, instruction relevance, fluency, and aggregate
+steering quality on a $0$--$2$ scale.  Safe-concept relevance tests whether low
+ASR reflects the intended refusal behavior.  The remaining judgments are
+reported for transparency but are not treated as safety objectives because a
+successful refusal should not comply with an unsafe instruction.
+
+\begin{table*}[!htbp]
+\centering
+\scriptsize
+\caption{
+HarmBench robust-refusal results for Llama-3.2-1B-Instruct.  Direct requests
+and each frozen jailbreak template contain the same 240 behavior identities.
+Lower ASR is better; higher is better for the four $0$--$2$ semantic metrics.
+}
+\label{tab:harmbench-full}
+\setlength{\tabcolsep}{4.0pt}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llccccc}
+\toprule
+Template & Method & ASR (\%) $\downarrow$ & Safe-concept rel. $\uparrow$
+& Instruction rel. $\uparrow$ & Fluency $\uparrow$ & Overall $\uparrow$ \\
+\midrule
+Direct
+& Original & 10.00 & 1.91 & \textbf{1.73} & 1.85 & \textbf{1.62} \\
+& A-LQR & 9.58 & 1.95 & 1.51 & \textbf{1.89} & 1.46 \\
+& $\mathrm{H}_{\infty}$ (ours) & \textbf{2.92} & \textbf{1.96}
+& 1.29 & 1.74 & 1.22 \\
+\midrule
+John persona
+& Original & 5.83 & 1.97 & \textbf{0.68} & \textbf{1.60} & \textbf{0.65} \\
+& A-LQR & 6.25 & 1.97 & 0.62 & 1.52 & 0.55 \\
+& $\mathrm{H}_{\infty}$ (ours) & \textbf{1.25} & \textbf{1.98}
+& 0.39 & 1.19 & 0.34 \\
+\midrule
+DNE nonresponse
+& Original & 6.25 & \textbf{1.99} & \textbf{0.63} & \textbf{1.59} & \textbf{0.64} \\
+& A-LQR & 4.17 & \textbf{1.99} & 0.57 & 1.53 & 0.56 \\
+& $\mathrm{H}_{\infty}$ (ours) & \textbf{1.67} & 1.98
+& 0.38 & 1.18 & 0.30 \\
+\midrule
+Jailbreak Bot
+& Original & 4.58 & 1.96 & \textbf{0.64} & \textbf{1.62} & \textbf{0.63} \\
+& A-LQR & 3.33 & 1.96 & 0.56 & 1.53 & 0.53 \\
+& $\mathrm{H}_{\infty}$ (ours) & \textbf{0.42} & \textbf{1.98}
+& 0.38 & 1.17 & 0.30 \\
+\midrule
+YOJA/Nona roleplay
+& Original & 8.33 & 1.97 & \textbf{0.63} & \textbf{1.56} & \textbf{0.62} \\
+& A-LQR & 8.75 & 1.97 & 0.55 & 1.50 & 0.51 \\
+& $\mathrm{H}_{\infty}$ (ours) & \textbf{0.83} & \textbf{1.98}
+& 0.37 & 1.15 & 0.29 \\
+\midrule
+APM programmer
+& Original & 2.92 & 1.94 & \textbf{0.64} & \textbf{1.56} & \textbf{0.64} \\
+& A-LQR & 5.00 & 1.97 & 0.57 & 1.51 & 0.53 \\
+& $\mathrm{H}_{\infty}$ (ours) & \textbf{0.42} & \textbf{1.98}
+& 0.37 & 1.12 & 0.30 \\
+\bottomrule
+\end{tabular}}
+\end{table*}
+
+\begin{table}[!htbp]
+\centering
+\scriptsize
+\caption{Expandable HarmBench cross-model summary.  The two reserved model
+blocks will be populated using the identical 240-behavior protocol.}
+\label{tab:harmbench-cross-model}
+\setlength{\tabcolsep}{3.0pt}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{llccc}
+\toprule
+Model & Method & Mean ASR $\downarrow$ & Worst ASR $\downarrow$
+& Safe rel. $\uparrow$ \\
+\midrule
+Llama-3.2-1B
+& Original & 6.32 & 10.00 & 1.957 \\
+& A-LQR & 6.18 & 9.58 & 1.968 \\
+& $\mathrm{H}_{\infty}$ (ours) & \textbf{1.25} & \textbf{2.92}
+& \textbf{1.977} \\
+\midrule
+\textit{[Model 2]}
+& Original & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+& A-LQR & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+& $\mathrm{H}_{\infty}$ (ours) & \textit{TBD} & \textit{TBD}
+& \textit{TBD} \\
+\midrule
+\textit{[Model 3]}
+& Original & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+& A-LQR & \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+& $\mathrm{H}_{\infty}$ (ours) & \textit{TBD} & \textit{TBD}
+& \textit{TBD} \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\paragraph{Analysis.}
+The per-template results in Table~\ref{tab:harmbench-full} and the cross-model
+summary in Table~\ref{tab:harmbench-cross-model} show that, for
+Llama-3.2-1B-Instruct, $\mathrm{H}_{\infty}$ attains the lowest ASR in
+every condition and keeps worst-case ASR below $3\%$.  Its mean ASR is
+$1.25\%$, compared with $6.18\%$ for A-LQR, while its mean safe-concept
+relevance is also slightly higher ($1.977$ versus $1.968$).  Generic
+instruction relevance and fluency decline because successful refusals do not
+comply with the unsafe request; the full table exposes this trade-off rather
+than folding compliance into the safety endpoint.  The two reserved model
+blocks will determine whether the ASR reduction generalizes across model
+families.
+
+\FloatBarrier
+
+
+% ============================================================
+% MGSM FULL RESULTS
+% ============================================================
+
+\subsection{MGSM: Cross-Lingual Transfer}
+\label{app:mgsm-full}
+
+MGSM contains 250 grade-school mathematics problems manually translated into
+ten languages \citep{shi2023language}.  We evaluate the same 250 identities in
+Chinese, French, Japanese, Swahili, and Telugu after English-only controller
+calibration.  Exact-answer accuracy measures retained mathematical capability.
+Target-language relevance ($T$), IR, and F are scored on a $0$--$2$ scale, and
+we report
+$Q_{\mathrm{tr}}=\min\{T/2,\mathrm{IR}/2,\mathrm{F}/2\}$ and
+$\mathrm{QAA}=\mathrm{Acc}(\%)Q_{\mathrm{tr}}$.
+
+\begin{table*}[!htbp]
+\centering
+\scriptsize
+\caption{
+MGSM transfer after English-only controller calibration.  Accuracy is reported
+for each unseen language; semantic metrics are macro-averaged equally across
+the five languages.  Higher is better throughout.
+}
+\label{tab:mgsm-full}
+\setlength{\tabcolsep}{4.0pt}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llcccccc|ccccc}
+\toprule
+& & \multicolumn{6}{c|}{\textbf{MGSM accuracy (\%)}}
+& \multicolumn{5}{c}{\textbf{Aggregate transfer quality}} \\
+\cmidrule(lr){3-8}\cmidrule(lr){9-13}
+Model & Method & Chinese & French & Japanese & Swahili & Telugu & Mean
+& $T$ & IR & F & $Q_{\mathrm{tr}}$ & QAA \\
+\midrule
+\multicolumn{13}{l}{\textit{Qwen3-4B}} \\
+& Original & 71.0 & 60.0 & 56.0 & 15.0 & 6.0 & 41.6
+& 0.000 & 1.758 & 1.466 & 0.000 & 0.00 \\
+& S-PID & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0
+& \textbf{1.976} & 0.000 & 0.000 & 0.000 & 0.00 \\
+& A-LQR & 20.0 & 29.0 & 32.0 & 12.0 & \textbf{19.0} & 22.4
+& 1.808 & 1.512 & 1.084 & 0.542 & 12.14 \\
+& $\mathrm{H}_{\infty}$ (ours)
+& \textbf{51.0} & \textbf{48.0} & \textbf{40.0} & \textbf{14.0}
+& 8.0 & \textbf{32.2} & 1.440 & \textbf{1.662} & \textbf{1.250}
+& \textbf{0.625} & \textbf{20.13} \\
+\midrule
+\multicolumn{13}{l}{\textit{Qwen3-8B}} \\
+& Original & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+& S-PID & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+& A-LQR & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+& $\mathrm{H}_{\infty}$ (ours)
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} & \textit{TBD} \\
+\bottomrule
+\end{tabular}}
+\end{table*}
+
+\paragraph{Analysis.}
+As reported in Table~\ref{tab:mgsm-full}, $\mathrm{H}_{\infty}$ retains
+$32.2\%$ mean accuracy on Qwen3-4B, compared
+with $22.4\%$ for A-LQR and $0\%$ for S-PID, and leads the steering methods in
+four of five languages.  It simultaneously improves the transfer bottleneck
+from $Q_{\mathrm{tr}}=0.542$ to $0.625$, increasing QAA from $12.14$ to
+$20.13$.  The original model retains greater raw accuracy but has zero target
+relevance and therefore does not realize the desired intervention.  The
+Qwen3-8B block is reserved for the same English-calibration protocol.
+
+\FloatBarrier
+
+
+% ============================================================
+% LCITEEVAL FULL RESULTS
+% ============================================================
+
+\subsection{L-CiteEval: Context-Length Shift}
+\label{app:lciteeval-full}
+
+L-CiteEval measures whether long-context models answer from the supplied
+context and provide faithful citations \citep{tang2024lciteeval}.  We retain
+the same 40 question identities while increasing context length from $8$K to
+$16$K and $32$K; controllers are calibrated only at $8$K.  Answer recall (AR)
+measures task completion, citation F1 (CF1) measures citation quality, and
+concept relevance (CR), IR, and F are scored on a $0$--$2$ scale.  Overall
+steering quality (OS) is the aggregate semantic score used in the main text.
+
+\begin{table*}[!htbp]
+\centering
+\scriptsize
+\caption{
+L-CiteEval length transfer.  The same 40 question identities are evaluated at
+each length.  AR is answer recall, CF1 is citation F1, CR is concept relevance,
+IR is instruction relevance, F is fluency, and OS is overall steering quality.
+All metrics are better when higher.
+}
+\label{tab:lciteeval-full}
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lllcccccc}
+\toprule
+Model & Context & Method & AR (\%) $\uparrow$ & CF1 (\%) $\uparrow$
+& CR $\uparrow$ & IR $\uparrow$ & F $\uparrow$ & OS $\uparrow$ \\
+\midrule
+\multirow{12}{*}{\rotatebox{90}{Qwen2.5-3B-Instruct}}
+& \multirow{4}{*}{$8$K}
+& Original & 66.2 & 7.8 & 0.00 & 1.35 & 1.50 & 0.00 \\
+& & S-PID & \textbf{72.1} & \textbf{7.2} & 0.00 & \textbf{1.60} & 1.50 & 0.00 \\
+& & A-LQR & 70.1 & 5.6 & \textbf{0.05} & 1.48 & 1.48 & \textbf{0.05} \\
+& & $\mathrm{H}_{\infty}$ (ours) & 66.4 & 6.4 & 0.00 & 1.55
+& \textbf{1.55} & 0.00 \\
+\cmidrule(lr){2-9}
+& \multirow{4}{*}{$16$K}
+& Original & 65.2 & 5.8 & 0.20 & 1.40 & 1.52 & 0.15 \\
+& & S-PID & 61.9 & 7.2 & 0.00 & 1.38 & 1.48 & 0.00 \\
+& & A-LQR & 64.8 & 3.0 & 0.00 & \textbf{1.43} & \textbf{1.57} & 0.00 \\
+& & $\mathrm{H}_{\infty}$ (ours) & \textbf{65.2} & \textbf{7.8}
+& \textbf{0.15} & 1.40 & 1.43 & \textbf{0.10} \\
+\cmidrule(lr){2-9}
+& \multirow{4}{*}{$32$K}
+& Original & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+& & S-PID & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+& & A-LQR & \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+& & $\mathrm{H}_{\infty}$ (ours)
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+\bottomrule
+\end{tabular}}
+\end{table*}
+
+\begin{table*}[!htbp]
+\centering
+\scriptsize
+\caption{Reserved L-CiteEval blocks for two additional model families.  Each
+model will use the same $8$K calibration and $8$K/$16$K/$32$K evaluation
+protocol as Table~\ref{tab:lciteeval-full}.}
+\label{tab:lciteeval-future-models}
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lllcccccc}
+\toprule
+Model & Context & Method & AR (\%) $\uparrow$ & CF1 (\%) $\uparrow$
+& CR $\uparrow$ & IR $\uparrow$ & F $\uparrow$ & OS $\uparrow$ \\
+\midrule
+\multirow{3}{*}{\textit{[Model 2]}}
+& $8$K & Original/S-PID/A-LQR/$\mathrm{H}_{\infty}$
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+& $16$K & Original/S-PID/A-LQR/$\mathrm{H}_{\infty}$
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+& $32$K & Original/S-PID/A-LQR/$\mathrm{H}_{\infty}$
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+\midrule
+\multirow{3}{*}{\textit{[Model 3]}}
+& $8$K & Original/S-PID/A-LQR/$\mathrm{H}_{\infty}$
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+& $16$K & Original/S-PID/A-LQR/$\mathrm{H}_{\infty}$
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+& $32$K & Original/S-PID/A-LQR/$\mathrm{H}_{\infty}$
+& \textit{TBD} & \textit{TBD} & \textit{TBD} & \textit{TBD}
+& \textit{TBD} & \textit{TBD} \\
+\bottomrule
+\end{tabular}}
+\end{table*}
+
+\paragraph{Analysis.}
+Table~\ref{tab:lciteeval-full} shows that the matched $8$K evaluation does not
+favor robust synthesis: S-PID has the
+highest answer recall, while A-LQR has the largest controlled OS.  After the
+shift to $16$K, A-LQR's CF1 falls from $5.6$ to $3.0$ and S-PID's AR falls
+from $72.1\%$ to $61.9\%$.  In contrast, $\mathrm{H}_{\infty}$ preserves AR
+($66.4\%\!\rightarrow\!65.2\%$) and improves CF1 from $6.4$ to $7.8$, giving
+the best CF1 and OS among controlled methods.  The pending $32$K evaluation
+and two additional model families reserved in
+Table~\ref{tab:lciteeval-future-models} test whether this robustness crossover
+strengthens with shift severity and persists across architectures.
+
+\FloatBarrier

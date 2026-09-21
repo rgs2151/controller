@@ -1,0 +1,180 @@
+\section{Experiments}
+\label{sec:experiments}
+
+We test whether controllers synthesized from calibration-time dynamics remain
+reliable under prompt, adversarial, language, and context-length shifts.  All
+identified dynamics, disturbance channels, gains, and hyperparameters are
+frozen before shifted evaluation.  A-LQR and $\mathrm{H}_{\infty}$ use the
+same state coordinates, references, intervention channels, and quadratic
+weights, isolating the effect of nominal versus worst-case synthesis.  Full
+protocols, per-condition results, and standard errors are reported in
+Appendix~\ref{app:full-results}.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]
+    {Figures/benchmark-evaluation-overview.pdf}
+    \caption{
+        \textbf{Evaluation under distribution shift.}
+        Controllers are calibrated in-distribution and frozen before testing.
+        \emph{Aligned} benchmarks directly score the steered behavior;
+        \emph{orthogonal} benchmarks require attaining a separate steering
+        target while preserving task capability.
+    }
+    \label{fig:benchmark-overview}
+\end{figure*}
+
+Figure~\ref{fig:benchmark-overview} summarizes the four evaluation settings.
+We use ``orthogonal'' to describe the roles of the objectives, not geometric
+orthogonality between their representation directions.
+
+
+% ============================================================
+% TruthfulQA
+% ============================================================
+
+\subsection{Prompt Shift: TruthfulQA}
+\label{sec:exp-truthfulqa}
+
+We calibrate on English prompts and test matched English inputs (ID) and
+Spanish-input, English-output transfer (OOD).  We measure the joint
+truthfulness--quality trade-off by
+$\mathrm{QAT}=\mathrm{True}(\%)\min\{\mathrm{IR}/2,\mathrm{F}/2\}$, where
+IR and F denote instruction relevance and fluency.
+
+\begin{figure*}[t]
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]
+        {Figures/truthfulqa-id-quality-frontier.pdf}
+        \caption{Matched English evaluation.}
+        \label{fig:truthfulqa-id}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]
+        {Figures/truthfulqa-ood-quality-frontier.pdf}
+        \caption{Spanish-to-English transfer.}
+        \label{fig:truthfulqa-ood}
+    \end{subfigure}
+    \caption{
+        \textbf{Truthfulness--quality trade-off.}
+        Colors denote models, markers denote methods, and dashed contours show
+        equal QAT; diamonds mark $\mathrm{H}_{\infty}$.
+    }
+    \label{fig:truthfulqa-quality-tradeoff}
+\end{figure*}
+
+Under OOD transfer, $\mathrm{H}_{\infty}$ attains the best QAT on both models
+(Figure~\ref{fig:truthfulqa-quality-tradeoff}): $39.50$ on Gemma-2-2B versus
+$39.12$ for A-LQR, and $41.33$ on Llama-3-8B versus $35.29$.  The ID Llama
+result provides an important qualification: robust synthesis substantially
+raises truthfulness but not QAT because the stronger intervention reduces
+response quality.  Its advantage is therefore a better frontier under shift,
+not uniform dominance of every nominal metric.
+
+
+% ============================================================
+% HarmBench
+% ============================================================
+
+\subsection{Adversarial Prompt Shift: HarmBench}
+\label{sec:exp-harmbench}
+
+We evaluate refusal on direct HarmBench requests and five frozen jailbreak
+templates over the same 240 behaviors.  ASR is the primary endpoint, while
+safe-concept relevance checks that lower ASR reflects the intended refusal.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]
+    {Figures/harmbench-robust-refusal.pdf}
+    \caption{
+        \textbf{Robust refusal under adversarial prompts.}
+        \textbf{(A)} ASR across direct and jailbreak conditions.
+        \textbf{(B)} Mean ASR versus safe-concept relevance.
+    }
+    \label{fig:harmbench-refusal}
+\end{figure}
+
+Across all six conditions, $\mathrm{H}_{\infty}$ keeps ASR below $3\%$
+(Figure~\ref{fig:harmbench-refusal}).  Mean ASR falls from $6.18\%$ with
+A-LQR to $1.25\%$---an $80\%$ reduction---while safe-concept relevance
+slightly increases from $1.968$ to $1.977$.  The gain therefore reflects more
+reliable refusal rather than abandonment of the safety target.
+
+
+% ============================================================
+% MGSM
+% ============================================================
+
+\subsection{Language Shift: MGSM}
+\label{sec:exp-mgsm}
+
+We calibrate in English and transfer the frozen controllers to five unseen
+MGSM languages.  Joint target attainment and capability retention are measured
+by $Q_{\mathrm{tr}}=\min\{T/2,\mathrm{IR}/2,\mathrm{F}/2\}$ and
+$\mathrm{QAA}=\mathrm{Acc}(\%)Q_{\mathrm{tr}}$, where $T$ is target-language
+relevance.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]
+    {Figures/mgsm-transfer-overview.pdf}
+    \caption{
+        \textbf{Cross-lingual transfer on MGSM.}
+        Left: capability--steering frontier with equal-QAA contours.
+        Right: accuracy by unseen language.  Calibration uses English only.
+    }
+    \label{fig:mgsm-transfer}
+\end{figure}
+
+$\mathrm{H}_{\infty}$ leads the steering baselines in four of five languages
+(Figure~\ref{fig:mgsm-transfer}), retaining $32.2\%$ mean accuracy versus
+$22.4\%$ for A-LQR and $0\%$ for S-PID.  This is not obtained by weakening
+the intervention: $Q_{\mathrm{tr}}$ rises from $0.542$ to $0.625$, increasing
+QAA from $12.14$ to $20.13$.  Although the unmodified model has higher raw
+accuracy, its zero target-language relevance means that it does not achieve
+the steering objective.
+
+
+% ============================================================
+% Context length
+% ============================================================
+
+\subsection{Context-Length Shift: L-CiteEval}
+\label{sec:exp-context}
+
+We calibrate at $8$K and evaluate the frozen controllers as context length
+increases, reporting answer recall (AR), citation F1 (CF1), and overall
+steering quality (OS).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]
+    {Figures/lciteeval-context-robustness.pdf}
+    \caption{
+        \textbf{Robustness to context-length shift on L-CiteEval.}
+        AR, CF1, and OS for controllers calibrated at $8$K and evaluated at
+        increasing context lengths.
+    }
+    \label{fig:context-shift}
+\end{figure}
+
+The robust controller need not dominate at the matched $8$K condition, but the
+ordering changes under shift (Figure~\ref{fig:context-shift}).  At $16$K,
+A-LQR's CF1 falls from $5.6$ to $3.0$ and S-PID's AR from $72.1\%$ to
+$61.9\%$; $\mathrm{H}_{\infty}$ instead preserves AR
+($66.4\%\!\rightarrow\!65.2\%$) while CF1 rises from $6.4$ to $7.8$, yielding
+the strongest controlled result.  This crossover is the expected signature of
+robust synthesis: its advantage emerges as deployment dynamics depart from
+calibration.
+
+
+% The calibration-time predictive analysis is a central paper claim and should
+% return here once its cross-model figure is complete.  Use one figure containing
+% (i) S_rob versus held-out reliability and (ii) residual-subspace coverage or
+% reference deviation versus certificate error.  Do not expose a visible
+% ``results forthcoming'' subsection in the submitted manuscript.
