@@ -9,7 +9,7 @@
 | Llama-3.2-3B | Original | 33.0 ± 1.6 | 0.00 ± 0.00 | 1.68 ± 0.03 | 1.44 ± 0.03 |
 | Llama-3.2-3B | S-PID | 8.2 ± 1.7 | 1.94 ± 0.02 | 0.87 ± 0.04 | 0.60 ± 0.05 |
 | Llama-3.2-3B | A-LQR | 27.6 ± 2.6 | 1.50 ± 0.03 | 1.57 ± 0.04 | 1.17 ± 0.04 |
-| Llama-3.2-3B | H∞ (ours) | 11.0 ± 2.0 | 1.66 ± 0.02 | 1.13 ± 0.04 | 0.93 ± 0.03 |
+| Llama-3.2-3B | H∞ (ours) | 12.2 ± 2.4 | 1.47 ± 0.02 | 1.02 ± 0.05 | 0.91 ± 0.04 |
 
 ## Method
 
@@ -41,4 +41,4 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Llama-3.2-3B-Instruct | Original | No intervention |
 | Llama-3.2-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
 | Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
-| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 10; Qf/R = 0.01; R = 1; γ★ = 4.951513; costs selected from the frozen 12-point grid on 50 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 1; Qf/R = 0.01; R = 1; γ★ = 1.919061; costs selected from the frozen 12-point grid on 50 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using 80% exact-answer accuracy and 20% normalized AXBench Overall; no λ sweep |

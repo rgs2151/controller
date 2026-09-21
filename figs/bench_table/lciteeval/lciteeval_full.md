@@ -13,7 +13,7 @@
 | 32K | Qwen2.5-3B-Instruct | Original | 54.0 ± 8.4 | 2.4 ± 1.3 | 0.00 ± 0.00 | 1.18 ± 0.17 | 1.48 ± 0.11 |
 | 32K | Qwen2.5-3B-Instruct | S-PID | 61.0 ± 9.1 | 1.6 ± 1.1 | 0.00 ± 0.00 | 1.20 ± 0.12 | 1.35 ± 0.09 |
 | 32K | Qwen2.5-3B-Instruct | A-LQR | 56.2 ± 6.7 | 4.1 ± 1.9 | 0.00 ± 0.00 | 1.23 ± 0.13 | 1.35 ± 0.08 |
-| 32K | Qwen2.5-3B-Instruct | H∞ (ours) | 52.6 ± 6.6 | 1.8 ± 1.2 | 0.05 ± 0.03 | 1.20 ± 0.12 | 1.38 ± 0.11 |
+| 32K | Qwen2.5-3B-Instruct | H∞ (ours) | 49.2 ± 6.1 | 4.3 ± 2.4 | 0.00 ± 0.00 | 1.18 ± 0.15 | 1.20 ± 0.15 |
 
 ## Method
 
@@ -44,4 +44,4 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Qwen2.5-3B-Instruct | Original | No intervention |
 | Qwen2.5-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01; frozen upstream concept-steering configuration |
 | Qwen2.5-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I; frozen upstream concept-steering configuration |
-| Qwen2.5-3B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054; selected on 50 disjoint short AXBench-style prompts |
+| Qwen2.5-3B-Instruct | H∞ | 8K/16K: λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054. Updated 32K: λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 2.9917; selected on the 40 matched 8K HotpotQA prompts with 45% answer recall, 45% citation F1, 5% concept relevance, and 5% fluency. |
