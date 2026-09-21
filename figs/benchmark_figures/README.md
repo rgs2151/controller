@@ -173,7 +173,7 @@
 - Data/input: `cache/mgsm_transfer_results.csv` and `cache/lciteeval_context_results.csv`.
 - MGSM groups: model, method, and Chinese/French/Japanese/Swahili/Telugu.
 - L-CiteEval groups: model, method, and context length.
-- Outputs: `plots/pdf/mgsm-transfer-overview.pdf`, `plots/pdf/lciteeval-context-robustness.pdf`, and matching PNG files.
+- Outputs: `plots/pdf/mgsm-transfer-overview.pdf`, `plots/pdf/lciteeval-context-robustness.pdf`, `plots/pdf/lciteeval-context-robustness-drop-32k.pdf`, and matching PNG files.
 
 ## Statistics
 
@@ -197,6 +197,7 @@
 ## Notes
 
 - The plotting layout and visual encodings are preserved from the supplied archive; the 32K label now reflects its completed status.
+- `lciteeval-context-robustness-drop-32k` is an otherwise identical reporting variant restricted to the 8K and 16K results; the complete 8K/16K/32K figure remains unchanged.
 
 ## References
 

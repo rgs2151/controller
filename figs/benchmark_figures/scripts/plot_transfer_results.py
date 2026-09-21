@@ -483,7 +483,20 @@ def context_metric_limits(metric: str, values: list[float]) -> tuple[float, floa
     return min(values) - padding, max(values) + padding
 
 
-def create_lcite_figure(rows: list[dict[str, object]]) -> plt.Figure:
+def create_lcite_figure(
+    rows: list[dict[str, object]],
+    context_subset: tuple[int, ...] | None = None,
+) -> plt.Figure:
+    if context_subset is not None:
+        allowed_contexts = set(context_subset)
+        rows = [
+            row
+            for row in rows
+            if int(float(row["context_k"])) in allowed_contexts
+        ]
+        if not rows:
+            raise ValueError("No L-CiteEval rows remain after context filtering")
+
     models = list(dict.fromkeys(str(row["model"]) for row in rows))
     colors = model_color_map(models)
     compared_methods = ["H-infinity", "A-LQR", "S-PID"]
@@ -492,9 +505,7 @@ def create_lcite_figure(rows: list[dict[str, object]]) -> plt.Figure:
         ("citation_f1", "B   Citation F1 (%)"),
         ("steering_quality", "C   Overall steering (0-2)"),
     ]
-    context_ticks = sorted(
-        {int(float(row["context_k"])) for row in rows}.union({32})
-    )
+    context_ticks = sorted({int(float(row["context_k"])) for row in rows})
     nrows = len(models)
     fig, axes = plt.subplots(
         nrows,
@@ -523,7 +534,10 @@ def create_lcite_figure(rows: list[dict[str, object]]) -> plt.Figure:
             y_limits = context_metric_limits(metric, metric_values)
             ax.set_ylim(*y_limits)
             ax.set_xscale("log", base=2)
-            ax.set_xlim(7.0, 38.0)
+            ax.set_xlim(
+                7.0,
+                38.0 if max(context_ticks) >= 32 else 19.0,
+            )
             ax.set_xticks(context_ticks)
             context_labels = {
                 8: "8K\nmatched",
@@ -715,9 +729,14 @@ def create_lcite_figure(rows: list[dict[str, object]]) -> plt.Figure:
 def main() -> None:
     configure_style()
     save_figure(create_mgsm_figure(read_csv(MGSM_DATA)), "mgsm-transfer-overview")
+    lcite_rows = read_csv(LCITE_DATA)
     save_figure(
-        create_lcite_figure(read_csv(LCITE_DATA)),
+        create_lcite_figure(lcite_rows),
         "lciteeval-context-robustness",
+    )
+    save_figure(
+        create_lcite_figure(lcite_rows, context_subset=(8, 16)),
+        "lciteeval-context-robustness-drop-32k",
     )
 
 
