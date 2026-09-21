@@ -59,7 +59,7 @@ h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
 
 [calibration.truthfulqa_txi_fluency_composite]
-aggregation = "mean_per_response_weighted_sum"
+aggregation = "aggregate_product_weighted_sum"
 truthfulqa_true_informative_weight = 0.95
 axbench_fluency_weight = 0.05
 axbench_score_normalizer = 2.0
