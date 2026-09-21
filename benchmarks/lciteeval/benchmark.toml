@@ -52,9 +52,10 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "mean_axbench_overall"
+selection_metric = "0.45_answer_recall_plus_0.45_citation_f1_plus_0.05_concept_relevance_plus_0.05_fluency"
 h_infinity_disturbance_samples = 200
-h_infinity_tuning_samples = 50
+h_infinity_tuning_dataset = "lciteeval_length_hotpotqa_8k"
+h_infinity_tuning_samples = 40
 h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
 

@@ -70,14 +70,45 @@ def data_path(model_key: str) -> Path:
     return dataset_root(BENCHMARK, model_key) / "lciteeval.json"
 
 
-def cache_root(model_key: str, use_cache: bool) -> Path:
-    return evaluation_root(BENCHMARK, model_key, use_cache=use_cache)
+def cache_root(
+    model_key: str, use_cache: bool, calibration_id: str = "selected"
+) -> Path:
+    """Route named recalibrations away from the historical selected run."""
+
+    root = evaluation_root(BENCHMARK, model_key, use_cache=use_cache)
+    if calibration_id == "selected":
+        return root
+    if not calibration_id or "/" in calibration_id or "\\" in calibration_id:
+        raise ValueError("calibration_id must be a simple name")
+    return root / "calibrations" / calibration_id
+
+
+def compact_results_root(use_cache: bool, calibration_id: str = "selected") -> Path:
+    """Mirror the evaluation namespace for compact, Git-tracked summaries."""
+
+    root = results_root(BENCHMARK, use_cache=use_cache)
+    if calibration_id == "selected":
+        return root
+    if not calibration_id or "/" in calibration_id or "\\" in calibration_id:
+        raise ValueError("calibration_id must be a simple name")
+    return root / "calibrations" / calibration_id
 
 
 def generation_path(
-    model_key: str, condition: str, method: str, *, use_cache: bool
+    model_key: str,
+    condition: str,
+    method: str,
+    *,
+    use_cache: bool,
+    calibration_id: str = "selected",
 ) -> Path:
-    return cache_root(model_key, use_cache) / "generations" / f"hotpotqa_{condition}" / method / "final.json"
+    return (
+        cache_root(model_key, use_cache, calibration_id)
+        / "generations"
+        / f"hotpotqa_{condition}"
+        / method
+        / "final.json"
+    )
 
 
 def generation_complete(path: Path) -> bool:
@@ -234,9 +265,10 @@ def _shard_path(
     shard_count: int,
     *,
     use_cache: bool,
+    calibration_id: str = "selected",
 ) -> Path:
     return (
-        cache_root(model_key, use_cache)
+        cache_root(model_key, use_cache, calibration_id)
         / "generation_shards"
         / f"hotpotqa_{condition}"
         / method
@@ -264,6 +296,7 @@ def generate_shard(
         shard_index,
         shard_count,
         use_cache=use_cache,
+        calibration_id=calibration_id,
     )
     batch_size = generation_batch_size or DEFAULT_BATCH_SIZE[model_key][condition]
     identity = {
@@ -367,6 +400,7 @@ def merge_shards(
     shard_count: int,
     *,
     use_cache: bool,
+    calibration_id: str = "selected",
 ) -> Path:
     paths = [
         _shard_path(
@@ -376,6 +410,7 @@ def merge_shards(
             index,
             shard_count,
             use_cache=use_cache,
+            calibration_id=calibration_id,
         )
         for index in range(shard_count)
     ]
@@ -388,7 +423,13 @@ def merge_shards(
         raise ValueError(f"L-CiteEval merge changed matched order for {condition}/{method}")
     common = dict(shards[0]["identity"])
     common.pop("shard")
-    destination = generation_path(model_key, condition, method, use_cache=use_cache)
+    destination = generation_path(
+        model_key,
+        condition,
+        method,
+        use_cache=use_cache,
+        calibration_id=calibration_id,
+    )
     _write_json(
         destination,
         {
@@ -410,8 +451,18 @@ def _dataset_map(model_key: str) -> dict[str, dict]:
     }
 
 
-def score_answer_overlap(model_key: str, generation: Path, *, use_cache: bool) -> Path:
-    destination = scorer_cache_path(cache_root(model_key, use_cache), generation, "lcite_answer_overlap")
+def score_answer_overlap(
+    model_key: str,
+    generation: Path,
+    *,
+    use_cache: bool,
+    calibration_id: str = "selected",
+) -> Path:
+    destination = scorer_cache_path(
+        cache_root(model_key, use_cache, calibration_id),
+        generation,
+        "lcite_answer_overlap",
+    )
     if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
         return destination
     source = _dataset_map(model_key)
@@ -430,9 +481,18 @@ def score_answer_overlap(model_key: str, generation: Path, *, use_cache: bool) -
 
 
 def score_citations(
-    model_key: str, generation: Path, device: str, *, use_cache: bool
+    model_key: str,
+    generation: Path,
+    device: str,
+    *,
+    use_cache: bool,
+    calibration_id: str = "selected",
 ) -> Path:
-    destination = scorer_cache_path(cache_root(model_key, use_cache), generation, "lcite_citation_nli")
+    destination = scorer_cache_path(
+        cache_root(model_key, use_cache, calibration_id),
+        generation,
+        "lcite_citation_nli",
+    )
     if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
         return destination
     source = _dataset_map(model_key)
@@ -466,8 +526,14 @@ def score_citations(
     return destination
 
 
-def score_axbench_overall(model_key: str, generation: Path, *, use_cache: bool) -> Path:
-    root = cache_root(model_key, use_cache)
+def score_axbench_overall(
+    model_key: str,
+    generation: Path,
+    *,
+    use_cache: bool,
+    calibration_id: str = "selected",
+) -> Path:
+    root = cache_root(model_key, use_cache, calibration_id)
     components = (
         "axbench_concept_relevance",
         "axbench_instruction_relevance",
@@ -500,9 +566,16 @@ def summarize(
     scorer_keys: tuple[str, ...],
     *,
     use_cache: bool,
+    calibration_id: str = "selected",
 ) -> Path:
-    root = cache_root(model_key, use_cache)
-    generation = generation_path(model_key, condition, method, use_cache=use_cache)
+    root = cache_root(model_key, use_cache, calibration_id)
+    generation = generation_path(
+        model_key,
+        condition,
+        method,
+        use_cache=use_cache,
+        calibration_id=calibration_id,
+    )
     generation_payload = json.loads(generation.read_text())
     metrics = {}
     for key in scorer_keys:
@@ -533,7 +606,7 @@ def summarize(
         summary["metrics"] = {**existing.get("metrics", {}), **metrics}
     _write_json(destination, summary)
     _write_json(
-        results_root(BENCHMARK, use_cache=use_cache)
+        compact_results_root(use_cache, calibration_id)
         / model_key
         / f"hotpotqa_{condition}"
         / f"{method}.json",
@@ -575,6 +648,7 @@ def main() -> None:
             Path(arguments.generation_path),
             arguments.device,
             use_cache=use_cache,
+            calibration_id=arguments.calibration_id,
         )
 
 
