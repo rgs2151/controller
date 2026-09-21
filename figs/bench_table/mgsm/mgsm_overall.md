@@ -9,7 +9,7 @@
 | Llama-3.2-3B | Original | 33.0 ± 1.6 | 0.00 ± 0.00 | 1.68 ± 0.03 | 1.44 ± 0.03 |
 | Llama-3.2-3B | S-PID | 8.2 ± 1.7 | 1.94 ± 0.02 | 0.87 ± 0.04 | 0.60 ± 0.05 |
 | Llama-3.2-3B | A-LQR | 27.6 ± 2.6 | 1.50 ± 0.03 | 1.57 ± 0.04 | 1.17 ± 0.04 |
-| Llama-3.2-3B | H∞ (ours) | 25.8 | 0.83 | 1.46 | 1.08 |
+| Llama-3.2-3B | H∞ (ours) | 11.0 ± 2.0 | 1.66 ± 0.02 | 1.13 ± 0.04 | 0.93 ± 0.03 |
 
 ## Method
 
@@ -28,7 +28,7 @@
 | Instruction relevance (0–2) ↑ | Whether the response addresses and attempts the arithmetic task. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Language quality of the generated response. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
-Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains 10 matched MGSM question identities; deleting a group removes the same questions from all five languages. The uncertainty measures question-sampling variability, not decoding-run or judge variability. Every method within a model uses identical problem identities. The per-response records required for the Llama H∞ jackknife were not retained, so that block remains without an uncertainty term rather than receiving an estimated or fabricated one.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains 10 matched MGSM question identities; deleting a group removes the same questions from all five languages. The uncertainty measures question-sampling variability, not decoding-run or judge variability. Every method within a model uses identical problem identities.
 
 ## Hyperparameters
 
@@ -41,4 +41,4 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Llama-3.2-3B-Instruct | Original | No intervention |
 | Llama-3.2-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
 | Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
-| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.284523; costs selected from the frozen 12-point grid on 50 disjoint GSM8K training prompts using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 10; Qf/R = 0.01; R = 1; γ★ = 4.951513; costs selected from the frozen 12-point grid on 50 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |

@@ -377,7 +377,11 @@ def score_deterministic(
     model_key: str, generation: Path, scorer_key: str, *, use_cache: bool
 ) -> Path:
     destination = scorer_cache_path(cache_root(model_key, use_cache), generation, scorer_key)
-    if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
+    if (
+        scorer_key != "mgsm_exact_match"
+        and destination.exists()
+        and json.loads(destination.read_text()).get("status") == "complete"
+    ):
         return destination
     payload = json.loads(generation.read_text())
     rows = []

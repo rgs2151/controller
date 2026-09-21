@@ -395,10 +395,6 @@ def _score_exact_generations(
         answers[str(row["prompt_id"])] = answer
     for generation in generations:
         destination = scorer_cache_path(scorer_root, generation, EXACT_SCORER)
-        if destination.exists():
-            saved = json.loads(destination.read_text())
-            if saved.get("status") == "complete":
-                continue
         payload = json.loads(generation.read_text())
         rows = []
         for repetition in payload["repetitions"]:
@@ -901,9 +897,16 @@ def calibrate(
     if (root / "selection.json").exists() and (root / "controller.pt").exists():
         saved = json.loads((root / "selection.json").read_text())
         protocol = saved.get("protocol", {})
+        expected_metric_configuration = (
+            CALIBRATION_CONFIG[QUALITY_SCORER]
+            if COMPOSITION.calibration.selection_metric == QUALITY_SCORER
+            else None
+        )
         if (
             protocol.get("selection_metric")
             == COMPOSITION.calibration.selection_metric
+            and protocol.get("metric_configuration")
+            == expected_metric_configuration
             and bool(protocol.get("lambda_sweep_enabled", False))
             == LAMBDA_SWEEP.enabled
         ):

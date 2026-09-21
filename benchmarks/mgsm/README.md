@@ -13,12 +13,15 @@ five transfer languages: Chinese, French, Japanese, Swahili, and Telugu.
   disturbance geometry on 200 translated GSM8K prompts balanced across Bengali,
   German, Russian, and Thai, then selects the cost grid on 50 additional disjoint
   prompts in the same four-language mixture. Selection uses the mean per-response
-  balanced additive combination of exact-answer accuracy and normalized AXBench
-  Overall.
+  accuracy-weighted additive combination of 80% exact-answer accuracy and 20%
+  normalized AXBench Overall.
 - `evaluate`: generate one native-eight-shot worked solution for each of 100
   matched problems in every requested input language, capped at 256 new tokens.
 - `score`: independently compute exact final-number accuracy, AXBench Spanish rule
   following, instruction relevance, fluency, and their steering harmonic mean.
+  Exact-number scoring accepts decimal and thousands separators in either comma
+  or period conventions and resolves ambiguous final tokens against the numeric
+  gold answer.
 
 English and Spanish construct the direction and are not in the default evaluation.
 The remaining registered languages stay independently runnable with `--datasets`;
