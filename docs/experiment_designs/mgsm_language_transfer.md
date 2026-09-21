@@ -15,7 +15,7 @@
 - **H∞ disturbance data:** 200 frozen GSM8K training questions translated and
   balanced across Bengali, German, Russian, and Thai.
 - **Baseline settings:** Fixed A-LQR settings; no sweep.
-- **H∞ selection:** 50 additional translated GSM8K questions balanced across
+- **H∞ selection:** 100 additional translated GSM8K questions balanced across
   Bengali, German, Russian, and Thai and shared by every candidate; `lambda=1.5`
   is fixed to the same target as A-LQR, and the 12-point cost grid maximizes the
   per-response accuracy-weighted additive score: 90% exact-answer accuracy and
@@ -27,7 +27,7 @@
   retained in code only as an optional deferred method.
 - **Scoring:** Exact final-number accuracy, Spanish adherence, instruction
   relevance, fluency, and overall steering.
-- **Evaluation size:** Per model, 600 H∞ selection generations and 1,500 final
+- **Evaluation size:** Per model, 1,200 H∞ selection generations and 1,500 final
   generations.
 
 ## Question
@@ -71,8 +71,8 @@ question itself moves into unseen input languages, while retaining correctness?
 ## 4. Controller selection
 
 - **A-LQR:** fixed `lambda=1.5`, `Q=0.1`, `R=1`, `Qf=0.1`. No sweep.
-- **H∞ development set:** 50 additional GSM8K training questions, disjoint from
-  the 200 disturbance prompts: 13 Bengali, 13 German, 12 Russian, and 12 Thai.
+- **H∞ development set:** 100 additional GSM8K training questions, disjoint from
+  the 200 disturbance prompts: 25 each in Bengali, German, Russian, and Thai.
 - **Isolation:** Bengali, German, Russian, and Thai are calibration-only. Chinese,
   French, Japanese, Swahili, and Telugu remain untouched final-test languages.
 - **H∞ target:** fixed `lambda=1.5`, exactly matching A-LQR. The generic optional
@@ -107,7 +107,7 @@ question itself moves into unseen input languages, while retaining correctness?
   generations.
 - Historical Qwen and Llama S-PID generations remain archived but are outside
   the active comparison.
-- H∞ selection per model: `12 × 50 = 600` cost-grid generations. There is no
+- H∞ selection per model: `12 × 100 = 1,200` cost-grid generations. There is no
   setpoint-multiplier sweep.
 - There are no repeated final-evaluation seeds.
 

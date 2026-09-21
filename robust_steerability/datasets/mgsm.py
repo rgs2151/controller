@@ -157,7 +157,7 @@ def materialize_evaluation(tokenizer) -> dict:
 
 
 def gsm8k_calibration_splits(seed: int = 42) -> dict[str, list[dict]]:
-    """Freeze 200 disturbance and 50 disjoint H-infinity tuning questions."""
+    """Freeze 200 disturbance and 100 disjoint H-infinity tuning questions."""
 
     rows = list(
         load_dataset(
@@ -170,7 +170,7 @@ def gsm8k_calibration_splits(seed: int = 42) -> dict[str, list[dict]]:
     indices = list(range(len(rows)))
     random.Random(seed).shuffle(indices)
     disturbance_indices = indices[:200]
-    tuning_indices = indices[200:250]
+    tuning_indices = indices[200:300]
 
     def records(prefix: str, selected: list[int]) -> list[dict]:
         return [
@@ -197,6 +197,6 @@ def multilingual_calibration_splits() -> dict[str, list[dict]]:
 
     payload = json.loads(MULTILINGUAL_CALIBRATION_PATH.read_text())
     splits = payload["splits"]
-    if len(splits["disturbance"]) != 200 or len(splits["tuning"]) != 50:
+    if len(splits["disturbance"]) != 200 or len(splits["tuning"]) != 100:
         raise ValueError("Frozen multilingual MGSM calibration counts changed")
     return splits
