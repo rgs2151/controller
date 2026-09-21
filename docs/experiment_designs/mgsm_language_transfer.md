@@ -18,8 +18,8 @@
 - **H∞ selection:** 50 additional translated GSM8K questions balanced across
   Bengali, German, Russian, and Thai and shared by every candidate; `lambda=1.5`
   is fixed to the same target as A-LQR, and the 12-point cost grid maximizes the
-  per-response accuracy-weighted additive score: 80% exact-answer accuracy and
-  20% normalized AXBench Overall.
+  per-response accuracy-weighted additive score: 90% exact-answer accuracy and
+  10% normalized AXBench Overall.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
 - **Models:** Qwen3-4B and Llama-3.2-3B-Instruct.

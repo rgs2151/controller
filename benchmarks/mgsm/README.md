@@ -13,7 +13,7 @@ five transfer languages: Chinese, French, Japanese, Swahili, and Telugu.
   disturbance geometry on 200 translated GSM8K prompts balanced across Bengali,
   German, Russian, and Thai, then selects the cost grid on 50 additional disjoint
   prompts in the same four-language mixture. Selection uses the mean per-response
-  accuracy-weighted additive combination of 80% exact-answer accuracy and 20%
+  accuracy-weighted additive combination of 90% exact-answer accuracy and 10%
   normalized AXBench Overall.
 - `evaluate`: generate one native-eight-shot worked solution for each of 100
   matched problems in every requested input language, capped at 256 new tokens.
