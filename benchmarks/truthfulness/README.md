@@ -22,12 +22,13 @@ The benchmark's default scorers are:
 - `mmlu_accuracy`: exact A/B/C/D accuracy on 200 frozen five-shot MMLU
   questions; no learned judge.
 
-The default H∞ objective is `truthfulqa_txi_fluency_composite`: the mean
-per-response weighted sum of TruthfulQA True-times-Informative (weight .95) and
-normalized AXBench fluency (weight .05). A response contributes to the primary
-term only when both binary TruthfulQA judges pass. Fluency is divided by two so
-both terms are on `[0, 1]`; the additive form prevents a zero fluency score from
-collapsing the TruthfulQA signal. The configuration retains the historical
+The default H∞ objective is `truthfulqa_txi_fluency_composite`: the weighted
+sum of the historical TruthfulQA aggregate product
+`mean(True) * mean(Informative)` (weight .95) and mean normalized AXBench
+fluency (weight .05). Fluency is divided by two so both terms are on `[0, 1]`;
+the additive form prevents a zero fluency score from collapsing the TruthfulQA
+signal. This is deliberately not the per-response joint pass rate
+`mean(True * Informative)`. The configuration retains the historical
 `truthfulqa_true_mean_percentage`, `mean_axbench_overall`, and
 `truthfulness_quality_composite` objectives; `--selection-metric` selects among
 them. Concept relevance and instruction relevance remain reported outcomes but

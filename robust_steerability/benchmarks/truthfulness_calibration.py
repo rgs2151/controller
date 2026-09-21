@@ -838,10 +838,8 @@ def _calibration_profile(
             )
             if len(flattened) != len(fluency_rows):
                 raise ValueError(f"Calibration scorer row-count mismatch for {grid_id}")
-            response_scores = []
             truth_scores = []
             informative_scores = []
-            txi_scores = []
             fluency_scores = []
             for (repetition, row), fluency in zip(
                 flattened, fluency_rows, strict=True
@@ -855,26 +853,27 @@ def _calibration_profile(
                 informative = float(
                     informative_map[(grid_id, repetition, prompt_id)]
                 )
-                txi = truth * informative
                 fluency_score = float(fluency["score"])
-                normalized_fluency = float(
-                    np.clip(fluency_score / normalizer, 0.0, 1.0)
-                )
                 truth_scores.append(truth)
                 informative_scores.append(informative)
-                txi_scores.append(txi)
                 fluency_scores.append(fluency_score)
-                response_scores.append(
-                    quality_weights[0] * txi
-                    + quality_weights[1] * normalized_fluency
-                )
+            truth_mean = float(np.mean(truth_scores))
+            informative_mean = float(np.mean(informative_scores))
+            # TruthfulQA's historical T×I statistic is the product of the two
+            # aggregate acceptance rates, not the per-response joint pass rate.
+            txi = truth_mean * informative_mean
+            normalized_fluency_mean = float(np.mean([
+                np.clip(score / normalizer, 0.0, 1.0)
+                for score in fluency_scores
+            ]))
             summary = {
-                "truth": 100.0 * float(np.mean(truth_scores)),
-                "info": 100.0 * float(np.mean(informative_scores)),
-                "txi": 100.0 * float(np.mean(txi_scores)),
+                "truth": 100.0 * truth_mean,
+                "info": 100.0 * informative_mean,
+                "txi": 100.0 * txi,
                 "axbench_fluency": float(np.mean(fluency_scores)),
-                "truthfulqa_txi_fluency_composite": float(
-                    np.mean(response_scores)
+                "truthfulqa_txi_fluency_composite": (
+                    quality_weights[0] * txi
+                    + quality_weights[1] * normalized_fluency_mean
                 ),
             }
         configuration["lambda"] = paper_alqr_setting(
@@ -928,8 +927,8 @@ def _calibration_profile(
     else:
         metric_key = "truthfulqa_txi_fluency_composite"
         description = (
-            "mean per-response weighted sum of TruthfulQA True-times-Informative "
-            "and normalized AXBench fluency"
+            "weighted sum of aggregate TruthfulQA True-times-Informative "
+            "and mean normalized AXBench fluency"
         )
         tie_breakers = [
             "higher True-times-Informative percentage",
