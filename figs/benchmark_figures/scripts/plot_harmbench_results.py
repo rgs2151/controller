@@ -458,8 +458,19 @@ def create_combined_figure(rows: list[dict[str, object]]) -> plt.Figure:
     x = np.arange(len(ordered_templates))
 
     summaries: dict[str, dict[str, dict[str, float]]] = {}
+    displayed_profile_values: list[float] = []
     for model in models:
         summaries[model] = {}
+        for template in ordered_templates:
+            displayed_profile_values.extend(
+                [
+                    float(indexed[(model, template, "H-infinity")]["asr"]),
+                    min(
+                        float(indexed[(model, template, "Original")]["asr"]),
+                        float(indexed[(model, template, "A-LQR")]["asr"]),
+                    ),
+                ]
+            )
         for method in METHODS:
             method_rows = [
                 indexed[(model, template, method)] for template in TEMPLATES
@@ -525,7 +536,7 @@ def create_combined_figure(rows: list[dict[str, object]]) -> plt.Figure:
         )
 
     ax_raw.set_xlim(-0.35, len(ordered_templates) - 0.65)
-    ax_raw.set_ylim(0, 1.08 * max(float(row["asr"]) for row in rows))
+    ax_raw.set_ylim(0, 1.08 * max(displayed_profile_values))
     ax_raw.set_xticks(x)
     ax_raw.set_xticklabels(
         [display_names[template] for template in ordered_templates],
