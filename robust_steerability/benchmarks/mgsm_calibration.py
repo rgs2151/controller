@@ -177,7 +177,6 @@ def fit_base(
         "dataset": {
             "direction": "all 250 matched MGSM English/Spanish test questions",
             "disturbance": "frozen 200 translated GSM8K train questions balanced across Bengali, German, Russian, and Thai",
-            "tuning": "disjoint frozen 100 translated GSM8K train questions balanced across Bengali, German, Russian, and Thai",
         },
     }
     root = destination_root or _root(model_key, calibration_id)
