@@ -541,7 +541,7 @@ def create_combined_figure(rows: list[dict[str, object]]) -> plt.Figure:
     ax_raw.text(
         0.985,
         0.965,
-        r"solid: $H_\infty$     dashed: stronger baseline",
+        r"solid: $H_\infty$     dashed: min ASR(Original, A-LQR)",
         transform=ax_raw.transAxes,
         ha="right",
         va="top",
