@@ -40,7 +40,7 @@
 ## Method
 
 - Plot English TruthfulQA and Spanish-transfer TruthfulQA in separate figures and in a shared 1×2 comparison.
-- Represent each model by color and each steering method by marker shape.
+- Represent each model by its official company mark plus color, and each steering method by marker shape.
 - Compute response quality as `min(instruction relevance / 2, fluency / 2)` and quality-adjusted truthfulness (QAT) as `True (%) × quality`.
 - Overlay constant-QAT contours and emphasize H∞ with an outer gold ring.
 
@@ -59,7 +59,7 @@
 
 ## Legends
 
-- Color: foundation model.
+- Official Gemma, Meta, and Qwen marks: model family; label/point color: model scale.
 - Marker: steering method.
 - Gold outline: H∞.
 - Dashed contours: equal QAT values.
