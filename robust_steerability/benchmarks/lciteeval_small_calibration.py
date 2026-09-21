@@ -107,7 +107,7 @@ def _settings(model_key: str, q: float, r: float, q_final: float) -> dict[str, o
         "seed": 42,
         "fit_prompts_per_class": 250,
         "disturbance_prompts": 200,
-        "calibration_max_length": 8192,
+        "calibration_max_length": 10_000,
         "activation_batch_size": model.activation_batch_size,
         "jacobian_prompts": artifacts.JACOBIAN_PROMPTS,
         "jacobian_max_length": artifacts.JACOBIAN_MAX_LENGTH,

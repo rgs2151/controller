@@ -22,6 +22,9 @@
   use OpenAI judgments: maximize `0.40 bilingual semantic answer recall + 0.40
   bilingual citation F1 + 0.10 normalized Spanish concept relevance + 0.10
   normalized fluency`.
+- **Prompt ceiling:** The released one-shot 8K prompts tokenize to about
+  8.3--8.8K after the chat template, so artifact/calibration processing uses a
+  10K ceiling to avoid truncating the official 8K condition.
 - **Final evaluation:** Ten matched questions at 8K and 32K by default, with 16K
   retained as an optional configured condition; deterministic generation, KV
   cache off, and at most 128 new tokens.
