@@ -11,16 +11,14 @@
 \begin{tabular}{rlcccc}
 Model & Method & \cellcolor{projectdarkred!10}Accuracy (\%) $\uparrow$ & \shortstack{Spanish\\relevance (0--2) $\uparrow$} & \shortstack{Instruction\\relevance (0--2) $\uparrow$} & Fluency (0--2) $\uparrow$ \\
 \midrule
-\multirow{4}{*}{\rotatebox[origin=c]{90}{\scriptsize Qwen3-4B}} & Original & \cellcolor{projectdarkred!10}$41.6\,\pm\,2.5$ & $0.00\,\pm\,0.00$ & $1.76\,\pm\,0.03$ & $1.47\,\pm\,0.03$ \\
+\multirow{3}{*}{\rotatebox[origin=c]{90}{\scriptsize Qwen3-4B}} & Original & \cellcolor{projectdarkred!10}$41.6\,\pm\,2.5$ & $0.00\,\pm\,0.00$ & $1.76\,\pm\,0.03$ & $1.47\,\pm\,0.03$ \\
 \cmidrule(l){2-6}
- & S-PID & \cellcolor{projectdarkred!10}$0.0\,\pm\,0.0$ & $\underline{1.98\,\pm\,0.01}$ & $0.00\,\pm\,0.00$ & $0.00\,\pm\,0.00$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$22.4\,\pm\,2.3$ & $1.81\,\pm\,0.02$ & $1.51\,\pm\,0.04$ & $1.08\,\pm\,0.02$ \\
+ & A-LQR & \cellcolor{projectdarkred!10}$22.4\,\pm\,2.3$ & $\underline{1.81\,\pm\,0.02}$ & $1.51\,\pm\,0.04$ & $1.08\,\pm\,0.02$ \\
  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{32.2\,\pm\,2.4}$ & $1.44\,\pm\,0.03$ & $\mathbf{1.66\,\pm\,0.03}$ & $\mathbf{1.25\,\pm\,0.04}$ \\
 \midrule
-\multirow{4}{*}{\rotatebox[origin=c]{90}{\scriptsize Llama-3.2-3B}} & Original & \cellcolor{projectdarkred!10}$33.0\,\pm\,1.6$ & $0.00\,\pm\,0.00$ & $1.68\,\pm\,0.03$ & $1.44\,\pm\,0.03$ \\
+\multirow{3}{*}{\rotatebox[origin=c]{90}{\scriptsize Llama-3.2-3B}} & Original & \cellcolor{projectdarkred!10}$33.0\,\pm\,1.6$ & $0.00\,\pm\,0.00$ & $1.68\,\pm\,0.03$ & $1.44\,\pm\,0.03$ \\
 \cmidrule(l){2-6}
- & S-PID & \cellcolor{projectdarkred!10}$8.2\,\pm\,1.7$ & $\underline{1.94\,\pm\,0.02}$ & $0.87\,\pm\,0.04$ & $0.60\,\pm\,0.05$ \\
- & A-LQR & \cellcolor{projectdarkred!10}$\underline{27.6\,\pm\,2.6}$ & $1.50\,\pm\,0.03$ & $\underline{1.57\,\pm\,0.04}$ & $\underline{1.17\,\pm\,0.04}$ \\
+ & A-LQR & \cellcolor{projectdarkred!10}$\underline{27.6\,\pm\,2.6}$ & $\underline{1.50\,\pm\,0.03}$ & $\underline{1.57\,\pm\,0.04}$ & $\underline{1.17\,\pm\,0.04}$ \\
  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$12.2\,\pm\,2.4$ & $1.47\,\pm\,0.02$ & $1.02\,\pm\,0.05$ & $0.91\,\pm\,0.04$ \\
 \bottomrule
 \end{tabular}%
