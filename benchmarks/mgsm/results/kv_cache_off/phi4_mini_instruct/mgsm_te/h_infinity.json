@@ -1,0 +1,17 @@
+{
+  "model": [
+    "microsoft/Phi-4-mini-instruct",
+    "cfbefacb99257ffa30c83adab238a50856ac3083"
+  ],
+  "input_language": "te",
+  "method": "h_infinity",
+  "sample_count": 100,
+  "metrics": {
+    "mgsm_exact_match.score": 0.18,
+    "mgsm_exact_match.valid_rate": 0.97,
+    "axbench_rule_spanish.score": 1.38,
+    "axbench_instruction_relevance.score": 1.34,
+    "axbench_fluency.score": 0.89,
+    "mgsm_axbench_overall.score": 0.787
+  }
+}

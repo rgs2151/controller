@@ -1,0 +1,27 @@
+PIPELINE_START_UTC=2026-09-21T20:14:14Z
+GIT_HEAD=74ad2bc1359a71f237ce0b6e5cdbcdb2a942ecba
+Fetching 21 files:   0%|          | 0/21 [00:00<?, ?it/s]Fetching 21 files: 100%|██████████| 21/21 [00:00<00:00, 2252.70it/s]
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 160.93it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/controller-remote1/robust_steerability/benchmarks/mgsm.py", line 335, in <module>
+    main()
+  File "/tmp/controller-remote1/robust_steerability/benchmarks/mgsm.py", line 300, in main
+    calibration_stage(
+  File "/tmp/controller-remote1/robust_steerability/benchmarks/mgsm.py", line 95, in calibration_stage
+    calibration.calibrate(
+  File "/tmp/controller-remote1/robust_steerability/benchmarks/mgsm_calibration.py", line 987, in calibrate
+    fit_base(model_key, devices[0], calibration_id)
+  File "/tmp/controller-remote1/robust_steerability/benchmarks/mgsm_calibration.py", line 184, in fit_base
+    _artifact, metadata = calibrate_controller(
+                          ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/controller-remote1/robust_steerability/experiments/calibration.py", line 539, in calibrate_controller
+    raise ValueError(
+ValueError: The H-infinity calibration ID already contains a different immutable dataset, direction, or controller configuration
+PIPELINE_RESTART_UTC=2026-09-21T20:15:17Z
+GIT_HEAD=2d947e30b5881c565512bff20b0ab07080bbb18e
+Fetching 21 files:   0%|          | 0/21 [00:00<?, ?it/s]Fetching 21 files: 100%|██████████| 21/21 [00:00<00:00, 2033.39it/s]
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 154.81it/s]
+Fetching 21 files:   0%|          | 0/21 [00:00<?, ?it/s]Fetching 21 files: 100%|██████████| 21/21 [00:00<00:00, 2893.57it/s]
+PIPELINE_END_UTC=2026-09-21T21:01:08Z
