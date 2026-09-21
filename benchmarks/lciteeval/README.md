@@ -3,7 +3,10 @@
 This first-class benchmark runs the frozen AXBench concept-499 direction through the L-CiteEval-Length HotpotQA transfer conditions.
 
 - `artifacts`: materialize the 72/72 AXBench direction data, fit layer-wise all-token DiffMean setpoints, and average 50 desired-example Jacobians into the one A matrix shared by A-LQR and H∞.
-- `calibrate`: write fixed S-PID/A-LQR selections and select H∞ on 50 disjoint short prompts using the harmonic mean of AXBench concept relevance, instruction relevance, and fluency.
+- `calibrate`: write fixed S-PID/A-LQR selections and select H∞ on all 40
+  HotpotQA 8K prompts using 45% answer recall, 45% citation F1, 5% AXBench
+  concept relevance, and 5% AXBench fluency. This intentionally tunes on the
+  matched question identities later evaluated at longer context lengths.
 - `evaluate`: generate one deterministic answer for each of 40 matched questions at 8K and 16K with Original, S-PID, A-LQR, and H∞.
 - `score`: independently compute L-CiteEval answer overlap, citation NLI, and the AXBench steering scores from saved generations.
 
@@ -33,9 +36,13 @@ Each model has one cache rooted at
 - `evaluations/<kv-cache-condition>/` contains resumable generation shards,
   merged generations, prompt-level scorer outputs, and summaries. Generation
   shards are written after every batch and citation scores after every answer.
+- Named recalibrations preserve the historical `selected` run and write their
+  complete evaluation state below
+  `evaluations/<kv-cache-condition>/calibrations/<calibration-id>/`.
 - `benchmarks/lciteeval/results/<kv-cache-condition>/` contains only compact
-  Git-tracked summaries; large tensors, prompts, and generations remain in the
-  ignored persistent cache.
+  Git-tracked summaries. Named recalibrations use the matching
+  `calibrations/<calibration-id>/` subtree; large tensors, prompts, and
+  generations remain in the ignored persistent cache.
 
 ```bash
 python -m robust_steerability.benchmarks.lciteeval artifacts --model qwen25_3b_instruct --devices auto

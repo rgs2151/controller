@@ -118,7 +118,11 @@ def evaluation_stage(
     for method in ordered_methods:
         for condition in datasets:
             destination = runtime.generation_path(
-                model_key, condition, method, use_cache=use_cache
+                model_key,
+                condition,
+                method,
+                use_cache=use_cache,
+                calibration_id=calibration_id,
             )
             if runtime.generation_complete(destination):
                 continue
@@ -158,6 +162,7 @@ def evaluation_stage(
                 method,
                 len(devices),
                 use_cache=use_cache,
+                calibration_id=calibration_id,
             )
 
 
@@ -171,6 +176,7 @@ def score_stage(
     api_concurrency: int,
     api_batch_size: int,
     use_cache: bool,
+    calibration_id: str,
 ) -> None:
     generation_paths = []
     requested_by_dataset = {}
@@ -179,13 +185,22 @@ def score_stage(
         requested_by_dataset[condition] = selected
         for method in methods:
             generation = runtime.generation_path(
-                model_key, condition, method, use_cache=use_cache
+                model_key,
+                condition,
+                method,
+                use_cache=use_cache,
+                calibration_id=calibration_id,
             )
             if not runtime.generation_complete(generation):
                 raise ValueError(f"Missing completed generation: {generation}")
             generation_paths.append((condition, method, generation))
             if "lcite_answer_overlap" in selected:
-                runtime.score_answer_overlap(model_key, generation, use_cache=use_cache)
+                runtime.score_answer_overlap(
+                    model_key,
+                    generation,
+                    use_cache=use_cache,
+                    calibration_id=calibration_id,
+                )
 
     citation_jobs = []
     for condition, method, generation in generation_paths:
@@ -206,6 +221,8 @@ def score_stage(
                     "{device}",
                     "--generation-path",
                     str(generation),
+                    "--calibration-id",
+                    calibration_id,
                     "--kv-cache",
                     "on" if use_cache else "off",
                 ],
@@ -225,14 +242,19 @@ def score_stage(
     if api_scorers:
         openai_scoring.score_generations(
             [generation for _condition, _method, generation in generation_paths],
-            runtime.cache_root(model_key, use_cache),
+            runtime.cache_root(model_key, use_cache, calibration_id),
             api_scorers,
             concurrency=api_concurrency,
             batch_size=api_batch_size,
         )
     for condition, _method, generation in generation_paths:
         if "axbench_overall" in requested_by_dataset[condition]:
-            runtime.score_axbench_overall(model_key, generation, use_cache=use_cache)
+            runtime.score_axbench_overall(
+                model_key,
+                generation,
+                use_cache=use_cache,
+                calibration_id=calibration_id,
+            )
     for condition, method, _generation in generation_paths:
         runtime.summarize(
             model_key,
@@ -240,6 +262,7 @@ def score_stage(
             method,
             requested_by_dataset[condition],
             use_cache=use_cache,
+            calibration_id=calibration_id,
         )
 
 
@@ -360,6 +383,7 @@ def main() -> None:
                 arguments.api_concurrency,
                 arguments.api_batch_size,
                 use_cache,
+                arguments.calibration_id,
             )
 
 

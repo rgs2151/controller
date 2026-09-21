@@ -29,7 +29,12 @@ from robust_steerability.experiments.calibration import calibrate_controller, di
 from robust_steerability.experiments.diagnostics import score as freeze_diagnostic_score
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
 from robust_steerability.judges import openai as openai_scoring
-from robust_steerability.judges.exact import harmonic_mean
+from robust_steerability.judges.exact import lcite_answer_overlap
+from robust_steerability.judges.lciteeval import (
+    lcite_citation_scores,
+    load_lcite_entailer,
+    pipeline_entailment,
+)
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.modeling.huggingface import cuda_device_index, release_cuda_memory
@@ -42,17 +47,38 @@ Q_OVER_R = (0.01, 0.1, 1.0, 10.0)
 Q_FINAL_OVER_R = (0.01, 0.1, 10**-0.5)
 FIXED_R = 1.0
 SETPOINT_MULTIPLIER = 1.5
-GRID_SELECTION_SOURCE = "AXBench three-judge harmonic-mean calibration argmax"
+GRID_SELECTION_SOURCE = "HotpotQA 8K task-quality and steering weighted argmax"
 FIXED_SELECTION_SOURCE = "fixed configuration supplied at calibration launch"
 API_SCORERS = (
     "axbench_concept_relevance",
-    "axbench_instruction_relevance",
     "axbench_fluency",
 )
+TUNING_PROMPTS = 40
+SELECTION_METRIC = "weighted_task_quality_and_steering_score"
+SELECTION_WEIGHTS = {
+    "answer_recall": 0.45,
+    "citation_f1": 0.45,
+    "concept_relevance": 0.05,
+    "fluency": 0.05,
+}
 
 
 def _root(model_key: str, calibration_id: str) -> Path:
     return calibration_root(BENCHMARK, model_key, "h_infinity", calibration_id)
+
+
+def _tuning_rows(model_key: str) -> list[dict]:
+    payload = json.loads(runtime.data_path(model_key).read_text())
+    rows = list(payload["evaluation"]["8k"])
+    if len(rows) != TUNING_PROMPTS:
+        raise ValueError(
+            f"L-CiteEval calibration requires all {TUNING_PROMPTS} HotpotQA 8K rows"
+        )
+    if [int(row["matched_question_index"]) for row in rows] != list(
+        range(TUNING_PROMPTS)
+    ):
+        raise ValueError("HotpotQA 8K calibration question order changed")
+    return rows
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -147,7 +173,7 @@ def fit_base(
         "disturbance": data["calibration"]["disturbance"],
         "dataset": {
             "direction": "AXBench concept 499",
-            "tuning": "AlpacaEval frozen 50",
+            "tuning": "L-CiteEval-Length HotpotQA 8K frozen 40",
             "evaluation": "L-CiteEval-Length HotpotQA",
         },
     }
@@ -234,16 +260,28 @@ def generate_worker(
         root / "base/controller.pt", map_location="cpu", weights_only=True, mmap=True
     )
     base = ControllerArtifact(**base_payload["artifact"])
-    prompts = [
-        runtime.format_short_instruction(tokenizer, str(row["text"]))
-        for row in data["calibration"]["tuning"]
-    ]
+    tuning_rows = _tuning_rows(model_key)
+    prompts = [str(row["model_input"]) for row in tuning_rows]
     batch_size = generation_batch_size or MODELS[model_key].activation_batch_size
     for configuration in _grid()[shard_index::shard_count]:
         grid_id = str(configuration["grid_id"])
         destination = root / "grid/generations" / f"{grid_id}.json"
-        if runtime.generation_complete(destination):
-            continue
+        identity = {
+            "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
+            "configuration": configuration,
+            "calibration_id": calibration_id,
+            "tuning_dataset": "L-CiteEval-Length HotpotQA 8K",
+            "tuning_prompt_ids": [str(row["prompt_id"]) for row in tuning_rows],
+            "evaluated_model_kv_cache": False,
+            "generation_batch_size": batch_size,
+        }
+        if destination.exists():
+            existing = json.loads(destination.read_text())
+            if existing.get("status") == "complete" and existing.get("identity") == identity:
+                continue
+            raise ValueError(
+                f"Existing calibration generation has a different identity: {destination}"
+            )
         controller = torch.load(
             root / "grid/controllers" / f"{grid_id}.pt",
             map_location="cpu",
@@ -273,25 +311,19 @@ def generate_worker(
             {
                 "prompt_id": row["prompt_id"],
                 "grid_id": grid_id,
-                "text": row["text"],
+                "text": f"{row['instruction']}\n\nQuestion: {row['question']}",
                 "concept": artifacts.AXBENCH_CONCEPT,
                 "completion": completion,
                 "generated_tokens": count,
             }
             for row, completion, count in zip(
-                data["calibration"]["tuning"], completions, generated, strict=True
+                tuning_rows, completions, generated, strict=True
             )
         ]
         _write_json(
             destination,
             {
-                "identity": {
-                    "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
-                    "configuration": configuration,
-                    "calibration_id": calibration_id,
-                    "evaluated_model_kv_cache": False,
-                    "generation_batch_size": batch_size,
-                },
+                "identity": identity,
                 "status": "complete",
                 "attempts": [
                     {
@@ -308,9 +340,81 @@ def generate_worker(
                         ),
                     }
                 ],
-                "repetitions": [{"repetition": 0, "sample_count": 50, "rows": rows}],
+                "repetitions": [
+                    {"repetition": 0, "sample_count": TUNING_PROMPTS, "rows": rows}
+                ],
             },
         )
+
+
+def score_task_worker(
+    model_key: str,
+    device: str,
+    shard_index: int,
+    shard_count: int,
+    calibration_id: str,
+) -> None:
+    grid_root = _root(model_key, calibration_id) / "grid"
+    source = {str(row["prompt_id"]): row for row in _tuning_rows(model_key)}
+    entailer = pipeline_entailment(
+        load_lcite_entailer(cuda_device_index(device))
+    )
+    for configuration in _grid()[shard_index::shard_count]:
+        generation = grid_root / "generations" / f"{configuration['grid_id']}.json"
+        payload = json.loads(generation.read_text())
+        generation_rows = [
+            row for repetition in payload["repetitions"] for row in repetition["rows"]
+        ]
+        answer_path = scorer_cache_path(
+            grid_root, generation, "lcite_answer_overlap"
+        )
+        if not answer_path.exists() or json.loads(answer_path.read_text()).get(
+            "status"
+        ) != "complete":
+            _write_json(
+                answer_path,
+                {
+                    "status": "complete",
+                    "rows": [
+                        {
+                            "prompt_id": row["prompt_id"],
+                            **lcite_answer_overlap(
+                                row["completion"], source[row["prompt_id"]]["answer"]
+                            ),
+                        }
+                        for row in generation_rows
+                    ],
+                },
+            )
+        citation_path = scorer_cache_path(
+            grid_root, generation, "lcite_citation_nli"
+        )
+        saved = (
+            json.loads(citation_path.read_text())
+            if citation_path.exists()
+            else {"status": "partial", "rows": []}
+        )
+        citation_rows = list(saved["rows"])
+        expected = [
+            str(row["prompt_id"]) for row in generation_rows[: len(citation_rows)]
+        ]
+        if [str(row["prompt_id"]) for row in citation_rows] != expected:
+            raise ValueError(
+                f"Citation calibration cache is not a valid prefix: {citation_path}"
+            )
+        for row in generation_rows[len(citation_rows) :]:
+            citation_rows.append(
+                {
+                    "prompt_id": row["prompt_id"],
+                    **lcite_citation_scores(
+                        row["completion"],
+                        source[row["prompt_id"]]["docs"],
+                        entailer,
+                    ),
+                }
+            )
+            _write_json(citation_path, {"status": "partial", "rows": citation_rows})
+        _write_json(citation_path, {"status": "complete", "rows": citation_rows})
 
 
 def score_grid(
@@ -332,19 +436,56 @@ def score_grid(
         batch_size=api_batch_size,
     )
     for generation in generations:
-        maps = []
-        for scorer in API_SCORERS:
-            payload = json.loads(scorer_cache_path(grid_root, generation, scorer).read_text())
-            maps.append({row["prompt_id"]: float(row["score"]) for row in payload["rows"]})
+        answer_payload = json.loads(
+            scorer_cache_path(
+                grid_root, generation, "lcite_answer_overlap"
+            ).read_text()
+        )
+        answer = {
+            row["prompt_id"]: float(row["answer_recall"])
+            for row in answer_payload["rows"]
+        }
+        citation_payload = json.loads(
+            scorer_cache_path(grid_root, generation, "lcite_citation_nli").read_text()
+        )
+        citation = {
+            row["prompt_id"]: float(row["citation_f1"])
+            for row in citation_payload["rows"]
+        }
+        concept_payload = json.loads(
+            scorer_cache_path(
+                grid_root, generation, "axbench_concept_relevance"
+            ).read_text()
+        )
+        concept = {
+            row["prompt_id"]: float(row["score"]) / 2.0
+            for row in concept_payload["rows"]
+        }
+        fluency_payload = json.loads(
+            scorer_cache_path(grid_root, generation, "axbench_fluency").read_text()
+        )
+        fluency = {
+            row["prompt_id"]: float(row["score"]) / 2.0
+            for row in fluency_payload["rows"]
+        }
         rows = [
             {
                 "prompt_id": prompt_id,
-                "score": harmonic_mean([mapping[prompt_id] for mapping in maps]),
+                "answer_recall": answer[prompt_id],
+                "citation_f1": citation[prompt_id],
+                "concept_relevance_normalized": concept[prompt_id],
+                "fluency_normalized": fluency[prompt_id],
+                "score": (
+                    SELECTION_WEIGHTS["answer_recall"] * answer[prompt_id]
+                    + SELECTION_WEIGHTS["citation_f1"] * citation[prompt_id]
+                    + SELECTION_WEIGHTS["concept_relevance"] * concept[prompt_id]
+                    + SELECTION_WEIGHTS["fluency"] * fluency[prompt_id]
+                ),
             }
-            for prompt_id in maps[0]
+            for prompt_id in answer
         ]
         _write_json(
-            scorer_cache_path(grid_root, generation, "axbench_overall"),
+            scorer_cache_path(grid_root, generation, SELECTION_METRIC),
             {"status": "complete", "rows": rows},
         )
 
@@ -411,24 +552,56 @@ def select(model_key: str, calibration_id: str) -> dict:
     summaries = []
     for configuration in _grid():
         generation = root / "grid/generations" / f"{configuration['grid_id']}.json"
-        means = {}
-        for scorer in (*API_SCORERS, "axbench_overall"):
-            payload = json.loads(
-                scorer_cache_path(root / "grid", generation, scorer).read_text()
-            )
-            means[scorer] = float(np.mean([float(row["score"]) for row in payload["rows"]]))
+        payload = json.loads(
+            scorer_cache_path(
+                root / "grid", generation, SELECTION_METRIC
+            ).read_text()
+        )
+        means = {
+            SELECTION_METRIC: float(
+                np.mean([float(row["score"]) for row in payload["rows"]])
+            ),
+            "answer_recall": float(
+                np.mean([float(row["answer_recall"]) for row in payload["rows"]])
+            ),
+            "citation_f1": float(
+                np.mean([float(row["citation_f1"]) for row in payload["rows"]])
+            ),
+            "concept_relevance_normalized": float(
+                np.mean(
+                    [
+                        float(row["concept_relevance_normalized"])
+                        for row in payload["rows"]
+                    ]
+                )
+            ),
+            "fluency_normalized": float(
+                np.mean([float(row["fluency_normalized"]) for row in payload["rows"]])
+            ),
+        }
         summaries.append({**configuration, **means})
     require_nonzero_selection_metric(
         summaries,
-        "axbench_overall",
+        SELECTION_METRIC,
         context="L-CiteEval H-infinity calibration",
     )
+    for component in (
+        "answer_recall",
+        "citation_f1",
+        "concept_relevance_normalized",
+        "fluency_normalized",
+    ):
+        require_nonzero_selection_metric(
+            summaries,
+            component,
+            context=f"L-CiteEval H-infinity calibration component {component}",
+        )
     selected = sorted(
         summaries,
         key=lambda row: (
-            -row["axbench_overall"],
-            -row["axbench_instruction_relevance"],
-            -row["axbench_fluency"],
+            -row[SELECTION_METRIC],
+            -row["answer_recall"],
+            -row["citation_f1"],
             row["q"],
             row["q_final"],
         ),
@@ -452,8 +625,16 @@ def select(model_key: str, calibration_id: str) -> dict:
         "calibration_id": calibration_id,
         "protocol": {
             "selection_strategy": "grid",
-            "selection_metric": "mean per-response AXBench three-judge harmonic mean",
-            "tuning_samples": 50,
+            "selection_metric": SELECTION_METRIC,
+            "selection_weights": SELECTION_WEIGHTS,
+            "selection_components": {
+                "answer_recall": "released L-CiteEval answer-overlap recall",
+                "citation_f1": "released L-CiteEval AutoAIS citation F1",
+                "concept_relevance": "AXBench concept relevance divided by two",
+                "fluency": "AXBench fluency divided by two",
+            },
+            "tuning_dataset": "all 40 L-CiteEval-Length HotpotQA 8K rows",
+            "tuning_samples": TUNING_PROMPTS,
             "tuning_repetitions": 1,
             "evaluated_model_kv_cache": False,
             "q_over_r": list(Q_OVER_R),
@@ -605,6 +786,30 @@ def calibrate(
         for index in range(len(devices))
     ]
     run_jobs(jobs, devices, log_root / "hinf-grid-generation")
+    task_jobs = [
+        (
+            f"hinf-task-score-{index:02d}",
+            [
+                sys.executable,
+                "-m",
+                "robust_steerability.benchmarks.lciteeval_calibration",
+                "--stage",
+                "score-task-worker",
+                "--model",
+                model_key,
+                "--device",
+                "{device}",
+                "--shard-index",
+                str(index),
+                "--shard-count",
+                str(len(devices)),
+                "--calibration-id",
+                calibration_id,
+            ],
+        )
+        for index in range(len(devices))
+    ]
+    run_jobs(task_jobs, devices, log_root / "hinf-grid-task-scoring")
     score_grid(
         model_key,
         calibration_id,
@@ -618,7 +823,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--stage",
-        choices=("base", "synthesize", "generate-worker", "score-grid", "select"),
+        choices=(
+            "base",
+            "synthesize",
+            "generate-worker",
+            "score-task-worker",
+            "score-grid",
+            "select",
+        ),
         required=True,
     )
     parser.add_argument(
@@ -646,6 +858,14 @@ def main() -> None:
             arguments.shard_count,
             arguments.calibration_id,
             arguments.generation_batch_size,
+        )
+    elif arguments.stage == "score-task-worker":
+        score_task_worker(
+            arguments.model,
+            arguments.device,
+            arguments.shard_index,
+            arguments.shard_count,
+            arguments.calibration_id,
         )
     elif arguments.stage == "score-grid":
         score_grid(
