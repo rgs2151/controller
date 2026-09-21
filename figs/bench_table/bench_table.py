@@ -341,10 +341,9 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 """
 
 
-LCITE_MODEL = "Qwen2.5-3B-Instruct"
-LCITE_MODEL_KEY = "qwen25_3b_instruct"
 LCITE_CONDITIONS = (("8k", "8K"), ("16k", "16K"), ("32k", "32K"))
 LCITE_METHODS = MGSM_METHODS
+LCITE_LLAMA_METHODS = tuple(method for method in LCITE_METHODS if method[0] != "spid")
 LCITE_METRICS = (
     Metric("lcite_answer_overlap.answer_recall", "Answer recall (%) ↑", r"\shortstack{Answer\\recall (\%) $\uparrow$}", 1, True),
     Metric("lcite_citation_nli.citation_f1", "Citation F1 (%) ↑", r"Citation F1 (\%) $\uparrow$", 1, True),
@@ -358,9 +357,32 @@ LCITE_SUMMARY_METRICS = (
     Metric("axbench_overall.score", "Overall steering (0–2) ↑", r"\shortstack{Overall\\steering (0--2) $\uparrow$}", 2, True),
 )
 LCITE_JACKKNIFE_PATH = UNIT / "lciteeval/lciteeval_jackknife.json"
+LCITE_LLAMA_JACKKNIFE_PATH = UNIT / "lciteeval/lciteeval_jackknife_llama32_1b.json"
 LCITE_RESULT_OVERRIDES = {
     ("32k", "h_infinity"): "hotpot8k_task_40",
 }
+LCITE_MODELS = (
+    {
+        "key": "qwen25_3b_instruct",
+        "label": "Qwen2.5-3B-Instruct",
+        "tex_label": "Qwen2.5-3B",
+        "tex_font": r"\scriptsize",
+        "conditions": LCITE_CONDITIONS,
+        "methods": LCITE_METHODS,
+        "jackknife_path": LCITE_JACKKNIFE_PATH,
+        "result_overrides": LCITE_RESULT_OVERRIDES,
+    },
+    {
+        "key": "llama32_1b_instruct",
+        "label": "Llama-3.2-1B-Instruct",
+        "tex_label": "Llama-3.2-1B",
+        "tex_font": r"\tiny",
+        "conditions": (("8k", "8K"),),
+        "methods": LCITE_LLAMA_METHODS,
+        "jackknife_path": LCITE_LLAMA_JACKKNIFE_PATH,
+        "result_overrides": {},
+    },
+)
 
 
 LCITE_DOCUMENTATION = r"""## Method
@@ -370,8 +392,8 @@ LCITE_DOCUMENTATION = r"""## Method
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`. The direction uses all 72 released positive responses and 72 genre-matched negative responses from `pyvene/axbench-concept500` variant `prod_9b_l20_v1`.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller without changing that shared dynamics matrix.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths.
-- The summary keeps 8K, 16K, and 32K separate. The full report exposes all 12 context-length–method cells.
+- Models: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths, and `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6` at 8K.
+- The summary keeps context lengths separate. Qwen reports 8K, 16K, and 32K; Llama currently reports the completed 8K condition only.
 
 ## Measures
 
@@ -393,6 +415,9 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Qwen2.5-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01; frozen upstream concept-steering configuration |
 | Qwen2.5-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I; frozen upstream concept-steering configuration |
 | Qwen2.5-3B-Instruct | H∞ | 8K/16K: λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054. Updated 32K: λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 2.9917; selected on the 40 matched 8K HotpotQA prompts with 45% answer recall, 45% citation F1, 5% concept relevance, and 5% fluency. |
+| Llama-3.2-1B-Instruct | Original | No intervention |
+| Llama-3.2-1B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.2-1B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.08690; selected on the 40 8K HotpotQA prompts with 45% answer recall, 45% citation F1, 5% concept relevance, and 5% fluency; no A-LQR fallback was used. |
 """
 
 
@@ -403,8 +428,8 @@ LCITE_SUMMARY_DOCUMENTATION = r"""## Method
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`, using all 72 released positive responses and 72 genre-matched negative responses.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths.
-- The 8K, 16K, and 32K conditions remain separate; no cross-length average is reported.
+- Models: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths, and `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6` at 8K.
+- Context conditions remain separate; no cross-length or cross-model average is reported.
 
 ## Measures
 
@@ -424,6 +449,9 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Qwen2.5-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01; frozen upstream concept-steering configuration |
 | Qwen2.5-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I; frozen upstream concept-steering configuration |
 | Qwen2.5-3B-Instruct | H∞ | 8K/16K: λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054. Updated 32K: λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 2.9917; selected on the 40 matched 8K HotpotQA prompts with 45% answer recall, 45% citation F1, 5% concept relevance, and 5% fluency. |
+| Llama-3.2-1B-Instruct | Original | No intervention |
+| Llama-3.2-1B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.2-1B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.08690; selected on the 40 8K HotpotQA prompts with 45% answer recall, 45% citation F1, 5% concept relevance, and 5% fluency; no A-LQR fallback was used. |
 """
 
 
@@ -1109,12 +1137,12 @@ def render_mgsm_reports() -> None:
         render_pdf(tex, destination / f"{stem}.pdf")
 
 
-def _load_lcite_result(condition: str, method: str) -> dict:
+def _load_lcite_result(model: dict, condition: str, method: str) -> dict:
     root = RESULTS_ROOT / "lciteeval/results/kv_cache_off"
-    calibration_id = LCITE_RESULT_OVERRIDES.get((condition, method))
+    calibration_id = model["result_overrides"].get((condition, method))
     if calibration_id is not None:
         root = root / "calibrations" / calibration_id
-    path = root / LCITE_MODEL_KEY / f"hotpotqa_{condition}" / f"{method}.json"
+    path = root / model["key"] / f"hotpotqa_{condition}" / f"{method}.json"
     return json.loads(path.read_text())
 
 
@@ -1128,36 +1156,39 @@ def _lcite_value(result: dict, metric: Metric) -> float:
     return value
 
 
-def _lcite_jackknife() -> dict:
-    return json.loads(LCITE_JACKKNIFE_PATH.read_text())
+def _lcite_jackknife(model: dict) -> dict:
+    return json.loads(model["jackknife_path"].read_text())
 
 
 def _lcite_rows(metrics: tuple[Metric, ...]) -> list[dict]:
-    jackknife = _lcite_jackknife()
     rows = []
-    for condition_key, condition_label in LCITE_CONDITIONS:
-        for method_key, markdown_label, tex_label in LCITE_METHODS:
-            result = _load_lcite_result(condition_key, method_key)
-            rows.append(
-                {
-                    "condition_key": condition_key,
-                    "condition": condition_label,
-                    "method_key": method_key,
-                    "method_markdown": markdown_label,
-                    "method_tex": tex_label,
-                    "values": tuple(
-                        _lcite_value(result, metric) for metric in metrics
-                    ),
-                    "standard_errors": tuple(
-                        float(
-                            jackknife["conditions"][condition_key][method_key][
-                                metric.key
-                            ]["jackknife_standard_error"]
-                        )
-                        for metric in metrics
-                    ),
-                }
-            )
+    for model in LCITE_MODELS:
+        jackknife = _lcite_jackknife(model)
+        for condition_key, condition_label in model["conditions"]:
+            for method_key, markdown_label, tex_label in model["methods"]:
+                result = _load_lcite_result(model, condition_key, method_key)
+                rows.append(
+                    {
+                        "model_key": model["key"],
+                        "model": model["label"],
+                        "condition_key": condition_key,
+                        "condition": condition_label,
+                        "method_key": method_key,
+                        "method_markdown": markdown_label,
+                        "method_tex": tex_label,
+                        "values": tuple(
+                            _lcite_value(result, metric) for metric in metrics
+                        ),
+                        "standard_errors": tuple(
+                            float(
+                                jackknife["conditions"][condition_key][method_key][
+                                    metric.key
+                                ]["jackknife_standard_error"]
+                            )
+                            for metric in metrics
+                        ),
+                    }
+                )
     return rows
 
 
@@ -1165,7 +1196,7 @@ def render_lcite_markdown(rows: list[dict], *, full: bool) -> str:
     title = "L-CiteEval length transfer — full results" if full else "L-CiteEval length transfer — summary"
     metrics = LCITE_METRICS if full else LCITE_SUMMARY_METRICS
     headers = " | ".join(metric.markdown for metric in metrics)
-    leading_headers = "Context | Model | Method" if full else "Model | Context | Method"
+    leading_headers = "Model | Context | Method"
     lines = [f"# {title}", "", f"| {leading_headers} | {headers} |", "|---|---|---|" + "---:|" * len(metrics)]
     for row in rows:
         values = " | ".join(
@@ -1174,11 +1205,7 @@ def render_lcite_markdown(rows: list[dict], *, full: bool) -> str:
                 row["values"], row["standard_errors"], metrics, strict=True
             )
         )
-        leading_values = (
-            f"{row['condition']} | {LCITE_MODEL} | {row['method_markdown']}"
-            if full
-            else f"{LCITE_MODEL} | {row['condition']} | {row['method_markdown']}"
-        )
+        leading_values = f"{row['model']} | {row['condition']} | {row['method_markdown']}"
         lines.append(f"| {leading_values} | {values} |")
     documentation = LCITE_DOCUMENTATION if full else LCITE_SUMMARY_DOCUMENTATION
     lines.extend(["", documentation.strip(), ""])
@@ -1216,9 +1243,9 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
     metrics = LCITE_METRICS if full else LCITE_SUMMARY_METRICS
     column_count = len(metrics)
     caption = (
-        "Full L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors. The 8K, 16K, and 32K conditions use the same 40 question identities."
+        "Full L-CiteEval length-transfer results. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors. Context conditions use the same 40 question identities within each model."
         if full
-        else "Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors; the matched 8K, 16K, and 32K conditions are reported separately."
+        else "Summary L-CiteEval length-transfer results. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors; available context conditions are reported separately within each model."
     )
     label = "tab:lciteeval-full" if full else "tab:lciteeval-summary"
     lines = [
@@ -1233,12 +1260,8 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
         r"\setlength{\tabcolsep}{5pt}",
         r"\resizebox{\textwidth}{!}{%",
     ]
-    if full:
-        lines.append(f"\\begin{{tabular}}{{rl{'c' * column_count}}}")
-        leading_headers = "Context & Method"
-    else:
-        lines.append(f"\\begin{{tabular}}{{rrl{'c' * column_count}}}")
-        leading_headers = "Model & Context & Method"
+    lines.append(f"\\begin{{tabular}}{{rrl{'c' * column_count}}}")
+    leading_headers = "Model & Context & Method"
     lines.append(
         leading_headers + " & "
         + " & ".join(
@@ -1248,40 +1271,53 @@ def render_lcite_tex(rows: list[dict], *, full: bool) -> str:
         + r" \\"
     )
     lines.append(r"\midrule")
-    for condition_index, (_, condition_label) in enumerate(LCITE_CONDITIONS):
-        group = [row for row in rows if row["condition"] == condition_label]
-        best_values = _lcite_best_values(group, metrics)
-        for method_index, row in enumerate(group):
-            condition = f"\\multirow{{{len(group)}}}{{*}}{{{condition_label}}}" if method_index == 0 else ""
-            model = (
-                f"\\multirow{{{len(rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{LCITE_MODEL}}}}}"
-                if not full and condition_index == 0 and method_index == 0
-                else ""
-            )
-            values = " & ".join(
-                _lcite_tex_value(
-                    value,
-                    metric,
-                    standard_error=row["standard_errors"][index],
-                    emphasis=(
-                        "bold"
-                        if row["method_key"] == "h_infinity" and value == best_values[index]
-                        else "underline"
-                        if row["method_key"] != "original" and value == best_values[index]
-                        else None
-                    ),
-                    primary=index == 0,
+    for model_index, model_spec in enumerate(LCITE_MODELS):
+        model_rows = [row for row in rows if row["model_key"] == model_spec["key"]]
+        for condition_index, (condition_key, condition_label) in enumerate(model_spec["conditions"]):
+            group = [
+                row for row in model_rows if row["condition_key"] == condition_key
+            ]
+            best_values = _lcite_best_values(group, metrics)
+            for method_index, row in enumerate(group):
+                model = (
+                    f"\\multirow{{{len(model_rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{model_spec['tex_font']} {model_spec['tex_label']}}}}}"
+                    if condition_index == 0 and method_index == 0
+                    else ""
                 )
-                for index, (value, metric) in enumerate(zip(row["values"], metrics, strict=True))
-            )
-            prefix = f"{condition} & {row['method_tex']}" if full else f"{model} & {condition} & {row['method_tex']}"
-            lines.append(f"{prefix} & {values} \\\\")
-            if method_index == 0:
-                first_column = 2 if full else 3
-                last_column = column_count + (2 if full else 3)
-                lines.append(f"\\cmidrule(l){{{first_column}-{last_column}}}")
-        if condition_index != len(LCITE_CONDITIONS) - 1:
-            lines.append(r"\midrule" if full else f"\\cmidrule(l){{2-{column_count + 3}}}")
+                condition = (
+                    f"\\multirow{{{len(group)}}}{{*}}{{{condition_label}}}"
+                    if method_index == 0
+                    else ""
+                )
+                values = " & ".join(
+                    _lcite_tex_value(
+                        value,
+                        metric,
+                        standard_error=row["standard_errors"][index],
+                        emphasis=(
+                            "bold"
+                            if row["method_key"] == "h_infinity"
+                            and value == best_values[index]
+                            else "underline"
+                            if row["method_key"] != "original"
+                            and value == best_values[index]
+                            else None
+                        ),
+                        primary=index == 0,
+                    )
+                    for index, (value, metric) in enumerate(
+                        zip(row["values"], metrics, strict=True)
+                    )
+                )
+                lines.append(
+                    f"{model} & {condition} & {row['method_tex']} & {values} \\\\"
+                )
+                if method_index == 0:
+                    lines.append(f"\\cmidrule(l){{3-{column_count + 3}}}")
+            if condition_index != len(model_spec["conditions"]) - 1:
+                lines.append(f"\\cmidrule(l){{2-{column_count + 3}}}")
+        if model_index != len(LCITE_MODELS) - 1:
+            lines.append(r"\midrule")
     lines.extend([r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""])
     return "\n".join(lines)
 

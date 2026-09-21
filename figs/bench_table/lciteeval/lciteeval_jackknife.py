@@ -9,7 +9,8 @@ import math
 from pathlib import Path
 
 
-REPO = Path(__file__).resolve().parents[3]
+SCRIPT_PATH = Path(__file__).resolve()
+REPO = SCRIPT_PATH.parents[3] if len(SCRIPT_PATH.parents) > 3 else Path.cwd()
 DEFAULT_ROOT = REPO / "benchmarks/lciteeval/cache/qwen25_3b_instruct"
 DEFAULT_OUTPUT = Path(__file__).with_name("lciteeval_jackknife.json")
 CONDITIONS = ("8k", "16k", "32k")
@@ -32,6 +33,16 @@ def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-root", type=Path, default=DEFAULT_ROOT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--conditions",
+        default=",".join(CONDITIONS),
+        help="Comma-separated context conditions to include.",
+    )
+    parser.add_argument(
+        "--methods",
+        default=",".join(METHODS),
+        help="Comma-separated methods to include.",
+    )
     return parser.parse_args()
 
 
@@ -102,6 +113,10 @@ def _jackknife(values: dict[str, float], groups: list[list[str]]) -> dict[str, o
 def main() -> None:
     args = _arguments()
     root = args.cache_root.expanduser().resolve()
+    conditions = tuple(item.strip() for item in args.conditions.split(",") if item.strip())
+    methods = tuple(item.strip() for item in args.methods.split(",") if item.strip())
+    if not conditions or not methods:
+        raise RuntimeError("At least one condition and method are required")
     dataset = json.loads((root / "datasets/lciteeval.json").read_text())
     question_ids = {
         str(row["matched_question_index"])
@@ -117,7 +132,7 @@ def main() -> None:
         "groups": groups,
         "conditions": {},
     }
-    for condition in CONDITIONS:
+    for condition in conditions:
         rows = dataset["evaluation"][condition]
         prompt_to_question = {
             row["prompt_id"]: str(row["matched_question_index"]) for row in rows
@@ -125,7 +140,7 @@ def main() -> None:
         if set(prompt_to_question.values()) != question_ids:
             raise RuntimeError(f"Question identities differ at {condition}")
         condition_report: dict[str, object] = {}
-        for method in METHODS:
+        for method in methods:
             method_report: dict[str, object] = {}
             for metric_key, (scorer, value_key, scale) in SCORERS.items():
                 scores = _score_map(
