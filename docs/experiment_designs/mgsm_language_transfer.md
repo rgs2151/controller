@@ -18,7 +18,8 @@
 - **H∞ selection:** 50 additional translated GSM8K questions balanced across
   Bengali, German, Russian, and Thai and shared by every candidate; `lambda=1.5`
   is fixed to the same target as A-LQR, and the 12-point cost grid maximizes the
-  per-response accuracy/AXBench-Overall balanced additive score.
+  per-response accuracy-weighted additive score: 80% exact-answer accuracy and
+  20% normalized AXBench Overall.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
 - **Models:** Qwen3-4B and Llama-3.2-3B-Instruct.
@@ -78,8 +79,8 @@ question itself moves into unseen input languages, while retaining correctness?
   lambda-sweep implementation remains available but is disabled for every run.
 - **H∞ grid:** `R=1`, `Q/R in {0.01, 0.1, 1, 10}`, and
   `Qf/R in {0.01, 0.1, 0.316...}` at the fixed target.
-- **Objective:** mean of the per-response score `0.5 × exact-answer accuracy +
-  0.5 × (AXBench Overall / 2)`. AXBench Overall is itself the harmonic mean of
+- **Objective:** mean of the per-response score `0.8 × exact-answer accuracy +
+  0.2 × (AXBench Overall / 2)`. AXBench Overall is itself the harmonic mean of
   Spanish adherence, instruction relevance, and fluency. A zero on either axis
   removes only that axis's contribution rather than collapsing the entire score.
 
@@ -93,7 +94,8 @@ question itself moves into unseen input languages, while retaining correctness?
 
 ## Scoring
 
-- **Accuracy:** exact final-number match.
+- **Accuracy:** exact final-number match with locale-aware comma/period decimal
+  and thousands-separator parsing.
 - **Spanish adherence:** deterministic AXBench rule score, 0 or 2.
 - **Instruction relevance:** AXBench 0–2 rubric.
 - **Fluency:** AXBench 0–2 rubric.

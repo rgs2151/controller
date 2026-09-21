@@ -315,7 +315,7 @@ MGSM_DOCUMENTATION = r"""## Method
 | Instruction relevance (0–2) ↑ | Whether the response addresses and attempts the arithmetic task. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Language quality of the generated response. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
-Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains 10 matched MGSM question identities; deleting a group removes the same questions from all five languages. The uncertainty measures question-sampling variability, not decoding-run or judge variability. Every method within a model uses identical problem identities. The per-response records required for the Llama H∞ jackknife were not retained, so that block remains without an uncertainty term rather than receiving an estimated or fabricated one.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains 10 matched MGSM question identities; deleting a group removes the same questions from all five languages. The uncertainty measures question-sampling variability, not decoding-run or judge variability. Every method within a model uses identical problem identities.
 
 ## Hyperparameters
 
@@ -328,7 +328,7 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Llama-3.2-3B-Instruct | Original | No intervention |
 | Llama-3.2-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
 | Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
-| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.284523; costs selected from the frozen 12-point grid on 50 disjoint GSM8K training prompts using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 10; Qf/R = 0.01; R = 1; γ★ = 4.951513; costs selected from the frozen 12-point grid on 50 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |
 """
 
 
@@ -926,9 +926,9 @@ def _mgsm_best_values(rows: list[dict]) -> tuple[float, ...]:
 def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
     column_count = len(MGSM_METRICS)
     caption = (
-        "Full MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct on 100 matched questions per language. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors where retained per-response records permit computation."
+        "Full MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct on 100 matched questions per language. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors."
         if full
-        else "Summary MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct, macro-averaged equally across five languages. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors where retained per-response records permit computation."
+        else "Summary MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct, macro-averaged equally across five languages. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors."
     )
     label = "tab:mgsm-full" if full else "tab:mgsm-overall"
     lines = [
@@ -941,7 +941,11 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
         r"\small",
         r"\renewcommand{\arraystretch}{1.08}",
         r"\setlength{\tabcolsep}{5pt}",
-        r"\resizebox{\textwidth}{!}{%",
+        (
+            r"\resizebox{0.80\textwidth}{!}{%"
+            if full
+            else r"\resizebox{\textwidth}{!}{%"
+        ),
     ]
     if full:
         lines.append(f"\\begin{{tabular}}{{rrl{'c' * column_count}}}")

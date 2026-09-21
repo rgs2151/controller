@@ -25,23 +25,23 @@
 | Llama-3.2-3B | Chinese | Original | 43.0 ± 3.3 | 0.00 ± 0.00 | 1.79 ± 0.07 | 1.59 ± 0.07 |
 | Llama-3.2-3B | Chinese | S-PID | 9.0 ± 2.3 | 1.96 ± 0.03 | 1.23 ± 0.05 | 0.87 ± 0.06 |
 | Llama-3.2-3B | Chinese | A-LQR | 26.0 ± 3.7 | 1.80 ± 0.04 | 1.49 ± 0.08 | 1.21 ± 0.08 |
-| Llama-3.2-3B | Chinese | H∞ (ours) | 34.0 | 0.92 | 1.50 | 1.17 |
+| Llama-3.2-3B | Chinese | H∞ (ours) | 13.0 ± 3.0 | 1.98 ± 0.02 | 1.48 ± 0.05 | 1.18 ± 0.06 |
 | Llama-3.2-3B | French | Original | 49.0 ± 4.6 | 0.00 ± 0.00 | 1.83 ± 0.03 | 1.71 ± 0.04 |
 | Llama-3.2-3B | French | S-PID | 14.0 ± 3.4 | 1.98 ± 0.02 | 1.21 ± 0.04 | 0.67 ± 0.06 |
 | Llama-3.2-3B | French | A-LQR | 43.0 ± 4.2 | 1.24 ± 0.09 | 1.76 ± 0.04 | 1.09 ± 0.03 |
-| Llama-3.2-3B | French | H∞ (ours) | 42.0 | 0.80 | 1.77 | 1.10 |
+| Llama-3.2-3B | French | H∞ (ours) | 8.0 ± 2.9 | 1.00 ± 0.07 | 0.79 ± 0.05 | 0.69 ± 0.05 |
 | Llama-3.2-3B | Japanese | Original | 27.0 ± 3.0 | 0.00 ± 0.00 | 1.56 ± 0.08 | 1.34 ± 0.09 |
 | Llama-3.2-3B | Japanese | S-PID | 10.0 ± 2.6 | 1.96 ± 0.04 | 0.67 ± 0.06 | 0.63 ± 0.09 |
 | Llama-3.2-3B | Japanese | A-LQR | 26.0 ± 3.7 | 1.94 ± 0.04 | 1.68 ± 0.08 | 1.31 ± 0.07 |
-| Llama-3.2-3B | Japanese | H∞ (ours) | 24.0 | 0.96 | 1.56 | 1.28 |
+| Llama-3.2-3B | Japanese | H∞ (ours) | 13.0 ± 3.0 | 2.00 ± 0.00 | 1.29 ± 0.05 | 1.08 ± 0.08 |
 | Llama-3.2-3B | Swahili | Original | 40.0 ± 3.3 | 0.00 ± 0.00 | 1.79 ± 0.02 | 1.49 ± 0.03 |
 | Llama-3.2-3B | Swahili | S-PID | 2.0 ± 1.3 | 1.90 ± 0.04 | 0.47 ± 0.10 | 0.38 ± 0.05 |
 | Llama-3.2-3B | Swahili | A-LQR | 22.0 ± 4.4 | 0.68 ± 0.10 | 1.47 ± 0.04 | 0.98 ± 0.04 |
-| Llama-3.2-3B | Swahili | H∞ (ours) | 19.0 | 0.52 | 1.38 | 0.95 |
+| Llama-3.2-3B | Swahili | H∞ (ours) | 18.0 ± 4.2 | 1.96 ± 0.03 | 1.27 ± 0.07 | 0.93 ± 0.06 |
 | Llama-3.2-3B | Telugu | Original | 6.0 ± 2.2 | 0.00 ± 0.00 | 1.43 ± 0.04 | 1.07 ± 0.03 |
 | Llama-3.2-3B | Telugu | S-PID | 6.0 ± 2.7 | 1.90 ± 0.03 | 0.79 ± 0.08 | 0.46 ± 0.06 |
 | Llama-3.2-3B | Telugu | A-LQR | 21.0 ± 6.0 | 1.86 ± 0.05 | 1.44 ± 0.08 | 1.25 ± 0.07 |
-| Llama-3.2-3B | Telugu | H∞ (ours) | 10.0 | 0.96 | 1.08 | 0.92 |
+| Llama-3.2-3B | Telugu | H∞ (ours) | 3.0 ± 1.5 | 1.36 ± 0.06 | 0.84 ± 0.09 | 0.79 ± 0.07 |
 
 ## Method
 
@@ -60,7 +60,7 @@
 | Instruction relevance (0–2) ↑ | Whether the response addresses and attempts the arithmetic task. | AXBench instruction-relevance rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 | Fluency (0–2) ↑ | Language quality of the generated response. | AXBench fluency rubric through `gpt-4o-mini-2024-07-18`; integer score 0, 1, or 2. |
 
-Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains 10 matched MGSM question identities; deleting a group removes the same questions from all five languages. The uncertainty measures question-sampling variability, not decoding-run or judge variability. Every method within a model uses identical problem identities. The per-response records required for the Llama H∞ jackknife were not retained, so that block remains without an uncertainty term rather than receiving an estimated or fabricated one.
+Values are full-sample means ± ten-group delete-one-group jackknife standard errors. Each group contains 10 matched MGSM question identities; deleting a group removes the same questions from all five languages. The uncertainty measures question-sampling variability, not decoding-run or judge variability. Every method within a model uses identical problem identities.
 
 ## Hyperparameters
 
@@ -73,4 +73,4 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Llama-3.2-3B-Instruct | Original | No intervention |
 | Llama-3.2-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
 | Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
-| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.284523; costs selected from the frozen 12-point grid on 50 disjoint GSM8K training prompts using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 10; Qf/R = 0.01; R = 1; γ★ = 4.951513; costs selected from the frozen 12-point grid on 50 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |
