@@ -349,6 +349,9 @@ LCITE_SUMMARY_METRICS = (
     Metric("axbench_overall.score", "Overall steering (0–2) ↑", r"\shortstack{Overall\\steering (0--2) $\uparrow$}", 2, True),
 )
 LCITE_JACKKNIFE_PATH = UNIT / "lciteeval/lciteeval_jackknife.json"
+LCITE_RESULT_OVERRIDES = {
+    ("32k", "h_infinity"): "hotpot8k_task_40",
+}
 
 
 LCITE_DOCUMENTATION = r"""## Method
@@ -380,7 +383,7 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Qwen2.5-3B-Instruct | Original | No intervention |
 | Qwen2.5-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01; frozen upstream concept-steering configuration |
 | Qwen2.5-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I; frozen upstream concept-steering configuration |
-| Qwen2.5-3B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054; selected on 50 disjoint short AXBench-style prompts |
+| Qwen2.5-3B-Instruct | H∞ | 8K/16K: λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054. Updated 32K: λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 2.9917; selected on the 40 matched 8K HotpotQA prompts with 45% answer recall, 45% citation F1, 5% concept relevance, and 5% fluency. |
 """
 
 
@@ -411,7 +414,7 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Qwen2.5-3B-Instruct | Original | No intervention |
 | Qwen2.5-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01; frozen upstream concept-steering configuration |
 | Qwen2.5-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I; frozen upstream concept-steering configuration |
-| Qwen2.5-3B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054; selected on 50 disjoint short AXBench-style prompts |
+| Qwen2.5-3B-Instruct | H∞ | 8K/16K: λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054. Updated 32K: λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 2.9917; selected on the 40 matched 8K HotpotQA prompts with 45% answer recall, 45% citation F1, 5% concept relevance, and 5% fluency. |
 """
 
 
@@ -1053,13 +1056,11 @@ def render_mgsm_reports() -> None:
 
 
 def _load_lcite_result(condition: str, method: str) -> dict:
-    path = (
-        RESULTS_ROOT
-        / "lciteeval/results/kv_cache_off"
-        / LCITE_MODEL_KEY
-        / f"hotpotqa_{condition}"
-        / f"{method}.json"
-    )
+    root = RESULTS_ROOT / "lciteeval/results/kv_cache_off"
+    calibration_id = LCITE_RESULT_OVERRIDES.get((condition, method))
+    if calibration_id is not None:
+        root = root / "calibrations" / calibration_id
+    path = root / LCITE_MODEL_KEY / f"hotpotqa_{condition}" / f"{method}.json"
     return json.loads(path.read_text())
 
 

@@ -23,6 +23,9 @@ SCORERS = {
     "axbench_overall.score": ("axbench_overall", "score", 1.0),
 }
 GROUP_COUNT = 10
+RESULT_OVERRIDES = {
+    ("32k", "h_infinity"): "hotpot8k_task_40",
+}
 
 
 def _arguments() -> argparse.Namespace:
@@ -53,9 +56,13 @@ def _score_map(
     value_key: str,
     prompt_to_question: dict[str, str],
 ) -> dict[str, float]:
+    score_root = root / "evaluations/kv_cache_off"
+    calibration_id = RESULT_OVERRIDES.get((condition, method))
+    if calibration_id is not None:
+        score_root = score_root / "calibrations" / calibration_id
     path = (
-        root
-        / "evaluations/kv_cache_off/scores"
+        score_root
+        / "scores"
         / scorer_directory
         / f"hotpotqa_{condition}"
         / method
