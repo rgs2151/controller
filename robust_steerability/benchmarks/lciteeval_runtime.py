@@ -52,6 +52,7 @@ CONDITIONS = ("8k", "16k", "32k")
 DEFAULT_BATCH_SIZE = {
     "qwen25_3b_instruct": {"8k": 4, "16k": 2, "32k": 1},
     "llama31_8b_instruct": {"8k": 2, "16k": 1, "32k": 1},
+    "llama32_1b_instruct": {"8k": 8, "16k": 4, "32k": 2},
 }
 
 
