@@ -22,12 +22,16 @@ The benchmark's default scorers are:
 - `mmlu_accuracy`: exact A/B/C/D accuracy on 200 frozen five-shot MMLU
   questions; no learned judge.
 
-The default H∞ objective is `truthfulness_quality_composite`: the mean
-per-response weighted harmonic mean of TruthfulQA True (weight .50), AXBench
-instruction relevance (.25), and AXBench fluency (.25). The configuration also
-registers the historical `truthfulqa_true_mean_percentage` objective and
-`mean_axbench_overall`; `--selection-metric` selects among them. Informative and
-concept relevance remain reported outcomes and do not enter the default objective.
+The default H∞ objective is `truthfulqa_txi_fluency_composite`: the mean
+per-response weighted sum of TruthfulQA True-times-Informative (weight .95) and
+normalized AXBench fluency (weight .05). A response contributes to the primary
+term only when both binary TruthfulQA judges pass. Fluency is divided by two so
+both terms are on `[0, 1]`; the additive form prevents a zero fluency score from
+collapsing the TruthfulQA signal. The configuration retains the historical
+`truthfulqa_true_mean_percentage`, `mean_axbench_overall`, and
+`truthfulness_quality_composite` objectives; `--selection-metric` selects among
+them. Concept relevance and instruction relevance remain reported outcomes but
+do not enter the new default objective.
 H∞ always uses the same model-specific published setpoint multiplier as A-LQR;
 there is no Truthfulness lambda sweep. Calibration sweeps only `Q/R` and `Qf/R`
 with `R=1`.
@@ -69,15 +73,39 @@ defaults to concurrency 500 and batch size 20.
 calibration; Spanish and MMLU consume the selected controllers without fitting
 or selecting anything again. Every dataset has an independent cache namespace,
 so adding MMLU leaves complete TruthfulQA and Spanish generations untouched.
+A named `--calibration-id` also isolates its evaluation generations, scores,
+and compact results. The historical `selected` outputs remain at their original
+paths, so a new H∞ attempt cannot overwrite or silently reuse the published row.
+
+The Gemma-2-2B and Llama-3-8B T×I rerun uses calibration ID
+`txi_fluency_95_05`, H∞ only, and one complete pass over the same 817 English
+questions plus the same 817 Spanish-transfer questions. Existing Original and
+A-LQR rows stay untouched. Five-group question jackknife uncertainty is added
+after scoring; it measures question-sampling variability, not decoding-run
+variability. Gemma runs first, followed by Llama.
+
+For each model, the rerun is the same three-stage sequence; do not launch the
+Llama sequence until the Gemma score stage completes:
+
+```bash
+python -m robust_steerability.benchmarks.truthfulness calibrate --model gemma2b --methods h_infinity --calibration-id txi_fluency_95_05 --selection-metric truthfulqa_txi_fluency_composite --devices auto
+python -m robust_steerability.benchmarks.truthfulness evaluate --model gemma2b --methods h_infinity --datasets id,spanish --calibration-id txi_fluency_95_05 --evaluation-repetitions 1 --devices auto
+python -m robust_steerability.benchmarks.truthfulness score --model gemma2b --methods h_infinity --datasets id,spanish --calibration-id txi_fluency_95_05 --evaluation-repetitions 1 --scorers default --devices auto
+```
+
+Repeat those commands with `--model llama8b`. The one-pass score stage writes
+the five-group question-jackknife standard errors automatically.
 
 ```text
 cache/<model>/artifacts/
 cache/<model>/datasets/
 cache/<model>/calibrations/<method>/<calibration-id>/
 cache/<model>/evaluations/<kv-cache-condition>/generations/<dataset>/<method>/
-cache/<model>/evaluations/<kv-cache-condition>/scores/<scorer>/<dataset>/<method>/
-cache/<model>/evaluations/<kv-cache-condition>/results/<dataset>/<method>.json
+cache/<model>/evaluations/<kv-cache-condition>/calibrations/<calibration-id>/generations/<dataset>/<method>/
+cache/<model>/evaluations/<kv-cache-condition>/calibrations/<calibration-id>/scores/<scorer>/<dataset>/<method>/
+cache/<model>/evaluations/<kv-cache-condition>/calibrations/<calibration-id>/results/<dataset>/<method>.json
 results/<kv-cache-condition>/<model>/<dataset>/<method>.json
+results/<kv-cache-condition>/calibrations/<calibration-id>/<model>/<dataset>/<method>.json
 ```
 
 On Lightning, this complete cache hierarchy is written directly to the

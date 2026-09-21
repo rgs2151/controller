@@ -52,11 +52,17 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "truthfulness_quality_composite"
-available_selection_metrics = ["truthfulqa_true_mean_percentage", "mean_axbench_overall", "truthfulness_quality_composite"]
+selection_metric = "truthfulqa_txi_fluency_composite"
+available_selection_metrics = ["truthfulqa_txi_fluency_composite", "truthfulqa_true_mean_percentage", "mean_axbench_overall", "truthfulness_quality_composite"]
 h_infinity_tuning_samples = 50
 h_infinity_tuning_repetitions = 1
 h_infinity_fixed_selection_supported = true
+
+[calibration.truthfulqa_txi_fluency_composite]
+aggregation = "mean_per_response_weighted_sum"
+truthfulqa_true_informative_weight = 0.95
+axbench_fluency_weight = 0.05
+axbench_score_normalizer = 2.0
 
 [calibration.truthfulness_quality_composite]
 aggregation = "mean_per_response_weighted_harmonic"

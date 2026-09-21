@@ -75,6 +75,10 @@ GRID_SELECTION_SOURCES = {
         "TruthfulQA True/instruction-relevance/fluency weighted-harmonic "
         "calibration argmax"
     ),
+    "truthfulqa_txi_fluency_composite": (
+        "TruthfulQA True-times-Informative/fluency weighted-sum "
+        "calibration argmax"
+    ),
 }
 GRID_CONFIGURATION_SOURCE = "truthfulness H-infinity Q/R and Qf/R calibration grid"
 FIXED_SELECTION_SOURCE = "fixed configuration supplied at calibration launch"
@@ -487,16 +491,23 @@ def generate_worker(
         _write_json(destination, payload)
 
 
-def _score_truth_grid(model_key: str, device: str, calibration_id: str) -> None:
+def _score_truthfulqa_grid(
+    model_key: str,
+    device: str,
+    calibration_id: str,
+    scorer_key: str,
+) -> None:
     root = _root(model_key, calibration_id)
-    specification = scorer_spec("truthfulqa_true")
-    destination = root / "grid/scores/truthfulqa_true.json"
+    if scorer_key not in {"truthfulqa_true", "truthfulqa_informative"}:
+        raise ValueError(f"Unsupported TruthfulQA calibration scorer {scorer_key!r}")
+    specification = scorer_spec(scorer_key)
+    destination = root / "grid/scores" / f"{scorer_key}.json"
     generation_paths = sorted((root / "grid/generations").glob("*.json"))
     if len(generation_paths) != len(_grid()):
         raise ValueError("Truthfulness H-infinity grid generations are incomplete")
     identity = {
         "model": [specification.model_id, specification.revision],
-        "scorer": "truthfulqa_true",
+        "scorer": scorer_key,
         "rubric": specification.rubric,
     }
     saved = {"identity": identity, "status": "partial", "rows": []}
@@ -553,6 +564,8 @@ def _required_api_scorers(selection_metric: str) -> tuple[str, ...]:
         return ()
     if selection_metric == "truthfulness_quality_composite":
         return ("axbench_instruction_relevance", "axbench_fluency")
+    if selection_metric == "truthfulqa_txi_fluency_composite":
+        return ("axbench_fluency",)
     if selection_metric == "mean_axbench_overall":
         return API_SCORERS
     raise ValueError(f"Unknown truthfulness calibration metric {selection_metric!r}")
@@ -576,8 +589,15 @@ def score_grid(
     if selection_metric in {
         "truthfulqa_true_mean_percentage",
         "truthfulness_quality_composite",
+        "truthfulqa_txi_fluency_composite",
     }:
-        _score_truth_grid(model_key, device, calibration_id)
+        _score_truthfulqa_grid(
+            model_key, device, calibration_id, "truthfulqa_true"
+        )
+    if selection_metric == "truthfulqa_txi_fluency_composite":
+        _score_truthfulqa_grid(
+            model_key, device, calibration_id, "truthfulqa_informative"
+        )
     api_scorers = _required_api_scorers(selection_metric)
     if api_scorers:
         openai_scoring.score_generations(
@@ -670,10 +690,12 @@ def _freeze_selected_diagnostics(
     )
 
 
-def _truth_score_map(root: Path) -> dict[tuple[str, int, str], float]:
-    payload = json.loads((root / "grid/scores/truthfulqa_true.json").read_text())
+def _truthfulqa_score_map(
+    root: Path, scorer_key: str
+) -> dict[tuple[str, int, str], float]:
+    payload = json.loads((root / "grid/scores" / f"{scorer_key}.json").read_text())
     if payload.get("status") != "complete":
-        raise ValueError("TruthfulQA True calibration scores are incomplete")
+        raise ValueError(f"TruthfulQA calibration scores are incomplete: {scorer_key}")
     return {
         (str(row["grid_id"]), int(row["repetition"]), str(row["prompt_id"])):
         float(row["score"])
@@ -699,22 +721,38 @@ def _calibration_profile(
         raise ValueError(f"Unknown truthfulness calibration metric {selection_metric!r}")
     root = _root(model_key, calibration_id)
     truth_map = (
-        _truth_score_map(root)
+        _truthfulqa_score_map(root, "truthfulqa_true")
         if selection_metric in {
             "truthfulqa_true_mean_percentage",
             "truthfulness_quality_composite",
+            "truthfulqa_txi_fluency_composite",
         }
         else None
     )
-    quality_config = CALIBRATION_CONFIG["truthfulness_quality_composite"]
-    quality_weights = (
-        float(quality_config["truthfulqa_true_weight"]),
-        float(quality_config["axbench_instruction_relevance_weight"]),
-        float(quality_config["axbench_fluency_weight"]),
+    informative_map = (
+        _truthfulqa_score_map(root, "truthfulqa_informative")
+        if selection_metric == "truthfulqa_txi_fluency_composite"
+        else None
     )
-    if not np.isclose(sum(quality_weights), 1.0):
-        raise ValueError("Truthfulness-quality calibration weights must sum to one")
-    normalizer = float(quality_config["axbench_score_normalizer"])
+    metric_config = CALIBRATION_CONFIG.get(selection_metric)
+    if selection_metric == "truthfulness_quality_composite":
+        quality_weights = (
+            float(metric_config["truthfulqa_true_weight"]),
+            float(metric_config["axbench_instruction_relevance_weight"]),
+            float(metric_config["axbench_fluency_weight"]),
+        )
+        normalizer = float(metric_config["axbench_score_normalizer"])
+    elif selection_metric == "truthfulqa_txi_fluency_composite":
+        quality_weights = (
+            float(metric_config["truthfulqa_true_informative_weight"]),
+            float(metric_config["axbench_fluency_weight"]),
+        )
+        normalizer = float(metric_config["axbench_score_normalizer"])
+    else:
+        quality_weights = ()
+        normalizer = 1.0
+    if quality_weights and not np.isclose(sum(quality_weights), 1.0):
+        raise ValueError("Truthfulness calibration weights must sum to one")
     if normalizer <= 0:
         raise ValueError("AXBench calibration score normalizer must be positive")
     summaries = []
@@ -752,7 +790,7 @@ def _calibration_profile(
                 "truth": float(np.mean([row["truth"] for row in per_repetition])),
                 "per_repetition": per_repetition,
             }
-        else:
+        elif selection_metric == "truthfulness_quality_composite":
             instruction_rows = _scorer_rows(
                 root, generation_path, "axbench_instruction_relevance"
             )
@@ -794,6 +832,51 @@ def _calibration_profile(
                 "axbench_fluency": float(np.mean(fluency_scores)),
                 "truthfulness_quality_composite": float(np.mean(response_scores)),
             }
+        else:
+            fluency_rows = _scorer_rows(
+                root, generation_path, "axbench_fluency"
+            )
+            if len(flattened) != len(fluency_rows):
+                raise ValueError(f"Calibration scorer row-count mismatch for {grid_id}")
+            response_scores = []
+            truth_scores = []
+            informative_scores = []
+            txi_scores = []
+            fluency_scores = []
+            for (repetition, row), fluency in zip(
+                flattened, fluency_rows, strict=True
+            ):
+                prompt_id = str(row["prompt_id"])
+                if str(fluency["prompt_id"]) != prompt_id:
+                    raise ValueError(
+                        f"Calibration scorer alignment mismatch for {grid_id}"
+                    )
+                truth = float(truth_map[(grid_id, repetition, prompt_id)])
+                informative = float(
+                    informative_map[(grid_id, repetition, prompt_id)]
+                )
+                txi = truth * informative
+                fluency_score = float(fluency["score"])
+                normalized_fluency = float(
+                    np.clip(fluency_score / normalizer, 0.0, 1.0)
+                )
+                truth_scores.append(truth)
+                informative_scores.append(informative)
+                txi_scores.append(txi)
+                fluency_scores.append(fluency_score)
+                response_scores.append(
+                    quality_weights[0] * txi
+                    + quality_weights[1] * normalized_fluency
+                )
+            summary = {
+                "truth": 100.0 * float(np.mean(truth_scores)),
+                "info": 100.0 * float(np.mean(informative_scores)),
+                "txi": 100.0 * float(np.mean(txi_scores)),
+                "axbench_fluency": float(np.mean(fluency_scores)),
+                "truthfulqa_txi_fluency_composite": float(
+                    np.mean(response_scores)
+                ),
+            }
         configuration["lambda"] = paper_alqr_setting(
             "truthfulness", MODELS[model_key].model_id
         ).multiplier
@@ -821,7 +904,7 @@ def _calibration_profile(
             row["q"],
             row["q_final"],
         )
-    else:
+    elif selection_metric == "truthfulness_quality_composite":
         metric_key = "truthfulness_quality_composite"
         description = (
             "mean per-response weighted harmonic mean of TruthfulQA True, "
@@ -842,6 +925,29 @@ def _calibration_profile(
             row["q"],
             row["q_final"],
         )
+    else:
+        metric_key = "truthfulqa_txi_fluency_composite"
+        description = (
+            "mean per-response weighted sum of TruthfulQA True-times-Informative "
+            "and normalized AXBench fluency"
+        )
+        tie_breakers = [
+            "higher True-times-Informative percentage",
+            "higher True percentage",
+            "higher Informative percentage",
+            "higher fluency",
+            "smaller Q/R",
+            "smaller Qf/R",
+        ]
+        rank_key = lambda row: (
+            -row["truthfulqa_txi_fluency_composite"],
+            -row["txi"],
+            -row["truth"],
+            -row["info"],
+            -row["axbench_fluency"],
+            row["q"],
+            row["q_final"],
+        )
     require_nonzero_selection_metric(
         summaries, metric_key, context="Truthfulness H-infinity calibration"
     )
@@ -854,11 +960,7 @@ def _calibration_profile(
         "calibration_id": calibration_id,
         "selection_metric": selection_metric,
         "selection_metric_description": description,
-        "metric_configuration": (
-            quality_config
-            if selection_metric == "truthfulness_quality_composite"
-            else None
-        ),
+        "metric_configuration": metric_config,
         "tie_breakers": tie_breakers,
         "selected": ranked[0],
         "ranking": [str(row["grid_id"]) for row in ranked],
