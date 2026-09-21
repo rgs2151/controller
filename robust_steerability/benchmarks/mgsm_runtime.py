@@ -28,7 +28,11 @@ from robust_steerability.benchmarks.mgsm_artifacts import (
 )
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.calibration.nominal_artifact import load_shared_nominal_dynamics
-from robust_steerability.datasets.mgsm import LANGUAGES, LANGUAGE_NAMES
+from robust_steerability.datasets.mgsm import (
+    LANGUAGES,
+    LANGUAGE_NAMES,
+    multilingual_calibration_splits,
+)
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
 from robust_steerability.judges.exact import harmonic_mean
 from robust_steerability.judges.mgsm import exact_match, spanish_rule_score
@@ -96,6 +100,17 @@ def _selection_parameters(model_key: str, method: str, calibration_id: str) -> d
     payload = json.loads(path.read_text())
     if payload.get("model") != [MODELS[model_key].model_id, MODELS[model_key].revision]:
         raise ValueError(f"MGSM selection model mismatch: {path}")
+    if method == "h_infinity":
+        expected_tuning_samples = len(multilingual_calibration_splits()["tuning"])
+        actual_tuning_samples = int(
+            payload.get("protocol", {}).get("tuning_samples", -1)
+        )
+        if actual_tuning_samples != expected_tuning_samples:
+            raise ValueError(
+                "MGSM H-infinity evaluation requires a selection calibrated on "
+                f"{expected_tuning_samples} prompts; found {actual_tuning_samples}. "
+                "Run calibration before evaluation."
+            )
     return dict(
         payload["selected"]["parameters"]
         if method == "h_infinity"
