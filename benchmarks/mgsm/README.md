@@ -28,9 +28,9 @@ The remaining registered languages stay independently runnable with `--datasets`
 evaluation never refits the controller by language.
 
 Qwen3-4B is complete under its original English calibration protocol. The first
-Llama-3.2-3B-Instruct H∞ run exposed calibration saturation and is superseded by
-the four-language calibration specified above. Original, S-PID, and A-LQR remain
-unchanged; only the Llama H∞ rows are regenerated.
+Llama-3.2-3B-Instruct H∞ run exposed calibration saturation and is retained for
+comparison. Phi-4-mini-instruct is registered as the next full four-method model
+expansion and uses the four-language calibration specified above.
 
 ```bash
 python -m robust_steerability.benchmarks.mgsm artifacts --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --devices auto
@@ -38,5 +38,9 @@ python -m robust_steerability.benchmarks.mgsm calibrate --model llama32_3b_instr
 python -m robust_steerability.benchmarks.mgsm evaluate --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --devices auto
 python -m robust_steerability.benchmarks.mgsm score --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --scorers default --devices auto
 ```
+
+For the Phi expansion, replace the model key above with
+`phi4_mini_instruct`. Its artifacts, calibration, generations, scores, and
+results remain isolated under that model key.
 
 Use `--datasets all` only for the deferred 11-language expansion.

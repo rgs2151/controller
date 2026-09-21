@@ -44,7 +44,7 @@ CONCEPT = "respond only in Spanish, and no other language is allowed"
 DIRECTION_RECORDS_PER_CLASS = 250
 JACOBIAN_PROMPTS = 50
 MAX_CALIBRATION_LENGTH = 512
-MODEL_KEYS = ("qwen3_4b", "llama32_3b_instruct")
+MODEL_KEYS = ("qwen3_4b", "llama32_3b_instruct", "phi4_mini_instruct")
 
 
 def _utc_now() -> str:
