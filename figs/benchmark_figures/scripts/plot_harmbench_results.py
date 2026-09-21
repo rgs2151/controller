@@ -14,6 +14,7 @@ mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
+from matplotlib.offsetbox import AnchoredOffsetbox, HPacker, OffsetImage, TextArea
 from matplotlib.patches import FancyArrowPatch, Rectangle
 
 
@@ -21,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "cache" / "harmbench_refusal_results.csv"
 PDF_DIR = ROOT / "plots" / "pdf"
 PNG_DIR = ROOT / "plots" / "figures"
+LLAMA_LOGO = ROOT / "assets" / "model_logos" / "llama_hq.png"
 
 TEMPLATES = [
     "Direct",
@@ -99,6 +101,51 @@ def style_axis(ax: plt.Axes) -> None:
         spine.set_color(SPINE)
         spine.set_linewidth(0.8)
     ax.tick_params(labelsize=10.7, length=4.0, width=0.8)
+
+
+def add_llama_model_legend(
+    fig: plt.Figure,
+    models: list[str],
+    colors: dict[str, str],
+    *,
+    center_y: float,
+    fontsize: float,
+) -> None:
+    """Draw the official Meta mark for every Llama model legend entry."""
+
+    if not LLAMA_LOGO.exists():
+        raise FileNotFoundError(f"Missing model logo: {LLAMA_LOGO}")
+    logo = plt.imread(LLAMA_LOGO)
+    entries = [
+        HPacker(
+            children=[
+                OffsetImage(logo, zoom=0.0135),
+                TextArea(
+                    model,
+                    textprops={
+                        "fontsize": fontsize,
+                        "fontweight": "bold",
+                        "color": colors[model],
+                    },
+                ),
+            ],
+            align="center",
+            pad=0,
+            sep=4,
+        )
+        for model in models
+    ]
+    row = HPacker(children=entries, align="center", pad=0, sep=18)
+    legend = AnchoredOffsetbox(
+        loc="center",
+        child=row,
+        frameon=False,
+        pad=0,
+        borderpad=0,
+        bbox_to_anchor=(0.5, center_y),
+        bbox_transform=fig.transFigure,
+    )
+    fig.add_artist(legend)
 
 
 def create_figure(rows: list[dict[str, object]]) -> plt.Figure:
@@ -362,24 +409,12 @@ def create_figure(rows: list[dict[str, object]]) -> plt.Figure:
     ax_frontier.set_ylabel("Mean safe-concept relevance (0-2)  $\\rightarrow$")
     ax_frontier.set_title("B   Safety Pareto frontier", loc="left", fontweight="bold")
 
-    model_handle = Line2D(
-        [0],
-        [0],
-        marker="o",
-        linestyle="none",
-        markerfacecolor="#5B4CC4",
-        markeredgecolor="white",
-        markeredgewidth=0.7,
-        markersize=8.0,
-        label=model,
-    )
-    fig.legend(
-        handles=[model_handle],
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.995),
-        frameon=False,
+    add_llama_model_legend(
+        fig,
+        [model],
+        {model: "#5B4CC4"},
+        center_y=0.965,
         fontsize=11.0,
-        handletextpad=0.35,
     )
     method_handles = [
         Line2D(
@@ -649,20 +684,6 @@ def create_combined_figure(rows: list[dict[str, object]]) -> plt.Figure:
         fontweight="bold",
     )
 
-    model_handles = [
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            linestyle="none",
-            markerfacecolor=model_colors[model],
-            markeredgecolor="white",
-            markeredgewidth=0.7,
-            markersize=8.0,
-            label=model,
-        )
-        for model in models
-    ]
     method_handles = [
         Line2D(
             [0],
@@ -677,15 +698,12 @@ def create_combined_figure(rows: list[dict[str, object]]) -> plt.Figure:
         )
         for method in METHODS
     ]
-    fig.legend(
-        handles=model_handles,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.985),
-        ncol=len(models),
-        frameon=False,
+    add_llama_model_legend(
+        fig,
+        models,
+        model_colors,
+        center_y=0.955,
         fontsize=10.8,
-        handletextpad=0.35,
-        columnspacing=1.2,
     )
     fig.legend(
         handles=method_handles,

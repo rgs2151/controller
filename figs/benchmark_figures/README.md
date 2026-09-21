@@ -183,7 +183,7 @@
 
 ## Legends
 
-- Color: model.
+- Official Qwen and Meta marks: model family; label/curve color: model scale.
 - Marker and line style: method.
 - Gold outline: H∞.
 - MGSM axes: transfer quality versus accuracy, plus per-language accuracy.
@@ -229,6 +229,7 @@
 
 ## Legends
 
+- Official Meta mark: Llama model family; label/curve color: model scale.
 - Line and marker: method.
 - In the combined left panel, color identifies model, solid diamonds show H∞, and the matching dashed curve is `min ASR(Original, A-LQR)` at each template.
 - Gold outline: H∞.

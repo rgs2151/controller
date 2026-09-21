@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import csv
 import math
-import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -19,9 +18,8 @@ mpl.use("Agg")
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.offsetbox import AnchoredOffsetbox, HPacker, OffsetImage, TextArea
 from matplotlib.lines import Line2D
-from matplotlib.path import Path as MplPath
-from matplotlib.patches import PathPatch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,7 +27,8 @@ MGSM_DATA = ROOT / "cache" / "mgsm_transfer_results.csv"
 LCITE_DATA = ROOT / "cache" / "lciteeval_context_results.csv"
 PDF_DIR = ROOT / "plots" / "pdf"
 PNG_DIR = ROOT / "plots" / "figures"
-QWEN_LOGO = ROOT / "assets" / "logos" / "qwen-icon.svg"
+QWEN_LOGO = ROOT / "assets" / "logos" / "qwen-icon-transparent.png"
+LLAMA_LOGO = ROOT / "assets" / "model_logos" / "llama_hq.png"
 
 METHOD_ORDER = ["H-infinity", "A-LQR", "S-PID", "Original"]
 METHOD_LABEL = {
@@ -135,83 +134,56 @@ def style_axis(ax: plt.Axes) -> None:
     ax.tick_params(labelsize=10.6, length=4.0, width=0.8)
 
 
-def add_qwen_header(
+def add_model_logo_legend(
     fig: plt.Figure,
-    label: str,
+    models: list[str],
+    colors: dict[str, str],
     *,
-    center_x: float,
     center_y: float,
-    icon_width: float = 0.022,
+    fontsize: float,
 ) -> None:
-    """Add the official Qwen mark as vector paths plus the model name."""
+    """Draw company marks rather than generic dots in the model legend."""
 
-    if not QWEN_LOGO.exists():
-        return
-    icon_height = icon_width * fig.get_figwidth() / fig.get_figheight()
-    icon_ax = fig.add_axes(
-        [
-            center_x - 0.076,
-            center_y - 0.5 * icon_height,
-            icon_width,
-            icon_height,
-        ],
-        zorder=20,
-    )
-    svg_text = QWEN_LOGO.read_text(encoding="utf-8")
-    path_strings = re.findall(r'<path\s+d="([^"]+)"', svg_text)
-    token_pattern = re.compile(r"[MLCZ]|-?\d+(?:\.\d+)?")
-    for path_string in path_strings:
-        tokens = token_pattern.findall(path_string)
-        vertices: list[tuple[float, float]] = []
-        codes: list[int] = []
-        index = 0
-        start = (0.0, 0.0)
-        while index < len(tokens):
-            command = tokens[index]
-            index += 1
-            if command == "M":
-                point = (float(tokens[index]), float(tokens[index + 1]))
-                index += 2
-                start = point
-                vertices.append(point)
-                codes.append(MplPath.MOVETO)
-            elif command == "L":
-                point = (float(tokens[index]), float(tokens[index + 1]))
-                index += 2
-                vertices.append(point)
-                codes.append(MplPath.LINETO)
-            elif command == "C":
-                for _ in range(3):
-                    point = (float(tokens[index]), float(tokens[index + 1]))
-                    index += 2
-                    vertices.append(point)
-                    codes.append(MplPath.CURVE4)
-            elif command == "Z":
-                vertices.append(start)
-                codes.append(MplPath.CLOSEPOLY)
-            else:
-                raise ValueError(f"Unsupported SVG path command: {command}")
-        icon_ax.add_patch(
-            PathPatch(
-                MplPath(vertices, codes),
-                facecolor="#082DFF",
-                edgecolor="none",
+    entries = []
+    for model in models:
+        normalized = model.lower()
+        if normalized.startswith("qwen"):
+            logo_path, zoom = QWEN_LOGO, 0.023
+        elif normalized.startswith("llama"):
+            logo_path, zoom = LLAMA_LOGO, 0.0135
+        else:
+            raise ValueError(f"No model logo registered for {model!r}")
+        if not logo_path.exists():
+            raise FileNotFoundError(f"Missing model logo: {logo_path}")
+        entries.append(
+            HPacker(
+                children=[
+                    OffsetImage(plt.imread(logo_path), zoom=zoom),
+                    TextArea(
+                        model,
+                        textprops={
+                            "fontsize": fontsize,
+                            "fontweight": "bold",
+                            "color": colors[model],
+                        },
+                    ),
+                ],
+                align="center",
+                pad=0,
+                sep=4,
             )
         )
-    icon_ax.set_xlim(0, 233)
-    icon_ax.set_ylim(236, 0)
-    icon_ax.set_aspect("equal")
-    icon_ax.set_axis_off()
-    fig.text(
-        center_x - 0.046,
-        center_y,
-        label,
-        ha="left",
-        va="center",
-        fontsize=11.8,
-        fontweight="bold",
-        color=INK,
+    row = HPacker(children=entries, align="center", pad=0, sep=18)
+    legend = AnchoredOffsetbox(
+        loc="center",
+        child=row,
+        frameon=False,
+        pad=0,
+        borderpad=0,
+        bbox_to_anchor=(0.5, center_y),
+        bbox_transform=fig.transFigure,
     )
+    fig.add_artist(legend)
 
 
 def save_figure(fig: plt.Figure, stem: str) -> None:
@@ -435,32 +407,13 @@ def create_mgsm_figure(rows: list[dict[str, object]]) -> plt.Figure:
     ax_language.set_xlabel("MGSM accuracy (%)  $\\rightarrow$")
     ax_language.set_title("B   Accuracy across transfer languages", loc="left", fontweight="bold")
 
-    model_handles = [
-        Line2D(
-            [0], [0], marker="o", linestyle="none", markerfacecolor=colors[model],
-            markeredgecolor="white", markeredgewidth=0.7, markersize=7.0, label=model
-        )
-        for model in models
-    ]
-    if len(models) == 1 and models[0].lower().startswith("qwen"):
-        add_qwen_header(
-            fig,
-            models[0],
-            center_x=0.5,
-            center_y=0.965,
-            icon_width=0.020,
-        )
-    else:
-        fig.legend(
-            handles=model_handles,
-            loc="upper center",
-            bbox_to_anchor=(0.5, 0.995),
-            ncol=min(4, len(models)),
-            frameon=False,
-            fontsize=15.5,
-            handletextpad=0.35,
-            columnspacing=0.9,
-        )
+    add_model_logo_legend(
+        fig,
+        models,
+        colors,
+        center_y=0.965,
+        fontsize=15.5,
+    )
     fig.legend(
         handles=method_handles(),
         loc="lower center",
@@ -686,39 +639,13 @@ def create_lcite_figure(
         handletextpad=0.45,
         columnspacing=1.15,
     )
-    model_handles = [
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            linestyle="none",
-            markerfacecolor=colors[model],
-            markeredgecolor="white",
-            markeredgewidth=0.7,
-            markersize=8.0,
-            label=model,
-        )
-        for model in models
-    ]
-    if len(models) == 1 and models[0].lower().startswith("qwen"):
-        add_qwen_header(
-            fig,
-            models[0],
-            center_x=0.5,
-            center_y=0.925,
-            icon_width=0.018,
-        )
-    else:
-        fig.legend(
-            handles=model_handles,
-            loc="upper center",
-            bbox_to_anchor=(0.5, 0.935),
-            ncol=min(4, len(models)),
-            frameon=False,
-            fontsize=13.5,
-            handletextpad=0.35,
-            columnspacing=1.0,
-        )
+    add_model_logo_legend(
+        fig,
+        models,
+        colors,
+        center_y=0.925,
+        fontsize=13.5,
+    )
     fig.subplots_adjust(
         left=0.095,
         right=0.985,
