@@ -104,4 +104,12 @@ MODELS = {
         8,
         16,
     ),
+    "granite33_2b_instruct": ModelSpec(
+        "granite33_2b_instruct",
+        "Granite-3.3-2B-Instruct",
+        "ibm-granite/granite-3.3-2b-instruct",
+        "707f574c62054322f6b5b04b6d075f0a8f05e0f0",
+        8,
+        16,
+    ),
 }

@@ -44,7 +44,12 @@ CONCEPT = "respond only in Spanish, and no other language is allowed"
 DIRECTION_RECORDS_PER_CLASS = 250
 JACOBIAN_PROMPTS = 50
 MAX_CALIBRATION_LENGTH = 512
-MODEL_KEYS = ("qwen3_4b", "llama32_3b_instruct", "phi4_mini_instruct")
+MODEL_KEYS = (
+    "qwen3_4b",
+    "llama32_3b_instruct",
+    "phi4_mini_instruct",
+    "granite33_2b_instruct",
+)
 
 
 def _utc_now() -> str:
@@ -109,7 +114,7 @@ def _prefix_length(tokenizer) -> int:
     for index, (left_token, right_token) in enumerate(zip(left, right, strict=True)):
         if left_token != right_token:
             return index
-    raise ValueError("Could not identify the Qwen3 chat prefix")
+    raise ValueError("Could not identify the chat-template prefix")
 
 
 def _suffix_length(tokenizer) -> int:

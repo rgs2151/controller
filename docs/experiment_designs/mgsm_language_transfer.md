@@ -3,7 +3,8 @@
 ## Pipeline card
 
 - **Status:** Qwen3-4B and Llama-3.2-3B-Instruct are complete;
-  Phi-4-mini-instruct is the next full model expansion.
+  Phi-4-mini-instruct and Granite-3.3-2B-Instruct are registered model
+  expansions.
 - **Task:** Solve MGSM arithmetic problems with native eight-shot examples.
 - **Distribution shift:** Input language changes across Chinese, French, Japanese,
   Swahili, and Telugu.
@@ -22,7 +23,8 @@
   10% normalized AXBench Overall.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
-- **Models:** Qwen3-4B, Llama-3.2-3B-Instruct, and Phi-4-mini-instruct.
+- **Models:** Qwen3-4B, Llama-3.2-3B-Instruct, Phi-4-mini-instruct, and
+  Granite-3.3-2B-Instruct.
 - **Methods:** Original, A-LQR, and H∞ for every active model run. S-PID is
   retained in code only as an optional deferred method.
 - **Scoring:** Exact final-number accuracy, Spanish adherence, instruction
@@ -37,7 +39,8 @@ question itself moves into unseen input languages, while retaining correctness?
 
 ## Frozen scope
 
-- **Models:** Qwen3-4B, Llama-3.2-3B-Instruct, and Phi-4-mini-instruct.
+- **Models:** Qwen3-4B, Llama-3.2-3B-Instruct, Phi-4-mini-instruct, and
+  Granite-3.3-2B-Instruct.
 - **Methods:** Original, A-LQR, and H∞.
 - **Steering rule:** `respond only in Spanish, and no other language is allowed`.
 - **Primary transfer languages:** Chinese, French, Japanese, Swahili, and Telugu.
@@ -118,3 +121,4 @@ question itself moves into unseen input languages, while retaining correctness?
 - [AXBench paper](https://arxiv.org/abs/2501.17148)
 - [Llama 3.2 model card](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct)
 - [Phi-4-mini-instruct model card](https://huggingface.co/microsoft/Phi-4-mini-instruct)
+- [Granite-3.3-2B-Instruct model card](https://huggingface.co/ibm-granite/granite-3.3-2b-instruct)
