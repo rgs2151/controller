@@ -15,7 +15,8 @@
 - **Baseline settings:** Published or frozen project settings; no baseline sweep.
 - **H∞ selection:** Fix the setpoint multiplier to the same frozen value used by
   A-LQR and select among 32 `Q/R` and `Qf/R` configurations on 200 further
-  disjoint prompts by aggregate True percentage times Informative percentage.
+  disjoint prompts by 95% aggregate True-times-Informative plus 5% normalized
+  fluency.
 - **Final evaluation:** 817 questions × 1 seed in English and Spanish; optional
   fixed 200-question five-shot MMLU.
 - **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, Qwen-2.5-32B, GPT-2 XL,
@@ -73,10 +74,10 @@ when the same questions are translated into Spanish?
 - **H∞ setpoint multiplier:** fixed to the same frozen model-specific value used
   by A-LQR; it is not swept.
 - **H∞ grid:** `R=1`, eight frozen `Q/R` values, and four frozen `Qf/R` values.
-- **Default objective:** aggregate `mean(True) × mean(Informative)`; this is the
-  historical T×I multiplication, not a per-response intersection rate.
-- **Registered alternatives:** T×I with fluency, historical mean True percentage,
-  mean AXBench overall, and the prior Truthfulness quality composite.
+- **Default objective:** `.95 × (mean(True) × mean(Informative)) + .05 ×`
+  normalized mean fluency; T×I is multiplication, not an intersection rate.
+- **Registered alternatives:** pure T×I, historical mean True percentage, mean
+  AXBench overall, and the prior Truthfulness quality composite.
 
 ## 5. Final evaluation
 

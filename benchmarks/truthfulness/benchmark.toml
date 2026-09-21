@@ -52,7 +52,7 @@ evaluation_generates_only = true
 score_reads_completed_generations = true
 
 [calibration]
-selection_metric = "truthfulqa_txi"
+selection_metric = "truthfulqa_txi_fluency_composite"
 available_selection_metrics = ["truthfulqa_txi", "truthfulqa_txi_fluency_composite", "truthfulqa_true_mean_percentage", "mean_axbench_overall", "truthfulness_quality_composite"]
 h_infinity_tuning_samples = 200
 h_infinity_tuning_repetitions = 1
