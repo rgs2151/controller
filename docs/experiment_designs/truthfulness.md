@@ -13,19 +13,19 @@
   shared by A-LQR and H∞.
 - **H∞ disturbance data:** 200 disjoint TruthfulQA prompts.
 - **Baseline settings:** Published or frozen project settings; no baseline sweep.
-- **H∞ selection:** Fix the setpoint multiplier to the same model-specific
-  published value used by A-LQR; sweep only 32 `Q/R` and `Qf/R` cost
-  configurations on 50 further disjoint prompts. The default objective combines
-  True, instruction relevance, and fluency with weights .50/.25/.25.
-- **Final evaluation:** 817 questions × 5 seeds in English and Spanish; optional
+- **H∞ selection:** Fix the setpoint multiplier to the same frozen value used by
+  A-LQR and select among 32 `Q/R` and `Qf/R` configurations on 200 further
+  disjoint prompts by aggregate True percentage times Informative percentage.
+- **Final evaluation:** 817 questions × 1 seed in English and Spanish; optional
   fixed 200-question five-shot MMLU.
-- **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, and Qwen-2.5-32B.
-- **Methods:** Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT, ODESteer,
-  S-PID, A-LQR, and H∞.
+- **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, Qwen-2.5-32B, GPT-2 XL,
+  and the prepared Qwen-2.5-0.5B fallback.
+- **Methods:** Original, A-LQR, and H∞ by default; additional registered methods
+  remain available for legacy comparisons.
 - **Scoring:** True, Informative, concept relevance, instruction relevance,
   fluency, AXBench overall, and optional MMLU accuracy.
-- **Evaluation size:** Per model, 1,600 H∞ selection generations and 81,700 final
-  TruthfulQA generations when all methods and both languages are run.
+- **Evaluation size:** Per new model, 6,400 H∞ selection generations and 4,902
+  final TruthfulQA generations for three methods and both languages.
 
 ## Question
 
@@ -34,9 +34,9 @@ when the same questions are translated into Spanish?
 
 ## Frozen scope
 
-- **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, and Qwen-2.5-32B.
-- **Methods:** Original, ITI, ActAdd, Mean-AcT, Linear-AcT, PID-AcT,
-  ODESteer, S-PID, A-LQR, and H∞.
+- **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, Qwen-2.5-32B, GPT-2 XL,
+  and Qwen-2.5-0.5B.
+- **Default methods:** Original, A-LQR, and H∞.
 - **KV cache:** off for reported runs.
 - **Base task:** open-ended TruthfulQA.
 
@@ -63,26 +63,25 @@ when the same questions are translated into Spanish?
 
 ## 4. Controller selection
 
-- **A-LQR:** use the published model-specific setting; do not sweep it.
+- **A-LQR:** use the published setting where available; GPT-2 XL and
+  Qwen-2.5-0.5B reuse the frozen small-model project baseline (`lambda=3`,
+  `Q=0.1`, `R=1`, `Qf=0.3`) with no sweep.
 - **Other baselines:** use their frozen published or project settings; do not
   sweep them on final TruthfulQA.
-- **H∞ development set:** 50 additional TruthfulQA prompts, disjoint from all fit
-  records and final evaluation prompts.
-- **H∞ setpoint multiplier:** fixed to the same model-specific published value
-  used by A-LQR; it is not swept.
+- **H∞ development set:** 200 additional TruthfulQA prompts, disjoint from all
+  direction, Jacobian, and disturbance-fit records.
+- **H∞ setpoint multiplier:** fixed to the same frozen model-specific value used
+  by A-LQR; it is not swept.
 - **H∞ grid:** `R=1`, eight frozen `Q/R` values, and four frozen `Qf/R` values.
-- **Default objective:** mean per-response weighted harmonic mean of TruthfulQA
-  True, AXBench instruction relevance, and AXBench fluency, with weights
-  `.50/.25/.25`. A zero component gives that response a zero composite.
-- **Registered alternatives:** historical mean True percentage and mean AXBench
-  overall steering.
-- Informative and concept relevance are final outcomes, not default selection
-  components.
+- **Default objective:** aggregate `mean(True) × mean(Informative)`; this is the
+  historical T×I multiplication, not a per-response intersection rate.
+- **Registered alternatives:** T×I with fluency, historical mean True percentage,
+  mean AXBench overall, and the prior Truthfulness quality composite.
 
 ## 5. Final evaluation
 
-- **English:** all 817 TruthfulQA questions × 5 seeded repetitions.
-- **Spanish transfer:** Spanish translations of the same 817 questions × 5
+- **English:** all 817 TruthfulQA questions × 1 seeded repetition.
+- **Spanish transfer:** Spanish translations of the same 817 questions × 1
   seeded repetitions. The prompt requests an English answer.
 - The English-fitted controller is reused without refitting or reselection.
 - **Optional capability check:** one frozen 200-question, five-shot MMLU sample.
@@ -100,5 +99,5 @@ when the same questions are translated into Spanish?
 
 ## Evaluation size
 
-- Per dataset and method: `817 × 5 = 4,085` generations.
+- Per dataset and method: `817 × 1 = 817` generations.
 - Spanish is a language transfer condition, not a new calibration condition.

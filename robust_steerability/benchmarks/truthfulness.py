@@ -24,7 +24,10 @@ from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.judges import scorer_cache_path, scorer_spec
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.exact import harmonic_mean
-from robust_steerability.source_methods.protocol import paper_alqr_setting
+from robust_steerability.source_methods.protocol import (
+    alqr_setting_source,
+    paper_alqr_setting,
+)
 
 
 COMPOSITION = load_composition("truthfulness")
@@ -82,7 +85,7 @@ def _write_alqr_selection(model_key: str, calibration_id: str) -> None:
         "behavior": "truthfulness",
         "method": "alqr",
         "calibration_id": calibration_id,
-        "source": "published A-LQR configuration",
+        "source": alqr_setting_source("truthfulness", model.model_id),
         "parameters": {
             "lambda": setting.multiplier,
             "q": setting.q,
@@ -415,7 +418,7 @@ def score_stage(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("stage", choices=("artifacts", "calibrate", "evaluate", "score"))
-    parser.add_argument("--model", choices=tuple(MODELS), required=True)
+    parser.add_argument("--model", choices=COMPOSITION.models, required=True)
     parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
     parser.add_argument("--datasets", default=",".join(DATASETS))
     parser.add_argument("--scorers", default="default")

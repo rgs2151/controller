@@ -61,6 +61,8 @@ METHODS = (
 )
 
 MODEL_IDS = {
+    "gpt2xl": "openai-community/gpt2-xl",
+    "qwen05b": "Qwen/Qwen2.5-0.5B",
     "llama1b": "meta-llama/Llama-3.2-1B",
     "gemma2b": "google/gemma-2-2b",
     "qwen3b": "Qwen/Qwen2.5-3B",
@@ -93,6 +95,10 @@ ALQR_PAPER_SELECTIONS = {
         "llama8b": LQRSetting(multiplier=2.0, q=0.1, r=10.0, q_final=10.0),
     },
     "truthfulness": {
+        # Frozen project settings for new model-family comparisons. These are
+        # deliberately not tuned on TruthfulQA.
+        "gpt2xl": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
+        "qwen05b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
         "gemma2b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
         "llama8b": LQRSetting(multiplier=2.0, q=0.1, r=10.0, q_final=10.0),
         "qwen14b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
@@ -314,12 +320,26 @@ def model_key(model_id: str) -> str:
 
 
 def paper_alqr_setting(behavior: str, model_id: str) -> LQRSetting:
-    """Return a published fixed A-LQR setting, never an evaluation-time sweep."""
+    """Return the frozen A-LQR setting, never an evaluation-time sweep.
+
+    Settings for models covered by the upstream comparison are published
+    selections. Newly added model families use an explicitly frozen project
+    guess recorded next to the table above.
+    """
 
     key = model_key(model_id)
     if behavior not in ALQR_PAPER_SELECTIONS or key not in ALQR_PAPER_SELECTIONS[behavior]:
         raise ValueError(f"No fixed paper A-LQR setting for {behavior}/{model_id}")
     return ALQR_PAPER_SELECTIONS[behavior][key]
+
+
+def alqr_setting_source(behavior: str, model_id: str) -> str:
+    """Describe whether one frozen setting came from upstream or this project."""
+
+    key = model_key(model_id)
+    if behavior == "truthfulness" and key in {"gpt2xl", "qwen05b"}:
+        return "frozen project configuration; not tuned on TruthfulQA"
+    return "published A-LQR configuration"
 
 
 def act_module_patterns(model_id: str) -> tuple[str, ...]:
