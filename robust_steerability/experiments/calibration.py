@@ -242,6 +242,7 @@ def _fit_controller_inputs(
         "truthfulness": "truthfulness",
         "lciteeval": "positive sentiments and descriptions of enjoyable experiences",
         "lciteeval_spanish": "respond only in Spanish, and no other language is allowed",
+        "lciteeval_small": "respond only in Spanish, and no other language is allowed",
         "mgsm": "respond only in Spanish, and no other language is allowed",
         "harmful": "non-exhibition of requested harmful behavior",
     }[str(settings["behavior"])]
