@@ -110,7 +110,7 @@ def create_figure(rows: list[dict[str, object]]) -> plt.Figure:
     fig, (ax_raw, ax_frontier) = plt.subplots(
         1,
         2,
-        figsize=(11.2, 5.25),
+        figsize=(11.2, 5.8),
         gridspec_kw={"width_ratios": [1.30, 0.92]},
     )
     style_axis(ax_raw)
@@ -409,7 +409,7 @@ def create_figure(rows: list[dict[str, object]]) -> plt.Figure:
         left=0.155,
         right=0.985,
         top=0.865,
-        bottom=0.205,
+        bottom=0.255,
         wspace=0.28,
     )
     return fig
