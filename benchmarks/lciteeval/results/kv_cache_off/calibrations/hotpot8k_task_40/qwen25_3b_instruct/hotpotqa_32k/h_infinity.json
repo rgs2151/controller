@@ -1,0 +1,57 @@
+{
+  "identity": {
+    "schema_version": 1,
+    "model": [
+      "Qwen/Qwen2.5-3B-Instruct",
+      "aa8e72537993ba99e69dfaafa59ed015b17504d1"
+    ],
+    "condition": "32k",
+    "method": "h_infinity",
+    "parameters": {
+      "lambda": 1.5,
+      "q": 0.1,
+      "r": 1.0,
+      "q_final": 0.01
+    },
+    "calibration_id": "hotpot8k_task_40",
+    "evaluated_model_kv_cache": false,
+    "generation_batch_size": 20,
+    "model_loading": {
+      "model_id": "Qwen/Qwen2.5-3B-Instruct",
+      "revision": "aa8e72537993ba99e69dfaafa59ed015b17504d1",
+      "quantized": false,
+      "dtype": "bfloat16",
+      "attention_implementation": "sdpa",
+      "quantization_compute_dtype": "float16",
+      "rope_scaling": {
+        "rope_type": "yarn",
+        "factor": 4.0,
+        "original_max_position_embeddings": 32768
+      }
+    }
+  },
+  "model": [
+    "Qwen/Qwen2.5-3B-Instruct",
+    "aa8e72537993ba99e69dfaafa59ed015b17504d1"
+  ],
+  "condition": "32k",
+  "method": "h_infinity",
+  "sample_count": 40,
+  "created_at_utc": "2026-09-21T13:25:34.670516+00:00",
+  "metrics": {
+    "lcite_answer_overlap.answer_precision": 0.022143855977256856,
+    "lcite_answer_overlap.answer_f1": 0.04196785794064778,
+    "lcite_answer_overlap.answer_recall": 0.4916666666666666,
+    "lcite_citation_nli.citation_precision": 0.05166666666666666,
+    "lcite_citation_nli.citation_recall": 0.03833333333333333,
+    "lcite_citation_nli.citation_f1": 0.043055555555555555,
+    "lcite_citation_nli.citation_count": 2.325,
+    "axbench_concept_relevance.score": 0.0,
+    "axbench_concept_relevance.item_index": 19.5,
+    "axbench_instruction_relevance.score": 1.175,
+    "axbench_instruction_relevance.item_index": 19.5,
+    "axbench_fluency.score": 1.2,
+    "axbench_fluency.item_index": 19.5,
+    "axbench_overall.score": 0.0
+  }
+}
