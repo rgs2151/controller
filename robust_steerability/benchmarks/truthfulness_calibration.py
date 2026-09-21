@@ -969,6 +969,11 @@ def _calibration_profile(
 
 def select(model_key: str, calibration_id: str, selection_metric: str) -> dict:
     root = _root(model_key, calibration_id)
+    previous_selection = (
+        json.loads((root / "selection.json").read_text())
+        if (root / "selection.json").exists()
+        else None
+    )
     profile = _calibration_profile(model_key, calibration_id, selection_metric)
     profile_path = root / "grid/selection_profiles" / f"{selection_metric}.json"
     _write_json(profile_path, profile)
@@ -1008,14 +1013,31 @@ def select(model_key: str, calibration_id: str, selection_metric: str) -> dict:
         "selection_profile": str(profile_path.relative_to(root)),
         "grid": profile["grid"],
     }
-    payload["diagnostic_bundle"] = str(
-        _freeze_selected_diagnostics(
-            model_key,
-            calibration_id,
-            parameters,
-            controller,
-        ).relative_to(root)
+    previous_grid_id = (
+        str(previous_selection.get("selected", {}).get("grid_id"))
+        if previous_selection is not None
+        else None
     )
+    previous_bundle = (
+        root / str(previous_selection.get("diagnostic_bundle", ""))
+        if previous_selection is not None
+        else None
+    )
+    if (
+        previous_grid_id == str(selected["grid_id"])
+        and previous_bundle is not None
+        and previous_bundle.is_file()
+    ):
+        payload["diagnostic_bundle"] = str(previous_bundle.relative_to(root))
+    else:
+        payload["diagnostic_bundle"] = str(
+            _freeze_selected_diagnostics(
+                model_key,
+                calibration_id,
+                parameters,
+                controller,
+            ).relative_to(root)
+        )
     _write_json(root / "selection.json", payload)
     return payload
 
@@ -1074,7 +1096,12 @@ def calibrate(
         return
     if selection.exists() and (_root(model_key, calibration_id) / "controller.pt").exists():
         saved = json.loads(selection.read_text())
-        if saved.get("protocol", {}).get("selection_metric") == selection_metric:
+        protocol = saved.get("protocol", {})
+        if (
+            protocol.get("selection_metric") == selection_metric
+            and protocol.get("metric_configuration")
+            == CALIBRATION_CONFIG.get(selection_metric)
+        ):
             return
     prepare(model_key, calibration_id)
     fit_base(model_key, devices[0], calibration_id)
