@@ -48,6 +48,10 @@ Q_FINAL_OVER_R = (0.01, 0.1, 10**-0.5)
 FIXED_R = 1.0
 SETPOINT_MULTIPLIER = 1.5
 GRID_SELECTION_SOURCE = "HotpotQA 8K task-quality and steering weighted argmax"
+ALQR_FALLBACK_SOURCE = (
+    "A-LQR-cost fallback because the H-infinity grid argmax did not exceed "
+    "fixed A-LQR on the same HotpotQA 8K calibration rows"
+)
 FIXED_SELECTION_SOURCE = "fixed configuration supplied at calibration launch"
 API_SCORERS = (
     "axbench_concept_relevance",
@@ -61,6 +65,13 @@ SELECTION_WEIGHTS = {
     "concept_relevance": 0.05,
     "fluency": 0.05,
 }
+ALQR_PARAMETERS = {
+    "lambda": SETPOINT_MULTIPLIER,
+    "q": 0.1,
+    "r": 1.0,
+    "q_final": 0.1,
+}
+ALQR_FALLBACK_GRID_ID = "q_01_qf_01"
 
 
 def _root(model_key: str, calibration_id: str) -> Path:
@@ -113,6 +124,10 @@ def _grid() -> list[dict[str, float | str]]:
         for q_index, q_ratio in enumerate(Q_OVER_R)
         for qf_index, qf_ratio in enumerate(Q_FINAL_OVER_R)
     ]
+
+
+def _alqr_reference_path(model_key: str, calibration_id: str) -> Path:
+    return _root(model_key, calibration_id) / "grid/generations/alqr_reference.json"
 
 
 def _settings(model_key: str, q: float, r: float, q_final: float) -> dict[str, object]:
@@ -262,39 +277,22 @@ def generate_worker(
     base = ControllerArtifact(**base_payload["artifact"])
     tuning_rows = _tuning_rows(model_key)
     prompts = [str(row["model_input"]) for row in tuning_rows]
-    batch_size = generation_batch_size or MODELS[model_key].activation_batch_size
-    for configuration in _grid()[shard_index::shard_count]:
-        grid_id = str(configuration["grid_id"])
-        destination = root / "grid/generations" / f"{grid_id}.json"
-        identity = {
-            "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
-            "configuration": configuration,
-            "calibration_id": calibration_id,
-            "tuning_dataset": "L-CiteEval-Length HotpotQA 8K",
-            "tuning_prompt_ids": [str(row["prompt_id"]) for row in tuning_rows],
-            "evaluated_model_kv_cache": False,
-            "generation_batch_size": batch_size,
-        }
+    batch_size = generation_batch_size or runtime.DEFAULT_BATCH_SIZE[model_key]["8k"]
+
+    def generate_one(
+        destination: Path,
+        identity: dict,
+        policy,
+        *,
+        configuration_id: str,
+    ) -> None:
         if destination.exists():
             existing = json.loads(destination.read_text())
             if existing.get("status") == "complete" and existing.get("identity") == identity:
-                continue
+                return
             raise ValueError(
                 f"Existing calibration generation has a different identity: {destination}"
             )
-        controller = torch.load(
-            root / "grid/controllers" / f"{grid_id}.pt",
-            map_location="cpu",
-            weights_only=True,
-        )
-        artifact = replace(
-            base,
-            hinf_gains=controller["gains"],
-            hinf_feasible=bool(controller["feasible"]),
-            gamma_star=float(controller["gamma_star"]),
-            hinf_diagnostics=controller["diagnostics"],
-        )
-        policy = build_policy("hinf", artifact, kp=0.0, ki=0.0, kd=0.0)
         started_at = _utc_now()
         started = time.perf_counter()
         torch.cuda.reset_peak_memory_stats(cuda_device_index(device))
@@ -310,7 +308,8 @@ def generate_worker(
         rows = [
             {
                 "prompt_id": row["prompt_id"],
-                "grid_id": grid_id,
+                "configuration_id": configuration_id,
+                "grid_id": configuration_id,
                 "text": f"{row['instruction']}\n\nQuestion: {row['question']}",
                 "concept": artifacts.AXBENCH_CONCEPT,
                 "completion": completion,
@@ -346,6 +345,56 @@ def generate_worker(
             },
         )
 
+    if shard_index == 0:
+        reference_identity = {
+            "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
+            "method": "alqr",
+            "parameters": ALQR_PARAMETERS,
+            "calibration_id": calibration_id,
+            "tuning_dataset": "L-CiteEval-Length HotpotQA 8K",
+            "tuning_prompt_ids": [str(row["prompt_id"]) for row in tuning_rows],
+            "evaluated_model_kv_cache": False,
+            "generation_batch_size": batch_size,
+        }
+        generate_one(
+            _alqr_reference_path(model_key, calibration_id),
+            reference_identity,
+            build_policy("alqr", base, kp=0.0, ki=0.0, kd=0.0),
+            configuration_id="alqr_reference",
+        )
+
+    for configuration in _grid()[shard_index::shard_count]:
+        grid_id = str(configuration["grid_id"])
+        destination = root / "grid/generations" / f"{grid_id}.json"
+        identity = {
+            "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
+            "configuration": configuration,
+            "calibration_id": calibration_id,
+            "tuning_dataset": "L-CiteEval-Length HotpotQA 8K",
+            "tuning_prompt_ids": [str(row["prompt_id"]) for row in tuning_rows],
+            "evaluated_model_kv_cache": False,
+            "generation_batch_size": batch_size,
+        }
+        controller = torch.load(
+            root / "grid/controllers" / f"{grid_id}.pt",
+            map_location="cpu",
+            weights_only=True,
+        )
+        artifact = replace(
+            base,
+            hinf_gains=controller["gains"],
+            hinf_feasible=bool(controller["feasible"]),
+            gamma_star=float(controller["gamma_star"]),
+            hinf_diagnostics=controller["diagnostics"],
+        )
+        policy = build_policy("hinf", artifact, kp=0.0, ki=0.0, kd=0.0)
+        generate_one(
+            destination,
+            identity,
+            policy,
+            configuration_id=grid_id,
+        )
+
 
 def score_task_worker(
     model_key: str,
@@ -359,8 +408,13 @@ def score_task_worker(
     entailer = pipeline_entailment(
         load_lcite_entailer(cuda_device_index(device))
     )
-    for configuration in _grid()[shard_index::shard_count]:
-        generation = grid_root / "generations" / f"{configuration['grid_id']}.json"
+    generations = [
+        grid_root / "generations" / f"{configuration['grid_id']}.json"
+        for configuration in _grid()[shard_index::shard_count]
+    ]
+    if shard_index == 0:
+        generations.append(_alqr_reference_path(model_key, calibration_id))
+    for generation in generations:
         payload = json.loads(generation.read_text())
         generation_rows = [
             row for repetition in payload["repetitions"] for row in repetition["rows"]
@@ -425,9 +479,15 @@ def score_grid(
     api_batch_size: int,
 ) -> None:
     grid_root = _root(model_key, calibration_id) / "grid"
-    generations = sorted((grid_root / "generations").glob("*.json"))
+    generations = sorted((grid_root / "generations").glob("q_*.json"))
     if len(generations) != len(_grid()):
         raise ValueError("L-CiteEval H-infinity grid generations are incomplete")
+    alqr_reference = _alqr_reference_path(model_key, calibration_id)
+    if not alqr_reference.exists():
+        raise FileNotFoundError(
+            f"Missing fixed A-LQR 8K calibration reference: {alqr_reference}"
+        )
+    generations.append(alqr_reference)
     openai_scoring.score_generations(
         generations,
         grid_root,
@@ -547,39 +607,43 @@ def _freeze_selected_diagnostics(
     )
 
 
+def _selection_summary(grid_root: Path, generation: Path) -> dict[str, float]:
+    payload = json.loads(
+        scorer_cache_path(grid_root, generation, SELECTION_METRIC).read_text()
+    )
+    return {
+        SELECTION_METRIC: float(
+            np.mean([float(row["score"]) for row in payload["rows"]])
+        ),
+        "answer_recall": float(
+            np.mean([float(row["answer_recall"]) for row in payload["rows"]])
+        ),
+        "citation_f1": float(
+            np.mean([float(row["citation_f1"]) for row in payload["rows"]])
+        ),
+        "concept_relevance_normalized": float(
+            np.mean(
+                [
+                    float(row["concept_relevance_normalized"])
+                    for row in payload["rows"]
+                ]
+            )
+        ),
+        "fluency_normalized": float(
+            np.mean([float(row["fluency_normalized"]) for row in payload["rows"]])
+        ),
+    }
+
+
 def select(model_key: str, calibration_id: str) -> dict:
     root = _root(model_key, calibration_id)
+    grid_root = root / "grid"
     summaries = []
     for configuration in _grid():
-        generation = root / "grid/generations" / f"{configuration['grid_id']}.json"
-        payload = json.loads(
-            scorer_cache_path(
-                root / "grid", generation, SELECTION_METRIC
-            ).read_text()
+        generation = grid_root / "generations" / f"{configuration['grid_id']}.json"
+        summaries.append(
+            {**configuration, **_selection_summary(grid_root, generation)}
         )
-        means = {
-            SELECTION_METRIC: float(
-                np.mean([float(row["score"]) for row in payload["rows"]])
-            ),
-            "answer_recall": float(
-                np.mean([float(row["answer_recall"]) for row in payload["rows"]])
-            ),
-            "citation_f1": float(
-                np.mean([float(row["citation_f1"]) for row in payload["rows"]])
-            ),
-            "concept_relevance_normalized": float(
-                np.mean(
-                    [
-                        float(row["concept_relevance_normalized"])
-                        for row in payload["rows"]
-                    ]
-                )
-            ),
-            "fluency_normalized": float(
-                np.mean([float(row["fluency_normalized"]) for row in payload["rows"]])
-            ),
-        }
-        summaries.append({**configuration, **means})
     require_nonzero_selection_metric(
         summaries,
         SELECTION_METRIC,
@@ -596,7 +660,7 @@ def select(model_key: str, calibration_id: str) -> dict:
             component,
             context=f"L-CiteEval H-infinity calibration component {component}",
         )
-    selected = sorted(
+    grid_argmax = sorted(
         summaries,
         key=lambda row: (
             -row[SELECTION_METRIC],
@@ -606,6 +670,26 @@ def select(model_key: str, calibration_id: str) -> dict:
             row["q_final"],
         ),
     )[0]
+    alqr_reference = {
+        "method": "alqr",
+        "parameters": ALQR_PARAMETERS,
+        **_selection_summary(
+            grid_root, _alqr_reference_path(model_key, calibration_id)
+        ),
+    }
+    fallback_applied = (
+        float(grid_argmax[SELECTION_METRIC])
+        <= float(alqr_reference[SELECTION_METRIC])
+    )
+    selected = (
+        next(
+            row
+            for row in summaries
+            if row["grid_id"] == ALQR_FALLBACK_GRID_ID
+        )
+        if fallback_applied
+        else grid_argmax
+    )
     parameters = {
         key: float(selected[key]) for key in ("lambda", "q", "r", "q_final")
     }
@@ -641,15 +725,26 @@ def select(model_key: str, calibration_id: str) -> dict:
             "q_final_over_r": list(Q_FINAL_OVER_R),
             "fixed_r": FIXED_R,
             "fixed_setpoint_multiplier": SETPOINT_MULTIPLIER,
+            "alqr_reference_parameters": ALQR_PARAMETERS,
+            "fallback_rule": (
+                "If the H-infinity grid argmax does not strictly exceed fixed "
+                "A-LQR on the same weighted 8K score, select the H-infinity "
+                "grid point with A-LQR costs."
+            ),
         },
         "selected": {
             **selected,
             "configuration_id": selected["grid_id"],
             "parameters": parameters,
             "gamma_star": float(controller["gamma_star"]),
-            "source": GRID_SELECTION_SOURCE,
+            "source": (
+                ALQR_FALLBACK_SOURCE if fallback_applied else GRID_SELECTION_SOURCE
+            ),
+            "fallback_applied": fallback_applied,
+            "grid_argmax_configuration_id": grid_argmax["grid_id"],
         },
         "grid": summaries,
+        "alqr_reference": alqr_reference,
         "diagnostic_bundle": str(diagnostic.relative_to(root)),
     }
     _write_json(root / "selection.json", payload)
@@ -835,7 +930,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--model",
-        choices=("qwen25_3b_instruct", "llama31_8b_instruct"),
+        choices=artifacts.SUPPORTED_MODELS,
         required=True,
     )
     parser.add_argument("--device")

@@ -42,6 +42,13 @@ from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 
+SUPPORTED_MODELS = (
+    "qwen25_3b_instruct",
+    "llama31_8b_instruct",
+    "llama32_1b_instruct",
+)
+
+
 BENCHMARK = "lciteeval"
 JACOBIAN_PROMPTS = 50
 JACOBIAN_MAX_LENGTH = 32
@@ -68,7 +75,7 @@ def _save_torch(path: Path, payload: object) -> None:
 
 def model_load_spec(model_key: str) -> CausalModelLoadSpec:
     model = MODELS[model_key]
-    if model_key not in {"qwen25_3b_instruct", "llama31_8b_instruct"}:
+    if model_key not in SUPPORTED_MODELS:
         raise ValueError(f"{model_key!r} is not an L-CiteEval model")
     rope_scaling = None
     if model_key == "qwen25_3b_instruct":
@@ -440,7 +447,7 @@ def main() -> None:
         "--stage", choices=("prepare", "setpoint", "jacobian-shard"), required=True
     )
     parser.add_argument(
-        "--model", choices=("qwen25_3b_instruct", "llama31_8b_instruct"), required=True
+        "--model", choices=SUPPORTED_MODELS, required=True
     )
     parser.add_argument("--device")
     parser.add_argument("--shard-index", type=int)
