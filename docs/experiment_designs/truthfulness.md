@@ -19,7 +19,7 @@
 - **Final evaluation:** 817 questions × 1 seed in English and Spanish; optional
   fixed 200-question five-shot MMLU.
 - **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, Qwen-2.5-32B, GPT-2 XL,
-  and the prepared Qwen-2.5-0.5B fallback.
+  and Qwen-2.5-0.5B as an independently runnable future model.
 - **Methods:** Original, A-LQR, and H∞ by default; additional registered methods
   remain available for legacy comparisons.
 - **Scoring:** True, Informative, concept relevance, instruction relevance,
