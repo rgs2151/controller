@@ -158,6 +158,7 @@ def collect_last_token_states(
                 projection = layer.attn.c_proj
             elif model_type in {
                 "llama",
+                "phi3",
                 "qwen2",
                 "qwen3",
                 "mistral",
