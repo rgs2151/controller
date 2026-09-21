@@ -276,6 +276,21 @@ ALL_SCORERS = {
         output_fields=("score", "raw_score", "explanation"),
         source="Project bilingual L-CiteEval answer-correctness rubric",
     ),
+    "lcite_answer_recall_bilingual": ScorerSpec(
+        "lcite_answer_recall_bilingual",
+        "openai_lcite_bilingual",
+        "answer_recall",
+        "gpt-4o-mini-2024-07-18",
+        None,
+        0.0,
+        1.0,
+        "Judge only the fraction of essential English reference-answer content recovered "
+        "by the raw Spanish response. Score none, partial, or complete recall as 0, 1, or "
+        "2 and normalize to [0, 1]; ignore wording, citations, fluency, and language.",
+        input_fields=("question", "answer", "completion"),
+        output_fields=("score", "raw_score", "explanation"),
+        source="Project bilingual semantic adaptation of L-CiteEval answer recall",
+    ),
     "lcite_citation_bilingual": ScorerSpec(
         "lcite_citation_bilingual",
         "openai_lcite_bilingual",

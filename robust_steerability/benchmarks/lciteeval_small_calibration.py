@@ -28,13 +28,8 @@ from robust_steerability.control import (
 from robust_steerability.experiments.calibration import calibrate_controller, diagnostic_root
 from robust_steerability.experiments.diagnostics import score as freeze_diagnostic_score
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
+from robust_steerability.judges import lciteeval_openai
 from robust_steerability.judges import openai as openai_scoring
-from robust_steerability.judges.exact import lcite_answer_overlap
-from robust_steerability.judges.lciteeval import (
-    lcite_citation_scores,
-    load_lcite_entailer,
-    pipeline_entailment,
-)
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.modeling.huggingface import cuda_device_index, release_cuda_memory
@@ -52,6 +47,10 @@ FIXED_SELECTION_SOURCE = "fixed configuration supplied at calibration launch"
 API_SCORERS = (
     "axbench_concept_relevance",
     "axbench_fluency",
+)
+BILINGUAL_SCORERS = (
+    "lcite_answer_recall_bilingual",
+    "lcite_citation_bilingual",
 )
 TUNING_PROMPTS = 10
 SELECTION_WEIGHTS = {
@@ -106,9 +105,9 @@ def _settings(model_key: str, q: float, r: float, q_final: float) -> dict[str, o
     return {
         "behavior": BENCHMARK,
         "seed": 42,
-        "fit_prompts_per_class": 72,
+        "fit_prompts_per_class": 250,
         "disturbance_prompts": 200,
-        "calibration_max_length": 1024,
+        "calibration_max_length": 8192,
         "activation_batch_size": model.activation_batch_size,
         "jacobian_prompts": artifacts.JACOBIAN_PROMPTS,
         "jacobian_max_length": artifacts.JACOBIAN_MAX_LENGTH,
@@ -158,8 +157,10 @@ def fit_base(
         "jacobian": data["calibration"]["jacobian"],
         "disturbance": data["calibration"]["disturbance"],
         "dataset": {
-            "direction": "AXBench concept 499",
-            "tuning": "first 10 frozen L-CiteEval-Length HotpotQA 8K questions",
+            "direction": "250 matched MGSM English/Spanish questions",
+            "jacobian": "50 frozen upstream 2WikiMultihopQA prompts at about 8K",
+            "disturbance": "200 disjoint upstream 2WikiMultihopQA prompts at about 8K",
+            "tuning": "first 10 frozen official L-CiteEval 2Wiki shortest-context questions",
             "evaluation": "the same 10 matched HotpotQA identities at 8K and 32K",
         },
     }
@@ -250,7 +251,7 @@ def generate_worker(
     if len(tuning_rows) != TUNING_PROMPTS:
         raise ValueError(f"L-CiteEval Small requires {TUNING_PROMPTS} 8K tuning rows")
     prompts = [str(row["model_input"]) for row in tuning_rows]
-    batch_size = generation_batch_size or 4
+    batch_size = generation_batch_size or TUNING_PROMPTS
     for configuration in _grid()[shard_index::shard_count]:
         grid_id = str(configuration["grid_id"])
         destination = root / "grid/generations" / f"{grid_id}.json"
@@ -327,39 +328,6 @@ def generate_worker(
         )
 
 
-def score_grid_citations(
-    model_key: str,
-    calibration_id: str,
-    grid_id: str,
-    device: str,
-) -> None:
-    root = _root(model_key, calibration_id)
-    grid_root = root / "grid"
-    generation = grid_root / "generations" / f"{grid_id}.json"
-    destination = scorer_cache_path(grid_root, generation, "lcite_citation_nli")
-    if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
-        return
-    tuning = {
-        str(row["prompt_id"]): row
-        for row in artifacts.prepare(model_key)["calibration"]["tuning"][:TUNING_PROMPTS]
-    }
-    entailer = pipeline_entailment(load_lcite_entailer(cuda_device_index(device)))
-    generated = json.loads(generation.read_text())
-    rows = [
-        {
-            "prompt_id": str(row["prompt_id"]),
-            **lcite_citation_scores(
-                str(row["completion"]),
-                tuning[str(row["prompt_id"])]["docs"],
-                entailer,
-            ),
-        }
-        for repetition in generated["repetitions"]
-        for row in repetition["rows"]
-    ]
-    _write_json(destination, {"status": "complete", "rows": rows})
-
-
 def score_grid(
     model_key: str,
     calibration_id: str,
@@ -382,26 +350,23 @@ def score_grid(
         str(row["prompt_id"]): row
         for row in artifacts.prepare(model_key)["calibration"]["tuning"][:TUNING_PROMPTS]
     }
+    lciteeval_openai.score_generations(
+        generations,
+        grid_root,
+        tuning,
+        list(BILINGUAL_SCORERS),
+        concurrency=api_concurrency,
+        batch_size=api_batch_size,
+    )
     for generation in generations:
-        generated = json.loads(generation.read_text())
-        answer_rows = [
-            {
-                "prompt_id": str(row["prompt_id"]),
-                **lcite_answer_overlap(
-                    str(row["completion"]),
-                    tuning[str(row["prompt_id"])]["answer"],
-                ),
-            }
-            for repetition in generated["repetitions"]
-            for row in repetition["rows"]
-        ]
-        _write_json(
-            scorer_cache_path(grid_root, generation, "lcite_answer_overlap"),
-            {"status": "complete", "rows": answer_rows},
+        answer_payload = json.loads(
+            scorer_cache_path(
+                grid_root, generation, "lcite_answer_recall_bilingual"
+            ).read_text()
         )
-        answer = {row["prompt_id"]: float(row["answer_recall"]) for row in answer_rows}
+        answer = {row["prompt_id"]: float(row["score"]) for row in answer_payload["rows"]}
         citation_payload = json.loads(
-            scorer_cache_path(grid_root, generation, "lcite_citation_nli").read_text()
+            scorer_cache_path(grid_root, generation, "lcite_citation_bilingual").read_text()
         )
         citation = {
             row["prompt_id"]: float(row["citation_f1"])
@@ -549,10 +514,10 @@ def select(model_key: str, calibration_id: str) -> dict:
             "selection_metric": SELECTION_METRIC,
             "selection_weights": SELECTION_WEIGHTS,
             "selection_components": {
-                "answer_recall": "L-CiteEval token-overlap recall on 8K",
-                "citation_f1": "L-CiteEval AutoAIS citation F1 on 8K",
+                "answer_recall": "OpenAI bilingual semantic answer recall on 8K, normalized to [0,1]",
+                "citation_f1": "citation F1 derived from OpenAI bilingual AutoAIS entailment judgments on 8K",
                 "fluency": "AXBench fluency divided by two",
-                "concept_relevance": "AXBench concept relevance divided by two",
+                "concept_relevance": "AXBench relevance for Spanish-only responses divided by two",
             },
             "tuning_condition": "8k",
             "tuning_samples": TUNING_PROMPTS,
@@ -707,28 +672,6 @@ def calibrate(
         for index in range(len(devices))
     ]
     run_jobs(jobs, devices, log_root / "hinf-grid-generation")
-    citation_jobs = [
-        (
-            f"hinf-grid-citation-{configuration['grid_id']}",
-            [
-                sys.executable,
-                "-m",
-                "robust_steerability.benchmarks.lciteeval_small_calibration",
-                "--stage",
-                "score-grid-citations",
-                "--model",
-                model_key,
-                "--device",
-                "{device}",
-                "--grid-id",
-                str(configuration["grid_id"]),
-                "--calibration-id",
-                calibration_id,
-            ],
-        )
-        for configuration in _grid()
-    ]
-    run_jobs(citation_jobs, devices, log_root / "hinf-grid-citation-scoring")
     score_grid(
         model_key,
         calibration_id,
@@ -746,7 +689,6 @@ def main() -> None:
             "base",
             "synthesize",
             "generate-worker",
-            "score-grid-citations",
             "score-grid",
             "select",
         ),
@@ -762,7 +704,6 @@ def main() -> None:
     parser.add_argument("--shard-count", type=int)
     parser.add_argument("--calibration-id", default=CALIBRATION_ID_DEFAULT)
     parser.add_argument("--generation-batch-size", type=int)
-    parser.add_argument("--grid-id")
     parser.add_argument("--api-concurrency", type=int, default=500)
     parser.add_argument("--api-batch-size", type=int, default=20)
     arguments = parser.parse_args()
@@ -778,13 +719,6 @@ def main() -> None:
             arguments.shard_count,
             arguments.calibration_id,
             arguments.generation_batch_size,
-        )
-    elif arguments.stage == "score-grid-citations":
-        score_grid_citations(
-            arguments.model,
-            arguments.calibration_id,
-            arguments.grid_id,
-            arguments.device,
         )
     elif arguments.stage == "score-grid":
         score_grid(

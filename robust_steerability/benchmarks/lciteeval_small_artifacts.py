@@ -1,4 +1,4 @@
-"""AXBench DiffMean setpoint and shared nominal dynamics for L-CiteEval Small."""
+"""Spanish DiffMean setpoint and 8K shared dynamics for L-CiteEval Small."""
 
 from __future__ import annotations
 
@@ -26,10 +26,11 @@ from robust_steerability.calibration.nominal_artifact import (
     save_nominal_dynamics,
 )
 from robust_steerability.datasets.lciteeval_small import (
-    AXBENCH_CONCEPT,
-    axbench_direction_rows,
-    h_infinity_prompt_splits,
+    JACOBIAN_PROMPTS,
+    SPANISH_CONCEPT,
+    materialize_direction,
     materialize_evaluation,
+    materialize_h_infinity_splits,
 )
 from robust_steerability.modeling.huggingface import (
     CausalModelLoadSpec,
@@ -43,8 +44,8 @@ from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 
 BENCHMARK = "lciteeval_small"
-JACOBIAN_PROMPTS = 50
-JACOBIAN_MAX_LENGTH = 32
+AXBENCH_CONCEPT = SPANISH_CONCEPT
+JACOBIAN_MAX_LENGTH = 8192
 CONTEXT_WINDOW = 131_072
 
 
@@ -157,42 +158,22 @@ def prepare(model_key: str, tokenizer=None) -> dict:
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token = tokenizer.eos_token
             tokenizer.pad_token_id = tokenizer.eos_token_id
-    direction = axbench_direction_rows()
-    formatted: dict[str, list[dict]] = {}
-    for label in ("undesired", "desired"):
-        formatted[label] = [
-            {
-                **record,
-                "text": _axbench_text(
-                    tokenizer,
-                    model_key,
-                    str(record["prompt"]),
-                    str(record["response"]),
-                ),
-            }
-            for record in direction[label]
-        ]
-    prompt_splits = h_infinity_prompt_splits()
-    prompt_splits["disturbance"] = [
-        {
-            **record,
-            "instruction": record["text"],
-            "text": _instruction_text(tokenizer, str(record["text"])),
-        }
-        for record in prompt_splits["disturbance"]
-    ]
+    direction = materialize_direction(tokenizer)
+    prompt_splits = materialize_h_infinity_splits(
+        tokenizer, context_window=CONTEXT_WINDOW
+    )
     evaluation = materialize_evaluation(tokenizer, context_window=CONTEXT_WINDOW)
     payload = {
         "schema_version": 1,
         "benchmark": BENCHMARK,
         "model": [model.model_id, model.revision],
-        "concept": AXBENCH_CONCEPT,
-        "direction_estimator": "AXBench DiffMean over every valid non-prefix token",
+        "concept": SPANISH_CONCEPT,
+        "direction_estimator": "paired MGSM Spanish-minus-English question DiffMean",
         "calibration": {
-            **formatted,
-            "jacobian": formatted["desired"][:JACOBIAN_PROMPTS],
+            **direction,
+            "jacobian": prompt_splits["jacobian"],
             "disturbance": prompt_splits["disturbance"],
-            "tuning": evaluation["evaluation"]["8k"],
+            "tuning": prompt_splits["tuning"],
         },
     }
     _write_json(artifact_path, payload)
@@ -286,9 +267,9 @@ def fit_setpoint(model_key: str, device: str) -> None:
             "identity": {
                 "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
                 "concept": AXBENCH_CONCEPT,
-                "estimator": "AXBench DiffMean",
-                "desired_records": 72,
-                "undesired_records": 72,
+                "estimator": "paired MGSM Spanish-minus-English question DiffMean",
+                "desired_records": 250,
+                "undesired_records": 250,
             },
             "contrast": contrast,
             "feature_norm": feature_norm,

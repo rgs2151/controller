@@ -20,7 +20,7 @@ cache_namespace = "hotpotqa_8k"
 generation_profile = "lciteeval"
 samples = 10
 repetitions = 1
-scorers = ["lcite_answer_overlap", "lcite_citation_nli", "axbench_concept_relevance", "axbench_instruction_relevance", "axbench_fluency", "axbench_overall"]
+scorers = ["lcite_answer_recall_bilingual", "lcite_citation_bilingual", "axbench_concept_relevance", "axbench_fluency"]
 runtime = "lciteeval_small"
 
 [[evaluation_datasets]]
@@ -31,7 +31,7 @@ cache_namespace = "hotpotqa_16k"
 generation_profile = "lciteeval"
 samples = 10
 repetitions = 1
-scorers = ["lcite_answer_overlap", "lcite_citation_nli", "axbench_concept_relevance", "axbench_instruction_relevance", "axbench_fluency", "axbench_overall"]
+scorers = ["lcite_answer_recall_bilingual", "lcite_citation_bilingual", "axbench_concept_relevance", "axbench_fluency"]
 runtime = "lciteeval_small"
 
 [[evaluation_datasets]]
@@ -42,7 +42,7 @@ cache_namespace = "hotpotqa_32k"
 generation_profile = "lciteeval"
 samples = 10
 repetitions = 1
-scorers = ["lcite_answer_overlap", "lcite_citation_nli", "axbench_concept_relevance", "axbench_instruction_relevance", "axbench_fluency", "axbench_overall"]
+scorers = ["lcite_answer_recall_bilingual", "lcite_citation_bilingual", "axbench_concept_relevance", "axbench_fluency"]
 runtime = "lciteeval_small"
 
 [stages]

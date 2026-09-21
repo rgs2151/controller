@@ -29,17 +29,11 @@ from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.calibration.nominal_artifact import load_shared_nominal_dynamics
 from robust_steerability.calibration.nominal_artifact import nominal_dynamics_signature
 from robust_steerability.datasets.lciteeval_small import (
-    AXBENCH_CONCEPT,
     EVALUATION_QUESTIONS,
     MAX_NEW_TOKENS,
+    SPANISH_CONCEPT,
 )
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
-from robust_steerability.judges.exact import harmonic_mean, lcite_answer_overlap
-from robust_steerability.judges.lciteeval import (
-    lcite_citation_scores,
-    load_lcite_entailer,
-    pipeline_entailment,
-)
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.huggingface import cuda_device_index
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
@@ -52,8 +46,9 @@ from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 METHODS = ("original", "alqr", "h_infinity")
 CONDITIONS = ("8k", "16k", "32k")
+AXBENCH_CONCEPT = SPANISH_CONCEPT
 DEFAULT_BATCH_SIZE = {
-    "llama32_1b_instruct": {"8k": 4, "16k": 3, "32k": 2},
+    "llama32_1b_instruct": {"8k": 10, "16k": 8, "32k": 5},
 }
 
 
@@ -399,96 +394,13 @@ def merge_shards(
     return destination
 
 
-def _dataset_map(model_key: str) -> dict[str, dict]:
+def dataset_map(model_key: str) -> dict[str, dict]:
     data = json.loads(data_path(model_key).read_text())
     return {
         row["prompt_id"]: row
         for condition in CONDITIONS
         for row in data["evaluation"][condition]
     }
-
-
-def score_answer_overlap(model_key: str, generation: Path, *, use_cache: bool) -> Path:
-    destination = scorer_cache_path(cache_root(model_key, use_cache), generation, "lcite_answer_overlap")
-    if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
-        return destination
-    source = _dataset_map(model_key)
-    payload = json.loads(generation.read_text())
-    rows = []
-    for repetition in payload["repetitions"]:
-        for row in repetition["rows"]:
-            rows.append(
-                {
-                    "prompt_id": row["prompt_id"],
-                    **lcite_answer_overlap(row["completion"], source[row["prompt_id"]]["answer"]),
-                }
-            )
-    _write_json(destination, {"status": "complete", "rows": rows})
-    return destination
-
-
-def score_citations(
-    model_key: str, generation: Path, device: str, *, use_cache: bool
-) -> Path:
-    destination = scorer_cache_path(cache_root(model_key, use_cache), generation, "lcite_citation_nli")
-    if destination.exists() and json.loads(destination.read_text()).get("status") == "complete":
-        return destination
-    source = _dataset_map(model_key)
-    pipeline = load_lcite_entailer(cuda_device_index(device))
-    entails = pipeline_entailment(pipeline)
-    payload = json.loads(generation.read_text())
-    source_rows = [
-        row for repetition in payload["repetitions"] for row in repetition["rows"]
-    ]
-    saved = (
-        json.loads(destination.read_text())
-        if destination.exists()
-        else {"status": "partial", "rows": []}
-    )
-    rows = list(saved["rows"])
-    expected_prefix = [str(row["prompt_id"]) for row in source_rows[: len(rows)]]
-    actual_prefix = [str(row["prompt_id"]) for row in rows]
-    if actual_prefix != expected_prefix:
-        raise ValueError(f"Citation score cache is not a valid prompt prefix: {destination}")
-    for row in source_rows[len(rows) :]:
-        rows.append(
-            {
-                "prompt_id": row["prompt_id"],
-                **lcite_citation_scores(
-                    row["completion"], source[row["prompt_id"]]["docs"], entails
-                ),
-            }
-        )
-        _write_json(destination, {"status": "partial", "rows": rows})
-    _write_json(destination, {"status": "complete", "rows": rows})
-    return destination
-
-
-def score_axbench_overall(model_key: str, generation: Path, *, use_cache: bool) -> Path:
-    root = cache_root(model_key, use_cache)
-    components = (
-        "axbench_concept_relevance",
-        "axbench_instruction_relevance",
-        "axbench_fluency",
-    )
-    values = []
-    for key in components:
-        path = scorer_cache_path(root, generation, key)
-        payload = json.loads(path.read_text())
-        if payload.get("status") != "complete":
-            raise ValueError(f"Incomplete AXBench component score: {path}")
-        values.append({row["prompt_id"]: float(row["score"]) for row in payload["rows"]})
-    prompt_ids = list(values[0])
-    rows = [
-        {
-            "prompt_id": prompt_id,
-            "score": harmonic_mean([mapping[prompt_id] for mapping in values]),
-        }
-        for prompt_id in prompt_ids
-    ]
-    destination = scorer_cache_path(root, generation, "axbench_overall")
-    _write_json(destination, {"status": "complete", "rows": rows})
-    return destination
 
 
 def summarize(
@@ -542,7 +454,7 @@ def summarize(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stage", choices=("generate-shard", "score-citations"), required=True)
+    parser.add_argument("--stage", choices=("generate-shard",), required=True)
     parser.add_argument("--model", choices=tuple(DEFAULT_BATCH_SIZE), required=True)
     parser.add_argument("--condition", choices=CONDITIONS)
     parser.add_argument("--method", choices=METHODS)
@@ -552,28 +464,19 @@ def main() -> None:
     parser.add_argument("--shard-index", type=int)
     parser.add_argument("--shard-count", type=int)
     parser.add_argument("--generation-batch-size", type=int)
-    parser.add_argument("--generation-path")
     arguments = parser.parse_args()
     use_cache = arguments.kv_cache == "on"
-    if arguments.stage == "generate-shard":
-        generate_shard(
-            arguments.model,
-            arguments.condition,
-            arguments.method,
-            arguments.device,
-            arguments.calibration_id,
-            use_cache,
-            arguments.shard_index,
-            arguments.shard_count,
-            arguments.generation_batch_size,
-        )
-    else:
-        score_citations(
-            arguments.model,
-            Path(arguments.generation_path),
-            arguments.device,
-            use_cache=use_cache,
-        )
+    generate_shard(
+        arguments.model,
+        arguments.condition,
+        arguments.method,
+        arguments.device,
+        arguments.calibration_id,
+        use_cache,
+        arguments.shard_index,
+        arguments.shard_count,
+        arguments.generation_batch_size,
+    )
 
 
 if __name__ == "__main__":
