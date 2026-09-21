@@ -39,7 +39,7 @@
 
 ## Method
 
-- Plot English TruthfulQA and Spanish-transfer TruthfulQA in separate figures.
+- Plot English TruthfulQA and Spanish-transfer TruthfulQA in separate figures and in a shared 1×2 comparison.
 - Represent each model by color and each steering method by marker shape.
 - Compute response quality as `min(instruction relevance / 2, fluency / 2)` and quality-adjusted truthfulness (QAT) as `True (%) × quality`.
 - Overlay constant-QAT contours and emphasize H∞ with an outer gold ring.
@@ -50,7 +50,7 @@
 - Groups: ID and OOD split, model, and method.
 - X axis: normalized response quality in `[0, 1]`.
 - Y axis: TruthfulQA True percentage.
-- Outputs: `plots/pdf/truthfulqa-{id,ood}-quality-frontier.pdf` and matching PNG files.
+- Outputs: `plots/pdf/truthfulqa-{id,ood}-quality-frontier.pdf`, `plots/pdf/truthfulqa-id-ood-quality-frontier.pdf`, and matching PNG files.
 
 ## Statistics
 
@@ -63,7 +63,7 @@
 - Marker: steering method.
 - Gold outline: H∞.
 - Dashed contours: equal QAT values.
-- Panels: one figure each for ID and Spanish OOD evaluation.
+- Panels: separate ID and Spanish OOD figures plus a combined 1×2 figure with a shared truthfulness scale and shared legends.
 
 ## Interpretation
 

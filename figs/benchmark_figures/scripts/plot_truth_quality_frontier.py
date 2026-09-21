@@ -278,13 +278,18 @@ def draw_panel(
 
 
 def draw_vector_model_mark(
-    ax: plt.Axes, model: str, x: float, y: float, color: str
+    ax: plt.Axes,
+    model: str,
+    x: float,
+    y: float,
+    color: str,
+    scale: float = 1.0,
 ) -> None:
     """Draw resolution-independent model marks in axes coordinates."""
 
     if model.startswith("Gemma"):
-        x_radius = 0.047
-        y_radius = 0.038
+        x_radius = 0.047 * scale
+        y_radius = 0.038 * scale
         vertices = [
             (x, y + y_radius),
             (x + x_radius * 0.28, y + y_radius * 0.28),
@@ -307,7 +312,12 @@ def draw_vector_model_mark(
         )
         ax.add_patch(
             Polygon(
-                [(x, y + 0.017), (x + 0.022, y), (x, y - 0.017), (x - 0.022, y)],
+                [
+                    (x, y + 0.017 * scale),
+                    (x + 0.022 * scale, y),
+                    (x, y - 0.017 * scale),
+                    (x - 0.022 * scale, y),
+                ],
                 closed=True,
                 facecolor="white",
                 edgecolor="none",
@@ -316,8 +326,8 @@ def draw_vector_model_mark(
         )
     elif model.startswith("Llama"):
         t = np.linspace(0.0, 2.0 * np.pi, 240)
-        xx = x + 0.052 * np.sin(t)
-        yy = y + 0.026 * np.sin(2.0 * t)
+        xx = x + 0.052 * scale * np.sin(t)
+        yy = y + 0.026 * scale * np.sin(2.0 * t)
         ax.plot(
             xx,
             yy,
@@ -344,8 +354,8 @@ def draw_vector_model_mark(
                     raw = (float(tokens[index]), float(tokens[index + 1]))
                     index += 2
                     point = (
-                        x + (raw[0] / 233.0 - 0.5) * 0.074,
-                        y + (0.5 - raw[1] / 236.0) * 0.074,
+                        x + (raw[0] / 233.0 - 0.5) * 0.074 * scale,
+                        y + (0.5 - raw[1] / 236.0) * 0.074 * scale,
                     )
                     start = point
                     vertices.append(point)
@@ -355,8 +365,8 @@ def draw_vector_model_mark(
                     index += 2
                     vertices.append(
                         (
-                            x + (raw[0] / 233.0 - 0.5) * 0.074,
-                            y + (0.5 - raw[1] / 236.0) * 0.074,
+                            x + (raw[0] / 233.0 - 0.5) * 0.074 * scale,
+                            y + (0.5 - raw[1] / 236.0) * 0.074 * scale,
                         )
                     )
                     codes.append(MplPath.LINETO)
@@ -366,8 +376,8 @@ def draw_vector_model_mark(
                         index += 2
                         vertices.append(
                             (
-                                x + (raw[0] / 233.0 - 0.5) * 0.074,
-                                y + (0.5 - raw[1] / 236.0) * 0.074,
+                                x + (raw[0] / 233.0 - 0.5) * 0.074 * scale,
+                                y + (0.5 - raw[1] / 236.0) * 0.074 * scale,
                             )
                         )
                         codes.append(MplPath.CURVE4)
@@ -389,7 +399,7 @@ def draw_vector_model_mark(
         ax.add_patch(
             Circle(
                 (x, y),
-                0.028,
+                0.028 * scale,
                 facecolor=color,
                 edgecolor="white",
                 linewidth=0.6,
@@ -454,6 +464,38 @@ def method_legend_handles() -> list[Line2D]:
     return handles
 
 
+def add_horizontal_model_legend(
+    fig: plt.Figure,
+    grouped: OrderedDict[str, list[Result]],
+) -> None:
+    """Draw a shared horizontal model legend using the model marks."""
+
+    models = list(grouped)
+    centers = np.linspace(0.17, 0.83, len(models))
+    for index, (model, center) in enumerate(zip(models, centers)):
+        icon_ax = fig.add_axes([center - 0.075, 0.885, 0.036, 0.078])
+        icon_ax.set_xlim(0, 1)
+        icon_ax.set_ylim(0, 1)
+        icon_ax.axis("off")
+        draw_vector_model_mark(
+            icon_ax,
+            model,
+            0.5,
+            0.5,
+            MODEL_COLORS[index % len(MODEL_COLORS)],
+            scale=4.8,
+        )
+        fig.text(
+            center - 0.032,
+            0.924,
+            model,
+            ha="left",
+            va="center",
+            fontsize=11.2,
+            color=INK,
+        )
+
+
 def build_figure(
     split: str,
     grouped: OrderedDict[str, list[Result]],
@@ -488,6 +530,53 @@ def build_figure(
     return fig
 
 
+def build_combined_figure(
+    grouped_id: OrderedDict[str, list[Result]],
+    grouped_ood: OrderedDict[str, list[Result]],
+) -> plt.Figure:
+    if list(grouped_id) != list(grouped_ood):
+        raise ValueError("ID and OOD model order must match for the combined figure")
+
+    id_x, id_y = shared_limits(grouped_id)
+    ood_x, ood_y = shared_limits(grouped_ood)
+    shared_y = (min(id_y[0], ood_y[0]), max(id_y[1], ood_y[1]))
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.6))
+    draw_panel(axes[0], grouped_id, id_x, shared_y)
+    draw_panel(axes[1], grouped_ood, ood_x, shared_y)
+    axes[0].set_title("A   In-distribution", loc="left", fontweight="bold")
+    axes[1].set_title(
+        "B   Spanish-input, English-output (OOD)",
+        loc="left",
+        fontweight="bold",
+    )
+    axes[1].set_ylabel("")
+    axes[1].tick_params(labelleft=False)
+
+    add_horizontal_model_legend(fig, grouped_id)
+    method_legend = fig.legend(
+        handles=method_legend_handles(),
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.020),
+        ncol=len(METHOD_ORDER),
+        frameon=False,
+        fontsize=10.7,
+        handlelength=0.78,
+        handletextpad=0.16,
+        columnspacing=0.55,
+        borderaxespad=0.0,
+    )
+    method_legend.get_texts()[0].set_fontweight("bold")
+    fig.subplots_adjust(
+        left=0.070,
+        right=0.985,
+        top=0.825,
+        bottom=0.215,
+        wspace=0.16,
+    )
+    return fig
+
+
 def save_split(split: str, grouped: OrderedDict[str, list[Result]]) -> None:
     fig = build_figure(split, grouped)
     slug = split.lower()
@@ -507,11 +596,34 @@ def save_split(split: str, grouped: OrderedDict[str, list[Result]]) -> None:
     plt.close(fig)
 
 
+def save_combined(
+    grouped_id: OrderedDict[str, list[Result]],
+    grouped_ood: OrderedDict[str, list[Result]],
+) -> None:
+    fig = build_combined_figure(grouped_id, grouped_ood)
+    stem = "truthfulqa-id-ood-quality-frontier"
+    fig.savefig(
+        PDF_DIR / f"{stem}.pdf",
+        bbox_inches="tight",
+        pad_inches=0.04,
+    )
+    fig.savefig(
+        PNG_DIR / f"{stem}.png",
+        dpi=600,
+        bbox_inches="tight",
+        pad_inches=0.04,
+    )
+    plt.close(fig)
+
+
 def main() -> None:
     configure_style()
     records = load_data(DATA_PATH)
-    for split in ("ID", "OOD"):
-        save_split(split, group_split(records, split))
+    grouped_id = group_split(records, "ID")
+    grouped_ood = group_split(records, "OOD")
+    save_split("ID", grouped_id)
+    save_split("OOD", grouped_ood)
+    save_combined(grouped_id, grouped_ood)
 
 
 if __name__ == "__main__":
