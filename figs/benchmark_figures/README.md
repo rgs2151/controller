@@ -211,6 +211,7 @@
 - Order templates by baseline difficulty and shade the ASR margin between H∞ and the stronger baseline.
 - Average each method across the six displayed conditions and plot mean ASR against mean safe-concept relevance.
 - Render one visually identical figure per model so results from different model sizes are not mixed.
+- Also render a compact combined figure as one model per row with shared method encodings, common axes, and only the mean-ASR reduction annotation retained.
 
 ## Variables
 
@@ -218,7 +219,7 @@
 - Templates: Direct, John persona, DNE nonresponse, Jailbreak Bot, YOJA/Nona roleplay, and APM programmer.
 - Left axes: template and attack success rate percentage.
 - Right axes: mean ASR and mean safe-concept relevance.
-- Outputs: one PDF and PNG per HarmBench model under `plots/`.
+- Outputs: one PDF and PNG per HarmBench model plus `harmbench-robust-refusal-combined.pdf` and its matching PNG under `plots/`.
 
 ## Statistics
 

@@ -415,6 +415,284 @@ def create_figure(rows: list[dict[str, object]]) -> plt.Figure:
     return fig
 
 
+def create_combined_figure(rows: list[dict[str, object]]) -> plt.Figure:
+    """Combine model results as compact row facets without repeated callouts."""
+
+    models = list(dict.fromkeys(str(row["model"]) for row in rows))
+    indexed = {
+        (str(row["model"]), str(row["template"]), str(row["method"])): row
+        for row in rows
+    }
+
+    def profile(model: str, method: str, templates: list[str]) -> np.ndarray:
+        return np.array(
+            [float(indexed[(model, template, method)]["asr"]) for template in templates]
+        )
+
+    baseline_difficulty = {
+        template: float(
+            np.mean(
+                [
+                    min(
+                        float(indexed[(model, template, "Original")]["asr"]),
+                        float(indexed[(model, template, "A-LQR")]["asr"]),
+                    )
+                    for model in models
+                ]
+            )
+        )
+        for template in TEMPLATES
+    }
+    ordered_templates = sorted(
+        TEMPLATES,
+        key=lambda template: baseline_difficulty[template],
+        reverse=True,
+    )
+    display_names = {
+        "Direct": "Direct",
+        "YOJA/Nona roleplay": "YOJA/Nona\nroleplay",
+        "John persona": "John\npersona",
+        "DNE nonresponse": "DNE\nnonresponse",
+        "Jailbreak Bot": "Jailbreak\nBot",
+        "APM programmer": "APM\nprogrammer",
+    }
+    x = np.arange(len(ordered_templates))
+
+    all_asr = [float(row["asr"]) for row in rows]
+    raw_ymax = 1.08 * max(all_asr)
+    all_safe = [float(row["safe_concept_relevance"]) for row in rows]
+    safe_ymin = min(all_safe) - 0.012
+    safe_ymax = max(1.985, max(all_safe) + 0.006)
+    mean_asr_values = []
+    for model in models:
+        for method in METHODS:
+            mean_asr_values.append(
+                float(
+                    np.mean(
+                        [
+                            float(indexed[(model, template, method)]["asr"])
+                            for template in TEMPLATES
+                        ]
+                    )
+                )
+            )
+    frontier_xmax = 1.14 * max(mean_asr_values)
+
+    fig, axes = plt.subplots(
+        len(models),
+        2,
+        figsize=(12.2, 9.4),
+        sharex="col",
+        sharey="col",
+        gridspec_kw={"width_ratios": [1.35, 0.90]},
+        squeeze=False,
+    )
+
+    for model_index, model in enumerate(models):
+        ax_raw, ax_frontier = axes[model_index]
+        style_axis(ax_raw)
+        style_axis(ax_frontier)
+        ax_raw.grid(False)
+        ax_raw.grid(True, axis="y", color=GRID, linewidth=0.75, zorder=0)
+
+        profiles = {
+            method: profile(model, method, ordered_templates) for method in METHODS
+        }
+        strongest_profile = np.minimum(profiles["Original"], profiles["A-LQR"])
+        ax_raw.fill_between(
+            x,
+            profiles["H-infinity"],
+            strongest_profile,
+            color="#E4BD6A",
+            alpha=0.16,
+            zorder=1,
+        )
+        for method, linestyle, linewidth in (
+            ("Original", ":", 1.8),
+            ("A-LQR", "--", 2.0),
+            ("H-infinity", "-", 2.8),
+        ):
+            ax_raw.plot(
+                x,
+                profiles[method],
+                color=COLORS[method],
+                linewidth=linewidth,
+                linestyle=linestyle,
+                marker=MARKERS[method],
+                markersize=6.6 if method != "H-infinity" else 7.4,
+                markeredgecolor="white",
+                markeredgewidth=0.65,
+                zorder=5 if method == "H-infinity" else 3,
+            )
+        ax_raw.scatter(
+            x,
+            profiles["H-infinity"],
+            s=118,
+            marker=MARKERS["H-infinity"],
+            facecolor="none",
+            edgecolor=OURS_RING,
+            linewidth=1.7,
+            zorder=4.8,
+        )
+        ax_raw.set_xlim(-0.35, len(ordered_templates) - 0.65)
+        ax_raw.set_ylim(0, raw_ymax)
+        ax_raw.set_xticks(x)
+        if model_index == len(models) - 1:
+            ax_raw.set_xticklabels(
+                [display_names[template] for template in ordered_templates],
+                fontsize=9.2,
+            )
+        else:
+            ax_raw.tick_params(labelbottom=False)
+        ax_raw.text(
+            -0.17,
+            0.5,
+            model,
+            transform=ax_raw.transAxes,
+            rotation=90,
+            ha="center",
+            va="center",
+            fontsize=10.2,
+            fontweight="bold",
+            color="#5B4CC4",
+        )
+
+        summary: dict[str, dict[str, float]] = {}
+        for method in METHODS:
+            method_rows = [
+                indexed[(model, template, method)] for template in TEMPLATES
+            ]
+            summary[method] = {
+                "asr": float(np.mean([float(row["asr"]) for row in method_rows])),
+                "safe": float(
+                    np.mean(
+                        [float(row["safe_concept_relevance"]) for row in method_rows]
+                    )
+                ),
+            }
+
+        ax_frontier.add_patch(
+            Rectangle(
+                (0, 1.97),
+                frontier_xmax,
+                safe_ymax - 1.97,
+                facecolor="#FBF5E9",
+                edgecolor="none",
+                alpha=0.80,
+                zorder=0,
+            )
+        )
+        for source_method in ("Original", "A-LQR"):
+            source = summary[source_method]
+            target = summary["H-infinity"]
+            ax_frontier.plot(
+                [source["asr"], target["asr"]],
+                [source["safe"], target["safe"]],
+                color="#B4BAC2",
+                linewidth=1.2,
+                linestyle=(0, (3, 2.2)),
+                zorder=2,
+            )
+        for method in METHODS:
+            point = summary[method]
+            if method == "H-infinity":
+                ax_frontier.scatter(
+                    point["asr"],
+                    point["safe"],
+                    s=190,
+                    marker=MARKERS[method],
+                    facecolor="none",
+                    edgecolor=OURS_RING,
+                    linewidth=1.9,
+                    zorder=5,
+                )
+            ax_frontier.scatter(
+                point["asr"],
+                point["safe"],
+                s=92 if method == "H-infinity" else 68,
+                marker=MARKERS[method],
+                facecolor=COLORS[method],
+                edgecolor="white",
+                linewidth=0.7,
+                zorder=6,
+            )
+
+        h_mean = summary["H-infinity"]["asr"]
+        baseline_mean = min(summary["Original"]["asr"], summary["A-LQR"]["asr"])
+        reduction = 100.0 * (baseline_mean - h_mean) / baseline_mean
+        ax_frontier.text(
+            0.97,
+            0.88,
+            rf"$\downarrow$ {reduction:.0f}% mean ASR",
+            transform=ax_frontier.transAxes,
+            ha="right",
+            va="top",
+            fontsize=9.7,
+            fontweight="bold",
+            color="#A51C30",
+        )
+        ax_frontier.set_xlim(0, frontier_xmax)
+        ax_frontier.set_ylim(safe_ymin, safe_ymax)
+        if model_index < len(models) - 1:
+            ax_frontier.tick_params(labelbottom=False)
+
+    axes[0, 0].set_title(
+        "A   Robustness profile across jailbreaks",
+        loc="left",
+        fontweight="bold",
+    )
+    axes[0, 1].set_title(
+        "B   Safety Pareto frontier",
+        loc="left",
+        fontweight="bold",
+    )
+    axes[len(models) // 2, 0].set_ylabel(r"Attack success rate (%)  $\downarrow$")
+    axes[len(models) // 2, 1].set_ylabel(
+        "Mean safe-concept relevance (0-2)  $\\rightarrow$"
+    )
+    axes[-1, 0].set_xlabel("Jailbreak template")
+    axes[-1, 1].set_xlabel(
+        r"Mean attack success rate (%)   lower is better $\leftarrow$"
+    )
+
+    method_handles = [
+        Line2D(
+            [0],
+            [0],
+            color=COLORS[method],
+            linewidth=2.7 if method == "H-infinity" else 1.9,
+            linestyle={"H-infinity": "-", "A-LQR": "--", "Original": ":"}[method],
+            marker=MARKERS[method],
+            markerfacecolor=COLORS[method],
+            markeredgecolor=OURS_RING if method == "H-infinity" else "white",
+            markeredgewidth=1.4 if method == "H-infinity" else 0.7,
+            markersize=7.4,
+            label=LABELS[method],
+        )
+        for method in METHODS
+    ]
+    fig.legend(
+        handles=method_handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.012),
+        ncol=3,
+        frameon=False,
+        fontsize=11.0,
+        handlelength=2.2,
+        handletextpad=0.45,
+        columnspacing=1.4,
+    )
+    fig.subplots_adjust(
+        left=0.145,
+        right=0.985,
+        top=0.945,
+        bottom=0.125,
+        wspace=0.28,
+        hspace=0.11,
+    )
+    return fig
+
+
 def main() -> None:
     configure_style()
     PDF_DIR.mkdir(parents=True, exist_ok=True)
@@ -434,6 +712,21 @@ def main() -> None:
             pad_inches=0.05,
         )
         plt.close(fig)
+
+    combined = create_combined_figure(rows)
+    combined_stem = "harmbench-robust-refusal-combined"
+    combined.savefig(
+        PDF_DIR / f"{combined_stem}.pdf",
+        bbox_inches="tight",
+        pad_inches=0.05,
+    )
+    combined.savefig(
+        PNG_DIR / f"{combined_stem}.png",
+        dpi=600,
+        bbox_inches="tight",
+        pad_inches=0.05,
+    )
+    plt.close(combined)
 
 
 if __name__ == "__main__":
