@@ -49,7 +49,16 @@ def _write_selection(model_key: str, method: str, calibration_id: str) -> None:
             COMPOSITION.benchmark, model_key, method, calibration_id
     ) / "selection.json"
     if destination.exists():
-        return
+        saved = json.loads(destination.read_text())
+        if (
+            saved.get("protocol", {}).get("prompt_tokenization")
+            == artifacts.PROMPT_TOKENIZATION
+        ):
+            return
+        raise ValueError(
+            "The existing L-CiteEval Small A-LQR selection predates the "
+            "duplicate-BOS fix. Remove the derived selection before rerunning."
+        )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
         json.dumps(
@@ -60,6 +69,9 @@ def _write_selection(model_key: str, method: str, calibration_id: str) -> None:
                 "method": method,
                 "calibration_id": calibration_id,
                 "source": source,
+                "protocol": {
+                    "prompt_tokenization": artifacts.PROMPT_TOKENIZATION,
+                },
                 "parameters": parameters,
             },
             indent=2,

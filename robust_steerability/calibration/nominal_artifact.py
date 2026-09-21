@@ -10,6 +10,7 @@ from pathlib import Path
 import torch
 
 from robust_steerability.calibration.nominal import average_prompt_jacobians
+from robust_steerability.modeling.tokenization import RAW_TEXT_TOKENIZATION
 
 
 SCHEMA_VERSION = 1
@@ -55,6 +56,7 @@ def nominal_dynamics_identity(
     records: list[dict],
     max_length: int,
     vjp_chunk_size: int,
+    prompt_tokenization: str = RAW_TEXT_TOKENIZATION,
 ) -> dict[str, object]:
     """Describe every scientific input to one averaged Jacobian artifact."""
 
@@ -67,7 +69,7 @@ def nominal_dynamics_identity(
         normalized_records.append(
             {"prompt_id": str(record["prompt_id"]), "text": str(record["text"])}
         )
-    return {
+    identity = {
         "schema_version": SCHEMA_VERSION,
         "artifact": "averaged_last_token_transformer_jacobians",
         "behavior": behavior,
@@ -78,6 +80,9 @@ def nominal_dynamics_identity(
         "max_length": max_length,
         "vjp_chunk_size": vjp_chunk_size,
     }
+    if prompt_tokenization != RAW_TEXT_TOKENIZATION:
+        identity["prompt_tokenization"] = prompt_tokenization
+    return identity
 
 
 def load_nominal_dynamics(
@@ -153,6 +158,7 @@ def load_or_fit_nominal_dynamics(
     max_length: int,
     vjp_chunk_size: int,
     runtime: dict[str, object],
+    prompt_tokenization: str = RAW_TEXT_TOKENIZATION,
 ) -> torch.Tensor:
     """Reuse a matching A-LQR artifact, or compute it with the shared estimator."""
 
@@ -163,6 +169,7 @@ def load_or_fit_nominal_dynamics(
         records=records,
         max_length=max_length,
         vjp_chunk_size=vjp_chunk_size,
+        prompt_tokenization=prompt_tokenization,
     )
     metadata_path = artifact_path.with_suffix(".json")
     if artifact_path.exists():
@@ -188,6 +195,7 @@ def load_or_fit_nominal_dynamics(
         max_length=max_length,
         vjp_chunk_size=vjp_chunk_size,
         model_revision=model_revision,
+        prompt_tokenization=prompt_tokenization,
     )
     attempt["finished_at_utc"] = _utc_now()
     attempt["elapsed_seconds"] = time.perf_counter() - started
@@ -213,6 +221,7 @@ def reuse_or_fit_nominal_dynamics(
     max_length: int,
     vjp_chunk_size: int,
     runtime: dict[str, object],
+    prompt_tokenization: str = RAW_TEXT_TOKENIZATION,
 ) -> torch.Tensor:
     """Reuse an authoritative shared A, computing it only when none exists."""
 
@@ -234,4 +243,5 @@ def reuse_or_fit_nominal_dynamics(
         max_length=max_length,
         vjp_chunk_size=vjp_chunk_size,
         runtime=runtime,
+        prompt_tokenization=prompt_tokenization,
     )
