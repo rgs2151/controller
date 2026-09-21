@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import random
@@ -79,6 +80,34 @@ HINF_GENERATION_BATCH_SIZE = 8
 GENERATION_BATCH_SIZE_OVERRIDE: int | None = None
 EVALUATION_SAMPLES_OVERRIDE: int | None = None
 EVALUATION_REPETITIONS_OVERRIDE: int | None = None
+JACKKNIFE_GROUP_COUNT = 5
+JACKKNIFE_PARTITION_SEED = 20260921
+
+
+def cache_root(
+    model_key: str, use_cache: bool, calibration_id: str = "selected"
+) -> Path:
+    """Route named recalibrations away from the historical selected run."""
+
+    root = evaluation_root("truthfulness", model_key, use_cache=use_cache)
+    if calibration_id == "selected":
+        return root
+    if not calibration_id or "/" in calibration_id or "\\" in calibration_id:
+        raise ValueError("calibration_id must be a simple name")
+    return root / "calibrations" / calibration_id
+
+
+def compact_results_root(
+    use_cache: bool, calibration_id: str = "selected"
+) -> Path:
+    """Mirror the evaluation namespace for compact, Git-tracked summaries."""
+
+    root = results_root("truthfulness", use_cache=use_cache)
+    if calibration_id == "selected":
+        return root
+    if not calibration_id or "/" in calibration_id or "\\" in calibration_id:
+        raise ValueError("calibration_id must be a simple name")
+    return root / "calibrations" / calibration_id
 
 
 def _configure_runtime(
@@ -97,7 +126,7 @@ def _configure_runtime(
     global EVALUATION_SAMPLES_OVERRIDE, EVALUATION_REPETITIONS_OVERRIDE
     if model_key not in MODELS:
         raise ValueError(f"Unknown model {model_key!r}")
-    if not calibration_id or "/" in calibration_id:
+    if not calibration_id or "/" in calibration_id or "\\" in calibration_id:
         raise ValueError("calibration_id must be a simple name")
     if generation_batch_size is not None and generation_batch_size < 1:
         raise ValueError("generation_batch_size must be positive")
@@ -111,7 +140,7 @@ def _configure_runtime(
     GENERATION_BATCH_SIZE_OVERRIDE = generation_batch_size
     EVALUATION_SAMPLES_OVERRIDE = evaluation_samples
     EVALUATION_REPETITIONS_OVERRIDE = evaluation_repetitions
-    CACHE_ROOT = evaluation_root("truthfulness", model_key, use_cache=use_cache)
+    CACHE_ROOT = cache_root(model_key, use_cache, calibration_id)
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -329,6 +358,10 @@ def _load_selected_hinf(
             (
                 "TruthfulQA True/instruction-relevance/fluency "
                 "weighted-harmonic calibration argmax"
+            ),
+            (
+                "TruthfulQA True-times-Informative/fluency "
+                "weighted-sum calibration argmax"
             ),
         }
     ):
@@ -897,6 +930,38 @@ def _mean_se(values: list[float]) -> tuple[float, float]:
     return float(array.mean()), float(array.std(ddof=1) / math.sqrt(len(array)))
 
 
+def _question_jackknife(
+    values: dict[str, float],
+) -> tuple[float, list[float], list[list[str]], str]:
+    """Estimate question-sampling SE from five fixed, balanced groups."""
+
+    if len(values) < JACKKNIFE_GROUP_COUNT:
+        raise ValueError("Truthfulness jackknife needs at least five questions")
+    prompt_ids = sorted(values)
+    random.Random(JACKKNIFE_PARTITION_SEED).shuffle(prompt_ids)
+    groups = [
+        sorted(prompt_ids[index::JACKKNIFE_GROUP_COUNT])
+        for index in range(JACKKNIFE_GROUP_COUNT)
+    ]
+    all_ids = set(prompt_ids)
+    leave_group_out = []
+    for group in groups:
+        retained = all_ids.difference(group)
+        leave_group_out.append(
+            float(np.mean([values[prompt_id] for prompt_id in retained]))
+        )
+    center = float(np.mean(leave_group_out))
+    standard_error = math.sqrt(
+        (JACKKNIFE_GROUP_COUNT - 1)
+        / JACKKNIFE_GROUP_COUNT
+        * sum((estimate - center) ** 2 for estimate in leave_group_out)
+    )
+    partition_sha256 = hashlib.sha256(
+        json.dumps(groups, separators=(",", ":")).encode()
+    ).hexdigest()
+    return standard_error, leave_group_out, groups, partition_sha256
+
+
 def summarize_truthfulness(
     model_key: str,
     method: str,
@@ -948,10 +1013,52 @@ def summarize_truthfulness(
         per_repetition.append(row)
         offset += count
     metrics = {}
-    for key in scorer_keys:
-        metric = scorer_spec(key).metric
-        mean, standard_error = _mean_se([row[metric] for row in per_repetition])
-        metrics[metric] = {"mean": mean, "standard_error": standard_error}
+    uncertainty = None
+    if len(generation["repetitions"]) == 1:
+        prompt_ids = [
+            str(row["prompt_id"])
+            for row in generation["repetitions"][0]["rows"]
+        ]
+        if len(prompt_ids) != len(set(prompt_ids)):
+            raise ValueError("Single-pass truthfulness evaluation has duplicate prompt IDs")
+        partition_groups = None
+        partition_sha256 = None
+        for key in scorer_keys:
+            spec = scorer_spec(key)
+            scale = 100.0 if spec.maximum == 1.0 else 1.0
+            scorer_values = {
+                str(row["prompt_id"]): scale * float(row["score"])
+                for row in scores[key]
+            }
+            if set(scorer_values) != set(prompt_ids):
+                raise ValueError(f"Question identities differ for scorer {key}")
+            standard_error, leave_group_out, groups, digest = _question_jackknife(
+                scorer_values
+            )
+            metric = spec.metric
+            metrics[metric] = {
+                "mean": float(np.mean(list(scorer_values.values()))),
+                "standard_error": standard_error,
+                "leave_group_out_estimates": leave_group_out,
+            }
+            if partition_groups is None:
+                partition_groups = groups
+                partition_sha256 = digest
+            elif partition_groups != groups or partition_sha256 != digest:
+                raise ValueError("Truthfulness scorer jackknife partitions differ")
+        uncertainty = {
+            "method": "five-group delete-one-group question jackknife",
+            "group_count": JACKKNIFE_GROUP_COUNT,
+            "group_sizes": [len(group) for group in partition_groups],
+            "partition_seed": JACKKNIFE_PARTITION_SEED,
+            "partition_sha256": partition_sha256,
+            "captures": "question-sampling variability only; not decoding-run variability",
+        }
+    else:
+        for key in scorer_keys:
+            metric = scorer_spec(key).metric
+            mean, standard_error = _mean_se([row[metric] for row in per_repetition])
+            metrics[metric] = {"mean": mean, "standard_error": standard_error}
     result = {
         "identity": {
             "model_id": model.model_id,
@@ -961,6 +1068,7 @@ def summarize_truthfulness(
             "dataset": [TRUTHFULQA_ID, TRUTHFULQA_REVISION],
             "evaluation_key": evaluation_key,
             "kv_cache": CURRENT_USE_CACHE,
+            "calibration_id": CURRENT_CALIBRATION_ID,
             "scorers": list(scorer_keys),
         },
         "evaluation_samples_per_repetition": len(generation["repetitions"][0]["rows"]),
@@ -970,6 +1078,8 @@ def summarize_truthfulness(
         "metrics": metrics,
         "invalid_scorer_outputs": invalid_scorer_outputs,
     }
+    if uncertainty is not None:
+        result["uncertainty"] = uncertainty
     destination = CACHE_ROOT / "results" / cache_namespace / f"{method}.json"
     if destination.exists():
         existing = json.loads(destination.read_text())
@@ -989,7 +1099,7 @@ def summarize_truthfulness(
         )
     _write_json(destination, result)
     _write_json(
-        results_root("truthfulness", use_cache=CURRENT_USE_CACHE)
+        compact_results_root(CURRENT_USE_CACHE, CURRENT_CALIBRATION_ID)
         / model_key
         / cache_namespace
         / f"{method}.json",
