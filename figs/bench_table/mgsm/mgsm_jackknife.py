@@ -11,7 +11,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
 DEFAULT_OUTPUT = Path(__file__).with_name("mgsm_jackknife.json")
-MODELS = ("qwen3_4b", "llama32_3b_instruct")
+MODELS = ("qwen3_4b", "llama32_3b_instruct", "phi4_mini_instruct")
 LANGUAGES = ("zh", "fr", "ja", "sw", "te")
 METHODS = ("original", "alqr", "h_infinity")
 SCORERS = (

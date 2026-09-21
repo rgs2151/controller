@@ -291,6 +291,11 @@ MGSM_MODELS = (
         "Llama-3.2-3B",
         ("original", "alqr", "h_infinity"),
     ),
+    (
+        "phi4_mini_instruct",
+        "Phi-4-mini",
+        ("original", "alqr", "h_infinity"),
+    ),
 )
 MGSM_METRICS = (
     Metric("mgsm_exact_match.score", "Accuracy (%) ↑", r"Accuracy (\%) $\uparrow$", 1, True),
@@ -306,8 +311,8 @@ MGSM_DOCUMENTATION = r"""## Method
 - Task: solve matched MGSM arithmetic problems in Chinese, French, Japanese, Swahili, and Telugu while steering every response toward Spanish. English and Spanish are excluded from evaluation.
 - Direction: all 250 matched English–Spanish MGSM pairs define the Spanish steering direction. A-LQR and H∞ share the same 50-Jacobian dynamics estimate. H∞ additionally fits its disturbance geometry and robust controller without changing the shared dynamics matrix.
 - Prompting: each language uses its native eight-shot worked-example prompt. Generation is deterministic, limited to 256 new tokens, and runs with evaluated-model KV cache disabled.
-- Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, and `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`.
-- Evaluation size: both models use the same frozen 100-problem subset per language. The active comparison reports Original, A-LQR, and H∞ on identical problem identities within each model. The summary macro-averages the five language means independently within each model.
+- Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`, and `microsoft/Phi-4-mini-instruct` at revision `cfbefacb99257ffa30c83adab238a50856ac3083`.
+- Evaluation size: all three models use the same frozen 100-problem subset per language. The active comparison reports Original, A-LQR, and H∞ on identical problem identities within each model. The summary macro-averages the five language means independently within each model.
 
 ## Measures
 
@@ -330,6 +335,9 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Llama-3.2-3B-Instruct | Original | No intervention |
 | Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
 | Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 1; Qf/R = 0.01; R = 1; γ★ = 1.919061; costs selected from the frozen 12-point grid on 50 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using 80% exact-answer accuracy and 20% normalized AXBench Overall; no λ sweep |
+| Phi-4-mini-instruct | Original | No intervention |
+| Phi-4-mini-instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Phi-4-mini-instruct | H∞ | λ = 1.5 fixed; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 4.976749; costs selected from the frozen 12-point grid on 100 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using 90% exact-answer accuracy and 10% normalized AXBench Overall; no λ sweep |
 """
 
 
@@ -975,9 +983,9 @@ def _mgsm_best_values(rows: list[dict]) -> tuple[float, ...]:
 def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
     column_count = len(MGSM_METRICS)
     caption = (
-        "Full MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct on 100 matched questions per language. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors."
+        "Full MGSM multilingual-transfer results for Qwen3-4B, Llama-3.2-3B-Instruct, and Phi-4-mini-instruct on 100 matched questions per language. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors."
         if full
-        else "Summary MGSM multilingual-transfer results for Qwen3-4B and Llama-3.2-3B-Instruct, macro-averaged equally across five languages. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors."
+        else "Summary MGSM multilingual-transfer results for Qwen3-4B, Llama-3.2-3B-Instruct, and Phi-4-mini-instruct, macro-averaged equally across five languages. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors."
     )
     label = "tab:mgsm-full" if full else "tab:mgsm-overall"
     lines = [
