@@ -16,6 +16,22 @@ class ModelSpec:
 
 
 MODELS = {
+    "gpt2_xl": ModelSpec(
+        "gpt2_xl",
+        "GPT-2 XL",
+        "openai-community/gpt2-xl",
+        "15ea56dee5df4983c59b2538573817e1667135e2",
+        32,
+        32,
+    ),
+    "qwen25_05b": ModelSpec(
+        "qwen25_05b",
+        "Qwen-2.5-0.5B",
+        "Qwen/Qwen2.5-0.5B",
+        "060db6499f32faf8b98477b0a26969ef7d8b9987",
+        64,
+        64,
+    ),
     "llama32_1b_instruct": ModelSpec(
         "llama32_1b_instruct",
         "Llama-3.2-1B-Instruct",
