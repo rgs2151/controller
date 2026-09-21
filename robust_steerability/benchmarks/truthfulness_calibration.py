@@ -190,7 +190,12 @@ def _settings(
     model = MODELS[model_key]
     counts = ALQR_CALIBRATION_COUNTS["truthfulness"]
     alqr = paper_alqr_setting("truthfulness", model.model_id)
-    pid = SPID_SOURCE_GRIDS["truthfulness"][model_key]
+    # The shared H-infinity artifact schema records PID gains, but H-infinity
+    # fitting does not use them.  Small-model truthfulness runs intentionally
+    # omit S-PID, so they do not have (and must not require) an S-PID source
+    # grid entry.  Preserve the source gains for models that do have one and
+    # use inert placeholders otherwise.
+    pid = SPID_SOURCE_GRIDS["truthfulness"].get(model_key)
     return {
         "behavior": "truthfulness", "seed": SOURCE_RANDOM_SEED,
         "fit_prompts_per_class": counts.undesired,
@@ -206,7 +211,9 @@ def _settings(
         "hinf_setpoint_multiplier": alqr.multiplier,
         "q": float(q), "r": float(r), "q_final": float(q_final),
         "alqr_q": alqr.q, "alqr_r": alqr.r, "alqr_q_final": alqr.q_final,
-        "kp": pid.kp, "ki": pid.ki, "kd": pid.kd,
+        "kp": 0.0 if pid is None else pid.kp,
+        "ki": 0.0 if pid is None else pid.ki,
+        "kd": 0.0 if pid is None else pid.kd,
         "gamma_lower": 0.0, "gamma_upper": 100.0,
         "gamma_tolerance": 1e-5, "gamma_max_iterations": 100,
         "gamma_deployment_margin": 0.01,
