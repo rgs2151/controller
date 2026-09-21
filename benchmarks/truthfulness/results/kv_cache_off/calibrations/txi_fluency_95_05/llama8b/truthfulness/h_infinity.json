@@ -1,0 +1,127 @@
+{
+  "identity": {
+    "model_id": "meta-llama/Meta-Llama-3-8B",
+    "model_revision": "8cde5ca8380496c9a6cc7ef3a8b46a0372a1d920",
+    "method": "h_infinity",
+    "distribution": "id",
+    "dataset": [
+      "truthful_qa",
+      "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
+    ],
+    "evaluation_key": "truthfulness",
+    "kv_cache": false,
+    "calibration_id": "txi_fluency_95_05",
+    "scorers": [
+      "truthfulqa_true",
+      "truthfulqa_informative",
+      "axbench_concept_relevance",
+      "axbench_instruction_relevance",
+      "axbench_fluency",
+      "axbench_overall"
+    ]
+  },
+  "evaluation_samples_per_repetition": 817,
+  "evaluation_repetitions": 1,
+  "created_at_utc": "2026-09-21T17:22:58.926544+00:00",
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "truth": 76.49938800489596,
+      "info": 80.2937576499388,
+      "concept_relevance": 1.0024479804161566,
+      "instruction_relevance": 0.988984088127295,
+      "fluency": 0.9951040391676866,
+      "axbench_overall": 0.8326805385556915
+    }
+  ],
+  "metrics": {
+    "truth": {
+      "mean": 76.49938800489596,
+      "standard_error": 1.1106898026041432,
+      "leave_group_out_estimates": [
+        77.0290964777948,
+        77.0290964777948,
+        76.75840978593273,
+        75.99388379204893,
+        75.68807339449542
+      ]
+    },
+    "info": {
+      "mean": 80.2937576499388,
+      "standard_error": 0.5905964762562552,
+      "leave_group_out_estimates": [
+        79.93874425727412,
+        80.70444104134762,
+        80.58103975535168,
+        80.1223241590214,
+        80.1223241590214
+      ]
+    },
+    "concept_relevance": {
+      "mean": 1.0024479804161566,
+      "standard_error": 0.007394275727474976,
+      "leave_group_out_estimates": [
+        1.003062787136294,
+        1.006125574272588,
+        1.0045871559633028,
+        1.003058103975535,
+        0.9954128440366973
+      ]
+    },
+    "instruction_relevance": {
+      "mean": 0.988984088127295,
+      "standard_error": 0.01818079416988205,
+      "leave_group_out_estimates": [
+        0.9954058192955589,
+        0.9938744257274119,
+        0.9923547400611621,
+        0.9923547400611621,
+        0.9709480122324159
+      ]
+    },
+    "fluency": {
+      "mean": 0.9951040391676866,
+      "standard_error": 0.008946536752691685,
+      "leave_group_out_estimates": [
+        1.0,
+        0.998468606431853,
+        0.9969418960244648,
+        0.9877675840978594,
+        0.9923547400611621
+      ]
+    },
+    "axbench_overall": {
+      "mean": 0.8326805385556915,
+      "standard_error": 0.008862604959369698,
+      "leave_group_out_estimates": [
+        0.8370597243491578,
+        0.833843797856049,
+        0.8336391437308869,
+        0.8347094801223242,
+        0.8241590214067278
+      ]
+    }
+  },
+  "invalid_scorer_outputs": {
+    "truthfulqa_true": [],
+    "truthfulqa_informative": [],
+    "axbench_concept_relevance": [],
+    "axbench_instruction_relevance": [],
+    "axbench_fluency": [],
+    "axbench_overall": []
+  },
+  "uncertainty": {
+    "method": "five-group delete-one-group question jackknife",
+    "group_count": 5,
+    "group_sizes": [
+      164,
+      164,
+      163,
+      163,
+      163
+    ],
+    "partition_seed": 20260921,
+    "partition_sha256": "1c932c2e038009489d794b4dad648d015605c27920e93c5b8d7c6bf90c8e7a30",
+    "captures": "question-sampling variability only; not decoding-run variability"
+  }
+}
