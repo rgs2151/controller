@@ -328,7 +328,7 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Llama-3.2-3B-Instruct | Original | No intervention |
 | Llama-3.2-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01 |
 | Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
-| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 10; Qf/R = 0.01; R = 1; γ★ = 4.951513; costs selected from the frozen 12-point grid on 50 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using the equal-weight additive combination of exact-answer accuracy and normalized AXBench Overall; no λ sweep |
+| Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 1; Qf/R = 0.01; R = 1; γ★ = 1.919061; costs selected from the frozen 12-point grid on 50 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using 80% exact-answer accuracy and 20% normalized AXBench Overall; no λ sweep |
 """
 
 
