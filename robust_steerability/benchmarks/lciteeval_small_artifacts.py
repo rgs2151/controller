@@ -45,7 +45,7 @@ from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 BENCHMARK = "lciteeval_small"
 AXBENCH_CONCEPT = SPANISH_CONCEPT
-JACOBIAN_MAX_LENGTH = 8192
+JACOBIAN_MAX_LENGTH = 10_000
 CONTEXT_WINDOW = 131_072
 
 

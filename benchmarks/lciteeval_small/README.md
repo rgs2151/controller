@@ -13,6 +13,8 @@ selected on 8K citation QA retains task quality at longer contexts.
   approximately 8K.
 - H∞ selection: 12 cost configurations on 10 official 2WikiMultihopQA
   L-CiteEval prompts at approximately 8K.
+- The internal 10K processing ceiling preserves the released one-shot "8K"
+  prompts, which tokenize to roughly 8.3--8.8K after chat-template overhead.
 - Selection score: `0.40 × answer recall + 0.40 × citation F1 + 0.10 ×
   normalized fluency + 0.10 × normalized concept relevance`.
 - Available evaluation conditions: the same 10 question identities at 8K, 16K,
