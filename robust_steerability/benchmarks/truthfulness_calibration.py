@@ -1026,7 +1026,7 @@ def select(model_key: str, calibration_id: str, selection_metric: str) -> dict:
     if (
         previous_grid_id == str(selected["grid_id"])
         and previous_bundle is not None
-        and previous_bundle.is_file()
+        and previous_bundle.exists()
     ):
         payload["diagnostic_bundle"] = str(previous_bundle.relative_to(root))
     else:
