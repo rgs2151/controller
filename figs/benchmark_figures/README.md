@@ -211,7 +211,7 @@
 - Order templates by baseline difficulty and shade the ASR margin between H∞ and the stronger baseline.
 - Average each method across the six displayed conditions and plot mean ASR against mean safe-concept relevance.
 - Render one visually identical figure per model so results from different model sizes are not mixed.
-- Also render a compact combined figure as one model per row with shared method encodings, common axes, and only the mean-ASR reduction annotation retained.
+- Also render a compact two-panel combined figure: model-colored H∞ profiles against the stronger baseline on the left, and all model-method Pareto points on one shared frontier at right.
 
 ## Variables
 
@@ -230,6 +230,7 @@
 ## Legends
 
 - Line and marker: method.
+- In the combined left panel, color identifies model, solid diamonds show H∞, and the matching dashed curve is the stronger of Original and A-LQR at each template.
 - Gold outline: H∞.
 - Gold shading: robustness margin to the stronger baseline.
 - Left panel: template-level ASR profile.
