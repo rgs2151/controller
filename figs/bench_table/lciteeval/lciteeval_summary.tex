@@ -2,7 +2,7 @@
 \begin{table*}[!htbp]
 \centering
 \definecolor{projectdarkred}{RGB}{128,0,0}
-\caption{Summary L-CiteEval length-transfer results for Qwen2.5-3B-Instruct. Values are full-sample means $\pm$ ten-group matched-question jackknife standard errors; the matched 8K, 16K, and 32K conditions are reported separately. Higher is better for every column.}
+\caption{Summary L-CiteEval length-transfer results. Values are full-sample means $\pm$ ten-group matched-question jackknife standard errors; available context conditions are reported separately within each model. Higher is better for every column.}
 \label{tab:lciteeval-summary}
 \small
 \renewcommand{\arraystretch}{1.08}
@@ -11,7 +11,7 @@
 \begin{tabular}{rrlccc}
 Model & Context & Method & \cellcolor{projectdarkred!10}\shortstack{Answer\\recall (\%) $\uparrow$} & Citation F1 (\%) $\uparrow$ & \shortstack{Overall\\steering (0--2) $\uparrow$} \\
 \midrule
-\multirow{12}{*}{\rotatebox[origin=c]{90}{Qwen2.5-3B-Instruct}} & \multirow{4}{*}{8K} & Original & \cellcolor{projectdarkred!10}$66.2\,\pm\,8.1$ & $7.8\,\pm\,1.6$ & $0.00\,\pm\,0.00$ \\
+\multirow{12}{*}{\rotatebox[origin=c]{90}{\scriptsize Qwen2.5-3B}} & \multirow{4}{*}{8K} & Original & \cellcolor{projectdarkred!10}$66.2\,\pm\,8.1$ & $7.8\,\pm\,1.6$ & $0.00\,\pm\,0.00$ \\
 \cmidrule(l){3-6}
  &  & S-PID & \cellcolor{projectdarkred!10}$\underline{72.1\,\pm\,9.3}$ & $\underline{7.2\,\pm\,2.1}$ & $0.00\,\pm\,0.00$ \\
  &  & A-LQR & \cellcolor{projectdarkred!10}$70.1\,\pm\,8.9$ & $5.6\,\pm\,2.0$ & $\underline{0.05\,\pm\,0.05}$ \\
@@ -28,6 +28,11 @@ Model & Context & Method & \cellcolor{projectdarkred!10}\shortstack{Answer\\reca
  &  & S-PID & \cellcolor{projectdarkred!10}$\underline{61.0\,\pm\,9.1}$ & $1.6\,\pm\,1.1$ & $\underline{0.00\,\pm\,0.00}$ \\
  &  & A-LQR & \cellcolor{projectdarkred!10}$56.2\,\pm\,6.7$ & $4.1\,\pm\,1.9$ & $\underline{0.00\,\pm\,0.00}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$49.2\,\pm\,6.1$ & $\mathbf{4.3\,\pm\,2.4}$ & $\mathbf{0.00\,\pm\,0.00}$ \\
+\midrule
+\multirow{3}{*}{\rotatebox[origin=c]{90}{\tiny Llama-3.2-1B}} & \multirow{3}{*}{8K} & Original & \cellcolor{projectdarkred!10}$58.5\,\pm\,7.7$ & $6.2\,\pm\,2.5$ & $0.04\,\pm\,0.04$ \\
+\cmidrule(l){3-6}
+ &  & A-LQR & \cellcolor{projectdarkred!10}$59.8\,\pm\,9.3$ & $\underline{6.6\,\pm\,2.7}$ & $\underline{0.04\,\pm\,0.04}$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{61.7\,\pm\,7.8}$ & $6.4\,\pm\,2.9$ & $\mathbf{0.04\,\pm\,0.04}$ \\
 \bottomrule
 \end{tabular}%
 }

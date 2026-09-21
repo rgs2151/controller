@@ -14,6 +14,9 @@
 | Qwen2.5-3B-Instruct | 32K | S-PID | 61.0 ± 9.1 | 1.6 ± 1.1 | 0.00 ± 0.00 |
 | Qwen2.5-3B-Instruct | 32K | A-LQR | 56.2 ± 6.7 | 4.1 ± 1.9 | 0.00 ± 0.00 |
 | Qwen2.5-3B-Instruct | 32K | H∞ (ours) | 49.2 ± 6.1 | 4.3 ± 2.4 | 0.00 ± 0.00 |
+| Llama-3.2-1B-Instruct | 8K | Original | 58.5 ± 7.7 | 6.2 ± 2.5 | 0.04 ± 0.04 |
+| Llama-3.2-1B-Instruct | 8K | A-LQR | 59.8 ± 9.3 | 6.6 ± 2.7 | 0.04 ± 0.04 |
+| Llama-3.2-1B-Instruct | 8K | H∞ (ours) | 61.7 ± 7.8 | 6.4 ± 2.9 | 0.04 ± 0.04 |
 
 ## Method
 
@@ -22,8 +25,8 @@
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`, using all 72 released positive responses and 72 genre-matched negative responses.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Model: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths.
-- The 8K, 16K, and 32K conditions remain separate; no cross-length average is reported.
+- Models: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths, and `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6` at 8K.
+- Context conditions remain separate; no cross-length or cross-model average is reported.
 
 ## Measures
 
@@ -43,3 +46,6 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Qwen2.5-3B-Instruct | S-PID | λ = 1.5; Kp = 0.5; Ki = 0.5; Kd = 0.01; frozen upstream concept-steering configuration |
 | Qwen2.5-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I; frozen upstream concept-steering configuration |
 | Qwen2.5-3B-Instruct | H∞ | 8K/16K: λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 2.3054. Updated 32K: λ = 1.5; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 2.9917; selected on the 40 matched 8K HotpotQA prompts with 45% answer recall, 45% citation F1, 5% concept relevance, and 5% fluency. |
+| Llama-3.2-1B-Instruct | Original | No intervention |
+| Llama-3.2-1B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Llama-3.2-1B-Instruct | H∞ | λ = 1.5; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 0.08690; selected on the 40 8K HotpotQA prompts with 45% answer recall, 45% citation F1, 5% concept relevance, and 5% fluency; no A-LQR fallback was used. |
