@@ -7,7 +7,7 @@ five transfer languages: Chinese, French, Japanese, Swahili, and Telugu.
 - `artifacts`: materialize the paired direction corpus, fit the per-layer DiffMean
   setpoint, and average 50 Spanish-question Jacobians into the nominal `A` shared
   by A-LQR and H∞.
-- `calibrate`: write the frozen S-PID/A-LQR selections and run the 12-point H∞
+- `calibrate`: write the frozen A-LQR selection and run the 12-point H∞
   Q/R–Qf/R grid at the same fixed `lambda=1.5` target used by A-LQR. The optional
   lambda-sweep machinery remains available but is disabled. H∞ fits its
   disturbance geometry on 200 translated GSM8K prompts balanced across Bengali,
@@ -29,14 +29,16 @@ evaluation never refits the controller by language.
 
 Qwen3-4B is complete under its original English calibration protocol. The first
 Llama-3.2-3B-Instruct H∞ run exposed calibration saturation and is retained for
-comparison. Phi-4-mini-instruct is registered as the next full four-method model
-expansion and uses the four-language calibration specified above.
+comparison. Phi-4-mini-instruct is registered as the next three-method model
+expansion and uses the four-language calibration specified above. S-PID remains
+available as an optional composable method, but is not part of the active MGSM
+protocol.
 
 ```bash
-python -m robust_steerability.benchmarks.mgsm artifacts --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --devices auto
-python -m robust_steerability.benchmarks.mgsm calibrate --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --devices auto
-python -m robust_steerability.benchmarks.mgsm evaluate --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --devices auto
-python -m robust_steerability.benchmarks.mgsm score --model llama32_3b_instruct --methods original,spid,alqr,h_infinity --scorers default --devices auto
+python -m robust_steerability.benchmarks.mgsm artifacts --model llama32_3b_instruct --methods original,alqr,h_infinity --devices auto
+python -m robust_steerability.benchmarks.mgsm calibrate --model llama32_3b_instruct --methods original,alqr,h_infinity --devices auto
+python -m robust_steerability.benchmarks.mgsm evaluate --model llama32_3b_instruct --methods original,alqr,h_infinity --devices auto
+python -m robust_steerability.benchmarks.mgsm score --model llama32_3b_instruct --methods original,alqr,h_infinity --scorers default --devices auto
 ```
 
 For the Phi expansion, replace the model key above with

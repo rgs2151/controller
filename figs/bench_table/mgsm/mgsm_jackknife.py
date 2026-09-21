@@ -13,7 +13,7 @@ REPO = Path(__file__).resolve().parents[3]
 DEFAULT_OUTPUT = Path(__file__).with_name("mgsm_jackknife.json")
 MODELS = ("qwen3_4b", "llama32_3b_instruct")
 LANGUAGES = ("zh", "fr", "ja", "sw", "te")
-METHODS = ("original", "spid", "alqr", "h_infinity")
+METHODS = ("original", "alqr", "h_infinity")
 SCORERS = (
     "mgsm_exact_match",
     "axbench_rule_spanish",
