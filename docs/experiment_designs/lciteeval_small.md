@@ -8,24 +8,28 @@
 - **Distribution shift:** 8K is the controller-selection and in-distribution
   condition; the same ten question identities at 16K and 32K are available as
   out-of-distribution conditions, with only 32K enabled in the default run.
-- **Steered behavior:** Positive sentiments and descriptions of enjoyable
-  experiences, using AXBench concept 499.
-- **Direction data:** 72 positive and 72 genre-matched negative AXBench examples.
-- **Shared dynamics:** 50 desired AXBench prompt Jacobians; one saved `A` is
-  shared by A-LQR and H∞.
-- **H∞ disturbance data:** 200 frozen AlpacaEval prompts.
+- **Steered behavior:** Respond only in Spanish, with no other language.
+- **Direction data:** All 250 matched MGSM English/Spanish question pairs;
+  Spanish-minus-English DiffMean is fit separately in each evaluated model.
+- **Shared dynamics:** 50 frozen upstream 2WikiMultihopQA prompts expanded to
+  approximately 8K; one saved `A` is shared by A-LQR and H∞.
+- **H∞ disturbance data:** 200 disjoint frozen upstream 2WikiMultihopQA prompts
+  expanded to approximately 8K.
 - **Baseline settings:** A-LQR uses fixed `lambda=1.5`, `Q=0.1`, `R=1`, and
   `Qf=0.1`; it is not swept.
-- **H∞ selection:** Twelve `Q/R,Qf/R` configurations on ten fixed 8K questions;
-  maximize `0.40 answer recall + 0.40 citation F1 + 0.10 normalized fluency +
-  0.10 normalized concept relevance`.
+- **H∞ selection:** Twelve `Q/R,Qf/R` configurations on ten fixed official
+  2WikiMultihopQA L-CiteEval prompts at approximately 8K. All four components
+  use OpenAI judgments: maximize `0.40 bilingual semantic answer recall + 0.40
+  bilingual citation F1 + 0.10 normalized Spanish concept relevance + 0.10
+  normalized fluency`.
 - **Final evaluation:** Ten matched questions at 8K and 32K by default, with 16K
   retained as an optional configured condition; deterministic generation, KV
   cache off, and at most 128 new tokens.
 - **Model:** Llama-3.2-1B-Instruct.
 - **Methods:** Original, A-LQR, and H∞.
-- **Scoring:** L-CiteEval answer overlap and AutoAIS citation metrics plus
-  AXBench concept relevance, instruction relevance, fluency, and overall steering.
+- **Scoring:** OpenAI bilingual semantic answer recall; citation F1 computed from
+  OpenAI bilingual AutoAIS entailment decisions; OpenAI AXBench Spanish concept
+  relevance; and OpenAI AXBench fluency.
 - **Evaluation size:** 120 H∞ selection generations and 60 default final
   generations; enabling 16K adds 30 final generations.
 
