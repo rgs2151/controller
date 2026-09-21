@@ -51,9 +51,9 @@ from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 
 METHODS = ("original", "alqr", "h_infinity")
-CONDITIONS = ("8k", "32k")
+CONDITIONS = ("8k", "16k", "32k")
 DEFAULT_BATCH_SIZE = {
-    "llama32_1b_instruct": {"8k": 4, "32k": 2},
+    "llama32_1b_instruct": {"8k": 4, "16k": 3, "32k": 2},
 }
 
 
