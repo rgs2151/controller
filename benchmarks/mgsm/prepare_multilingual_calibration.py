@@ -44,8 +44,8 @@ def _api_key() -> str:
 def _language_assignment(split: str, count: int) -> list[str]:
     if split == "disturbance" and count == 200:
         return list(LANGUAGES) * 50
-    if split == "tuning" and count == 50:
-        return list(LANGUAGES) * 12 + ["bn", "de"]
+    if split == "tuning" and count == 100:
+        return list(LANGUAGES) * 25
     raise ValueError(f"Unexpected MGSM calibration split size: {split}={count}")
 
 
@@ -186,17 +186,31 @@ async def _translate(
     )
 
 
-async def _prepare(concurrency: int) -> dict:
+async def _prepare(concurrency: int, *, reuse_existing: bool) -> dict:
     source = gsm8k_calibration_splits()
     exemplars = {language: load_mgsm(language, "train") for language in LANGUAGES}
-    jobs = []
     identities = []
     for split in ("disturbance", "tuning"):
         records = source[split]
         languages = _language_assignment(split, len(records))
         for record, language in zip(records, languages, strict=True):
             identities.append((split, record, language))
-            jobs.append((_question(record), language))
+
+    existing: dict[tuple[str, int, str], dict] = {}
+    if reuse_existing and DESTINATION.exists():
+        payload = json.loads(DESTINATION.read_text())
+        for split, records in payload["splits"].items():
+            for record in records:
+                existing[(split, int(record["source_index"]), str(record["language"]))] = record
+
+    translations: list[str | None] = [None] * len(identities)
+    missing: list[tuple[int, str, str]] = []
+    for index, (split, record, language) in enumerate(identities):
+        prior = existing.get((split, int(record["source_index"]), language))
+        if prior is not None and prior.get("source_question") == _question(record):
+            translations[index] = str(prior["translated_question"])
+        else:
+            missing.append((index, _question(record), language))
 
     headers = {
         "Authorization": f"Bearer {_api_key()}",
@@ -205,17 +219,22 @@ async def _prepare(concurrency: int) -> dict:
     timeout = aiohttp.ClientTimeout(total=300)
     semaphore = asyncio.Semaphore(concurrency)
     async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
-        translations = await asyncio.gather(
+        new_translations = await asyncio.gather(
             *[
                 _translate(session, semaphore, question, language)
-                for question, language in jobs
+                for _, question, language in missing
             ]
         )
+    for (index, _, _), translation in zip(missing, new_translations, strict=True):
+        translations[index] = translation
+    if any(translation is None for translation in translations):
+        raise RuntimeError("MGSM calibration translation assembly is incomplete")
 
     splits = {"disturbance": [], "tuning": []}
-    for (split, source_record, language), translation in zip(
+    for (split, source_record, language), translation_value in zip(
         identities, translations, strict=True
     ):
+        translation = str(translation_value)
         splits[split].append(
             {
                 "prompt_id": (
@@ -246,7 +265,9 @@ async def _prepare(concurrency: int) -> dict:
         "construction": {
             "languages": list(LANGUAGES),
             "disturbance_allocation": {language: 50 for language in LANGUAGES},
-            "tuning_allocation": {"bn": 13, "de": 13, "ru": 12, "th": 12},
+            "tuning_allocation": {language: 25 for language in LANGUAGES},
+            "reused_existing_translations": len(identities) - len(missing),
+            "new_translations": len(missing),
             "prompt_style": "native MGSM eight-shot chain of thought",
             "final_evaluation_languages_excluded": ["zh", "fr", "ja", "sw", "te"],
         },
@@ -257,10 +278,13 @@ async def _prepare(concurrency: int) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--concurrency", type=int, default=100)
+    parser.add_argument("--extend-existing", action="store_true")
     arguments = parser.parse_args()
-    if DESTINATION.exists():
+    if DESTINATION.exists() and not arguments.extend_existing:
         raise FileExistsError(f"Frozen calibration dataset already exists: {DESTINATION}")
-    payload = asyncio.run(_prepare(arguments.concurrency))
+    payload = asyncio.run(
+        _prepare(arguments.concurrency, reuse_existing=arguments.extend_existing)
+    )
     DESTINATION.parent.mkdir(parents=True, exist_ok=True)
     temporary = DESTINATION.with_suffix(".json.tmp")
     temporary.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")

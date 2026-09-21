@@ -95,7 +95,7 @@ an independently sampled source dataset.
 
 | name | records | notes |
 | --- | ---: | --- |
-| `mgsm/h_infinity_multilingual_calibration.json` | 250 | Frozen H∞-only MGSM calibration data: 200 disturbance prompts (50 per Bengali/German/Russian/Thai) and 50 disjoint tuning prompts (13/13/12/12), translated from pinned GSM8K training questions and wrapped in native MGSM eight-shot prompts. |
+| `mgsm/h_infinity_multilingual_calibration.json` | 300 | Frozen H∞-only MGSM calibration data: 200 disturbance prompts (50 per Bengali/German/Russian/Thai) and 100 disjoint tuning prompts (25 per language), translated from pinned GSM8K training questions and wrapped in native MGSM eight-shot prompts. |
 | `lciteeval/direction.jsonl` | 144 | AXBench concept 499: all 72 desired text examples and all 72 genre-matched undesired text examples used only to fit the model-specific semantic direction. |
 | `lciteeval/h_infinity_calibration.jsonl` | 50 | Fixed, unique AlpacaEval instructions used only to compare H∞ candidates; not direction-fitting examples. |
 | `lciteeval/manifest.json` | 1 | Pinned revisions, source hashes, deterministic selection rules, and the verified zero-overlap check. |

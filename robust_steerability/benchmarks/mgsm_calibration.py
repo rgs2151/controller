@@ -177,7 +177,7 @@ def fit_base(
         "dataset": {
             "direction": "all 250 matched MGSM English/Spanish test questions",
             "disturbance": "frozen 200 translated GSM8K train questions balanced across Bengali, German, Russian, and Thai",
-            "tuning": "disjoint frozen 50 translated GSM8K train questions balanced across Bengali, German, Russian, and Thai",
+            "tuning": "disjoint frozen 100 translated GSM8K train questions balanced across Bengali, German, Russian, and Thai",
         },
     }
     root = destination_root or _root(model_key, calibration_id)
@@ -275,8 +275,15 @@ def generate_lambda_candidate(
     destination = _lambda_generation_path(
         model_key, calibration_id, str(configuration["configuration_id"])
     )
+    tuning = multilingual_calibration_splits()["tuning"]
+    tuning_prompt_ids = [str(row["prompt_id"]) for row in tuning]
     if runtime.generation_complete(destination):
-        return
+        saved = json.loads(destination.read_text())
+        if saved.get("identity", {}).get("tuning_prompt_ids") == tuning_prompt_ids:
+            return
+        sweep_root = _root(model_key, calibration_id) / "lambda_sweep"
+        for scorer in (*COMPONENT_SCORERS, OVERALL_SCORER):
+            scorer_cache_path(sweep_root, destination, scorer).unlink(missing_ok=True)
     fit_base(
         model_key,
         device,
@@ -288,7 +295,6 @@ def generate_lambda_candidate(
         destination_root=candidate_root,
     )
     release_cuda_memory(device)
-    tuning = multilingual_calibration_splits()["tuning"]
     model, tokenizer = artifacts.load_model(model_key, device)
     base_payload = torch.load(
         candidate_root / "base/controller.pt",
@@ -334,6 +340,7 @@ def generate_lambda_candidate(
                 "calibration_id": calibration_id,
                 "evaluated_model_kv_cache": False,
                 "generation_batch_size": batch_size,
+                "tuning_prompt_ids": tuning_prompt_ids,
             },
             "status": "complete",
             "repetitions": [
@@ -571,11 +578,16 @@ def generate_worker(
         for row in tuning
     ]
     batch_size = generation_batch_size or MODELS[model_key].activation_batch_size
+    tuning_prompt_ids = [str(row["prompt_id"]) for row in tuning]
     for configuration in grid(multiplier)[shard_index::shard_count]:
         grid_id = str(configuration["grid_id"])
         destination = grid_root / "generations" / f"{grid_id}.json"
         if runtime.generation_complete(destination):
-            continue
+            saved = json.loads(destination.read_text())
+            if saved.get("identity", {}).get("tuning_prompt_ids") == tuning_prompt_ids:
+                continue
+            for scorer in (*COMPONENT_SCORERS, OVERALL_SCORER, EXACT_SCORER):
+                scorer_cache_path(grid_root, destination, scorer).unlink(missing_ok=True)
         controller = torch.load(
             grid_root / "controllers" / f"{grid_id}.pt",
             map_location="cpu",
@@ -620,6 +632,7 @@ def generate_worker(
                     "calibration_id": calibration_id,
                     "evaluated_model_kv_cache": False,
                     "generation_batch_size": batch_size,
+                    "tuning_prompt_ids": tuning_prompt_ids,
                 },
                 "status": "complete",
                 "repetitions": [
@@ -795,7 +808,7 @@ def select(model_key: str, calibration_id: str) -> dict:
             "selection_metric": COMPOSITION.calibration.selection_metric,
             "selection_metric_description": selection_description,
             "metric_configuration": metric_configuration,
-            "tuning_samples": 50,
+            "tuning_samples": len(multilingual_calibration_splits()["tuning"]),
             "tuning_repetitions": 1,
             "evaluated_model_kv_cache": False,
             "q_over_r": list(Q_OVER_R),
@@ -909,6 +922,8 @@ def calibrate(
             == expected_metric_configuration
             and bool(protocol.get("lambda_sweep_enabled", False))
             == LAMBDA_SWEEP.enabled
+            and int(protocol.get("tuning_samples", -1))
+            == len(multilingual_calibration_splits()["tuning"])
         ):
             return
     if LAMBDA_SWEEP.enabled:
