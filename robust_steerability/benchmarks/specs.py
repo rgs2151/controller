@@ -80,4 +80,12 @@ MODELS = {
         8,
         16,
     ),
+    "phi4_mini_instruct": ModelSpec(
+        "phi4_mini_instruct",
+        "Phi-4-mini-instruct",
+        "microsoft/Phi-4-mini-instruct",
+        "cfbefacb99257ffa30c83adab238a50856ac3083",
+        8,
+        16,
+    ),
 }

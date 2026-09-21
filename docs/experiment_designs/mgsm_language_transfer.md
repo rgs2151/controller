@@ -2,8 +2,8 @@
 
 ## Pipeline card
 
-- **Status:** Qwen3-4B is complete; the first Llama-3.2-3B-Instruct H∞ run is
-  superseded and awaits four-language H∞ recalibration.
+- **Status:** Qwen3-4B and Llama-3.2-3B-Instruct are complete;
+  Phi-4-mini-instruct is the next full model expansion.
 - **Task:** Solve MGSM arithmetic problems with native eight-shot examples.
 - **Distribution shift:** Input language changes across Chinese, French, Japanese,
   Swahili, and Telugu.
@@ -22,8 +22,8 @@
   10% normalized AXBench Overall.
 - **Final evaluation:** 100 matched problems × 5 held-out languages;
   deterministic generation with a 256-token cap.
-- **Models:** Qwen3-4B and Llama-3.2-3B-Instruct.
-- **Methods:** Original, S-PID, A-LQR, and H∞ for both models.
+- **Models:** Qwen3-4B, Llama-3.2-3B-Instruct, and Phi-4-mini-instruct.
+- **Methods:** Original, S-PID, A-LQR, and H∞ for every model.
 - **Scoring:** Exact final-number accuracy, Spanish adherence, instruction
   relevance, fluency, and overall steering.
 - **Evaluation size:** Per model, 600 H∞ selection generations and 2,000 final
@@ -36,7 +36,7 @@ question itself moves into unseen input languages, while retaining correctness?
 
 ## Frozen scope
 
-- **Models:** Qwen3-4B and Llama-3.2-3B-Instruct.
+- **Models:** Qwen3-4B, Llama-3.2-3B-Instruct, and Phi-4-mini-instruct.
 - **Methods:** Original, S-PID, A-LQR, and H∞.
 - **Steering rule:** `respond only in Spanish, and no other language is allowed`.
 - **Primary transfer languages:** Chinese, French, Japanese, Swahili, and Telugu.
@@ -79,8 +79,8 @@ question itself moves into unseen input languages, while retaining correctness?
   lambda-sweep implementation remains available but is disabled for every run.
 - **H∞ grid:** `R=1`, `Q/R in {0.01, 0.1, 1, 10}`, and
   `Qf/R in {0.01, 0.1, 0.316...}` at the fixed target.
-- **Objective:** mean of the per-response score `0.8 × exact-answer accuracy +
-  0.2 × (AXBench Overall / 2)`. AXBench Overall is itself the harmonic mean of
+- **Objective:** mean of the per-response score `0.9 × exact-answer accuracy +
+  0.1 × (AXBench Overall / 2)`. AXBench Overall is itself the harmonic mean of
   Spanish adherence, instruction relevance, and fluency. A zero on either axis
   removes only that axis's contribution rather than collapsing the entire score.
 
@@ -104,7 +104,8 @@ question itself moves into unseen input languages, while retaining correctness?
 ## Evaluation size
 
 - Completed Qwen: `100 × 5 languages × 4 methods = 2,000` generations.
-- Planned Llama: `100 × 5 languages × 4 methods = 2,000` generations.
+- Completed Llama: `100 × 5 languages × 4 methods = 2,000` generations.
+- Planned Phi: `100 × 5 languages × 4 methods = 2,000` generations.
 - H∞ selection per model: `12 × 50 = 600` cost-grid generations. There is no
   setpoint-multiplier sweep.
 - There are no repeated final-evaluation seeds.
@@ -115,3 +116,4 @@ question itself moves into unseen input languages, while retaining correctness?
 - [MGSM dataset](https://huggingface.co/datasets/juletxara/mgsm)
 - [AXBench paper](https://arxiv.org/abs/2501.17148)
 - [Llama 3.2 model card](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct)
+- [Phi-4-mini-instruct model card](https://huggingface.co/microsoft/Phi-4-mini-instruct)
