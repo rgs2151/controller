@@ -24,6 +24,7 @@ mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
+from matplotlib.offsetbox import AnchoredOffsetbox, HPacker, OffsetImage, TextArea
 from matplotlib.path import Path as MplPath
 from matplotlib.patches import PathPatch
 from matplotlib.patches import Circle, Polygon
@@ -34,6 +35,9 @@ DATA_PATH = ROOT / "cache" / "truthfulqa_figure_data.csv"
 PDF_DIR = ROOT / "plots" / "pdf"
 PNG_DIR = ROOT / "plots" / "figures"
 QWEN_LOGO = ROOT / "assets" / "logos" / "qwen-icon.svg"
+QWEN_LOGO_PNG = ROOT / "assets" / "logos" / "qwen-icon-transparent.png"
+LLAMA_LOGO = ROOT / "assets" / "model_logos" / "llama_hq.png"
+GEMMA_LOGO = ROOT / "assets" / "model_logos" / "gemma_hq.png"
 
 METHOD_ORDER = [
     "H-infinity",
@@ -213,7 +217,9 @@ def draw_qat_contours(
                 zorder=0,
             )
             indices = np.flatnonzero(visible)
-            label_fraction = 0.36 if 25.0 <= level <= 35.0 else 0.82
+            if float(np.ptp(quality_grid[visible])) < 0.025:
+                continue
+            label_fraction = 0.36 if 25.0 <= level <= 35.0 else 0.55
             label_index = indices[int(label_fraction * (len(indices) - 1))]
             ax.text(
                 quality_grid[label_index],
@@ -222,9 +228,10 @@ def draw_qat_contours(
                 color="#7B838D",
                 fontsize=9.5,
                 rotation=-18,
-                ha="left",
-                va="bottom",
+                ha="center",
+                va="center",
                 bbox={"fc": "white", "ec": "none", "pad": 0.35, "alpha": 0.78},
+                clip_on=True,
                 zorder=0.2,
             )
 
@@ -468,32 +475,50 @@ def add_horizontal_model_legend(
     fig: plt.Figure,
     grouped: OrderedDict[str, list[Result]],
 ) -> None:
-    """Draw a shared horizontal model legend using the model marks."""
+    """Draw the standard image-backed company/model legend."""
 
-    models = list(grouped)
-    centers = np.linspace(0.17, 0.83, len(models))
-    for index, (model, center) in enumerate(zip(models, centers)):
-        icon_ax = fig.add_axes([center - 0.075, 0.885, 0.036, 0.078])
-        icon_ax.set_xlim(0, 1)
-        icon_ax.set_ylim(0, 1)
-        icon_ax.axis("off")
-        draw_vector_model_mark(
-            icon_ax,
-            model,
-            0.5,
-            0.5,
-            MODEL_COLORS[index % len(MODEL_COLORS)],
-            scale=4.8,
+    entries = []
+    for index, model in enumerate(grouped):
+        normalized = model.lower()
+        if normalized.startswith("gemma"):
+            logo_path, zoom = GEMMA_LOGO, 0.0125
+        elif normalized.startswith("llama"):
+            logo_path, zoom = LLAMA_LOGO, 0.0125
+        elif normalized.startswith("qwen"):
+            logo_path, zoom = QWEN_LOGO_PNG, 0.0215
+        else:
+            raise ValueError(f"No company logo registered for {model!r}")
+        if not logo_path.exists():
+            raise FileNotFoundError(f"Missing model logo: {logo_path}")
+        entries.append(
+            HPacker(
+                children=[
+                    OffsetImage(plt.imread(logo_path), zoom=zoom),
+                    TextArea(
+                        model,
+                        textprops={
+                            "fontsize": 11.1,
+                            "fontweight": "bold",
+                            "color": MODEL_COLORS[index % len(MODEL_COLORS)],
+                        },
+                    ),
+                ],
+                align="center",
+                pad=0,
+                sep=4,
+            )
         )
-        fig.text(
-            center - 0.032,
-            0.924,
-            model,
-            ha="left",
-            va="center",
-            fontsize=11.2,
-            color=INK,
-        )
+    row = HPacker(children=entries, align="center", pad=0, sep=19)
+    legend = AnchoredOffsetbox(
+        loc="center",
+        child=row,
+        frameon=False,
+        pad=0,
+        borderpad=0,
+        bbox_to_anchor=(0.5, 0.955),
+        bbox_transform=fig.transFigure,
+    )
+    fig.add_artist(legend)
 
 
 def build_figure(
@@ -541,7 +566,7 @@ def build_combined_figure(
     ood_x, ood_y = shared_limits(grouped_ood)
     shared_y = (min(id_y[0], ood_y[0]), max(id_y[1], ood_y[1]))
 
-    fig, axes = plt.subplots(1, 2, figsize=(13.4, 5.6))
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.25))
     draw_panel(axes[0], grouped_id, id_x, shared_y)
     draw_panel(axes[1], grouped_ood, ood_x, shared_y)
     axes[0].set_title("A   In-distribution", loc="left", fontweight="bold")
@@ -552,27 +577,44 @@ def build_combined_figure(
     )
     axes[1].set_ylabel("")
     axes[1].tick_params(labelleft=False)
+    axes[0].set_xlabel("")
+    axes[1].set_xlabel("")
+    fig.supxlabel(
+        r"Quality bottleneck  $\min(\mathrm{IR}/2,\,F/2)$  $\rightarrow$",
+        x=0.53,
+        y=0.155,
+        fontsize=15.0,
+        color=INK,
+    )
 
     add_horizontal_model_legend(fig, grouped_id)
+    method_handles = method_legend_handles()
+    # Matplotlib fills multi-row legends down columns. Reorder the handles so
+    # the visible rows retain the canonical method sequence.
+    method_handles = [
+        method_handles[index]
+        for index in (0, 5, 1, 6, 2, 7, 3, 8, 4)
+    ]
     method_legend = fig.legend(
-        handles=method_legend_handles(),
+        handles=method_handles,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.020),
-        ncol=len(METHOD_ORDER),
+        bbox_to_anchor=(0.5, 0.012),
+        ncol=5,
         frameon=False,
-        fontsize=10.7,
+        fontsize=10.6,
         handlelength=0.78,
-        handletextpad=0.16,
-        columnspacing=0.55,
+        handletextpad=0.20,
+        columnspacing=0.85,
+        labelspacing=0.40,
         borderaxespad=0.0,
     )
     method_legend.get_texts()[0].set_fontweight("bold")
     fig.subplots_adjust(
-        left=0.070,
+        left=0.075,
         right=0.985,
-        top=0.825,
-        bottom=0.215,
-        wspace=0.16,
+        top=0.835,
+        bottom=0.275,
+        wspace=0.15,
     )
     return fig
 
