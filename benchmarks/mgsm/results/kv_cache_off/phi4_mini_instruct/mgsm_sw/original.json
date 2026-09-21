@@ -1,0 +1,17 @@
+{
+  "model": [
+    "microsoft/Phi-4-mini-instruct",
+    "cfbefacb99257ffa30c83adab238a50856ac3083"
+  ],
+  "input_language": "sw",
+  "method": "original",
+  "sample_count": 100,
+  "metrics": {
+    "mgsm_exact_match.score": 0.32,
+    "mgsm_exact_match.valid_rate": 1.0,
+    "axbench_rule_spanish.score": 0.0,
+    "axbench_instruction_relevance.score": 1.67,
+    "axbench_fluency.score": 1.36,
+    "mgsm_axbench_overall.score": 0.0
+  }
+}

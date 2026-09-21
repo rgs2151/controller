@@ -1,0 +1,130 @@
+{
+  "schema_version": 2,
+  "run_id": "mgsm-phi4-mini-artifacts-remote1",
+  "status": "complete",
+  "started_at_utc": "2026-09-21T19:15:33.688999+00:00",
+  "benchmark": "mgsm",
+  "model": "phi4_mini_instruct",
+  "stage": "artifacts",
+  "methods": [
+    "original",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "zh",
+    "fr",
+    "ja",
+    "sw",
+    "te"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "auto",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "scorers": "default",
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "h_infinity_fixed_parameters": null,
+    "h_infinity_lambda_sweep": {
+      "enabled": false,
+      "values": [
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0,
+        1.5
+      ],
+      "fixed_q_over_r": 0.1,
+      "fixed_q_final_over_r": 0.1,
+      "fixed_r": 1.0,
+      "selection_metric": "mean_axbench_overall"
+    }
+  },
+  "command": [
+    "/tmp/controller-remote1/robust_steerability/benchmarks/mgsm.py",
+    "artifacts",
+    "--model",
+    "phi4_mini_instruct",
+    "--methods",
+    "original,alqr,h_infinity",
+    "--devices",
+    "auto",
+    "--run-id",
+    "mgsm-phi4-mini-artifacts-remote1"
+  ],
+  "working_directory": "/tmp/controller-remote1",
+  "git": {
+    "commit": "fc181979a3417da5750b14e09bc88021d26c60c1",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "vm-1790008452670085635",
+    "lightning_cloudspace_id": "01m2ges9x7p9xpz3z1b9208rk6",
+    "lightning_cloudspace_host": "01m2ges9x7p9xpz3z1b9208rk6.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 3,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 4,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 5,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 6,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 7,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      }
+    ],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/mgsm/phi4_mini_instruct",
+    "huggingface_model_cache": "/tmp/robust-steerability/huggingface",
+    "staged_model_snapshot": "/tmp/robust-steerability/huggingface/models--microsoft--Phi-4-mini-instruct/snapshots/cfbefacb99257ffa30c83adab238a50856ac3083"
+  },
+  "finished_at_utc": "2026-09-21T19:39:55.589096+00:00",
+  "elapsed_seconds": 1459.121114783
+}
