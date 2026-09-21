@@ -11,7 +11,7 @@ five transfer languages: Chinese, French, Japanese, Swahili, and Telugu.
   Q/R–Qf/R grid at the same fixed `lambda=1.5` target used by A-LQR. The optional
   lambda-sweep machinery remains available but is disabled. H∞ fits its
   disturbance geometry on 200 translated GSM8K prompts balanced across Bengali,
-  German, Russian, and Thai, then selects the cost grid on 50 additional disjoint
+  German, Russian, and Thai, then selects the cost grid on 100 additional disjoint
   prompts in the same four-language mixture. Selection uses the mean per-response
   accuracy-weighted additive combination of 90% exact-answer accuracy and 10%
   normalized AXBench Overall.
@@ -29,10 +29,10 @@ evaluation never refits the controller by language.
 
 Qwen3-4B is complete under its original English calibration protocol. The first
 Llama-3.2-3B-Instruct H∞ run exposed calibration saturation and is retained for
-comparison. Phi-4-mini-instruct is registered as the next three-method model
-expansion and uses the four-language calibration specified above. S-PID remains
-available as an optional composable method, but is not part of the active MGSM
-protocol.
+comparison. Phi-4-mini-instruct and Granite-3.3-2B-Instruct are registered as
+three-method model expansions and use the four-language calibration specified
+above. S-PID remains available as an optional composable method, but is not part
+of the active MGSM protocol.
 
 ```bash
 python -m robust_steerability.benchmarks.mgsm artifacts --model llama32_3b_instruct --methods original,alqr,h_infinity --devices auto
@@ -41,8 +41,9 @@ python -m robust_steerability.benchmarks.mgsm evaluate --model llama32_3b_instru
 python -m robust_steerability.benchmarks.mgsm score --model llama32_3b_instruct --methods original,alqr,h_infinity --scorers default --devices auto
 ```
 
-For the Phi expansion, replace the model key above with
-`phi4_mini_instruct`. Its artifacts, calibration, generations, scores, and
-results remain isolated under that model key.
+For the Phi or Granite expansion, replace the model key above with
+`phi4_mini_instruct` or `granite33_2b_instruct`. Each model's artifacts,
+calibration, generations, scores, and results remain isolated under its model
+key.
 
 Use `--datasets all` only for the deferred 11-language expansion.

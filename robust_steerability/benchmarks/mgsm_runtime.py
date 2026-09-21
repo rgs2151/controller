@@ -51,6 +51,7 @@ DEFAULT_BATCH_SIZE = {
     "qwen3_4b": 32,
     "llama32_3b_instruct": 32,
     "phi4_mini_instruct": 32,
+    "granite33_2b_instruct": 32,
 }
 EVALUATION_SAMPLE_SEED = 42
 MAX_NEW_TOKENS = 256
