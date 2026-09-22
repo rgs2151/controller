@@ -13,6 +13,7 @@ class ModelSpec:
     revision: str
     activation_batch_size: int
     jacobian_vjp_chunk_size: int
+    devices_per_worker: int = 1
 
 
 MODELS = {
@@ -79,6 +80,15 @@ MODELS = {
         "0e9e39f249a16976918f6564b8830bc894c89659",
         2,
         8,
+    ),
+    "llama31_70b_instruct": ModelSpec(
+        "llama31_70b_instruct",
+        "Llama-3.1-70B-Instruct",
+        "meta-llama/Llama-3.1-70B-Instruct",
+        "1605565b47bb9346c5515c34102e054115b4f98b",
+        1,
+        16,
+        2,
     ),
     "qwen3_4b": ModelSpec(
         "qwen3_4b",

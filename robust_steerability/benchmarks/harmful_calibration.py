@@ -32,6 +32,7 @@ from robust_steerability.judges.exact import harmonic_mean
 from robust_steerability.judges.harmbench import score_generations
 from robust_steerability.judges.specs import scorer_cache_path
 from robust_steerability.modeling.huggingface import load_access_token, release_cuda_memory
+from robust_steerability.experiments.resources import primary_cuda_device
 
 
 BENCHMARK = artifacts.BENCHMARK
@@ -48,6 +49,7 @@ DEFAULT_GENERATION_BATCH_SIZE = {
     "llama32_1b_instruct": 32,
     "llama32_3b_instruct": 16,
     "llama31_8b_instruct": 8,
+    "llama31_70b_instruct": 4,
 }
 
 
@@ -156,7 +158,7 @@ def fit_base(
         nominal_dynamics_path=artifact_root(BENCHMARK, model_key) / "dynamics.pt",
         calibration_data=calibration_data,
         settings=_settings(model_key, q, r, q_final),
-        controller_device=device,
+        controller_device=primary_cuda_device(device),
         semantic_calibration={
             "contrast": setpoint["contrast"],
             "feature_norm": setpoint["feature_norm"],
@@ -192,7 +194,7 @@ def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
             * (float(configuration["q_final"]) / float(settings["q_final"])),
         )
         solution = HInfinityController.synthesize(
-            candidate, device=device, options=options
+            candidate, device=primary_cuda_device(device), options=options
         ).solution()
         if not solution.feasible:
             raise ValueError(f"Infeasible HarmBench H-infinity point: {configuration}")
@@ -603,7 +605,7 @@ def calibrate(
         return
     fit_base(model_key, devices[0], calibration_id)
     release_cuda_memory(devices[0])
-    synthesize_grid(model_key, devices[0], calibration_id)
+    synthesize_grid(model_key, primary_cuda_device(devices[0]), calibration_id)
     jobs = [
         (
             f"hinf-grid-{index:02d}",
@@ -635,7 +637,7 @@ def calibrate(
     run_jobs(jobs, devices, log_root / "hinf-grid-generation")
     score_grid(
         model_key,
-        devices[0],
+        primary_cuda_device(devices[0]),
         calibration_id,
         classifier_batch_size=classifier_batch_size,
         api_concurrency=api_concurrency,

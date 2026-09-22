@@ -35,7 +35,11 @@ from robust_steerability.datasets.harmful import SAFE_CONCEPT
 from robust_steerability.experiments.methods import ControllerArtifact, build_policy
 from robust_steerability.judges.exact import harmonic_mean
 from robust_steerability.judges.specs import scorer_cache_path, scorer_spec
-from robust_steerability.modeling.huggingface import cuda_device_index
+from robust_steerability.modeling.huggingface import (
+    cuda_device_indices,
+    model_input_device,
+)
+from robust_steerability.experiments.resources import primary_cuda_device
 from robust_steerability.modeling.interventions import register_generation_policy_hooks
 from robust_steerability.source_methods.control import SetpointCalibration, build_alqr_policy
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
@@ -47,6 +51,7 @@ DEFAULT_BATCH_SIZE = {
     "llama32_1b_instruct": {"direct": 16, "human_jailbreak": 8},
     "llama32_3b_instruct": {"direct": 16, "human_jailbreak": 8},
     "llama31_8b_instruct": {"direct": 8, "human_jailbreak": 4},
+    "llama31_70b_instruct": {"direct": 8, "human_jailbreak": 4},
 }
 MAX_NEW_TOKENS = 512
 
@@ -74,6 +79,17 @@ def evaluation_records(source: dict, condition: str, behavior_count: int | None)
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _peak_memory(device: str, reserved: bool) -> int | dict[str, int]:
+    indices = cuda_device_indices(device)
+    measure = (
+        torch.cuda.max_memory_reserved
+        if reserved
+        else torch.cuda.max_memory_allocated
+    )
+    values = {str(index): measure(index) for index in indices}
+    return values[str(indices[0])] if len(indices) == 1 else values
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -151,7 +167,7 @@ def policy(model_key: str, method: str, calibration_id: str, device: str):
             q=float(parameters["q"]),
             r=float(parameters["r"]),
             q_final=float(parameters["q_final"]),
-            device=device,
+            device=primary_cuda_device(device),
         )
     root = calibration_root(BENCHMARK, model_key, method, calibration_id)
     selection = json.loads((root / "selection.json").read_text())
@@ -202,7 +218,7 @@ def generate_completions(
         batch = prompts[start : start + batch_size]
         encoded = tokenizer(
             batch, return_tensors="pt", padding=True, truncation=False
-        ).to(next(model.parameters()).device)
+        ).to(model_input_device(model))
         input_width = int(encoded["input_ids"].shape[1])
         handles = (
             register_generation_policy_hooks(model, steering_policy)
@@ -310,7 +326,8 @@ def generate_shard(
     }
     payload["attempts"].append(attempt)
     _write_json(destination, payload)
-    torch.cuda.reset_peak_memory_stats(cuda_device_index(device))
+    for index in cuda_device_indices(device):
+        torch.cuda.reset_peak_memory_stats(index)
     try:
         model, tokenizer = load_model(model_key, device)
         steering_policy = policy(model_key, method, calibration_id, device)
@@ -361,12 +378,8 @@ def generate_shard(
                 "status": "complete",
                 "finished_at_utc": _utc_now(),
                 "elapsed_seconds": time.perf_counter() - started,
-                "gpu_peak_memory_allocated_bytes": torch.cuda.max_memory_allocated(
-                    cuda_device_index(device)
-                ),
-                "gpu_peak_memory_reserved_bytes": torch.cuda.max_memory_reserved(
-                    cuda_device_index(device)
-                ),
+                "gpu_peak_memory_allocated_bytes": _peak_memory(device, False),
+                "gpu_peak_memory_reserved_bytes": _peak_memory(device, True),
             }
         )
         payload["status"] = "complete"

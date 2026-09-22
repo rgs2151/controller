@@ -5,6 +5,7 @@ models = [
   "llama32_1b_instruct",
   "llama32_3b_instruct",
   "llama31_8b_instruct",
+  "llama31_70b_instruct",
 ]
 available_methods = ["original", "alqr", "h_infinity"]
 default_methods = ["original", "alqr", "h_infinity"]

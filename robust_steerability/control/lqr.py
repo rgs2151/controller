@@ -158,7 +158,8 @@ class LQRController(SynthesizedController):
     ) -> torch.Tensor:
         """Return the layer control coordinates for a state deviation."""
 
-        return feedback_input @ self.gains[layer_index].T
+        gain = self.layer_tensor("gains", self.gains, layer_index, feedback_input)
+        return feedback_input @ gain.T
 
     # Serialization.
 

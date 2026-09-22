@@ -429,7 +429,8 @@ class HInfinityController(SynthesizedController):
 
         if not self.feasible:
             raise RuntimeError("cannot use an infeasible H-infinity controller")
-        return feedback_input @ self.gains[layer_index].T
+        gain = self.layer_tensor("gains", self.gains, layer_index, feedback_input)
+        return feedback_input @ gain.T
 
     def solution(self) -> ControllerSolution:
         """Return a serializable copy of the synthesized H-infinity result."""

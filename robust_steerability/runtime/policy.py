@@ -63,6 +63,7 @@ class SemanticSetpointPolicy:
         self.controller.to(device=device, dtype=dtype)
         self.feature_unit = self.feature_unit.to(device=device, dtype=dtype)
         self.setpoints = self.setpoints.to(device=device, dtype=dtype)
+        self._layer_device_cache = {}
 
     def reset(self) -> None:
         self.controller.reset()
@@ -74,13 +75,22 @@ class SemanticSetpointPolicy:
         layer_index: int,
         activation: torch.Tensor,
     ) -> torch.Tensor:
-        feature = self.feature_unit[layer_index]
-        setpoint = self.setpoints[layer_index]
+        key = (layer_index, activation.device, activation.dtype)
+        if key not in self._layer_device_cache:
+            self._layer_device_cache[key] = (
+                self.feature_unit[layer_index].to(
+                    device=activation.device, dtype=activation.dtype
+                ),
+                self.setpoints[layer_index].to(
+                    device=activation.device, dtype=activation.dtype
+                ),
+            )
+        feature, setpoint = self._layer_device_cache[key]
         scalar_deviation = activation @ feature - setpoint
         state_deviation = scalar_deviation.unsqueeze(-1) * feature
         control = self.controller.control(layer_index, state_deviation)
-        channels = self.controller.control_channels
-        delta = control if channels is None else control @ channels[layer_index].T
+        channel = self.controller.control_channel(layer_index, control)
+        delta = control if channel is None else control @ channel.T
         if self.recorder is not None:
             self.recorder.append(layer_index, state=activation, feedback=state_deviation,
                                  control=control, deviation_control=control,
@@ -115,6 +125,7 @@ class ReducedStateSetpointPolicy:
         self.decoders = self.decoders.to(device=device, dtype=torch.float32)
         self.feature_unit = self.feature_unit.to(device=device, dtype=torch.float32)
         self.setpoints = self.setpoints.to(device=device, dtype=torch.float32)
+        self._layer_device_cache = {}
 
     def reset(self) -> None:
         self.controller.reset()
@@ -127,16 +138,26 @@ class ReducedStateSetpointPolicy:
         activation: torch.Tensor,
     ) -> torch.Tensor:
         activation_float = activation.float()
-        reduced = (
-            activation_float - self.means[layer_index]
-        ) @ self.encoders[layer_index]
-        feature = self.feature_unit[layer_index]
-        reference = self.setpoints[layer_index] * feature
+        key = (layer_index, activation.device)
+        if key not in self._layer_device_cache:
+            self._layer_device_cache[key] = tuple(
+                tensor[layer_index].to(device=activation.device, dtype=torch.float32)
+                for tensor in (
+                    self.means,
+                    self.encoders,
+                    self.decoders,
+                    self.feature_unit,
+                    self.setpoints,
+                )
+            )
+        mean, encoder, decoder, feature, setpoint = self._layer_device_cache[key]
+        reduced = (activation_float - mean) @ encoder
+        reference = setpoint * feature
         state_deviation = reduced - reference
         control = self.controller.control(layer_index, state_deviation)
-        channels = self.controller.control_channels
-        reduced_delta = control if channels is None else control @ channels[layer_index].T
-        hidden_delta = reduced_delta @ self.decoders[layer_index].T
+        channel = self.controller.control_channel(layer_index, control)
+        reduced_delta = control if channel is None else control @ channel.T
+        hidden_delta = reduced_delta @ decoder.T
         hidden_delta = hidden_delta.to(dtype=activation.dtype)
         if self.recorder is not None:
             self.recorder.append(layer_index, state=reduced, feedback=state_deviation,
