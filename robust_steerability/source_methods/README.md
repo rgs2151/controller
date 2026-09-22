@@ -43,9 +43,14 @@ on the final benchmark.
   and alpha 10; S-PID uses lambda 1 with Kp=.7, Ki=.01, and Kd=.1.
 - ITI and S-PID are never swept by this pipeline. Their saved selection files
   must equal the centralized project choices.
+- GPT-2 XL is outside the original comparison table. Its added truthfulness
+  rows use frozen, untuned project settings for all seven comparison methods:
+  ITI (32 heads, alpha 10), ActAdd (layer 24, strength 4), AcT (strength 1 at
+  the first four matched GPT-2 MLP modules), ODESteer (layer 24, time 50), and
+  S-PID (lambda 1, Kp=.7, Ki=.01, Kd=.1). No method is swept on TruthfulQA.
 
-These two choices are project assumptions, not values claimed by the source
-paper. All other fixed settings retain their source provenance.
+These project choices are assumptions, not values claimed by the source paper.
+All other fixed settings retain their source provenance.
 
 ## Provenance
 
