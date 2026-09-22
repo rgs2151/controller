@@ -9,9 +9,9 @@
   "metrics": {
     "mgsm_exact_match.score": 0.0,
     "mgsm_exact_match.valid_rate": 0.0,
-    "axbench_rule_spanish.score": 1.1,
-    "axbench_instruction_relevance.score": 0.05,
-    "axbench_fluency.score": 0.08,
-    "mgsm_axbench_overall.score": 0.024
+    "axbench_rule_spanish.score": 1.24,
+    "axbench_instruction_relevance.score": 0.07,
+    "axbench_fluency.score": 0.1,
+    "mgsm_axbench_overall.score": 0.0
   }
 }
