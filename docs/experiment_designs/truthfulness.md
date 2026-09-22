@@ -20,7 +20,8 @@
 - **Final evaluation:** 817 questions × 1 seed in English and Spanish; optional
   fixed 200-question five-shot MMLU.
 - **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, Qwen-2.5-32B, GPT-2 XL,
-  and Qwen-2.5-0.5B as an independently runnable future model.
+  OLMo-2-0325-32B-Instruct, and Qwen-2.5-0.5B as independently runnable model
+  entries.
 - **Methods:** Original, A-LQR, and H∞ by default; additional registered methods
   remain available for legacy comparisons.
 - **Scoring:** True, Informative, concept relevance, instruction relevance,
@@ -36,7 +37,7 @@ when the same questions are translated into Spanish?
 ## Frozen scope
 
 - **Models:** Gemma-2-2B, Llama-3-8B, Qwen-2.5-14B, Qwen-2.5-32B, GPT-2 XL,
-  and Qwen-2.5-0.5B.
+  OLMo-2-0325-32B-Instruct, and Qwen-2.5-0.5B.
 - **Default methods:** Original, A-LQR, and H∞.
 - **KV cache:** off for reported runs.
 - **Base task:** open-ended TruthfulQA.
@@ -64,9 +65,9 @@ when the same questions are translated into Spanish?
 
 ## 4. Controller selection
 
-- **A-LQR:** use the published setting where available; GPT-2 XL and
-  Qwen-2.5-0.5B reuse the frozen small-model project baseline (`lambda=3`,
-  `Q=0.1`, `R=1`, `Qf=0.3`) with no sweep.
+- **A-LQR:** use the published setting where available; GPT-2 XL,
+  Qwen-2.5-0.5B, and OLMo-2-0325-32B-Instruct reuse the frozen project baseline
+  (`lambda=3`, `Q=0.1`, `R=1`, `Qf=0.3`) with no sweep.
 - **Other baselines:** use their frozen published or project settings; do not
   sweep them on final TruthfulQA.
 - **H∞ development set:** 200 additional TruthfulQA prompts, disjoint from all

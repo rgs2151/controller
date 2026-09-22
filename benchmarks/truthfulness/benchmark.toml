@@ -1,7 +1,7 @@
 schema_version = 4
 benchmark = "truthfulness"
 base_dataset = "truthfulqa"
-models = ["gemma2b", "llama8b", "qwen14b", "qwen32b", "gpt2_xl", "qwen25_05b"]
+models = ["gemma2b", "llama8b", "qwen14b", "qwen32b", "gpt2_xl", "qwen25_05b", "olmo2_32b_instruct"]
 available_methods = ["original", "iti", "actadd", "mean_act", "linear_act", "pid_act", "odesteer", "spid", "alqr", "h_infinity"]
 default_methods = ["original", "alqr", "h_infinity"]
 default_datasets = ["id", "spanish", "mmlu"]

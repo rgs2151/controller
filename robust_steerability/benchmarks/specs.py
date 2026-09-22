@@ -65,6 +65,14 @@ MODELS = {
         "qwen32b", "Qwen-2.5-32B", "Qwen/Qwen2.5-32B",
         "1818d35814b8319459f4bd55ed1ac8709630f003", 2, 4,
     ),
+    "olmo2_32b_instruct": ModelSpec(
+        "olmo2_32b_instruct",
+        "OLMo-2-0325-32B-Instruct",
+        "allenai/OLMo-2-0325-32B-Instruct",
+        "b96024342a77a69aa0dda815c3454a671f477463",
+        2,
+        4,
+    ),
     "qwen25_3b_instruct": ModelSpec(
         "qwen25_3b_instruct",
         "Qwen-2.5-3B-Instruct",
