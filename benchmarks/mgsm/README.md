@@ -77,7 +77,9 @@ To evaluate a different point from a completed H-infinity calibration grid,
 promote the cached controller without rerunning disturbance fitting, grid
 generation, or calibration scoring. The command archives the previous active
 selection and controller under `selection_history/` and leaves the full grid
-unchanged:
+unchanged. Because the cached grid controller already records its synthesis
+diagnostics, promotion does not regenerate the multi-gigabyte optional diagnostic
+bundle:
 
 ```bash
 python -m robust_steerability.benchmarks.mgsm_calibration \
