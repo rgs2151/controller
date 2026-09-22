@@ -68,8 +68,12 @@ def runtime_provenance(device: str) -> dict:
     git_commit = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=repo, text=True
     ).strip()
-    git_status = subprocess.check_output(
-        ["git", "status", "--porcelain"], cwd=repo, text=True
+    git_status = (
+        ""
+        if os.environ.get("ROBUST_STEERING_SKIP_GIT_STATUS") == "1"
+        else subprocess.check_output(
+            ["git", "status", "--porcelain"], cwd=repo, text=True
+        )
     )
     packages = {}
     for package in ("accelerate", "bitsandbytes", "datasets", "numpy", "transformers"):

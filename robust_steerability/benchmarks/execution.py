@@ -37,6 +37,11 @@ def _write_json(path: Path, payload: object) -> None:
 
 
 def _git(command: list[str]) -> str:
+    if (
+        os.environ.get("ROBUST_STEERING_SKIP_GIT_STATUS") == "1"
+        and "status" in command
+    ):
+        return ""
     return subprocess.check_output(command, cwd=REPO_ROOT, text=True).strip()
 
 
