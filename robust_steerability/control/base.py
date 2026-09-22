@@ -25,6 +25,35 @@ class Controller(torch.nn.Module, ABC):
     def __init__(self, control_channels: torch.Tensor | None = None):
         super().__init__()
         self.register_buffer("control_channels", control_channels)
+        self._layer_device_cache: dict[tuple[str, int, torch.device, torch.dtype], torch.Tensor] = {}
+
+    def layer_tensor(
+        self,
+        name: str,
+        tensor: torch.Tensor,
+        layer_index: int,
+        reference: torch.Tensor,
+    ) -> torch.Tensor:
+        """Place one controller layer beside a model-parallel activation once."""
+
+        value = tensor[layer_index]
+        if value.device == reference.device and value.dtype == reference.dtype:
+            return value
+        key = (name, layer_index, reference.device, reference.dtype)
+        if key not in self._layer_device_cache:
+            self._layer_device_cache[key] = value.to(
+                device=reference.device, dtype=reference.dtype
+            )
+        return self._layer_device_cache[key]
+
+    def control_channel(
+        self, layer_index: int, reference: torch.Tensor
+    ) -> torch.Tensor | None:
+        if self.control_channels is None:
+            return None
+        return self.layer_tensor(
+            "control_channels", self.control_channels, layer_index, reference
+        )
 
     def reset(self) -> None:
         """Reset online controller state before an independent rollout."""
@@ -49,7 +78,8 @@ class Controller(torch.nn.Module, ABC):
         control = self.control(layer_index, feedback_input)
         if self.control_channels is None:
             return control
-        channel = self.control_channels[layer_index]
+        channel = self.control_channel(layer_index, feedback_input)
+        assert channel is not None
         return control @ channel.T
 
 

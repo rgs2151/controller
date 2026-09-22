@@ -61,5 +61,13 @@ def stage_model_snapshot(
             revision=revision,
             token=_optional_access_token(repo_root),
             cache_dir=cache_dir,
+            allow_patterns=[
+                "*.json",
+                "*.model",
+                "*.py",
+                "*.safetensors",
+                "*.tiktoken",
+                "*.txt",
+            ],
         )
     )

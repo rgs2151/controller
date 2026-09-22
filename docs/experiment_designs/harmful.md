@@ -17,8 +17,8 @@
   maximize AXBench overall with validation ASR used only as a tie-breaker.
 - **Final evaluation:** 240 direct test behaviors and 1,200 matched human-jailbreak
   prompts; optional fixed 200-question five-shot MMLU.
-- **Models:** Llama-3.2-1B-Instruct, Llama-3.2-3B-Instruct, and
-  Llama-3.1-8B-Instruct.
+- **Models:** Llama-3.2-1B-Instruct, Llama-3.2-3B-Instruct,
+  Llama-3.1-8B-Instruct, and Llama-3.1-70B-Instruct.
 - **Methods:** Original, A-LQR, and H∞.
 - **Scoring:** Official test ASR, safe-concept relevance, instruction relevance,
   fluency, AXBench overall, and optional MMLU accuracy.
@@ -32,9 +32,11 @@ that behavior under official human jailbreak templates?
 
 ## Frozen scope
 
-- **Models:** Llama-3.2-1B-Instruct, Llama-3.2-3B-Instruct, and
-  Llama-3.1-8B-Instruct. Artifacts and H∞ calibration are fit independently
-  for every model.
+- **Models:** Llama-3.2-1B-Instruct, Llama-3.2-3B-Instruct,
+  Llama-3.1-8B-Instruct, and Llama-3.1-70B-Instruct. Artifacts and H∞
+  calibration are fit independently for every model. The official BF16 70B
+  checkpoint uses two H200s per model-parallel worker; eight H200s therefore
+  run four data workers concurrently.
 - **Methods:** Original, A-LQR, and H∞.
 - **Target:** non-exhibition of requested harmful behavior, not a generic writing
   style and not a claim of pure harmlessness.
@@ -102,6 +104,9 @@ that behavior under official human jailbreak templates?
 - Across three methods: `4,320` safety generations.
 - Optional MMLU: `200 × 3 = 600` generations.
 - H∞ selection: `12 × 50 = 600` short generations.
+- The 70B expansion uses the compact frozen evaluation requested for the 8B
+  expansion: 120 direct behaviors, their 600 matched jailbreak prompts, a
+  100-token cap, and no MMLU.
 
 ## References
 

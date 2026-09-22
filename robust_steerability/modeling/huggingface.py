@@ -16,6 +16,8 @@ from transformers import (
     BitsAndBytesConfig,
 )
 
+from robust_steerability.experiments.resources import cuda_devices_in_group
+
 
 @dataclass(frozen=True)
 class CausalModelLoadSpec:
@@ -47,9 +49,24 @@ def load_access_token(repo_root: Path) -> str:
 
 
 def cuda_device_index(device: str) -> int:
-    if not device.startswith("cuda:"):
+    devices = cuda_devices_in_group(device)
+    if len(devices) != 1:
+        raise ValueError(f"Expected one CUDA device, received group {device!r}")
+    if not devices[0].startswith("cuda:"):
         raise ValueError("The quantized model requires a CUDA device such as cuda:0")
-    return int(device.split(":", 1)[1])
+    return int(devices[0].split(":", 1)[1])
+
+
+def cuda_device_indices(device: str) -> list[int]:
+    """Return every CUDA index assigned to a single model worker."""
+
+    return [int(item.split(":", 1)[1]) for item in cuda_devices_in_group(device)]
+
+
+def model_input_device(model: AutoModelForCausalLM) -> torch.device:
+    """Return the device holding the token embedding of a possibly sharded LM."""
+
+    return model.get_input_embeddings().weight.device
 
 
 def release_cuda_memory(device: str) -> None:
@@ -57,8 +74,9 @@ def release_cuda_memory(device: str) -> None:
 
     gc.collect()
     if device.startswith("cuda:") and torch.cuda.is_available():
-        with torch.cuda.device(cuda_device_index(device)):
-            torch.cuda.empty_cache()
+        for index in cuda_device_indices(device):
+            with torch.cuda.device(index):
+                torch.cuda.empty_cache()
 
 
 def load_causal_model(
@@ -104,7 +122,10 @@ def load_causal_model(
         model_kwargs["config"] = config
     if spec.attention_implementation is not None:
         model_kwargs["attn_implementation"] = spec.attention_implementation
+    device_indices = cuda_device_indices(device)
     if spec.quantized:
+        if len(device_indices) != 1:
+            raise ValueError("4-bit loading does not support a CUDA device group")
         if not device.startswith("cuda:"):
             raise ValueError("4-bit model loading requires an explicit CUDA device")
         model_kwargs["quantization_config"] = BitsAndBytesConfig(
@@ -113,8 +134,27 @@ def load_causal_model(
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
         )
-        model_kwargs["device_map"] = {"": cuda_device_index(device)}
+        model_kwargs["device_map"] = {"": device_indices[0]}
         model = AutoModelForCausalLM.from_pretrained(spec.model_id, **model_kwargs)
+    elif len(device_indices) > 1:
+        model_kwargs["device_map"] = "balanced"
+        model_kwargs["max_memory"] = {
+            index: int(torch.cuda.get_device_properties(index).total_memory * 0.92)
+            for index in device_indices
+        }
+        model = AutoModelForCausalLM.from_pretrained(spec.model_id, **model_kwargs)
+        assigned = {
+            value
+            for value in model.hf_device_map.values()
+            if isinstance(value, int)
+        }
+        if not assigned or not assigned.issubset(set(device_indices)):
+            raise RuntimeError(
+                f"Model was not confined to requested CUDA group {device_indices}: "
+                f"{model.hf_device_map}"
+            )
+        if any(value in {"cpu", "disk"} for value in model.hf_device_map.values()):
+            raise RuntimeError("Model-parallel loading spilled weights to CPU or disk")
     else:
         model = AutoModelForCausalLM.from_pretrained(spec.model_id, **model_kwargs).to(
             device

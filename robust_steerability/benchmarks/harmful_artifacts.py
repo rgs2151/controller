@@ -46,6 +46,7 @@ MODEL_KEYS = (
     "llama32_1b_instruct",
     "llama32_3b_instruct",
     "llama31_8b_instruct",
+    "llama31_70b_instruct",
 )
 CONCEPT = "non-exhibition of requested harmful behavior"
 FIT_RECORDS_PER_CLASS = 50
@@ -217,7 +218,10 @@ def _class_response_mean(
         if batch_count == 0:
             raise ValueError("HarmBench batch has no retained response tokens")
         batch_sum = torch.stack(
-            [value.float()[valid].sum(dim=0).double().cpu() for value in captured]
+            [
+                value.float()[valid.to(value.device)].sum(dim=0).double().cpu()
+                for value in captured
+            ]
         )
         if total is None:
             total = torch.zeros_like(batch_sum)

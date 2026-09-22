@@ -57,7 +57,10 @@ class ReducedTrajectoryRecorder:
     def finish(self) -> dict:
         if not self.layers:
             raise ValueError("No controller interventions were recorded")
-        tensors = {name: torch.stack(values).cpu() for name, values in self.values.items()}
+        tensors = {
+            name: torch.stack([value.cpu() for value in values])
+            for name, values in self.values.items()
+        }
         control_energy = (
             tensors["control"].double().square().sum()
             if self.detail == "full"

@@ -109,13 +109,16 @@ def forward_with_policy(
                 if steer_start_index is None:
                     activation = args[0][:, -1, :]
                     delta = policy.activation_delta(layer_index, activation)
-                    changed[:, -1, :] = changed[:, -1, :] + delta.to(changed.dtype)
+                    changed[:, -1, :] = changed[:, -1, :] + delta.to(
+                        device=changed.device, dtype=changed.dtype
+                    )
                     controls[layer_index, -1, :] = delta[0].detach().cpu().float()
                 else:
                     activation = args[0][:, steer_start_index:, :]
                     delta = policy.activation_delta(layer_index, activation)
                     changed[:, steer_start_index:, :] = (
-                        changed[:, steer_start_index:, :] + delta.to(changed.dtype)
+                        changed[:, steer_start_index:, :]
+                        + delta.to(device=changed.device, dtype=changed.dtype)
                     )
                     controls[layer_index, steer_start_index:, :] = (
                         delta[0].detach().cpu().float()
@@ -167,7 +170,9 @@ def register_generation_policy_hooks(
             activation = (args[0] if policy.site == "block_input" else hidden)[:, -1, :]
             delta = policy.activation_delta(layer_index, activation)
             changed = hidden.clone()
-            changed[:, -1, :] = changed[:, -1, :] + delta.to(changed.dtype)
+            changed[:, -1, :] = changed[:, -1, :] + delta.to(
+                device=changed.device, dtype=changed.dtype
+            )
             if isinstance(output, tuple):
                 return (changed,) + output[1:]
             return changed
@@ -177,7 +182,9 @@ def register_generation_policy_hooks(
     def make_head_hook(layer_index):
         def hook(_module, args):
             changed = args[0].clone()
-            changed[:, -1, :] += policy.activation_delta(layer_index, args[0][:, -1, :]).to(changed.dtype)
+            changed[:, -1, :] += policy.activation_delta(
+                layer_index, args[0][:, -1, :]
+            ).to(device=changed.device, dtype=changed.dtype)
             return (changed,) + args[1:]
         return hook
 
@@ -245,7 +252,9 @@ def capture_last_token_policy_rollout(
                 )[:, -1, :]
                 delta = policy.activation_delta(layer_index, activation)
                 changed = hidden.clone()
-                changed[:, -1, :] = changed[:, -1, :] + delta.to(hidden.dtype)
+                changed[:, -1, :] = changed[:, -1, :] + delta.to(
+                    device=changed.device, dtype=hidden.dtype
+                )
             controls[layer_index] = delta.detach().cpu().float()
             if layer_index == layer_count - 1:
                 states[layer_count] = changed[:, -1, :].detach().cpu().float()

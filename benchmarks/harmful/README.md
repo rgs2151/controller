@@ -23,14 +23,15 @@ The steering target is non-exhibition/refusal, not an unrelated orthogonal
 concept. The test metric is attack success rate, where lower is better. Validation
 and test behaviors and classifiers remain separate.
 
-The comparison is Original, A-LQR, and H-infinity on three Llama-family scales:
-`meta-llama/Llama-3.2-1B-Instruct`, `meta-llama/Llama-3.2-3B-Instruct`, and
-`meta-llama/Llama-3.1-8B-Instruct`.
+The comparison is Original, A-LQR, and H-infinity on four Llama-family scales:
+`meta-llama/Llama-3.2-1B-Instruct`, `meta-llama/Llama-3.2-3B-Instruct`,
+`meta-llama/Llama-3.1-8B-Instruct`, and the official BF16
+`meta-llama/Llama-3.1-70B-Instruct`.
 
 Run each stage independently:
 
 ```bash
-MODEL=llama32_3b_instruct  # or llama31_8b_instruct
+MODEL=llama32_3b_instruct  # or llama31_8b_instruct / llama31_70b_instruct
 python -m robust_steerability.benchmarks.harmful artifacts \
   --model "$MODEL" --devices auto
 python -m robust_steerability.benchmarks.harmful calibrate \
@@ -39,6 +40,17 @@ python -m robust_steerability.benchmarks.harmful evaluate \
   --model "$MODEL" --devices auto
 python -m robust_steerability.benchmarks.harmful score \
   --model "$MODEL" --devices auto
+```
+
+For `llama31_70b_instruct`, `--devices auto` on eight H200s automatically
+forms four two-H200 model-parallel workers. The compact 70B evaluation command
+is:
+
+```bash
+python -m robust_steerability.benchmarks.harmful evaluate \
+  --model llama31_70b_instruct --devices auto \
+  --evaluation-behaviors 120 --max-new-tokens 100 \
+  --datasets direct,human_jailbreak --methods original,alqr,h_infinity
 ```
 
 Evaluation defaults to KV-cache off. A fixed H-infinity selection can replace

@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 
+from robust_steerability.modeling.huggingface import model_input_device
 from robust_steerability.modeling.interventions import _decoder_layers, _text_config
 from robust_steerability.source_methods.actadd import collect_positionwise_mean, fit_actadd_direction
 from robust_steerability.source_methods.control import SetpointCalibration, fit_setpoint_calibration
@@ -62,7 +63,7 @@ def collect_decoder_states(
     if tokenizer.padding_side != "left":
         raise ValueError("source last-token calibration requires left padding")
     layers = _decoder_layers(model)
-    device = next(model.parameters()).device
+    device = model_input_device(model)
     collected = []
     for start in range(0, len(texts), batch_size):
         tokenize_arguments = {"return_tensors": "pt", "padding": True, "truncation": True}
@@ -74,12 +75,12 @@ def collect_decoder_states(
 
         def make_input_hook(layer_index):
             def hook(_module, inputs):
-                states[layer_index] = inputs[0][:, -1, :].detach().float()
+                states[layer_index] = inputs[0][:, -1, :].detach().float().cpu()
             return hook
 
         def terminal_hook(_module, _inputs, output):
             hidden = output[0] if isinstance(output, tuple) else output
-            states[-1] = hidden[:, -1, :].detach().float()
+            states[-1] = hidden[:, -1, :].detach().float().cpu()
 
         for layer_index, layer in enumerate(layers):
             handles.append(layer.register_forward_pre_hook(make_input_hook(layer_index)))

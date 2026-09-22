@@ -36,6 +36,7 @@ from robust_steerability.modeling.interventions import (
     _decoder_layers,
     _text_config,
 )
+from robust_steerability.modeling.huggingface import model_input_device
 from robust_steerability.modeling.tokenization import (
     RAW_TEXT_TOKENIZATION,
     tokenize_prompts,
@@ -130,7 +131,7 @@ def collect_last_token_states(
     batches = []
     head_batches = []
     layers = _decoder_layers(model)
-    model_device = next(model.parameters()).device
+    model_device = model_input_device(model)
     for start in range(0, len(texts), batch_size):
         encoded = tokenize_prompts(
             tokenizer,
@@ -146,15 +147,15 @@ def collect_last_token_states(
         handles = []
         def head_hook(index):
             def capture(_module, args):
-                heads[index] = args[0][:, -1, :].detach().float()
+                heads[index] = args[0][:, -1, :].detach().float().cpu()
             return capture
         def input_hook(index):
             def capture(_module, args):
-                states[index] = args[0][:, -1, :].detach().float()
+                states[index] = args[0][:, -1, :].detach().float().cpu()
             return capture
         def terminal_hook(_module, _args, output):
             hidden = output[0] if isinstance(output, tuple) else output
-            states[-1] = hidden[:, -1, :].detach().float()
+            states[-1] = hidden[:, -1, :].detach().float().cpu()
         for index, layer in enumerate(layers):
             handles.append(layer.register_forward_pre_hook(input_hook(index)))
             projection = _attention_output_projection(model, layer)
@@ -217,7 +218,7 @@ def _fit_controller_inputs(
     jacobian_records = calibration_data["jacobian"]
     dataset = calibration_data["dataset"]
     fit_records = negative + positive
-    model_device = next(model.parameters()).device
+    model_device = model_input_device(model)
     runtime = {
         "model_device": str(model_device),
         "torch_version": str(torch.__version__),

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import torch
 
+from robust_steerability.modeling.huggingface import model_input_device
 from robust_steerability.modeling.interventions import _decoder_layers
 from robust_steerability.modeling.jacobians import capture_layer_inputs, layer_last_token_jacobian
 from robust_steerability.modeling.tokenization import (
@@ -28,7 +29,7 @@ def average_prompt_jacobians(model, tokenizer, records, *, cache_dir: Path,
         raise ValueError("Jacobian identification requires fitting prompts")
     cache_dir.mkdir(parents=True, exist_ok=True)
     layers = _decoder_layers(model)
-    device = next(model.parameters()).device
+    device = model_input_device(model)
     identity = {
         "schema_version": 1,
         "model": str(model.config._name_or_path),

@@ -19,7 +19,11 @@ from robust_steerability.benchmarks.execution import default_run_id, tracked_sta
 from robust_steerability.benchmarks.launcher import run_data_shards
 from robust_steerability.benchmarks.layout import calibration_root
 from robust_steerability.benchmarks.specs import MODELS
-from robust_steerability.experiments.resources import resolve_cuda_devices
+from robust_steerability.experiments.resources import (
+    group_cuda_workers,
+    primary_cuda_device,
+    resolve_cuda_devices,
+)
 from robust_steerability.judges import openai as openai_scoring
 from robust_steerability.judges.harmbench import score_generations
 from robust_steerability.judges.specs import scorer_spec
@@ -236,7 +240,7 @@ def score_stage(
             classifier_paths,
             runtime.cache_root(model_key, use_cache),
             "harmbench_test_success",
-            devices[0],
+            primary_cuda_device(devices[0]),
             load_access_token(artifacts.REPO_ROOT),
             batch_size=classifier_batch_size,
         )
@@ -331,7 +335,10 @@ def main() -> None:
         else None
     )
     use_cache = arguments.kv_cache == "on"
-    devices = resolve_cuda_devices(arguments.devices)
+    physical_devices = resolve_cuda_devices(arguments.devices)
+    devices = group_cuda_workers(
+        physical_devices, MODELS[arguments.model].devices_per_worker
+    )
     run_id = arguments.run_id or default_run_id("harmful", arguments.model, arguments.stage)
     with tracked_stage(
         run_id=run_id,

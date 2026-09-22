@@ -54,6 +54,7 @@ from robust_steerability.source_methods.protocol import (
     selected_parameters as resolve_selected_parameters,
 )
 from robust_steerability.source_methods.transport import register_transport_hooks
+from robust_steerability.experiments.resources import cuda_devices_in_group
 
 
 def _utc_now() -> str:
@@ -92,15 +93,23 @@ def runtime_provenance(device: str) -> dict:
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
     }
     if device.startswith("cuda:"):
-        device_index = int(device.split(":", 1)[1])
-        properties = torch.cuda.get_device_properties(device_index)
-        result["gpu"] = {
-            "logical_index": device_index,
-            "name": properties.name,
-            "total_memory_bytes": properties.total_memory,
-            "compute_capability": [properties.major, properties.minor],
-            "uuid": str(getattr(properties, "uuid", "")),
-        }
+        indices = [
+            int(item.split(":", 1)[1]) for item in cuda_devices_in_group(device)
+        ]
+        gpus = []
+        for device_index in indices:
+            properties = torch.cuda.get_device_properties(device_index)
+            gpus.append({
+                "logical_index": device_index,
+                "name": properties.name,
+                "total_memory_bytes": properties.total_memory,
+                "compute_capability": [properties.major, properties.minor],
+                "uuid": str(getattr(properties, "uuid", "")),
+            })
+        if len(gpus) == 1:
+            result["gpu"] = gpus[0]
+        else:
+            result["gpus"] = gpus
     elif device != "cpu":
         raise ValueError(f"Unsupported provenance device {device!r}")
     return result
