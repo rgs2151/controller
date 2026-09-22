@@ -70,3 +70,24 @@ python -m robust_steerability.benchmarks.mgsm score \
 
 Use `--replace-completed` only on the first evaluation attempt. If an interrupted
 evaluation is resumed, omit it so completed language shards are retained.
+
+## H-infinity reruns from an existing grid
+
+To evaluate a different point from a completed H-infinity calibration grid,
+promote the cached controller without rerunning disturbance fitting, grid
+generation, or calibration scoring. The command archives the previous active
+selection and controller under `selection_history/` and leaves the full grid
+unchanged:
+
+```bash
+python -m robust_steerability.benchmarks.mgsm_calibration \
+  --stage promote-grid --model llama32_3b_instruct \
+  --calibration-id selected --q-over-r 0.1 --q-final-over-r 0.1 --r 1
+python -m robust_steerability.benchmarks.mgsm evaluate \
+  --model llama32_3b_instruct --methods h_infinity --devices auto \
+  --generation-batch-size 64 --replace-completed
+python -m robust_steerability.benchmarks.mgsm score \
+  --model llama32_3b_instruct --methods h_infinity --devices auto \
+  --scorers default --api-concurrency 500 --api-batch-size 20 \
+  --replace-completed
+```

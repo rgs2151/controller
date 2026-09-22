@@ -835,6 +835,90 @@ def select(model_key: str, calibration_id: str) -> dict:
     return payload
 
 
+def promote_existing_grid_candidate(
+    model_key: str,
+    calibration_id: str,
+    *,
+    q_over_r: float,
+    q_final_over_r: float,
+    r: float,
+) -> dict:
+    """Promote one cached grid point while preserving the completed calibration."""
+
+    if min(q_over_r, q_final_over_r, r) <= 0:
+        raise ValueError("Q/R, Qf/R, and R must be positive")
+    root = _root(model_key, calibration_id)
+    selection_path = root / "selection.json"
+    controller_path = root / "controller.pt"
+    if not selection_path.exists() or not controller_path.exists():
+        raise FileNotFoundError(
+            "Promoting an MGSM grid point requires an existing completed selection"
+        )
+    saved = json.loads(selection_path.read_text())
+    if saved.get("protocol", {}).get("selection_strategy") != "grid":
+        raise ValueError("The active MGSM selection is not backed by a saved grid")
+    if not np.isclose(r, FIXED_R):
+        raise ValueError(f"The saved MGSM grid uses R={FIXED_R}; requested R={r}")
+
+    candidates = [
+        configuration
+        for configuration in grid(selected_multiplier(model_key, calibration_id))
+        if np.isclose(float(configuration["q_over_r"]), q_over_r)
+        and np.isclose(float(configuration["q_final_over_r"]), q_final_over_r)
+        and np.isclose(float(configuration["r"]), r)
+    ]
+    if len(candidates) != 1:
+        raise ValueError(
+            "Requested H-infinity costs do not identify exactly one saved MGSM grid point"
+        )
+    configuration = candidates[0]
+    grid_id = str(configuration["grid_id"])
+    candidate_path = (
+        _q_grid_root(model_key, calibration_id)
+        / "controllers"
+        / f"{grid_id}.pt"
+    )
+    if not candidate_path.exists():
+        raise FileNotFoundError(f"Missing cached MGSM grid controller: {candidate_path}")
+
+    previous_id = str(saved.get("selected", {}).get("configuration_id", "unknown"))
+    history_root = root / "selection_history" / previous_id
+    suffix = 1
+    while history_root.exists():
+        history_root = root / "selection_history" / f"{previous_id}_{suffix:02d}"
+        suffix += 1
+    history_root.mkdir(parents=True)
+    shutil.copy2(selection_path, history_root / "selection.json")
+    shutil.copy2(controller_path, history_root / "controller.pt")
+
+    controller = torch.load(candidate_path, map_location="cpu", weights_only=True)
+    _write_torch(controller_path, controller)
+    parameters = {
+        key: float(configuration[key])
+        for key in ("lambda", "q", "r", "q_final")
+    }
+    diagnostic = _freeze_selected_diagnostics(
+        model_key, calibration_id, parameters, controller
+    )
+    summaries = {
+        str(row.get("grid_id")): row for row in saved.get("grid", [])
+    }
+    selected_summary = dict(summaries.get(grid_id, configuration))
+    saved["selected"] = {
+        **selected_summary,
+        "configuration_id": grid_id,
+        "parameters": parameters,
+        "gamma_star": float(controller["gamma_star"]),
+        "source": "manually promoted from the completed MGSM calibration grid",
+    }
+    saved["diagnostic_bundle"] = str(diagnostic.relative_to(root))
+    saved.setdefault("selection_history", []).append(
+        str(history_root.relative_to(root))
+    )
+    _write_json(selection_path, saved)
+    return saved
+
+
 def select_fixed(
     model_key: str,
     device: str,
@@ -1037,6 +1121,7 @@ def main() -> None:
             "generate-worker",
             "score-grid",
             "select",
+            "promote-grid",
         ),
         required=True,
     )
@@ -1049,6 +1134,9 @@ def main() -> None:
     parser.add_argument("--generation-batch-size", type=int)
     parser.add_argument("--api-concurrency", type=int, default=500)
     parser.add_argument("--api-batch-size", type=int, default=20)
+    parser.add_argument("--q-over-r", type=float)
+    parser.add_argument("--q-final-over-r", type=float)
+    parser.add_argument("--r", type=float)
     arguments = parser.parse_args()
     if arguments.stage == "base":
         fit_base(arguments.model, arguments.device, arguments.calibration_id)
@@ -1087,8 +1175,21 @@ def main() -> None:
             api_concurrency=arguments.api_concurrency,
             api_batch_size=arguments.api_batch_size,
         )
-    else:
+    elif arguments.stage == "select":
         select(arguments.model, arguments.calibration_id)
+    else:
+        values = (arguments.q_over_r, arguments.q_final_over_r, arguments.r)
+        if any(value is None for value in values):
+            raise ValueError(
+                "promote-grid requires --q-over-r, --q-final-over-r, and --r"
+            )
+        promote_existing_grid_candidate(
+            arguments.model,
+            arguments.calibration_id,
+            q_over_r=float(arguments.q_over_r),
+            q_final_over_r=float(arguments.q_final_over_r),
+            r=float(arguments.r),
+        )
 
 
 if __name__ == "__main__":
