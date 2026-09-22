@@ -11,7 +11,12 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
 DEFAULT_OUTPUT = Path(__file__).with_name("mgsm_jackknife.json")
-MODELS = ("qwen3_4b", "llama32_3b_instruct", "phi4_mini_instruct")
+MODELS = (
+    "qwen3_4b",
+    "llama32_3b_instruct",
+    "phi4_mini_instruct",
+    "granite33_2b_instruct",
+)
 LANGUAGES = ("zh", "fr", "ja", "sw", "te")
 METHODS = ("original", "alqr", "h_infinity")
 SCORERS = (
@@ -26,6 +31,11 @@ GROUP_COUNT = 10
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache-root", action="append", default=[], metavar="MODEL=PATH")
+    parser.add_argument(
+        "--models",
+        default=",".join(MODELS),
+        help="Comma-separated model keys to recompute; unselected models remain unchanged.",
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     return parser.parse_args()
 
@@ -108,13 +118,23 @@ def _jackknife(values: dict[str, list[float]], groups: list[list[str]]) -> dict[
 
 def main() -> None:
     args = _arguments()
-    report: dict[str, object] = {
-        "schema_version": 1,
-        "method": "ten-group delete-one-group matched-question jackknife",
-        "group_count": GROUP_COUNT,
-        "models": {},
-    }
-    for model, root in _roots(args.cache_root).items():
+    selected_models = tuple(item.strip() for item in args.models.split(",") if item.strip())
+    unknown_models = sorted(set(selected_models) - set(MODELS))
+    if unknown_models:
+        raise ValueError(f"Unknown MGSM model keys: {unknown_models}")
+    report: dict[str, object] = (
+        json.loads(args.output.read_text())
+        if args.output.exists()
+        else {
+            "schema_version": 1,
+            "method": "ten-group delete-one-group matched-question jackknife",
+            "group_count": GROUP_COUNT,
+            "models": {},
+        }
+    )
+    roots = _roots(args.cache_root)
+    for model in selected_models:
+        root = roots[model]
         reference = _score_map(root, "mgsm_exact_match", "zh", "original")
         if reference is None:
             raise FileNotFoundError(f"Missing MGSM reference scores for {model}")

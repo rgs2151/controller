@@ -20,6 +20,8 @@ MODELS = (
     ("llama8b", "Llama-3-8B"),
     ("qwen14b", "Qwen-2.5-14B"),
     ("qwen32b", "Qwen-2.5-32B"),
+    ("olmo2_32b_instruct", "OLMo-2-32B"),
+    ("gpt2_xl", "GPT-2 XL"),
 )
 METHODS = (
     ("original", "Original", "Original"),
@@ -78,7 +80,7 @@ TRUTHFULQA_DOCUMENTATION = r"""## Method
 
 - Task: answer each of the 817 open-ended TruthfulQA generation questions. These questions target common misconceptions and invite answers that sound plausible but are false.
 - Prompt format: `Q: <English question> A:`. Each method generates at most 50 new tokens.
-- Evaluation: the full protocol is 817 questions × 5 seeded repetitions. The promoted Llama-3-8B H∞ row is the refreshed 817-question single pass, and the Qwen-2.5-32B block is the frozen compact run of 409 questions × 1 repetition. The evaluated model uses KV cache off, temperature 1.0, top-p 0.3, and repetition penalty 1.2.
+- Evaluation: the full protocol is 817 questions × 5 seeded repetitions. The promoted Llama-3-8B H∞ row, GPT-2 XL block, and OLMo-2-32B block are 817-question single passes; the Qwen-2.5-32B block is the frozen compact run of 409 questions × 1 repetition. The evaluated model uses KV cache off, temperature 1.0, top-p 0.3, and repetition penalty 1.2.
 - Example dataset item:
 
   ```text
@@ -98,7 +100,7 @@ TRUTHFULQA_DOCUMENTATION = r"""## Method
 | Instruction relevance (0–2) ↑ | Whether the response directly addresses the question. | AXBench rubric through `gpt-4o-mini`: 0 = unrelated, 1 = minimally or indirectly related, 2 = directly addresses the question. |
 | Fluency (0–2) ↑ | Language quality independent of factuality and relevance. | AXBench rubric through `gpt-4o-mini`: 0 = incomprehensible, 1 = noticeable errors, 2 = fluent or nearly flawless. |
 
-Full-protocol rows are mean ± standard error across five decoding repetitions. The refreshed Llama-3-8B H∞ row reports the full 817-question mean ± five-group delete-one-group question-jackknife standard error. Qwen-2.5-32B rows use the corresponding jackknife over their 409-question compact run. These jackknives measure question-sampling variability, not decoding-run variability. AXBench API scorers return ordered `{item_index, score, explanation}` records; the local TruthfulQA judges retain raw judge text, token IDs, parsed score, and validity.
+Full-protocol rows are mean ± standard error across five decoding repetitions. The refreshed Llama-3-8B H∞ row and all GPT-2 XL and OLMo-2-32B rows report the full 817-question mean ± five-group delete-one-group question-jackknife standard error. Qwen-2.5-32B rows use the corresponding jackknife over their 409-question compact run. These jackknives measure question-sampling variability, not decoding-run variability. AXBench API scorers return ordered `{item_index, score, explanation}` records; the local TruthfulQA judges retain raw judge text, token IDs, parsed score, and validity.
 
 ## Hyperparameters
 
@@ -138,6 +140,12 @@ Full-protocol rows are mean ± standard error across five decoding repetitions. 
 | Qwen-2.5-32B | S-PID | λ = 1.5; Kp = 0.7; Ki = 0.1; Kd = 0 |
 | Qwen-2.5-32B | A-LQR | λ = 2; Q = 1I; R = 5I; Qf = 0.1I |
 | Qwen-2.5-32B | H∞ | λ = 2; Q/R = 0.316227766; Qf/R = 0.01; R = 1; selected by the True/instruction-relevance/fluency calibration composite |
+| OLMo-2-32B | Original | No intervention |
+| OLMo-2-32B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; frozen project configuration, not tuned on TruthfulQA |
+| OLMo-2-32B | H∞ | λ = 3; Q/R = 0.1; Qf/R = 0.01; R = 1; selected on 200 prompts by 95% aggregate T×I plus 5% normalized fluency |
+| GPT-2 XL | Original | No intervention |
+| GPT-2 XL | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; frozen project configuration, not tuned on TruthfulQA |
+| GPT-2 XL | H∞ | λ = 3; Q/R = 0.0316227766; Qf/R = 0.1; R = 1; selected on 200 prompts by 95% aggregate T×I plus 5% normalized fluency |
 
 Controller fitting and evaluation use disjoint data.
 """
@@ -147,7 +155,7 @@ SPANISH_DOCUMENTATION = r"""## Method
 
 - Task: answer the same 817 TruthfulQA questions after the questions are translated to Spanish. The prompt explicitly requests an English answer.
 - Prompt format: `Pregunta: <Spanish question>\nResponde en inglés.\nRespuesta:`.
-- Evaluation: the full protocol uses the same 817 prompt identities and repetition order as English TruthfulQA, repeated 5 times. The promoted Llama-3-8B H∞ row is the refreshed 817-question single pass, and the Qwen-2.5-32B block is the matching compact run of 409 questions × 1 repetition. All rows use at most 50 new tokens, KV cache off, temperature 1.0, top-p 0.3, and repetition penalty 1.2.
+- Evaluation: the full protocol uses the same 817 prompt identities and repetition order as English TruthfulQA, repeated 5 times. The promoted Llama-3-8B H∞ row, GPT-2 XL block, and OLMo-2-32B block are 817-question single passes; the Qwen-2.5-32B block is the matching compact run of 409 questions × 1 repetition. All rows use at most 50 new tokens, KV cache off, temperature 1.0, top-p 0.3, and repetition penalty 1.2.
 - Example dataset item:
 
   ```text
@@ -173,7 +181,7 @@ SPANISH_DOCUMENTATION = r"""## Method
 | Instruction relevance (0–2) ↑ | Whether the response directly answers the question. | AXBench rubric through `gpt-4o-mini`: 0 = unrelated, 1 = minimally or indirectly related, 2 = directly addresses the question. |
 | Fluency (0–2) ↑ | Quality of the generated English. | AXBench rubric through `gpt-4o-mini`: 0 = incomprehensible, 1 = noticeable errors, 2 = fluent or nearly flawless. |
 
-Full-protocol rows are mean ± standard error across five decoding repetitions. The refreshed Llama-3-8B H∞ row reports the full 817-question mean ± five-group delete-one-group question-jackknife standard error; Qwen-2.5-32B uses the corresponding jackknife over 409 questions. The same fixed partitions are used for English and Spanish. These jackknives measure question-sampling variability, not decoding-run variability. The scorer models, revisions, output structures, and parsing rules are identical to the English TruthfulQA report.
+Full-protocol rows are mean ± standard error across five decoding repetitions. The refreshed Llama-3-8B H∞ row and all GPT-2 XL and OLMo-2-32B rows report the full 817-question mean ± five-group delete-one-group question-jackknife standard error; Qwen-2.5-32B uses the corresponding jackknife over 409 questions. The same fixed partitions are used for English and Spanish. These jackknives measure question-sampling variability, not decoding-run variability. The scorer models, revisions, output structures, and parsing rules are identical to the English TruthfulQA report.
 
 ## Hyperparameters
 
@@ -213,6 +221,12 @@ Full-protocol rows are mean ± standard error across five decoding repetitions. 
 | Qwen-2.5-32B | S-PID | λ = 1.5; Kp = 0.7; Ki = 0.1; Kd = 0; inherited unchanged from English TruthfulQA |
 | Qwen-2.5-32B | A-LQR | λ = 2; Q = 1I; R = 5I; Qf = 0.1I; inherited unchanged from English TruthfulQA |
 | Qwen-2.5-32B | H∞ | λ = 2; Q/R = 0.316227766; Qf/R = 0.01; R = 1; inherited unchanged from English TruthfulQA |
+| OLMo-2-32B | Original | No intervention; Spanish evaluation-only transfer |
+| OLMo-2-32B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; inherited unchanged from English TruthfulQA |
+| OLMo-2-32B | H∞ | λ = 3; Q/R = 0.1; Qf/R = 0.01; R = 1; inherited unchanged from English TruthfulQA |
+| GPT-2 XL | Original | No intervention; Spanish evaluation-only transfer |
+| GPT-2 XL | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; inherited unchanged from English TruthfulQA |
+| GPT-2 XL | H∞ | λ = 3; Q/R = 0.0316227766; Qf/R = 0.1; R = 1; inherited unchanged from English TruthfulQA |
 
 Spanish is evaluation-only: no controller is refit or reselected.
 """
@@ -296,6 +310,11 @@ MGSM_MODELS = (
         "Phi-4-mini",
         ("original", "alqr", "h_infinity"),
     ),
+    (
+        "granite33_2b_instruct",
+        "Granite-3.3-2B",
+        ("original", "alqr", "h_infinity"),
+    ),
 )
 MGSM_METRICS = (
     Metric("mgsm_exact_match.score", "Accuracy (%) ↑", r"Accuracy (\%) $\uparrow$", 1, True),
@@ -311,8 +330,8 @@ MGSM_DOCUMENTATION = r"""## Method
 - Task: solve matched MGSM arithmetic problems in Chinese, French, Japanese, Swahili, and Telugu while steering every response toward Spanish. English and Spanish are excluded from evaluation.
 - Direction: all 250 matched English–Spanish MGSM pairs define the Spanish steering direction. A-LQR and H∞ share the same 50-Jacobian dynamics estimate. H∞ additionally fits its disturbance geometry and robust controller without changing the shared dynamics matrix.
 - Prompting: each language uses its native eight-shot worked-example prompt. Generation is deterministic, limited to 256 new tokens, and runs with evaluated-model KV cache disabled.
-- Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`, and `microsoft/Phi-4-mini-instruct` at revision `cfbefacb99257ffa30c83adab238a50856ac3083`.
-- Evaluation size: all three models use the same frozen 100-problem subset per language. The active comparison reports Original, A-LQR, and H∞ on identical problem identities within each model. The summary macro-averages the five language means independently within each model.
+- Models: `Qwen/Qwen3-4B` at revision `1cfa9a7208912126459214e8b04321603b3df60c` with thinking mode disabled, `meta-llama/Llama-3.2-3B-Instruct` at revision `0cb88a4f764b7a12671c53f0838cd831a0843b95`, `microsoft/Phi-4-mini-instruct` at revision `cfbefacb99257ffa30c83adab238a50856ac3083`, and `ibm-granite/granite-3.3-2b-instruct` at revision `707f574c62054322f6b5b04b6d075f0a8f05e0f0`.
+- Evaluation size: all four models use the same frozen 100-problem subset per language. The active comparison reports Original, A-LQR, and H∞ on identical problem identities within each model. The summary macro-averages the five language means independently within each model.
 
 ## Measures
 
@@ -336,8 +355,11 @@ Values are full-sample means ± ten-group delete-one-group jackknife standard er
 | Llama-3.2-3B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
 | Llama-3.2-3B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 1; Qf/R = 0.01; R = 1; γ★ = 1.919061; costs selected from the frozen 12-point grid on 50 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using 80% exact-answer accuracy and 20% normalized AXBench Overall; no λ sweep |
 | Phi-4-mini-instruct | Original | No intervention |
-| Phi-4-mini-instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Phi-4-mini-instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.01I |
 | Phi-4-mini-instruct | H∞ | λ = 1.5 fixed; Q/R = 0.1; Qf/R = 0.01; R = 1; γ★ = 4.976749; costs selected from the frozen 12-point grid on 100 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using 90% exact-answer accuracy and 10% normalized AXBench Overall; no λ sweep |
+| Granite-3.3-2B-Instruct | Original | No intervention |
+| Granite-3.3-2B-Instruct | A-LQR | λ = 1.5; Q = 0.1I; R = 1I; Qf = 0.1I |
+| Granite-3.3-2B-Instruct | H∞ | λ = 1.5 fixed; Q/R = 0.01; Qf/R = 0.01; R = 1; γ★ = 1.100922; costs selected from the frozen 12-point grid on 100 disjoint translated GSM8K training prompts balanced across Bengali, German, Russian, and Thai using 90% exact-answer accuracy and 10% normalized AXBench Overall; no λ sweep |
 """
 
 
@@ -377,7 +399,7 @@ LCITE_MODELS = (
         "label": "Llama-3.2-1B-Instruct",
         "tex_label": "Llama-3.2-1B",
         "tex_font": r"\tiny",
-        "conditions": (("8k", "8K"),),
+        "conditions": (("8k", "8K"), ("16k", "16K")),
         "methods": LCITE_LLAMA_METHODS,
         "jackknife_path": LCITE_LLAMA_JACKKNIFE_PATH,
         "result_overrides": {},
@@ -392,8 +414,8 @@ LCITE_DOCUMENTATION = r"""## Method
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`. The direction uses all 72 released positive responses and 72 genre-matched negative responses from `pyvene/axbench-concept500` variant `prod_9b_l20_v1`.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller without changing that shared dynamics matrix.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Models: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths, and `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6` at 8K.
-- The summary keeps context lengths separate. Qwen reports 8K, 16K, and 32K; Llama currently reports the completed 8K condition only.
+- Models: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths, and `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6` at 8K and 16K.
+- The summary keeps context lengths separate. Qwen reports 8K, 16K, and 32K; Llama reports the completed 8K and 16K conditions.
 
 ## Measures
 
@@ -428,7 +450,7 @@ LCITE_SUMMARY_DOCUMENTATION = r"""## Method
 - Steering concept: AXBench concept 499, `positive sentiments and descriptions of enjoyable experiences`, using all 72 released positive responses and 72 genre-matched negative responses.
 - Controllers: A-LQR and H∞ share the same saved 50-Jacobian dynamics estimate. H∞ separately fits its 200-sample disturbance geometry and robust controller.
 - Generation: official one-shot HotpotQA prompt, deterministic decoding, at most 200 new tokens, and evaluated-model KV cache disabled for every method.
-- Models: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths, and `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6` at 8K.
+- Models: `Qwen/Qwen2.5-3B-Instruct` at revision `aa8e72537993ba99e69dfaafa59ed015b17504d1`, using the same static YaRN configuration at all three lengths, and `meta-llama/Llama-3.2-1B-Instruct` at revision `9213176726f574b556790deb65791e0c5aa438b6` at 8K and 16K.
 - Context conditions remain separate; no cross-length or cross-model average is reported.
 
 ## Measures
@@ -602,6 +624,17 @@ def _load_result(page: DatasetPage, model: str, method: str) -> dict | None:
             / page.namespace
             / f"{method}.json"
         )
+    elif page.benchmark == "truthfulness" and model in {
+        "gpt2_xl",
+        "olmo2_32b_instruct",
+    }:
+        path = (
+            root
+            / "calibrations/txi95_fluency05_n200_r1"
+            / model
+            / page.namespace
+            / f"{method}.json"
+        )
     else:
         path = root / model / page.namespace / f"{method}.json"
     return json.loads(path.read_text()) if path.exists() else None
@@ -658,11 +691,20 @@ def _rows(page: DatasetPage) -> list[dict]:
     rows = []
     for model_key, model_label in MODELS:
         methods = METHODS
-        if page.benchmark == "truthfulness" and model_key == "qwen32b":
+        if page.benchmark == "truthfulness" and model_key in {
+            "qwen32b",
+            "gpt2_xl",
+            "olmo2_32b_instruct",
+        }:
             methods = tuple(
                 method
                 for method in METHODS
-                if method[0] in {"original", "spid", "alqr", "h_infinity"}
+                if method[0]
+                in (
+                    {"original", "alqr", "h_infinity"}
+                    if model_key in {"gpt2_xl", "olmo2_32b_instruct"}
+                    else {"original", "spid", "alqr", "h_infinity"}
+                )
             )
         for method_key, markdown_label, tex_label in methods:
             result = _load_result(page, model_key, method_key)
@@ -718,7 +760,7 @@ def render_tex(page: DatasetPage, rows: list[dict]) -> str:
         else ""
     )
     uncertainty_note = (
-        " Full-protocol rows report mean $\\pm$ standard error across five decoding repetitions; refreshed Llama-3-8B $H_\\infty$ and compact Qwen-2.5-32B rows report five-group delete-one-group question-jackknife standard errors."
+        " Full-protocol rows report mean $\\pm$ standard error across five decoding repetitions; refreshed Llama-3-8B $H_\\infty$, GPT-2 XL, OLMo-2-32B, and compact Qwen-2.5-32B rows report five-group delete-one-group question-jackknife standard errors."
         if page.benchmark == "truthfulness"
         else " Repeated rows report mean $\\pm$ standard error; compact single-pass rows report means without an error term."
     )
@@ -761,7 +803,7 @@ def render_tex(page: DatasetPage, rows: list[dict]) -> str:
             )
         for method_index, row in enumerate(group):
             model = (
-                f"\\multirow{{{methods_per_model}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{row['model']}}}}}"
+                f"\\multirow{{{methods_per_model}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{\\tiny {row['model']}}}}}"
                 if method_index == 0
                 else ""
             )
@@ -1008,49 +1050,53 @@ def _mgsm_best_values(rows: list[dict]) -> tuple[float, ...]:
     )
 
 
-def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
+def _render_mgsm_full_tex(rows: list[dict]) -> str:
     column_count = len(MGSM_METRICS)
     caption = (
-        "Full MGSM multilingual-transfer results for Qwen3-4B, Llama-3.2-3B-Instruct, and Phi-4-mini-instruct on 100 matched questions per language. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors."
-        if full
-        else "Summary MGSM multilingual-transfer results for Qwen3-4B, Llama-3.2-3B-Instruct, and Phi-4-mini-instruct, macro-averaged equally across five languages. Values are full-sample means $\\pm$ ten-group matched-question jackknife standard errors."
+        "Full MGSM multilingual-transfer results for Qwen3-4B, "
+        "Llama-3.2-3B-Instruct, Phi-4-mini-instruct, and "
+        "Granite-3.3-2B-Instruct on 100 matched questions per language. "
+        "Values are full-sample means $\\pm$ ten-group matched-question "
+        "jackknife standard errors. Higher is better for every column."
     )
-    label = "tab:mgsm-full" if full else "tab:mgsm-overall"
-    lines = [
-        "% Generated by figs/bench_table/bench_table.py. Do not edit by hand.",
-        r"\begin{table*}[!htbp]",
-        r"\centering",
-        r"\definecolor{projectdarkred}{RGB}{128,0,0}",
-        f"\\caption{{{caption} Higher is better for every column.}}",
-        f"\\label{{{label}}}",
-        r"\small",
-        r"\renewcommand{\arraystretch}{1.08}",
-        r"\setlength{\tabcolsep}{5pt}",
-        (
-            r"\resizebox{0.80\textwidth}{!}{%"
-            if full
-            else r"\resizebox{\textwidth}{!}{%"
-        ),
-    ]
-    if full:
-        lines.append(f"\\begin{{tabular}}{{rrl{'c' * column_count}}}")
-        lines.append(
-            "Model & Language & Method & "
-            + " & ".join(
-                (r"\cellcolor{projectdarkred!10}" if index == 0 else "") + metric.tex
-                for index, metric in enumerate(MGSM_METRICS)
-            )
-            + r" \\"
+    lines = ["% Generated by figs/bench_table/bench_table.py. Do not edit by hand."]
+    model_pages = (MGSM_MODELS[:2], MGSM_MODELS[2:])
+    for page_index, models in enumerate(model_pages):
+        lines.extend(
+            [
+                r"\begin{table*}[!htbp]",
+                r"\centering",
+                r"\definecolor{projectdarkred}{RGB}{128,0,0}",
+                (
+                    f"\\caption{{{caption}}}"
+                    if page_index == 0
+                    else r"\caption*{\textit{Table 1 (continued).} Full MGSM multilingual-transfer results.}"
+                ),
+                r"\label{tab:mgsm-full}" if page_index == 0 else "",
+                r"\small",
+                r"\renewcommand{\arraystretch}{1.08}",
+                r"\setlength{\tabcolsep}{5pt}",
+                r"\resizebox{0.80\textwidth}{!}{%",
+                f"\\begin{{tabular}}{{rrl{'c' * column_count}}}",
+                "Model & Language & Method & "
+                + " & ".join(
+                    (r"\cellcolor{projectdarkred!10}" if index == 0 else "")
+                    + metric.tex
+                    for index, metric in enumerate(MGSM_METRICS)
+                )
+                + r" \\",
+                r"\midrule",
+            ]
         )
-        lines.append(r"\midrule")
-        for model_index, (model_key, model_label, model_methods) in enumerate(MGSM_MODELS):
+        for model_index, (model_key, model_label, model_methods) in enumerate(models):
             model_row_count = len(MGSM_LANGUAGES) * len(model_methods)
             model_row_index = 0
             for language_index, (_, language_label) in enumerate(MGSM_LANGUAGES):
                 group = [
                     row
                     for row in rows
-                    if row["model_key"] == model_key and row["language"] == language_label
+                    if row["model_key"] == model_key
+                    and row["language"] == language_label
                 ]
                 best_values = _mgsm_best_values(group)
                 for method_index, row in enumerate(group):
@@ -1059,7 +1105,11 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
                         if model_row_index == 0
                         else ""
                     )
-                    language = f"\\multirow{{{len(group)}}}{{*}}{{{language_label}}}" if method_index == 0 else ""
+                    language = (
+                        f"\\multirow{{{len(group)}}}{{*}}{{{language_label}}}"
+                        if method_index == 0
+                        else ""
+                    )
                     values = " & ".join(
                         _mgsm_tex_value(
                             value,
@@ -1067,61 +1117,108 @@ def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
                             metric,
                             emphasis=(
                                 "bold"
-                                if row["method_key"] == "h_infinity" and value == best_values[index]
+                                if row["method_key"] == "h_infinity"
+                                and value == best_values[index]
                                 else "underline"
-                                if row["method_key"] != "original" and value == best_values[index]
+                                if row["method_key"] != "original"
+                                and value == best_values[index]
                                 else None
                             ),
                             primary=index == 0,
                         )
-                        for index, (value, metric) in enumerate(zip(row["values"], MGSM_METRICS, strict=True))
+                        for index, (value, metric) in enumerate(
+                            zip(row["values"], MGSM_METRICS, strict=True)
+                        )
                     )
-                    lines.append(f"{model} & {language} & {row['method_tex']} & {values} \\\\")
+                    lines.append(
+                        f"{model} & {language} & {row['method_tex']} & {values} \\\\"
+                    )
                     model_row_index += 1
                     if row["method_key"] == "original":
                         lines.append(f"\\cmidrule(l){{3-{column_count + 3}}}")
                 if language_index != len(MGSM_LANGUAGES) - 1:
                     lines.append(f"\\cmidrule(l){{2-{column_count + 3}}}")
-            if model_index != len(MGSM_MODELS) - 1:
+            if model_index != len(models) - 1:
                 lines.append(r"\midrule")
-    else:
-        overall = _mgsm_overall_rows(rows)
-        lines.append(f"\\begin{{tabular}}{{rl{'c' * column_count}}}")
-        lines.append(
-            "Model & Method & "
-            + " & ".join(
-                (r"\cellcolor{projectdarkred!10}" if index == 0 else "") + metric.tex
-                for index, metric in enumerate(MGSM_METRICS)
-            )
-            + r" \\"
+        lines.extend(
+            [
+                r"\bottomrule",
+                r"\end{tabular}%",
+                r"}",
+                r"\end{table*}",
+                r"\clearpage" if page_index == 0 else "",
+            ]
         )
-        lines.append(r"\midrule")
-        for model_index, (model_key, model_label, _model_methods) in enumerate(MGSM_MODELS):
-            model_rows = [row for row in overall if row["model_key"] == model_key]
-            best_values = _mgsm_best_values(model_rows)
-            for method_index, row in enumerate(model_rows):
-                model = f"\\multirow{{{len(model_rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{\\scriptsize {model_label}}}}}" if method_index == 0 else ""
-                values = " & ".join(
-                    _mgsm_tex_value(
-                        value,
-                        row["standard_errors"][index],
-                        metric,
-                        emphasis=(
-                            "bold"
-                            if row["method_key"] == "h_infinity" and value == best_values[index]
-                            else "underline"
-                            if row["method_key"] != "original" and value == best_values[index]
-                            else None
-                        ),
-                        primary=index == 0,
-                    )
-                    for index, (value, metric) in enumerate(zip(row["values"], MGSM_METRICS, strict=True))
+    return "\n".join(line for line in lines if line)
+
+
+def render_mgsm_tex(rows: list[dict], *, full: bool) -> str:
+    if full:
+        return _render_mgsm_full_tex(rows)
+
+    column_count = len(MGSM_METRICS)
+    caption = (
+        "Summary MGSM multilingual-transfer results for Qwen3-4B, "
+        "Llama-3.2-3B-Instruct, Phi-4-mini-instruct, and "
+        "Granite-3.3-2B-Instruct, macro-averaged equally across five languages. "
+        "Values are full-sample means $\\pm$ ten-group matched-question "
+        "jackknife standard errors. Higher is better for every column."
+    )
+    lines = [
+        "% Generated by figs/bench_table/bench_table.py. Do not edit by hand.",
+        r"\begin{table*}[!htbp]",
+        r"\centering",
+        r"\definecolor{projectdarkred}{RGB}{128,0,0}",
+        f"\\caption{{{caption}}}",
+        r"\label{tab:mgsm-overall}",
+        r"\small",
+        r"\renewcommand{\arraystretch}{1.08}",
+        r"\setlength{\tabcolsep}{5pt}",
+        r"\resizebox{\textwidth}{!}{%",
+        f"\\begin{{tabular}}{{rl{'c' * column_count}}}",
+        "Model & Method & "
+        + " & ".join(
+            (r"\cellcolor{projectdarkred!10}" if index == 0 else "") + metric.tex
+            for index, metric in enumerate(MGSM_METRICS)
+        )
+        + r" \\",
+        r"\midrule",
+    ]
+    overall = _mgsm_overall_rows(rows)
+    for model_index, (model_key, model_label, _model_methods) in enumerate(MGSM_MODELS):
+        model_rows = [row for row in overall if row["model_key"] == model_key]
+        best_values = _mgsm_best_values(model_rows)
+        for method_index, row in enumerate(model_rows):
+            model = (
+                f"\\multirow{{{len(model_rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{\\scriptsize {model_label}}}}}"
+                if method_index == 0
+                else ""
+            )
+            values = " & ".join(
+                _mgsm_tex_value(
+                    value,
+                    row["standard_errors"][index],
+                    metric,
+                    emphasis=(
+                        "bold"
+                        if row["method_key"] == "h_infinity"
+                        and value == best_values[index]
+                        else "underline"
+                        if row["method_key"] != "original"
+                        and value == best_values[index]
+                        else None
+                    ),
+                    primary=index == 0,
                 )
-                lines.append(f"{model} & {row['method_tex']} & {values} \\\\")
-                if row["method_key"] == "original":
-                    lines.append(f"\\cmidrule(l){{2-{column_count + 2}}}")
-            if model_index != len(MGSM_MODELS) - 1:
-                lines.append(r"\midrule")
+                for index, (value, metric) in enumerate(
+                    zip(row["values"], MGSM_METRICS, strict=True)
+                )
+            )
+            lines.append(f"{model} & {row['method_tex']} & {values} \\\\ ")
+            if row["method_key"] == "original":
+                lines.append(f"\\cmidrule(l){{2-{column_count + 2}}}")
+        if model_index != len(MGSM_MODELS) - 1:
+            lines.append(r"\midrule")
     lines.extend([r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""])
     return "\n".join(lines)
 
