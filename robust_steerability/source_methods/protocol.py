@@ -70,6 +70,7 @@ MODEL_IDS = {
     "gemma9b": "google/gemma-2-9b",
     "qwen14b": "Qwen/Qwen2.5-14B",
     "qwen32b": "Qwen/Qwen2.5-32B",
+    "olmo32b": "allenai/OLMo-2-0325-32B-Instruct",
 }
 MODEL_KEYS = {model_id: key for key, model_id in MODEL_IDS.items()}
 
@@ -104,6 +105,8 @@ ALQR_PAPER_SELECTIONS = {
         "qwen14b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
         # First frozen setting in the paper-producing Qwen-32B protocol.
         "qwen32b": LQRSetting(multiplier=2.0, q=1.0, r=5.0, q_final=0.1),
+        # Frozen before evaluation; OLMo is not covered by the A-LQR paper.
+        "olmo32b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
     },
 }
 
@@ -337,7 +340,7 @@ def alqr_setting_source(behavior: str, model_id: str) -> str:
     """Describe whether one frozen setting came from upstream or this project."""
 
     key = model_key(model_id)
-    if behavior == "truthfulness" and key in {"gpt2xl", "qwen05b"}:
+    if behavior == "truthfulness" and key in {"gpt2xl", "qwen05b", "olmo32b"}:
         return "frozen project configuration; not tuned on TruthfulQA"
     return "published A-LQR configuration"
 
