@@ -9,7 +9,10 @@ import torch
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 
-from robust_steerability.modeling.interventions import _decoder_layers
+from robust_steerability.modeling.interventions import (
+    _attention_output_projection,
+    _decoder_layers,
+)
 
 
 @dataclass(frozen=True)
@@ -82,7 +85,7 @@ def register_iti_hooks(
         direction = direction.reshape(-1)
         if not torch.any(direction):
             continue
-        projection = layer.self_attn.o_proj
+        projection = _attention_output_projection(model, layer)
 
         def make_hook(value):
             def hook(_module, inputs):

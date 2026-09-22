@@ -50,6 +50,7 @@ from robust_steerability.source_methods.protocol import (
     act_module_patterns,
     calibration_counts,
     model_key,
+    parameter_selection_source,
     protocol_manifest,
     selected_parameters as resolve_selected_parameters,
 )
@@ -770,11 +771,7 @@ def fit_source_method_calibration(
         "method": method,
         "calibration_id": calibration_root.name,
         "parameters": parameters,
-        "source": (
-            "recorded development-set selection from the preserved source grid"
-            if method in {"iti", "spid"}
-            else "fixed source setting"
-        ),
+        "source": parameter_selection_source(method, behavior, model_id),
     }
     _write_json(calibration_root / "selection.json", selection)
     del model, tokenizer

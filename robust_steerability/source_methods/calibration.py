@@ -6,7 +6,11 @@ import numpy as np
 import torch
 
 from robust_steerability.modeling.huggingface import model_input_device
-from robust_steerability.modeling.interventions import _decoder_layers, _text_config
+from robust_steerability.modeling.interventions import (
+    _attention_output_projection,
+    _decoder_layers,
+    _text_config,
+)
 from robust_steerability.source_methods.actadd import collect_positionwise_mean, fit_actadd_direction
 from robust_steerability.source_methods.control import SetpointCalibration, fit_setpoint_calibration
 from robust_steerability.source_methods.iti import ITIFit, fit_iti
@@ -151,7 +155,8 @@ def collect_attention_head_activations(
             return hook
 
         for layer_index, layer in enumerate(layers):
-            handles.append(layer.self_attn.o_proj.register_forward_pre_hook(make_hook(layer_index)))
+            projection = _attention_output_projection(model, layer)
+            handles.append(projection.register_forward_pre_hook(make_hook(layer_index)))
         with torch.inference_mode():
             model(**encoded, use_cache=False, return_dict=True)
         for handle in handles:

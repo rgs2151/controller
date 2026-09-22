@@ -122,6 +122,9 @@ SPID_SOURCE_GRIDS = {
         "qwen32b": PIDSweep((1.0, 1.5), 0.7, 0.1, 0.0),
     },
     "truthfulness": {
+        # GPT-2 XL is outside the preserved comparison table. Freeze the same
+        # untuned central grid choice used for the small-model extension.
+        "gpt2xl": PIDSweep((0.5, 1.0, 1.5), 0.7, 0.01, 0.1),
         "gemma2b": PIDSweep((0.5, 1.0, 1.5), 0.7, 0.01, 0.1),
         "llama8b": PIDSweep((0.5, 1.0, 1.5), 0.1, 0.1, 0.0),
         "gemma9b": PIDSweep((0.5, 1.0, 1.5), 0.7, 0.05, 0.0),
@@ -134,6 +137,8 @@ SPID_SOURCE_GRIDS = {
 
 
 ACTADD_PAPER_SELECTIONS = {
+    # Project-frozen midpoint setting for the 48-block GPT-2 XL extension.
+    "gpt2xl": (24, 4.0),
     "llama1b": (8, 4.0),
     "gemma2b": (12, 4.0),
     "qwen3b": (13, 2.0),
@@ -153,6 +158,7 @@ ITI_SOURCE_GRIDS = {
 # sweeping them on the benchmark.
 SPID_PROJECT_SELECTIONS = {
     "truthfulness": {
+        "gpt2xl": {"lambda": 1.0, "kp": 0.7, "ki": 0.01, "kd": 0.1},
         "gemma2b": {"lambda": 1.0, "kp": 0.7, "ki": 0.01, "kd": 0.1},
         "llama8b": {"lambda": 1.0, "kp": 0.1, "ki": 0.1, "kd": 0.0},
         "qwen14b": {"lambda": 2.0, "kp": 0.5, "ki": 0.01, "kd": 0.01},
@@ -161,6 +167,7 @@ SPID_PROJECT_SELECTIONS = {
 }
 ITI_PROJECT_SELECTIONS = {
     "truthfulness": {
+        "gpt2xl": {"top_heads": 32, "alpha": 10.0},
         "gemma2b": {"top_heads": 32, "alpha": 10.0},
         "llama8b": {"top_heads": 32, "alpha": 10.0},
         "qwen14b": {"top_heads": 32, "alpha": 10.0},
@@ -172,6 +179,10 @@ ITI_PROJECT_SELECTIONS = {
 ACT_STRENGTH = 1.0
 ACT_ADAPTER_MODULE_LIMIT = 4
 ACT_MODULE_PATTERNS = {
+    "gpt2xl": (
+        r"transformer.h.*.mlp.c_fc",
+        r"transformer.h.*.mlp.c_proj",
+    ),
     "llama1b": (
         r"model.layers.*.mlp.up_proj",
         r"model.layers.*.mlp.down_proj",
@@ -209,6 +220,8 @@ ODESTEER_PAPER_SELECTIONS = {
         "qwen14b": (24, 65.0),
     },
     "truthfulness": {
+        # Project-frozen midpoint setting for the 48-block GPT-2 XL extension.
+        "gpt2xl": (24, 50.0),
         "gemma2b": (15, 50.0),
         # The truthfulness adapter did not preserve a final Llama selection.
         # Freeze its preserved same-model comparison setting without a sweep.
@@ -467,6 +480,21 @@ def selected_parameters(
     raise ValueError(f"Unsupported method {method!r}")
 
 
+def parameter_selection_source(method: str, behavior: str, model_id: str) -> str:
+    """Describe the provenance of one method's frozen parameters."""
+
+    key = model_key(model_id)
+    if method == "original":
+        return "not applicable"
+    if method == "alqr":
+        return alqr_setting_source(behavior, model_id)
+    if key == "gpt2xl" and behavior == "truthfulness":
+        return "frozen project configuration; not tuned on TruthfulQA"
+    if method in {"iti", "spid"}:
+        return "fixed project choice from the preserved source grid"
+    return "fixed source setting"
+
+
 def protocol_manifest(
     method: str,
     behavior: str,
@@ -522,12 +550,8 @@ def protocol_manifest(
         "method": method,
         "calibration": asdict(calibration),
         "selected_parameters": parameters,
-        "selection_stage": (
-            "fixed project choice from the preserved source grid"
-            if method in {"iti", "spid"}
-            else "fixed source setting"
-            if method != "original"
-            else "not applicable"
+        "selection_stage": parameter_selection_source(
+            method, behavior, model_id
         ),
         "method_details": method_details,
         "evaluation_samples": evaluation_samples,
