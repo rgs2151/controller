@@ -897,9 +897,6 @@ def promote_existing_grid_candidate(
         key: float(configuration[key])
         for key in ("lambda", "q", "r", "q_final")
     }
-    diagnostic = _freeze_selected_diagnostics(
-        model_key, calibration_id, parameters, controller
-    )
     summaries = {
         str(row.get("grid_id")): row for row in saved.get("grid", [])
     }
@@ -910,8 +907,9 @@ def promote_existing_grid_candidate(
         "parameters": parameters,
         "gamma_star": float(controller["gamma_star"]),
         "source": "manually promoted from the completed MGSM calibration grid",
+        "controller_source": str(candidate_path.relative_to(root)),
     }
-    saved["diagnostic_bundle"] = str(diagnostic.relative_to(root))
+    saved["diagnostic_bundle"] = None
     saved.setdefault("selection_history", []).append(
         str(history_root.relative_to(root))
     )
