@@ -1,0 +1,17 @@
+{
+  "model": [
+    "ibm-granite/granite-3.3-2b-instruct",
+    "707f574c62054322f6b5b04b6d075f0a8f05e0f0"
+  ],
+  "input_language": "fr",
+  "method": "original",
+  "sample_count": 100,
+  "metrics": {
+    "mgsm_exact_match.score": 0.33,
+    "mgsm_exact_match.valid_rate": 1.0,
+    "axbench_rule_spanish.score": 0.0,
+    "axbench_instruction_relevance.score": 1.68,
+    "axbench_fluency.score": 1.43,
+    "mgsm_axbench_overall.score": 0.0
+  }
+}
