@@ -31,7 +31,11 @@ from robust_steerability.control import (
 )
 from robust_steerability.experiments.methods import ControllerArtifact
 from robust_steerability.experiments.diagnostics import cpu_tensors, score
-from robust_steerability.modeling.interventions import _decoder_layers, _text_config
+from robust_steerability.modeling.interventions import (
+    _attention_output_projection,
+    _decoder_layers,
+    _text_config,
+)
 from robust_steerability.modeling.tokenization import (
     RAW_TEXT_TOKENIZATION,
     tokenize_prompts,
@@ -151,26 +155,9 @@ def collect_last_token_states(
         def terminal_hook(_module, _args, output):
             hidden = output[0] if isinstance(output, tuple) else output
             states[-1] = hidden[:, -1, :].detach().float()
-        model_type = _text_config(model).model_type
         for index, layer in enumerate(layers):
             handles.append(layer.register_forward_pre_hook(input_hook(index)))
-            if model_type == "gpt2":
-                projection = layer.attn.c_proj
-            elif model_type in {
-                "llama",
-                "phi3",
-                "qwen2",
-                "qwen3",
-                "mistral",
-                "gemma",
-                "gemma2",
-                "gemma3_text",
-            }:
-                projection = layer.self_attn.o_proj
-            else:
-                raise ValueError(
-                    f"Attention-head capture unsupported for {model_type}"
-                )
+            projection = _attention_output_projection(model, layer)
             handles.append(projection.register_forward_pre_hook(head_hook(index)))
         handles.append(layers[-1].register_forward_hook(terminal_hook))
         try:

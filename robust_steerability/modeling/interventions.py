@@ -56,6 +56,22 @@ def _model_device_and_dtype(
     return device, dtype
 
 
+def _attention_output_projection(
+    model: AutoModelForCausalLM,
+    layer: torch.nn.Module,
+) -> torch.nn.Module:
+    """Return one decoder layer's attention output projection."""
+
+    if model.config.model_type == "gpt2":
+        return layer.attn.c_proj
+    if hasattr(layer, "self_attn") and hasattr(layer.self_attn, "o_proj"):
+        return layer.self_attn.o_proj
+    raise ValueError(
+        "Unsupported CausalLM architecture: could not locate the attention "
+        "output projection (expected attn.c_proj or self_attn.o_proj)."
+    )
+
+
 def forward_with_policy(
     model: AutoModelForCausalLM,
     encoded: dict[str, torch.Tensor],
@@ -167,7 +183,7 @@ def register_generation_policy_hooks(
 
     for layer_index, layer in enumerate(layers):
         if policy.site == "attention_heads":
-            projection = layer.attn.c_proj if model.config.model_type == "gpt2" else layer.self_attn.o_proj
+            projection = _attention_output_projection(model, layer)
             handles.append(projection.register_forward_pre_hook(make_head_hook(layer_index)))
         else:
             handles.append(layer.register_forward_hook(make_hook(layer_index)))
