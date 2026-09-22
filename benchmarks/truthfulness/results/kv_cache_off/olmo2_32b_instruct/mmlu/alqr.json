@@ -1,0 +1,35 @@
+{
+  "identity": {
+    "base_benchmark": "truthfulness",
+    "model": [
+      "allenai/OLMo-2-0325-32B-Instruct",
+      "b96024342a77a69aa0dda815c3454a671f477463"
+    ],
+    "method": "alqr",
+    "dataset": [
+      "cais/mmlu",
+      "c30699e8356da336a370243923dbaf21066bb9fe"
+    ],
+    "distribution": "mmlu",
+    "role": "capability",
+    "kv_cache": false,
+    "scorers": [
+      "mmlu_accuracy"
+    ]
+  },
+  "evaluation_samples_per_repetition": 200,
+  "evaluation_repetitions": 1,
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "mmlu_accuracy": 24.0,
+      "samples": 200
+    }
+  ],
+  "metrics": {
+    "mmlu_accuracy": {
+      "mean": 24.0,
+      "standard_error": 3.0199337741083
+    }
+  }
+}
