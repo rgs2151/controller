@@ -1,0 +1,53 @@
+{
+  "identity": {
+    "schema_version": 1,
+    "model": [
+      "meta-llama/Llama-3.2-1B-Instruct",
+      "9213176726f574b556790deb65791e0c5aa438b6"
+    ],
+    "condition": "16k",
+    "method": "alqr",
+    "parameters": {
+      "lambda": 1.5,
+      "q": 0.1,
+      "r": 1.0,
+      "q_final": 0.1
+    },
+    "calibration_id": "selected",
+    "evaluated_model_kv_cache": false,
+    "generation_batch_size": 10,
+    "model_loading": {
+      "model_id": "meta-llama/Llama-3.2-1B-Instruct",
+      "revision": "9213176726f574b556790deb65791e0c5aa438b6",
+      "quantized": false,
+      "dtype": "bfloat16",
+      "attention_implementation": "sdpa",
+      "quantization_compute_dtype": "float16",
+      "rope_scaling": null
+    }
+  },
+  "model": [
+    "meta-llama/Llama-3.2-1B-Instruct",
+    "9213176726f574b556790deb65791e0c5aa438b6"
+  ],
+  "condition": "16k",
+  "method": "alqr",
+  "sample_count": 40,
+  "created_at_utc": "2026-09-21T23:58:49.407016+00:00",
+  "metrics": {
+    "lcite_answer_overlap.answer_recall": 0.5010416666666666,
+    "lcite_answer_overlap.answer_f1": 0.07040511106464006,
+    "lcite_answer_overlap.answer_precision": 0.03939588275607603,
+    "lcite_citation_nli.citation_f1": 0.014215686274509804,
+    "lcite_citation_nli.citation_count": 0.825,
+    "lcite_citation_nli.citation_precision": 0.0225,
+    "lcite_citation_nli.citation_recall": 0.010416666666666666,
+    "axbench_concept_relevance.score": 0.0,
+    "axbench_concept_relevance.item_index": 19.5,
+    "axbench_instruction_relevance.score": 1.15,
+    "axbench_instruction_relevance.item_index": 19.5,
+    "axbench_fluency.score": 1.225,
+    "axbench_fluency.item_index": 19.5,
+    "axbench_overall.score": 0.0
+  }
+}
