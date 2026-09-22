@@ -36,12 +36,25 @@
 | Qwen-2.5-32B | S-PID | 73.84 ± 1.87 | 96.82 ± 0.50 | 71.49 ± 1.84 | 1.40 ± 0.04 | 1.26 ± 0.02 |
 | Qwen-2.5-32B | A-LQR | 78.73 ± 1.97 | 97.31 ± 0.60 | 76.61 ± 1.97 | 1.53 ± 0.04 | 1.23 ± 0.01 |
 | Qwen-2.5-32B | H∞ (ours) | 82.15 ± 2.10 | 92.42 ± 1.25 | 75.92 ± 2.19 | 1.42 ± 0.03 | 1.16 ± 0.01 |
+| OLMo-2-32B | Original | 56.92 ± 2.36 | 98.78 ± 0.34 | 56.22 ± 2.15 | 1.59 ± 0.03 | 1.43 ± 0.02 |
+| OLMo-2-32B | A-LQR | 87.76 ± 1.50 | 93.15 ± 1.22 | 81.74 ± 0.65 | 1.31 ± 0.03 | 1.02 ± 0.01 |
+| OLMo-2-32B | H∞ (ours) | 92.66 ± 0.73 | 93.15 ± 0.80 | 86.31 ± 0.42 | 1.38 ± 0.03 | 1.12 ± 0.01 |
+| GPT-2 XL | Original | 28.89 ± 1.56 | 94.25 ± 0.42 | 27.22 ± 1.35 | 0.82 ± 0.01 | 1.08 ± 0.01 |
+| GPT-2 XL | ITI | 30.11 ± 0.73 | 95.84 ± 0.66 | 28.86 ± 0.58 | 0.90 ± 0.02 | 1.08 ± 0.01 |
+| GPT-2 XL | ActAdd | 36.60 ± 2.10 | 88.86 ± 1.46 | 32.52 ± 1.50 | 0.78 ± 0.03 | 1.02 ± 0.02 |
+| GPT-2 XL | Mean-AcT | 30.35 ± 1.37 | 95.84 ± 1.07 | 29.09 ± 1.40 | 0.91 ± 0.01 | 1.02 ± 0.02 |
+| GPT-2 XL | Linear-AcT | 29.50 ± 1.28 | 96.33 ± 0.91 | 28.42 ± 1.12 | 0.87 ± 0.02 | 1.11 ± 0.02 |
+| GPT-2 XL | PID-AcT | 29.87 ± 1.66 | 96.57 ± 1.05 | 28.84 ± 1.48 | 0.89 ± 0.03 | 1.09 ± 0.01 |
+| GPT-2 XL | ODESteer | 37.58 ± 2.86 | 92.90 ± 0.64 | 34.91 ± 2.58 | 0.89 ± 0.03 | 1.06 ± 0.02 |
+| GPT-2 XL | S-PID | 28.40 ± 1.16 | 86.90 ± 1.49 | 24.68 ± 1.00 | 0.84 ± 0.03 | 0.84 ± 0.02 |
+| GPT-2 XL | A-LQR | 31.21 ± 1.98 | 92.04 ± 1.00 | 28.73 ± 1.85 | 0.84 ± 0.02 | 1.05 ± 0.02 |
+| GPT-2 XL | H∞ (ours) | 46.76 ± 1.14 | 74.05 ± 1.05 | 34.62 ± 0.80 | 0.77 ± 0.03 | 0.72 ± 0.02 |
 
 ## Method
 
 - Task: answer each of the 817 open-ended TruthfulQA generation questions. These questions target common misconceptions and invite answers that sound plausible but are false.
 - Prompt format: `Q: <English question> A:`. Each method generates at most 50 new tokens.
-- Evaluation: the full protocol is 817 questions × 5 seeded repetitions. The promoted Llama-3-8B H∞ row is the refreshed 817-question single pass, and the Qwen-2.5-32B block is the frozen compact run of 409 questions × 1 repetition. The evaluated model uses KV cache off, temperature 1.0, top-p 0.3, and repetition penalty 1.2.
+- Evaluation: the full protocol is 817 questions × 5 seeded repetitions. The promoted Llama-3-8B H∞ row, GPT-2 XL block, and OLMo-2-32B block are 817-question single passes; the Qwen-2.5-32B block is the frozen compact run of 409 questions × 1 repetition. The evaluated model uses KV cache off, temperature 1.0, top-p 0.3, and repetition penalty 1.2.
 - Example dataset item:
 
   ```text
@@ -61,7 +74,7 @@
 | Instruction relevance (0–2) ↑ | Whether the response directly addresses the question. | AXBench rubric through `gpt-4o-mini`: 0 = unrelated, 1 = minimally or indirectly related, 2 = directly addresses the question. |
 | Fluency (0–2) ↑ | Language quality independent of factuality and relevance. | AXBench rubric through `gpt-4o-mini`: 0 = incomprehensible, 1 = noticeable errors, 2 = fluent or nearly flawless. |
 
-Full-protocol rows are mean ± standard error across five decoding repetitions. The refreshed Llama-3-8B H∞ row reports the full 817-question mean ± five-group delete-one-group question-jackknife standard error. Qwen-2.5-32B rows use the corresponding jackknife over their 409-question compact run. These jackknives measure question-sampling variability, not decoding-run variability. AXBench API scorers return ordered `{item_index, score, explanation}` records; the local TruthfulQA judges retain raw judge text, token IDs, parsed score, and validity.
+Full-protocol rows are mean ± standard error across five decoding repetitions. The refreshed Llama-3-8B H∞ row and all GPT-2 XL and OLMo-2-32B rows report the full 817-question mean ± five-group delete-one-group question-jackknife standard error. Qwen-2.5-32B rows use the corresponding jackknife over their 409-question compact run. These jackknives measure question-sampling variability, not decoding-run variability. AXBench API scorers return ordered `{item_index, score, explanation}` records; the local TruthfulQA judges retain raw judge text, token IDs, parsed score, and validity.
 
 ## Hyperparameters
 
@@ -101,5 +114,18 @@ Full-protocol rows are mean ± standard error across five decoding repetitions. 
 | Qwen-2.5-32B | S-PID | λ = 1.5; Kp = 0.7; Ki = 0.1; Kd = 0 |
 | Qwen-2.5-32B | A-LQR | λ = 2; Q = 1I; R = 5I; Qf = 0.1I |
 | Qwen-2.5-32B | H∞ | λ = 2; Q/R = 0.316227766; Qf/R = 0.01; R = 1; selected by the True/instruction-relevance/fluency calibration composite |
+| OLMo-2-32B | Original | No intervention |
+| OLMo-2-32B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; frozen project configuration, not tuned on TruthfulQA |
+| OLMo-2-32B | H∞ | λ = 3; Q/R = 0.1; Qf/R = 0.01; R = 1; selected on 200 prompts by 95% aggregate T×I plus 5% normalized fluency |
+| GPT-2 XL | Original | No intervention |
+| GPT-2 XL | ITI | 32 heads; α = 10; frozen untuned project setting |
+| GPT-2 XL | ActAdd | Layer 24; strength 4; frozen untuned project setting |
+| GPT-2 XL | Mean-AcT | First 4 matched GPT-2 MLP modules; strength 1; frozen untuned project setting |
+| GPT-2 XL | Linear-AcT | First 4 matched GPT-2 MLP modules; strength 1; frozen untuned project setting |
+| GPT-2 XL | PID-AcT | First 4 matched GPT-2 MLP modules; strength 1; frozen untuned project setting |
+| GPT-2 XL | ODESteer | Layer 24; time 50; Euler, 10 steps, 8,000 components, degree 2, γ = 0.1, coefficient 1; frozen untuned project setting |
+| GPT-2 XL | S-PID | λ = 1; Kp = 0.7; Ki = 0.01; Kd = 0.1; frozen untuned project setting |
+| GPT-2 XL | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; frozen project configuration, not tuned on TruthfulQA |
+| GPT-2 XL | H∞ | λ = 3; Q/R = 0.0316227766; Qf/R = 0.1; R = 1; selected on 200 prompts by 95% aggregate T×I plus 5% normalized fluency |
 
 Controller fitting and evaluation use disjoint data.

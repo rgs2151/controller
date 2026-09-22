@@ -144,6 +144,13 @@ Full-protocol rows are mean ± standard error across five decoding repetitions. 
 | OLMo-2-32B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; frozen project configuration, not tuned on TruthfulQA |
 | OLMo-2-32B | H∞ | λ = 3; Q/R = 0.1; Qf/R = 0.01; R = 1; selected on 200 prompts by 95% aggregate T×I plus 5% normalized fluency |
 | GPT-2 XL | Original | No intervention |
+| GPT-2 XL | ITI | 32 heads; α = 10; frozen untuned project setting |
+| GPT-2 XL | ActAdd | Layer 24; strength 4; frozen untuned project setting |
+| GPT-2 XL | Mean-AcT | First 4 matched GPT-2 MLP modules; strength 1; frozen untuned project setting |
+| GPT-2 XL | Linear-AcT | First 4 matched GPT-2 MLP modules; strength 1; frozen untuned project setting |
+| GPT-2 XL | PID-AcT | First 4 matched GPT-2 MLP modules; strength 1; frozen untuned project setting |
+| GPT-2 XL | ODESteer | Layer 24; time 50; Euler, 10 steps, 8,000 components, degree 2, γ = 0.1, coefficient 1; frozen untuned project setting |
+| GPT-2 XL | S-PID | λ = 1; Kp = 0.7; Ki = 0.01; Kd = 0.1; frozen untuned project setting |
 | GPT-2 XL | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; frozen project configuration, not tuned on TruthfulQA |
 | GPT-2 XL | H∞ | λ = 3; Q/R = 0.0316227766; Qf/R = 0.1; R = 1; selected on 200 prompts by 95% aggregate T×I plus 5% normalized fluency |
 
@@ -225,6 +232,13 @@ Full-protocol rows are mean ± standard error across five decoding repetitions. 
 | OLMo-2-32B | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; inherited unchanged from English TruthfulQA |
 | OLMo-2-32B | H∞ | λ = 3; Q/R = 0.1; Qf/R = 0.01; R = 1; inherited unchanged from English TruthfulQA |
 | GPT-2 XL | Original | No intervention; Spanish evaluation-only transfer |
+| GPT-2 XL | ITI | 32 heads; α = 10; inherited unchanged from English TruthfulQA |
+| GPT-2 XL | ActAdd | Layer 24; strength 4; inherited unchanged from English TruthfulQA |
+| GPT-2 XL | Mean-AcT | First 4 matched GPT-2 MLP modules; strength 1; inherited unchanged from English TruthfulQA |
+| GPT-2 XL | Linear-AcT | First 4 matched GPT-2 MLP modules; strength 1; inherited unchanged from English TruthfulQA |
+| GPT-2 XL | PID-AcT | First 4 matched GPT-2 MLP modules; strength 1; inherited unchanged from English TruthfulQA |
+| GPT-2 XL | ODESteer | Layer 24; time 50; Euler, 10 steps, 8,000 components, degree 2, γ = 0.1, coefficient 1; inherited unchanged from English TruthfulQA |
+| GPT-2 XL | S-PID | λ = 1; Kp = 0.7; Ki = 0.01; Kd = 0.1; inherited unchanged from English TruthfulQA |
 | GPT-2 XL | A-LQR | λ = 3; Q = 0.1I; R = 1I; Qf = 0.3I; inherited unchanged from English TruthfulQA |
 | GPT-2 XL | H∞ | λ = 3; Q/R = 0.0316227766; Qf/R = 0.1; R = 1; inherited unchanged from English TruthfulQA |
 
@@ -693,7 +707,6 @@ def _rows(page: DatasetPage) -> list[dict]:
         methods = METHODS
         if page.benchmark == "truthfulness" and model_key in {
             "qwen32b",
-            "gpt2_xl",
             "olmo2_32b_instruct",
         }:
             methods = tuple(
@@ -702,7 +715,7 @@ def _rows(page: DatasetPage) -> list[dict]:
                 if method[0]
                 in (
                     {"original", "alqr", "h_infinity"}
-                    if model_key in {"gpt2_xl", "olmo2_32b_instruct"}
+                    if model_key == "olmo2_32b_instruct"
                     else {"original", "spid", "alqr", "h_infinity"}
                 )
             )

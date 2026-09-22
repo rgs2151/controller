@@ -1,0 +1,127 @@
+{
+  "identity": {
+    "model_id": "openai-community/gpt2-xl",
+    "model_revision": "15ea56dee5df4983c59b2538573817e1667135e2",
+    "method": "pid_act",
+    "distribution": "id",
+    "dataset": [
+      "truthful_qa",
+      "741b8276f2d1982aa3d5b832d3ee81ed3b896490"
+    ],
+    "evaluation_key": "truthfulness",
+    "kv_cache": false,
+    "calibration_id": "txi95_fluency05_n200_r1",
+    "scorers": [
+      "truthfulqa_true",
+      "truthfulqa_informative",
+      "axbench_concept_relevance",
+      "axbench_instruction_relevance",
+      "axbench_fluency",
+      "axbench_overall"
+    ]
+  },
+  "evaluation_samples_per_repetition": 817,
+  "evaluation_repetitions": 1,
+  "created_at_utc": "2026-09-22T17:54:22.941578+00:00",
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "truth": 29.865361077111384,
+      "info": 96.57282741738065,
+      "concept_relevance": 0.8910648714810282,
+      "instruction_relevance": 0.8910648714810282,
+      "fluency": 1.0905752753977969,
+      "axbench_overall": 0.7302325581395349
+    }
+  ],
+  "metrics": {
+    "truth": {
+      "mean": 29.865361077111384,
+      "standard_error": 1.6554745654218914,
+      "leave_group_out_estimates": [
+        28.637059724349157,
+        30.474732006125574,
+        30.122324159021407,
+        30.8868501529052,
+        29.204892966360855
+      ]
+    },
+    "info": {
+      "mean": 96.57282741738067,
+      "standard_error": 1.0544294019165954,
+      "leave_group_out_estimates": [
+        96.47779479326186,
+        96.17151607963247,
+        97.24770642201835,
+        95.87155963302752,
+        97.09480122324159
+      ]
+    },
+    "concept_relevance": {
+      "mean": 0.8910648714810282,
+      "standard_error": 0.02816539231741812,
+      "leave_group_out_estimates": [
+        0.8973966309341501,
+        0.889739663093415,
+        0.9128440366972477,
+        0.8853211009174312,
+        0.8700305810397554
+      ]
+    },
+    "instruction_relevance": {
+      "mean": 0.8910648714810282,
+      "standard_error": 0.028495333144959382,
+      "leave_group_out_estimates": [
+        0.9081163859111792,
+        0.8820826952526799,
+        0.9067278287461774,
+        0.8868501529051988,
+        0.8715596330275229
+      ]
+    },
+    "fluency": {
+      "mean": 1.0905752753977969,
+      "standard_error": 0.014335975752319048,
+      "leave_group_out_estimates": [
+        1.0964777947932618,
+        1.0934150076569678,
+        1.0932721712538227,
+        1.0764525993883791,
+        1.0932721712538227
+      ]
+    },
+    "axbench_overall": {
+      "mean": 0.7302325581395349,
+      "standard_error": 0.02298181141256976,
+      "leave_group_out_estimates": [
+        0.7451761102603369,
+        0.7222052067381317,
+        0.7431192660550457,
+        0.7226299694189602,
+        0.7180428134556576
+      ]
+    }
+  },
+  "invalid_scorer_outputs": {
+    "truthfulqa_true": [],
+    "truthfulqa_informative": [],
+    "axbench_concept_relevance": [],
+    "axbench_instruction_relevance": [],
+    "axbench_fluency": [],
+    "axbench_overall": []
+  },
+  "uncertainty": {
+    "method": "five-group delete-one-group question jackknife",
+    "group_count": 5,
+    "group_sizes": [
+      164,
+      164,
+      163,
+      163,
+      163
+    ],
+    "partition_seed": 20260921,
+    "partition_sha256": "1c932c2e038009489d794b4dad648d015605c27920e93c5b8d7c6bf90c8e7a30",
+    "captures": "question-sampling variability only; not decoding-run variability"
+  }
+}
