@@ -47,3 +47,26 @@ calibration, generations, scores, and results remain isolated under its model
 key.
 
 Use `--datasets all` only for the deferred 11-language expansion.
+
+## Fixed A-LQR reruns
+
+An A-LQR-only rerun reuses the saved MGSM setpoint and nominal dynamics; it does
+not refit the direction, Jacobians, or shared dynamics matrix. Write the explicit
+fixed selection first, then replace only the requested A-LQR generations and
+their scorer outputs:
+
+```bash
+python -m robust_steerability.benchmarks.mgsm calibrate \
+  --model phi4_mini_instruct --methods alqr --devices cuda:0 \
+  --alqr-lambda 1.5 --alqr-q 0.1 --alqr-r 1 --alqr-q-final 0.05
+python -m robust_steerability.benchmarks.mgsm evaluate \
+  --model phi4_mini_instruct --methods alqr --devices auto \
+  --generation-batch-size 64 --replace-completed
+python -m robust_steerability.benchmarks.mgsm score \
+  --model phi4_mini_instruct --methods alqr --devices auto \
+  --scorers default --api-concurrency 500 --api-batch-size 20 \
+  --replace-completed
+```
+
+Use `--replace-completed` only on the first evaluation attempt. If an interrupted
+evaluation is resumed, omit it so completed language shards are retained.

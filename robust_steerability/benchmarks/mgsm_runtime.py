@@ -92,6 +92,25 @@ def generation_complete(path: Path) -> bool:
     return path.exists() and json.loads(path.read_text()).get("status") == "complete"
 
 
+def clear_generation(
+    model_key: str, language: str, method: str, *, use_cache: bool
+) -> None:
+    """Remove one completed method-language generation and its data shards."""
+
+    generation_path(model_key, language, method, use_cache=use_cache).unlink(
+        missing_ok=True
+    )
+    shard_directory = (
+        cache_root(model_key, use_cache)
+        / "generation_shards"
+        / f"mgsm_{language}"
+        / method
+    )
+    if shard_directory.exists():
+        for shard in shard_directory.glob("shard_*.json"):
+            shard.unlink()
+
+
 def _selection_parameters(model_key: str, method: str, calibration_id: str) -> dict:
     if method == "original":
         return {}

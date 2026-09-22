@@ -17,11 +17,11 @@ from robust_steerability.benchmarks.composition import (
 )
 from robust_steerability.benchmarks.execution import default_run_id, tracked_stage
 from robust_steerability.benchmarks.launcher import run_data_shards
-from robust_steerability.benchmarks.layout import calibration_root
+from robust_steerability.benchmarks.layout import calibration_root, results_root
 from robust_steerability.benchmarks.specs import MODELS
 from robust_steerability.experiments.resources import resolve_cuda_devices
 from robust_steerability.judges import openai as openai_scoring
-from robust_steerability.judges.specs import scorer_spec
+from robust_steerability.judges.specs import scorer_cache_path, scorer_spec
 
 
 COMPOSITION = load_composition("mgsm")
@@ -39,19 +39,34 @@ def _names(value: str, allowed: tuple[str, ...]) -> list[str]:
     return names
 
 
-def _write_selection(model_key: str, method: str, calibration_id: str) -> None:
+def _write_selection(
+    model_key: str,
+    method: str,
+    calibration_id: str,
+    alqr_parameters: dict[str, float] | None = None,
+) -> None:
     if method == "spid":
         parameters = {"lambda": 1.5, "kp": 0.5, "ki": 0.5, "kd": 0.01}
         source = "frozen S-PID concept-steering configuration"
     elif method == "alqr":
-        parameters = {"lambda": 1.5, "q": 0.1, "r": 1.0, "q_final": 0.1}
-        source = "frozen upstream A-LQR concept-steering configuration"
+        parameters = alqr_parameters or {
+            "lambda": 1.5,
+            "q": 0.1,
+            "r": 1.0,
+            "q_final": 0.1,
+        }
+        source = (
+            "explicit fixed A-LQR concept-steering configuration"
+            if alqr_parameters is not None
+            else "frozen upstream A-LQR concept-steering configuration"
+        )
     else:
         return
     destination = calibration_root(
         "mgsm", model_key, method, calibration_id
     ) / "selection.json"
-    if destination.exists():
+    overwrite = method == "alqr" and alqr_parameters is not None
+    if destination.exists() and not overwrite:
         return
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
@@ -88,9 +103,10 @@ def calibration_stage(
     api_concurrency: int,
     api_batch_size: int,
     h_infinity_parameters: dict[str, float] | None,
+    alqr_parameters: dict[str, float] | None,
 ) -> None:
     for method in methods:
-        _write_selection(model_key, method, calibration_id)
+        _write_selection(model_key, method, calibration_id, alqr_parameters)
     if "h_infinity" in methods:
         calibration.calibrate(
             model_key,
@@ -113,11 +129,16 @@ def evaluation_stage(
     calibration_id: str,
     generation_batch_size: int | None,
     use_cache: bool,
+    replace_completed: bool,
 ) -> None:
     artifacts.prepare(model_key)
     ordered_methods = [method for method in METHODS if method in methods]
     for method in ordered_methods:
         for language in datasets:
+            if replace_completed:
+                runtime.clear_generation(
+                    model_key, language, method, use_cache=use_cache
+                )
             destination = runtime.generation_path(
                 model_key, language, method, use_cache=use_cache
             )
@@ -172,6 +193,7 @@ def score_stage(
     api_concurrency: int,
     api_batch_size: int,
     use_cache: bool,
+    replace_completed: bool,
 ) -> None:
     generations = []
     selected_by_dataset = {}
@@ -185,6 +207,23 @@ def score_stage(
             if not runtime.generation_complete(generation):
                 raise ValueError(f"Missing completed generation: {generation}")
             generations.append((language, method, generation))
+            if replace_completed:
+                for scorer in selected:
+                    scorer_cache_path(
+                        runtime.cache_root(model_key, use_cache), generation, scorer
+                    ).unlink(missing_ok=True)
+                (
+                    runtime.cache_root(model_key, use_cache)
+                    / "summaries"
+                    / f"mgsm_{language}"
+                    / f"{method}.json"
+                ).unlink(missing_ok=True)
+                (
+                    results_root(runtime.BENCHMARK, use_cache=use_cache)
+                    / model_key
+                    / f"mgsm_{language}"
+                    / f"{method}.json"
+                ).unlink(missing_ok=True)
             for scorer in ("mgsm_exact_match", "axbench_rule_spanish"):
                 if scorer in selected:
                     runtime.score_deterministic(
@@ -233,6 +272,15 @@ def main() -> None:
     parser.add_argument("--h-infinity-q-over-r", type=float)
     parser.add_argument("--h-infinity-q-final-over-r", type=float)
     parser.add_argument("--h-infinity-r", type=float)
+    parser.add_argument("--alqr-lambda", type=float)
+    parser.add_argument("--alqr-q", type=float)
+    parser.add_argument("--alqr-r", type=float)
+    parser.add_argument("--alqr-q-final", type=float)
+    parser.add_argument(
+        "--replace-completed",
+        action="store_true",
+        help="Replace only the requested method/dataset generations and scores.",
+    )
     parser.add_argument("--api-concurrency", type=int, default=500)
     parser.add_argument("--api-batch-size", type=int, default=20)
     parser.add_argument("--run-id")
@@ -266,6 +314,24 @@ def main() -> None:
         if all(value is not None for value in fixed_values)
         else None
     )
+    alqr_values = (
+        arguments.alqr_lambda,
+        arguments.alqr_q,
+        arguments.alqr_r,
+        arguments.alqr_q_final,
+    )
+    alqr_parameters = None
+    if any(value is not None for value in alqr_values):
+        defaults = (1.5, 0.1, 1.0, 0.1)
+        resolved = tuple(
+            default if value is None else float(value)
+            for value, default in zip(alqr_values, defaults, strict=True)
+        )
+        if min(resolved) <= 0:
+            raise ValueError("A-LQR lambda, Q, R, and Qf must be positive")
+        alqr_parameters = dict(
+            zip(("lambda", "q", "r", "q_final"), resolved, strict=True)
+        )
     use_cache = arguments.kv_cache == "on"
     devices = (
         resolve_cuda_devices(arguments.devices)
@@ -289,6 +355,8 @@ def main() -> None:
             "api_concurrency": arguments.api_concurrency,
             "api_batch_size": arguments.api_batch_size,
             "h_infinity_fixed_parameters": fixed,
+            "alqr_fixed_parameters": alqr_parameters,
+            "replace_completed": arguments.replace_completed,
             "h_infinity_lambda_sweep": asdict(
                 COMPOSITION.calibration.h_infinity_lambda_sweep
             ),
@@ -307,6 +375,7 @@ def main() -> None:
                 arguments.api_concurrency,
                 arguments.api_batch_size,
                 fixed,
+                alqr_parameters,
             )
         elif arguments.stage == "evaluate":
             evaluation_stage(
@@ -318,6 +387,7 @@ def main() -> None:
                 arguments.calibration_id,
                 arguments.generation_batch_size,
                 use_cache,
+                arguments.replace_completed,
             )
         else:
             score_stage(
@@ -328,6 +398,7 @@ def main() -> None:
                 arguments.api_concurrency,
                 arguments.api_batch_size,
                 use_cache,
+                arguments.replace_completed,
             )
 
 
