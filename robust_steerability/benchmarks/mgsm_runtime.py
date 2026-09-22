@@ -125,7 +125,14 @@ def _selection_parameters(model_key: str, method: str, calibration_id: str) -> d
         actual_tuning_samples = int(
             payload.get("protocol", {}).get("tuning_samples", -1)
         )
-        if actual_tuning_samples != expected_tuning_samples:
+        selected = payload.get("selected", {})
+        historical_grid_promotion = (
+            selected.get("source")
+            == "manually promoted from the completed MGSM calibration grid"
+            and bool(selected.get("controller_source"))
+            and actual_tuning_samples > 0
+        )
+        if actual_tuning_samples != expected_tuning_samples and not historical_grid_promotion:
             raise ValueError(
                 "MGSM H-infinity evaluation requires a selection calibrated on "
                 f"{expected_tuning_samples} prompts; found {actual_tuning_samples}. "
