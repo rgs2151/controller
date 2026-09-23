@@ -5,10 +5,11 @@
 - Read the finalized English and Spanish TruthfulQA tables under
   `figs/bench_table/truthfulness/`; exploratory and superseded runs are not
   eligible.
-- Panel (a) reproduces the scale-weighted truthfulness comparison from Figure
+- The left panel reproduces the box-plot truthfulness comparison from Figure
   0. For each model and split, the gray series selects the highest-True row
-  among all reported methods except H∞, including Original. The bar is
-  `sum(True × model parameters) / sum(model parameters)`.
+  among all reported methods except H∞, including Original. Boxes span the
+  four model scores with full-range whiskers, and the official model marks
+  expose every underlying observation.
 - Panels (b) and (c) plot every finalized method at aggregate Informative (%)
   and True (%). Model family is encoded by the official shared logo; method is
   encoded by the surrounding color. The background field and dashed contours
