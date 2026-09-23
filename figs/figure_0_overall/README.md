@@ -15,7 +15,8 @@
 - Conditions: Truthfulness groups are English and Spanish translation; adversarial groups are direct requests and the mean across five adversarial templates; language groups are Chinese, French, Japanese, Swahili, and Telugu; context groups are 8K and 16K.
 - Measures: truthful-response percentage; safe-response percentage; exact-answer accuracy percentage; citation F1 percentage.
 - Model-size weights: GPT-2 XL 1.5B, Llama-3-8B 8B, Qwen-2.5-14B 14B, OLMo-2-32B 32B; HarmBench Llama models 1B/3B/8B; MGSM Qwen/Phi/Granite 4B/3.8B/2B; L-CiteEval Qwen/Llama 3B/1B.
-- Colors: H∞ `#398197`; best competitor `#A7ADB2`.
+- Colors: H∞ uses the exact project teal `#007C7C`; best competitor uses the
+  exact aggregate gray `#737B80`.
 - Outputs: `plots/figure_0_overall.pdf`, `plots/figure_0_overall.png`, and `plots/figure_0_overall_values.csv`.
 - Alternative display: `figure_0_overall_boxplot.py` writes
   `plots/figure_0_overall_boxplot.pdf` and `.png` using the identical data,
@@ -24,6 +25,11 @@
   min/max whiskers; model logos retain their exact individual scores. The
   paired boxes are narrower and slightly farther apart than the bar centers,
   with tighter within-box logo jitter for clearer series membership.
+  Logos on H∞ boxes are recolored to `#007C7C`, while logos on best-competitor
+  boxes are recolored to `#737B80`; native company colors remain in the model-
+  family legend. Box borders, medians, whiskers, and caps use opaque series
+  colors at three times the original line weight, while fills remain at 30%
+  opacity.
   In this alternative display, the adversarial panel is cropped to 70--100%
   to resolve the tightly clustered safe-response results. Its bottom spine
   retains the same proportional 5% clearance below the lowest labeled tick

@@ -19,8 +19,8 @@ REPO = UNIT.parents[1]
 PLOTS = UNIT / "plots"
 LOGOS = REPO / "figs" / "logos"
 
-TEAL = "#398197"
-GRAY = "#A7ADB2"
+TEAL = "#007C7C"
+GRAY = "#737B80"
 INK = "#000000"
 
 MODEL_SIZES = {

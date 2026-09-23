@@ -4,6 +4,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import to_rgba
 from matplotlib.patches import Patch
 
 import figure_0_overall as base
@@ -11,6 +12,18 @@ import figure_0_overall as base
 
 UNIT = Path(__file__).resolve().parent
 PLOTS = UNIT / "plots"
+
+BOX_LINEWIDTH = 3.45
+MEDIAN_LINEWIDTH = 3.75
+
+
+def recolor_logo(image: np.ndarray, color: str) -> np.ndarray:
+    """Recolor one transparent logo without changing its silhouette."""
+
+    result = np.empty_like(image)
+    result[..., :3] = np.asarray(to_rgba(color)[:3]) * 255
+    result[..., 3] = image[..., 3]
+    return result.astype(np.uint8)
 
 
 def draw_box_panel(
@@ -48,14 +61,13 @@ def draw_box_panel(
                 whis=(0, 100),
                 manage_ticks=False,
                 boxprops={
-                    "facecolor": color,
+                    "facecolor": to_rgba(color, 0.30),
                     "edgecolor": color,
-                    "alpha": 0.3,
-                    "linewidth": 1.15,
+                    "linewidth": BOX_LINEWIDTH,
                 },
-                medianprops={"color": base.INK, "linewidth": 1.25},
-                whiskerprops={"color": color, "linewidth": 1.15, "alpha": 0.8},
-                capprops={"color": color, "linewidth": 1.15, "alpha": 0.8},
+                medianprops={"color": color, "linewidth": MEDIAN_LINEWIDTH},
+                whiskerprops={"color": color, "linewidth": BOX_LINEWIDTH},
+                capprops={"color": color, "linewidth": BOX_LINEWIDTH},
                 zorder=2,
             )
 
@@ -67,7 +79,10 @@ def draw_box_panel(
             for point, offset in zip(points, offsets, strict=True):
                 base.add_logo(
                     ax,
-                    logo_images,
+                    {
+                        family: recolor_logo(image, color)
+                        for family, image in logo_images.items()
+                    },
                     str(point["family"]),
                     position + float(offset),
                     float(point["score"]),
@@ -162,8 +177,18 @@ def main() -> None:
 
     fig.legend(
         handles=[
-            Patch(facecolor=base.GRAY, alpha=0.3, label="Best competitor"),
-            Patch(facecolor=base.TEAL, alpha=0.3, label=r"H$\infty$ (ours)"),
+            Patch(
+                facecolor=to_rgba(base.GRAY, 0.30),
+                edgecolor=base.GRAY,
+                linewidth=BOX_LINEWIDTH,
+                label="Best competitor",
+            ),
+            Patch(
+                facecolor=to_rgba(base.TEAL, 0.30),
+                edgecolor=base.TEAL,
+                linewidth=BOX_LINEWIDTH,
+                label=r"H$\infty$ (ours)",
+            ),
         ],
         loc="upper center",
         bbox_to_anchor=(0.5, 0.995),
