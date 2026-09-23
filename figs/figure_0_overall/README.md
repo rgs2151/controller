@@ -25,7 +25,9 @@
   paired boxes are narrower and slightly farther apart than the bar centers,
   with tighter within-box logo jitter for clearer series membership.
   In this alternative display, the adversarial panel is cropped to 70--100%
-  to resolve the tightly clustered safe-response results.
+  to resolve the tightly clustered safe-response results. Its bottom spine
+  retains the same proportional 5% clearance below the lowest labeled tick
+  used throughout the figure.
 
 ## Statistics
 
