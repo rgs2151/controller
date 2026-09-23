@@ -199,8 +199,8 @@ def render_model(model: str, results: list[Result]) -> None:
 
     fig, axes = plt.subplots(1, 2, figsize=(7.7, 3.55), gridspec_kw={"wspace": 0.25})
     metrics = (
-        ("answer_recall", "Answer recall (%) ↑"),
-        ("citation_f1", "Citation F1 (%) ↑"),
+        ("answer_recall", "Answer recall (%)"),
+        ("citation_f1", "Citation F1 (%)"),
     )
 
     for ax, (field, title) in zip(axes, metrics, strict=True):
@@ -210,7 +210,7 @@ def render_model(model: str, results: list[Result]) -> None:
             for context in CONTEXTS
         ]
         style_axis(ax, ylim=tight_limits(all_values))
-        ax.set_title(title, pad=10)
+        ax.set_ylabel(title, fontsize=13.5, fontweight="bold", labelpad=10)
         for method in methods:
             values = [getattr(lookup[(context, method)], field) for context in CONTEXTS]
             ours = method == "H-infinity"
