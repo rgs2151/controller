@@ -491,6 +491,7 @@ def draw_radar(
     label_fontsize: float = 8.6,
     label_pad: float = 10,
     extend_label_spokes: bool = False,
+    show_radial_labels: bool = False,
 ) -> None:
     categories, values = category_radar_values(
         model,
@@ -534,7 +535,12 @@ def draw_radar(
     ax.set_theta_direction(-1)
     ax.set_ylim(0, 100)
     ax.set_yticks([20, 40, 60, 80, 100])
-    ax.set_yticklabels([])
+    if show_radial_labels:
+        ax.set_yticklabels(["20", "40", "60", "80", "100"], fontsize=7.5)
+        ax.set_rlabel_position(72)
+        ax.tick_params(axis="y", colors="#6F767D", pad=1)
+    else:
+        ax.set_yticklabels([])
     ax.grid(color="#C9CED3", linewidth=0.6, linestyle=":")
     ax.spines["polar"].set_color("#AEB4BC")
     if extend_label_spokes:
@@ -734,15 +740,15 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         "true_pct",
         exclude_original_from_competitor=True,
     )
-    fig = plt.figure(figsize=(6.8, 3.5))
+    fig = plt.figure(figsize=(8.6, 4.8))
     outer = fig.add_gridspec(
         1,
         2,
-        left=0.05,
-        right=0.95,
-        bottom=0.24,
-        top=0.96,
-        wspace=1.85,
+        left=0.07,
+        right=0.96,
+        bottom=0.18,
+        top=0.95,
+        wspace=0.42,
     )
     radar_id_ax = fig.add_subplot(outer[0], projection="polar")
     radar_ood_ax = fig.add_subplot(outer[1], projection="polar")
@@ -752,9 +758,10 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         model=model,
         metric="true_pct",
         include_original=True,
-        label_fontsize=12.5,
-        label_pad=22,
+        label_fontsize=6.5,
+        label_pad=12,
         extend_label_spokes=True,
+        show_radial_labels=True,
     )
     draw_radar(
         radar_ood_ax,
@@ -762,9 +769,18 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         model=model,
         metric="true_pct",
         include_original=True,
-        label_fontsize=12.5,
-        label_pad=22,
+        label_fontsize=6.5,
+        label_pad=12,
         extend_label_spokes=True,
+    )
+    fig.text(
+        0.018,
+        0.57,
+        "True (%)",
+        ha="center",
+        va="center",
+        rotation=90,
+        fontsize=9.5,
     )
     fig.legend(
         handles=[
@@ -782,7 +798,7 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         loc="lower center",
         bbox_to_anchor=(0.5, 0.015),
         ncol=3,
-        fontsize=10.5,
+        fontsize=9.5,
         handlelength=1.8,
         columnspacing=1.6,
     )
