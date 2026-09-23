@@ -489,6 +489,7 @@ def draw_radar(
     metric: str = "txi_pct",
     include_original: bool = False,
     label_fontsize: float = 8.6,
+    label_fontweight: str = "normal",
     label_pad: float = 10,
     extend_label_spokes: bool = False,
     show_radial_labels: bool = False,
@@ -529,7 +530,11 @@ def draw_radar(
     ax.scatter(angles[:-1], best, s=14, color=GRAY, zorder=4)
     ax.scatter(angles[:-1], ours, s=18, color=TEAL, zorder=5)
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories, fontsize=label_fontsize)
+    ax.set_xticklabels(
+        categories,
+        fontsize=label_fontsize,
+        fontweight=label_fontweight,
+    )
     ax.tick_params(axis="x", pad=label_pad)
     ax.set_theta_offset(np.pi / 2.0)
     ax.set_theta_direction(-1)
@@ -758,7 +763,8 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         model=model,
         metric="true_pct",
         include_original=True,
-        label_fontsize=6.5,
+        label_fontsize=8.0,
+        label_fontweight="bold",
         label_pad=12,
         extend_label_spokes=True,
         show_radial_labels=True,
@@ -769,7 +775,8 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         model=model,
         metric="true_pct",
         include_original=True,
-        label_fontsize=6.5,
+        label_fontsize=8.0,
+        label_fontweight="bold",
         label_pad=12,
         extend_label_spokes=True,
     )
