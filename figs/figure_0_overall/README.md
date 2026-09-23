@@ -25,11 +25,12 @@
   min/max whiskers; model logos retain their exact individual scores. The
   paired boxes are narrower and slightly farther apart than the bar centers,
   with tighter within-box logo jitter for clearer series membership.
-  Logos on H∞ boxes are recolored to `#007C7C`, while logos on best-competitor
-  boxes are recolored to `#737B80`; native company colors remain in the model-
-  family legend. Box borders, medians, whiskers, and caps use opaque series
-  colors at three times the original line weight, while fills remain at 30%
-  opacity.
+  Logos on H∞ boxes use a 20%-darker version of `#007C7C`, while logos on
+  best-competitor boxes use a 20%-darker version of `#737B80`; native company
+  colors remain in the model-family legend. Boxes have no fill. Their borders,
+  medians, whiskers, and caps use the exact opaque series colors at half the
+  preceding revision's line weight. Slightly wider within-box logo jitter keeps
+  nearby model identities separable without changing box width.
   In this alternative display, the adversarial panel is cropped to 70--100%
   to resolve the tightly clustered safe-response results. Its bottom spine
   retains the same proportional 5% clearance below the lowest labeled tick
