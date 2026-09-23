@@ -78,7 +78,9 @@ def draw_box_panel(
     lower_limit = -0.05 * ymax if ymin == 0 else ymin
     ax.set_ylim(lower_limit, ymax)
     ax.set_yticks(
-        np.linspace(ymin, ymax, 6 if ymin == 0 else 5)
+        np.linspace(0, ymax, 6)
+        if ymin == 0
+        else np.arange(ymin, ymax + 0.1, 10)
     )
     ax.set_ylabel(ylabel, fontsize=11)
     ax.set_xticks(centers)
@@ -134,7 +136,7 @@ def main() -> None:
         100,
         logo_images,
         ["Direct", "Adversaries"],
-        ymin=60,
+        ymin=70,
     )
     draw_box_panel(
         axes[2],

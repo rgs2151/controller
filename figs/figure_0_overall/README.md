@@ -24,7 +24,7 @@
   min/max whiskers; model logos retain their exact individual scores. The
   paired boxes are narrower and slightly farther apart than the bar centers,
   with tighter within-box logo jitter for clearer series membership.
-  In this alternative display, the adversarial panel is cropped to 60--100%
+  In this alternative display, the adversarial panel is cropped to 70--100%
   to resolve the tightly clustered safe-response results.
 
 ## Statistics
