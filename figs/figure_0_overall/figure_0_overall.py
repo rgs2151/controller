@@ -21,7 +21,7 @@ LOGOS = REPO / "figs" / "logos"
 
 TEAL = "#398197"
 GRAY = "#A7ADB2"
-INK = "#202124"
+INK = "#000000"
 
 MODEL_SIZES = {
     "GPT-2 XL": 1.5,
@@ -284,8 +284,10 @@ def draw_panel(
     ymax: float,
     logo_images: dict[str, np.ndarray],
     condition_labels: list[str],
+    group_gap: float | None = None,
 ) -> None:
-    group_gap = 3.15 if len(conditions) <= 2 else 2.70
+    if group_gap is None:
+        group_gap = 3.15 if len(conditions) <= 2 else 2.70
     width = 0.92
     centers = np.arange(len(conditions), dtype=float) * group_gap
     for center, (condition, values) in zip(centers, conditions.items(), strict=True):
@@ -314,17 +316,7 @@ def draw_panel(
     ax.set_yticks(np.linspace(0, ymax, 6))
     ax.set_ylabel(ylabel, fontsize=11)
     ax.set_xticks(centers)
-    if len(condition_labels) > 2:
-        staggered = [
-            label if index % 2 == 0 else f"\n{label}"
-            for index, label in enumerate(condition_labels)
-        ]
-        ax.set_xticklabels(
-            staggered,
-            fontsize=8.5,
-        )
-    else:
-        ax.set_xticklabels(condition_labels, fontsize=9.5)
+    ax.set_xticklabels(condition_labels, fontsize=9.5)
     ax.set_title(title, fontsize=14, fontweight="semibold", pad=20)
     ax.tick_params(axis="y", labelsize=8)
     ax.tick_params(axis="x", length=0, pad=8)
@@ -383,17 +375,6 @@ def draw_model_legend(ax: plt.Axes, logo_images: dict[str, np.ndarray]) -> None:
     for family, y in zip(families, y_positions, strict=True):
         add_logo(ax, logo_images, family, 0.24, float(y), 0.078)
         ax.text(0.39, y, family, ha="left", va="center", fontsize=9.5)
-    ax.legend(
-        handles=[
-            Patch(facecolor=GRAY, label="Best competitor"),
-            Patch(facecolor=TEAL, label=r"H$\infty$ (ours)"),
-        ],
-        loc="lower left",
-        bbox_to_anchor=(0.04, 0.08),
-        fontsize=8.5,
-        handlelength=1.4,
-        labelspacing=0.6,
-    )
 
 
 def main() -> None:
@@ -403,16 +384,18 @@ def main() -> None:
     write_values(results)
     logo_images = {family: square_logo(path) for family, path in LOGO_FILES.items()}
 
-    fig = plt.figure(figsize=(16.5, 5.53))
+    # Preserve all established physical sizes while giving the five-condition
+    # language panel 30% more room.
+    fig = plt.figure(figsize=(18.6, 5.53))
     grid = fig.add_gridspec(
         1,
         6,
-        width_ratios=[1.35, 1.35, 0.42, 2.95, 1.35, 0.82],
+        width_ratios=[1.35, 1.35, 0.58, 3.84, 1.35, 0.82],
         left=0.045,
         right=0.985,
         bottom=0.19,
-        top=0.86,
-        wspace=0.38,
+        top=0.84,
+        wspace=0.44,
     )
     axes = [fig.add_subplot(grid[0, index]) for index in [0, 1, 3, 4, 5]]
 
@@ -439,9 +422,10 @@ def main() -> None:
         "Language shift",
         results["Language shift"],
         "Accuracy (%)",
-        100,
+        80,
         logo_images,
         ["Chinese", "French", "Japanese", "Swahili", "Telugu"],
+        group_gap=3.10,
     )
     draw_panel(
         axes[3],
@@ -453,6 +437,21 @@ def main() -> None:
         ["8K", "16K"],
     )
     draw_model_legend(axes[4], logo_images)
+
+    fig.legend(
+        handles=[
+            Patch(facecolor=GRAY, label="Best competitor"),
+            Patch(facecolor=TEAL, label=r"H$\infty$ (ours)"),
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.995),
+        ncol=2,
+        fontsize=13,
+        handlelength=1.8,
+        handleheight=0.9,
+        columnspacing=2.2,
+        labelspacing=0.0,
+    )
 
     for suffix in ["pdf", "png"]:
         fig.savefig(

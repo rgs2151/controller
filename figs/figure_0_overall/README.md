@@ -30,12 +30,13 @@
 ## Legends
 
 - X axis: English and Spanish translation; Direct and Adversaries; Chinese, French, Japanese, Swahili, and Telugu; 8K and 16K.
-- Y axis: Truthful responses, safe responses, accuracy, or citation F1, all in percent and all higher-is-better. Context-shift citation F1 is capped at 10%.
+- Y axis: Truthful responses, safe responses, accuracy, or citation F1, all in percent and all higher-is-better. Language-shift accuracy is capped at 80%; context-shift citation F1 is capped at 10%.
 - Color/value: gray bars are the best competitor; teal bars are H∞.
 - Grouping: each x-axis label names the concrete evaluation condition rather than using ID/OOD shorthand.
 - Ordering/sorting: shifts follow truthfulness, adversarial, language, and context; languages follow Chinese, French, Japanese, Swahili, and Telugu.
 - Lines/markers/labels: unboxed logos mark individual model scores; logo size increases with model parameters; the model-family legend uses a common display size.
-- Panels: the first pair contains truthfulness and adversarial shifts; additional horizontal space separates it from the language and context pair.
+- Panels: the first pair contains truthfulness and adversarial shifts; additional horizontal space separates it from the language and context pair. The language panel is widened so all five labels remain on one line while retaining the common rendered bar width.
+- Legend placement: the bar-series legend is centered above the full figure; the compact model-family legend remains at right.
 
 ## Interpretation
 
