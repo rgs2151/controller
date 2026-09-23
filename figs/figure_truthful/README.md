@@ -53,9 +53,10 @@
 - `plots/figure_truthful_c.pdf` and `.png`: paired English/Spanish category
   robustness radars.
 - `plots/figure_truthful_c_best_model.pdf` and `.png`: compact variant using
-  the single model with the largest mean H∞ minus best-competitor category
-  T×I margin across both splits. The current finalized data select
-  **LLaMA-3-8B** (mean margin: 4.856 percentage points).
+  category-level True (%) only. It selects the single model with the largest
+  mean H∞ minus best-competitor truthfulness margin across both splits, then
+  plots H∞ and that strongest truthfulness competitor. The current finalized
+  data select **Qwen-2.5-14B** (mean margin: 6.107 percentage points).
 - `cache/truthfulqa_category_txi.csv`: auditable category-level source values,
   including the exact scorer artifact paths.
 
