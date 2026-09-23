@@ -11,6 +11,7 @@ import matplotlib as mpl
 mpl.use("Agg")
 
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 from matplotlib.ticker import MaxNLocator
@@ -60,6 +61,12 @@ METHOD_COLORS = {
     "S-PID": "#B4775D",
     "A-LQR": "#687DA3",
     "H-infinity": TEAL,
+}
+LOGO_METHOD_COLORS = {
+    "Original": "#747E87",
+    "S-PID": "#B97A60",
+    "A-LQR": "#7B78A8",
+    "H-infinity": "#008C95",
 }
 METHOD_MARKERS = {
     "Original": "o",
@@ -192,6 +199,79 @@ def add_model_heading(fig: plt.Figure, spec: dict[str, object]) -> None:
     )
 
 
+def tinted_logo(path: Path, color: str) -> np.ndarray:
+    """Tint a transparent company logo while retaining antialiased edges."""
+
+    image = Image.open(path).convert("RGBA")
+    array = np.asarray(image, dtype=np.float32) / 255.0
+    alpha = array[..., 3]
+    luminance = 0.2126 * array[..., 0] + 0.7152 * array[..., 1] + 0.0722 * array[..., 2]
+    mask = alpha * np.clip(1.25 - luminance, 0.30, 1.0)
+    output = np.empty_like(array)
+    output[..., :3] = np.asarray(mpl.colors.to_rgb(color), dtype=np.float32)
+    output[..., 3] = mask
+    return output
+
+
+def add_logo_marker(
+    ax: plt.Axes,
+    *,
+    x: float,
+    y: float,
+    model: str,
+    method: str,
+) -> None:
+    spec = MODEL_SPECS[model]
+    zoom = 0.024 if model.startswith("Qwen") else 0.026
+    ax.add_artist(
+        AnnotationBbox(
+            OffsetImage(
+                tinted_logo(Path(spec["logo"]), LOGO_METHOD_COLORS[method]),
+                zoom=zoom,
+                interpolation="lanczos",
+            ),
+            (x, y),
+            frameon=False,
+            pad=0,
+            zorder=6 if method == "H-infinity" else 5,
+        )
+    )
+
+
+def add_logo_legend(fig: plt.Figure, model: str, methods: tuple[str, ...]) -> None:
+    """Draw a compact legend with the same tinted logos used in the panels."""
+
+    legend_ax = fig.add_axes([0.16, 0.005, 0.68, 0.09])
+    legend_ax.axis("off")
+    xs = np.linspace(0.08, 0.92, len(methods))
+    spec = MODEL_SPECS[model]
+    for x, method in zip(xs, methods, strict=True):
+        zoom = 0.020 if model.startswith("Qwen") else 0.022
+        legend_ax.add_artist(
+            AnnotationBbox(
+                OffsetImage(
+                    tinted_logo(Path(spec["logo"]), LOGO_METHOD_COLORS[method]),
+                    zoom=zoom,
+                    interpolation="lanczos",
+                ),
+                (x - 0.045, 0.50),
+                xycoords="axes fraction",
+                frameon=False,
+                pad=0,
+            )
+        )
+        legend_ax.text(
+            x,
+            0.50,
+            METHOD_LABELS[method],
+            transform=legend_ax.transAxes,
+            ha="left",
+            va="center",
+            fontsize=10.3,
+            color=INK,
+        )
+
+
 def render_model(model: str, results: list[Result]) -> None:
     spec = MODEL_SPECS[model]
     methods = tuple(spec["methods"])
@@ -266,11 +346,59 @@ def render_model(model: str, results: list[Result]) -> None:
     plt.close(fig)
 
 
+def render_model_logo_variant(model: str, results: list[Result]) -> None:
+    """Render the alternate design with tinted model logos as data marks."""
+
+    spec = MODEL_SPECS[model]
+    methods = tuple(spec["methods"])
+    lookup = {(row.context, row.method): row for row in results if row.model == model}
+
+    fig, axes = plt.subplots(1, 2, figsize=(7.7, 3.55), gridspec_kw={"wspace": 0.25})
+    metrics = (
+        ("answer_recall", "Answer recall (%)"),
+        ("citation_f1", "Citation F1 (%)"),
+    )
+
+    for ax, (field, label) in zip(axes, metrics, strict=True):
+        all_values = [
+            getattr(lookup[(context, method)], field)
+            for method in methods
+            for context in CONTEXTS
+        ]
+        style_axis(ax, ylim=tight_limits(all_values))
+        ax.set_ylabel(label, fontsize=13.5, fontweight="bold", labelpad=10)
+        for method in methods:
+            values = [getattr(lookup[(context, method)], field) for context in CONTEXTS]
+            ours = method == "H-infinity"
+            ax.plot(
+                [0, 1],
+                values,
+                color=LOGO_METHOD_COLORS[method],
+                linestyle=METHOD_STYLES[method],
+                linewidth=3.2 if ours else 2.0,
+                solid_capstyle="round",
+                zorder=4 if ours else 3,
+            )
+            for x, value in enumerate(values):
+                add_logo_marker(ax, x=float(x), y=value, model=model, method=method)
+
+    add_logo_legend(fig, model, methods)
+    add_model_heading(fig, spec)
+    fig.subplots_adjust(left=0.085, right=0.985, bottom=0.25, top=0.79)
+
+    PLOTS.mkdir(parents=True, exist_ok=True)
+    stem = f"figure_long_context_{spec['slug']}_logos"
+    fig.savefig(PLOTS / f"{stem}.pdf", bbox_inches="tight", pad_inches=0.04)
+    fig.savefig(PLOTS / f"{stem}.png", dpi=450, bbox_inches="tight", pad_inches=0.04)
+    plt.close(fig)
+
+
 def render() -> None:
     setup_style()
     results = read_results()
     for model in MODEL_SPECS:
         render_model(model, results)
+        render_model_logo_variant(model, results)
 
 
 if __name__ == "__main__":

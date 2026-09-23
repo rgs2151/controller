@@ -102,3 +102,101 @@
 
 - `figs/bench_table/lciteeval/lciteeval_full.md`.
 - `figs/logos/llama_transparent.png`.
+
+# Qwen2.5-3B-Instruct logo-marker variant
+
+## Method
+
+- Reuse the finalized Qwen context-transfer values and panel geometry from the primary figure.
+- Replace generic geometric point markers with the Qwen logo tinted by method.
+- Preserve the primary marker figure as a separate output.
+
+## Variables
+
+- Data/input: `figs/bench_table/lciteeval/lciteeval_full.md`.
+- Sessions/groups: context length and steering method for Qwen2.5-3B-Instruct.
+- Labels/targets: Original, S-PID, A-LQR, and H∞.
+- Signals/features/measures: answer recall (%) and citation F1 (%).
+- Parameters/thresholds: 8K is matched; 16K is long-context.
+- Outputs: `plots/figure_long_context_qwen2_5_3b_logos.pdf` and `.png`.
+
+## Statistics
+
+- Tests/models: descriptive visualization of finalized means; no inferential test.
+- Null hypothesis: not applicable.
+- Alternative hypothesis: not applicable.
+- Thresholds/decision rule: higher is better for both measures.
+- What the statistic means: the panels report answer-content recovery and citation support quality.
+- Why this statistic is appropriate here: the visual change affects encoding only, not the reported statistics.
+
+## Legends
+
+- X axis: 8K matched and 16K long-context.
+- Y axis: answer recall (%) or citation F1 (%).
+- Color/value: method identity; H∞ uses saturated teal.
+- Grouping: one trajectory per method.
+- Ordering/sorting: 8K precedes 16K.
+- Lines/markers/labels: tinted Qwen logos replace geometric markers.
+- Panels: answer recall and citation F1.
+
+## Interpretation
+
+- Read identically to the primary Qwen figure; this is an alternate visual encoding.
+
+## Notes
+
+- The primary geometric-marker output is retained unchanged.
+
+## References
+
+- `figs/bench_table/lciteeval/lciteeval_full.md`.
+- `figs/logos/qwen_transparent.png`.
+
+# Llama-3.2-1B-Instruct logo-marker variant
+
+## Method
+
+- Reuse the finalized Llama context-transfer values and panel geometry from the primary figure.
+- Replace generic geometric point markers with the Meta/Llama logo tinted by method.
+- Preserve the primary marker figure as a separate output.
+
+## Variables
+
+- Data/input: `figs/bench_table/lciteeval/lciteeval_full.md`.
+- Sessions/groups: context length and steering method for Llama-3.2-1B-Instruct.
+- Labels/targets: Original, A-LQR, and H∞.
+- Signals/features/measures: answer recall (%) and citation F1 (%).
+- Parameters/thresholds: 8K is matched; 16K is long-context.
+- Outputs: `plots/figure_long_context_llama3_2_1b_logos.pdf` and `.png`.
+
+## Statistics
+
+- Tests/models: descriptive visualization of finalized means; no inferential test.
+- Null hypothesis: not applicable.
+- Alternative hypothesis: not applicable.
+- Thresholds/decision rule: higher is better for both measures.
+- What the statistic means: the panels report answer-content recovery and citation support quality.
+- Why this statistic is appropriate here: the visual change affects encoding only, not the reported statistics.
+
+## Legends
+
+- X axis: 8K matched and 16K long-context.
+- Y axis: answer recall (%) or citation F1 (%).
+- Color/value: method identity; H∞ uses saturated teal.
+- Grouping: one trajectory per method.
+- Ordering/sorting: 8K precedes 16K.
+- Lines/markers/labels: tinted Meta/Llama logos replace geometric markers.
+- Panels: answer recall and citation F1.
+
+## Interpretation
+
+- Read identically to the primary Llama figure; this is an alternate visual encoding.
+
+## Notes
+
+- The primary geometric-marker output is retained unchanged.
+
+## References
+
+- `figs/bench_table/lciteeval/lciteeval_full.md`.
+- `figs/logos/llama_transparent.png`.
