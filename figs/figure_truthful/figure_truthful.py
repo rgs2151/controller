@@ -422,7 +422,7 @@ def draw_radar(ax: plt.Axes, split: str) -> None:
     ax.scatter(angles[:-1], best, s=14, color=GRAY, zorder=4)
     ax.scatter(angles[:-1], ours, s=18, color=TEAL, zorder=5)
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories, fontsize=6.5)
+    ax.set_xticklabels(categories, fontsize=7.4)
     ax.set_theta_offset(np.pi / 2.0)
     ax.set_theta_direction(-1)
     ax.set_ylim(0, 100)
@@ -430,40 +430,27 @@ def draw_radar(ax: plt.Axes, split: str) -> None:
     ax.set_yticklabels([])
     ax.grid(color="#C9CED3", linewidth=0.6, linestyle=":")
     ax.spines["polar"].set_color("#AEB4BC")
-    ax.text(
-        0.5,
-        -0.16,
-        split,
-        transform=ax.transAxes,
-        ha="center",
-        va="top",
-        fontsize=10.5,
-        fontweight="semibold",
-    )
-    ax.legend(
-        handles=[
-            Line2D([0], [0], color=TEAL, linewidth=2.2, label=r"H$\infty$ (ours)"),
-            Line2D([0], [0], color=GRAY, linewidth=1.7, linestyle="--", label="Best competitor"),
-        ],
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.35),
-        ncol=1,
-        fontsize=8,
-    )
 
 
 def draw_model_legend(ax: plt.Axes, images: dict[str, np.ndarray]) -> None:
     ax.set_axis_off()
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.text(0.5, 0.84, "Models", ha="center", va="top", fontsize=10.5, fontweight="semibold")
     models = list(MODEL_SIZES)
-    labels = ["GPT-2 XL (1.5B)", "LLaMA-3-8B", "Qwen-2.5-14B", "OLMo-2-32B"]
-    for model, label, y in zip(
-        models, labels, np.linspace(0.68, 0.35, len(models)), strict=True
+    labels = ["GPT", "LLaMA", "Qwen", "OLMo"]
+    for model, label, x in zip(
+        models, labels, np.linspace(0.13, 0.87, len(models)), strict=True
     ):
-        add_logo(ax, images, model, 0.17, float(y), zoom=0.067, coordinates=ax.transAxes)
-        ax.text(0.31, y, label, ha="left", va="center", fontsize=8.2)
+        add_logo(
+            ax,
+            images,
+            model,
+            float(x) - 0.035,
+            0.5,
+            zoom=0.058,
+            coordinates=ax.transAxes,
+        )
+        ax.text(float(x) + 0.015, 0.5, label, ha="left", va="center", fontsize=8.8)
 
 
 def method_handles() -> list[Line2D]:
@@ -504,19 +491,19 @@ def main() -> None:
     fig = plt.figure(figsize=(18.2, 5.2))
     outer = fig.add_gridspec(
         1,
-        7,
-        width_ratios=[1.40, 3.00, 3.00, 1.05, 2.10, 0.24, 2.10],
+        8,
+        width_ratios=[1.40, 0.28, 3.00, 3.00, 0.34, 2.10, 0.52, 2.10],
         left=0.035,
         right=0.985,
         bottom=0.24,
-        top=0.94,
-        wspace=0.20,
+        top=0.86,
+        wspace=0.17,
     )
     bar_ax = fig.add_subplot(outer[0])
     draw_bar_panel(bar_ax, records, images)
 
     frontier_axes: list[tuple[plt.Axes, plt.Axes, plt.Axes]] = []
-    for index in [1, 2]:
+    for index in [2, 3]:
         nested = outer[index].subgridspec(
             2,
             2,
@@ -532,10 +519,10 @@ def main() -> None:
 
     draw_frontier(*frontier_axes[0], records, "ID", images)
     draw_frontier(*frontier_axes[1], records, "OOD", images)
-    model_ax = fig.add_subplot(outer[3])
+    model_ax = fig.add_axes([0.225, 0.885, 0.395, 0.075])
     draw_model_legend(model_ax, images)
-    radar_id_ax = fig.add_subplot(outer[4], projection="polar")
-    radar_ood_ax = fig.add_subplot(outer[6], projection="polar")
+    radar_id_ax = fig.add_subplot(outer[5], projection="polar")
+    radar_ood_ax = fig.add_subplot(outer[7], projection="polar")
     draw_radar(radar_id_ax, "ID")
     draw_radar(radar_ood_ax, "OOD")
 
@@ -560,6 +547,25 @@ def main() -> None:
         handlelength=1.6,
         handletextpad=0.35,
         columnspacing=0.9,
+    )
+    fig.legend(
+        handles=[
+            Line2D([0], [0], color=TEAL, linewidth=2.2, label=r"H$\infty$ (ours)"),
+            Line2D(
+                [0],
+                [0],
+                color=GRAY,
+                linewidth=1.7,
+                linestyle="--",
+                label="Best competitor",
+            ),
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.825, 0.965),
+        ncol=2,
+        fontsize=9.0,
+        handlelength=1.8,
+        columnspacing=1.4,
     )
 
     for suffix in ["pdf", "png"]:
