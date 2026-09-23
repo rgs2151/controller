@@ -13,8 +13,16 @@ import figure_0_overall as base
 UNIT = Path(__file__).resolve().parent
 PLOTS = UNIT / "plots"
 
-BOX_LINEWIDTH = 3.45
-MEDIAN_LINEWIDTH = 3.75
+BOX_LINEWIDTH = 1.725
+MEDIAN_LINEWIDTH = 1.875
+DATA_LOGO_DARKEN = 0.80
+
+
+def darken(color: str, factor: float = DATA_LOGO_DARKEN) -> str:
+    """Return a fixed multiplicative darkening of an RGB hex color."""
+
+    rgb = np.asarray(to_rgba(color)[:3])
+    return "#" + "".join(f"{round(channel * factor * 255):02X}" for channel in rgb)
 
 
 def recolor_logo(image: np.ndarray, color: str) -> np.ndarray:
@@ -41,6 +49,16 @@ def draw_box_panel(
         group_gap = 3.15 if len(conditions) <= 2 else 2.70
     width = 0.72
     centers = np.arange(len(conditions), dtype=float) * group_gap
+    series_logo_images = {
+        "baseline": {
+            family: recolor_logo(image, darken(base.GRAY))
+            for family, image in logo_images.items()
+        },
+        "ours": {
+            family: recolor_logo(image, darken(base.TEAL))
+            for family, image in logo_images.items()
+        },
+    }
 
     for center, (_, values) in zip(centers, conditions.items(), strict=True):
         positions = [center - 0.60, center + 0.60]
@@ -61,7 +79,7 @@ def draw_box_panel(
                 whis=(0, 100),
                 manage_ticks=False,
                 boxprops={
-                    "facecolor": to_rgba(color, 0.30),
+                    "facecolor": "none",
                     "edgecolor": color,
                     "linewidth": BOX_LINEWIDTH,
                 },
@@ -72,17 +90,14 @@ def draw_box_panel(
             )
 
             offsets = (
-                np.linspace(-0.22, 0.22, len(points))
+                np.linspace(-0.27, 0.27, len(points))
                 if len(points) > 1
                 else [0.0]
             )
             for point, offset in zip(points, offsets, strict=True):
                 base.add_logo(
                     ax,
-                    {
-                        family: recolor_logo(image, color)
-                        for family, image in logo_images.items()
-                    },
+                    series_logo_images[key],
                     str(point["family"]),
                     position + float(offset),
                     float(point["score"]),
@@ -178,13 +193,13 @@ def main() -> None:
     fig.legend(
         handles=[
             Patch(
-                facecolor=to_rgba(base.GRAY, 0.30),
+                facecolor="none",
                 edgecolor=base.GRAY,
                 linewidth=BOX_LINEWIDTH,
                 label="Best competitor",
             ),
             Patch(
-                facecolor=to_rgba(base.TEAL, 0.30),
+                facecolor="none",
                 edgecolor=base.TEAL,
                 linewidth=BOX_LINEWIDTH,
                 label=r"H$\infty$ (ours)",
