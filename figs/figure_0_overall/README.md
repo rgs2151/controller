@@ -17,6 +17,11 @@
 - Model-size weights: GPT-2 XL 1.5B, Llama-3-8B 8B, Qwen-2.5-14B 14B, OLMo-2-32B 32B; HarmBench Llama models 1B/3B/8B; MGSM Qwen/Phi/Granite 4B/3.8B/2B; L-CiteEval Qwen/Llama 3B/1B.
 - Colors: H∞ `#398197`; best competitor `#A7ADB2`.
 - Outputs: `plots/figure_0_overall.pdf`, `plots/figure_0_overall.png`, and `plots/figure_0_overall_values.csv`.
+- Alternative display: `figure_0_overall_boxplot.py` writes
+  `plots/figure_0_overall_boxplot.pdf` and `.png` using the identical data,
+  layout, logos, colors, and axes. It replaces each aggregate bar with a
+  50%-opacity box spanning the model-score quartiles, a median line, and
+  min/max whiskers; model logos retain their exact individual scores.
 
 ## Statistics
 
