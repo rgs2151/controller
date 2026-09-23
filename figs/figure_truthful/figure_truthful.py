@@ -212,12 +212,12 @@ def weighted(points: list[Result], value: str) -> float:
     )
 
 
-def draw_bar_panel(
+def draw_box_panel(
     ax: plt.Axes,
     records: list[Result],
     images: dict[str, np.ndarray],
 ) -> None:
-    centers = np.array([0.0, 3.15])
+    centers = np.array([0.0, 3.55])
     for center, split in zip(centers, ["ID", "OOD"], strict=True):
         split_rows = [row for row in records if row.split == split]
         by_model: dict[str, list[Result]] = defaultdict(list)
@@ -228,21 +228,41 @@ def draw_bar_panel(
             for rows in by_model.values()
         ]
         ours = [next(row for row in rows if row.method == "H∞ (ours)") for rows in by_model.values()]
-        positions = [center - 0.53, center + 0.53]
-        heights = [weighted(baseline, "true"), weighted(ours, "true")]
-        ax.bar(positions, heights, width=0.92, color=[GRAY, TEAL], zorder=2)
-        for position, points in zip(positions, [baseline, ours], strict=True):
-            offsets = np.linspace(-0.30, 0.30, len(points))
+        positions = [center - 0.60, center + 0.60]
+        for position, points, color in zip(
+            positions, [baseline, ours], [GRAY, TEAL], strict=True
+        ):
+            scores = [point.true for point in points]
+            ax.boxplot(
+                [scores],
+                positions=[position],
+                widths=0.72,
+                patch_artist=True,
+                showfliers=False,
+                whis=(0, 100),
+                manage_ticks=False,
+                boxprops={
+                    "facecolor": color,
+                    "edgecolor": color,
+                    "alpha": 0.30,
+                    "linewidth": 1.15,
+                },
+                medianprops={"color": INK, "linewidth": 1.25},
+                whiskerprops={"color": color, "linewidth": 1.15, "alpha": 0.8},
+                capprops={"color": color, "linewidth": 1.15, "alpha": 0.8},
+                zorder=2,
+            )
+            offsets = np.linspace(-0.22, 0.22, len(points))
             for point, offset in zip(points, offsets, strict=True):
                 add_logo(ax, images, point.model, position + float(offset), point.true)
 
-    ax.set_xlim(-0.9, centers[-1] + 0.9)
+    ax.set_xlim(-1.0, centers[-1] + 1.0)
     ax.set_ylim(-5, 100)
     ax.set_yticks(np.arange(0, 101, 20))
-    ax.set_xticks(centers, ["English", "Spanish"], fontsize=9.5)
+    ax.set_xticks(centers, ["English", "Spanish"], fontsize=8.0)
     ax.set_ylabel("True (%)", fontsize=10.5)
     ax.tick_params(axis="y", labelsize=8)
-    ax.tick_params(axis="x", length=0, pad=7)
+    ax.tick_params(axis="x", length=0, pad=7, labelsize=7.0)
     ax.spines["left"].set_bounds(0, 100)
     ax.spines["left"].set_position(("outward", 4))
     ax.spines["bottom"].set_position(("outward", 4))
@@ -422,7 +442,8 @@ def draw_radar(ax: plt.Axes, split: str) -> None:
     ax.scatter(angles[:-1], best, s=14, color=GRAY, zorder=4)
     ax.scatter(angles[:-1], ours, s=18, color=TEAL, zorder=5)
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories, fontsize=7.4)
+    ax.set_xticklabels(categories, fontsize=8.6)
+    ax.tick_params(axis="x", pad=10)
     ax.set_theta_offset(np.pi / 2.0)
     ax.set_theta_direction(-1)
     ax.set_ylim(0, 100)
@@ -437,20 +458,20 @@ def draw_model_legend(ax: plt.Axes, images: dict[str, np.ndarray]) -> None:
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     models = list(MODEL_SIZES)
-    labels = ["GPT", "LLaMA", "Qwen", "OLMo"]
+    labels = ["GPT-2 XL", "LLaMA-3-8B", "Qwen-2.5-14B", "OLMo-2-32B"]
     for model, label, x in zip(
-        models, labels, np.linspace(0.13, 0.87, len(models)), strict=True
+        models, labels, np.linspace(0.17, 0.83, len(models)), strict=True
     ):
         add_logo(
             ax,
             images,
             model,
-            float(x) - 0.035,
+            float(x) - 0.040,
             0.5,
-            zoom=0.058,
+            zoom=0.054,
             coordinates=ax.transAxes,
         )
-        ax.text(float(x) + 0.015, 0.5, label, ha="left", va="center", fontsize=8.8)
+        ax.text(float(x) + 0.010, 0.5, label, ha="left", va="center", fontsize=8.0)
 
 
 def method_handles() -> list[Line2D]:
@@ -488,22 +509,22 @@ def main() -> None:
                 images[family], METHOD_COLORS[method]
             )
 
-    fig = plt.figure(figsize=(18.2, 5.2))
+    fig = plt.figure(figsize=(15.4, 4.8))
     outer = fig.add_gridspec(
         1,
-        8,
-        width_ratios=[1.40, 0.28, 3.00, 3.00, 0.34, 2.10, 0.52, 2.10],
+        9,
+        width_ratios=[1.68, 0.38, 3.00, 0.22, 3.00, 0.46, 2.10, 1.18, 2.10],
         left=0.035,
         right=0.985,
         bottom=0.24,
         top=0.86,
-        wspace=0.17,
+        wspace=0.12,
     )
     bar_ax = fig.add_subplot(outer[0])
-    draw_bar_panel(bar_ax, records, images)
+    draw_box_panel(bar_ax, records, images)
 
     frontier_axes: list[tuple[plt.Axes, plt.Axes, plt.Axes]] = []
-    for index in [2, 3]:
+    for index in [2, 4]:
         nested = outer[index].subgridspec(
             2,
             2,
@@ -519,10 +540,10 @@ def main() -> None:
 
     draw_frontier(*frontier_axes[0], records, "ID", images)
     draw_frontier(*frontier_axes[1], records, "OOD", images)
-    model_ax = fig.add_axes([0.225, 0.885, 0.395, 0.075])
+    model_ax = fig.add_axes([0.245, 0.885, 0.370, 0.075])
     draw_model_legend(model_ax, images)
-    radar_id_ax = fig.add_subplot(outer[5], projection="polar")
-    radar_ood_ax = fig.add_subplot(outer[7], projection="polar")
+    radar_id_ax = fig.add_subplot(outer[6], projection="polar")
+    radar_ood_ax = fig.add_subplot(outer[8], projection="polar")
     draw_radar(radar_id_ax, "ID")
     draw_radar(radar_ood_ax, "OOD")
 
