@@ -106,8 +106,9 @@ def setup_style() -> None:
     sns.set_theme(context="talk", style="ticks", palette="dark")
     mpl.rcParams.update(
         {
-            "font.family": "serif",
-            "mathtext.fontset": "cm",
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Arial", "DejaVu Sans"],
+            "mathtext.fontset": "dejavusans",
             "axes.spines.top": False,
             "axes.spines.right": False,
             "legend.frameon": False,
@@ -575,7 +576,7 @@ def draw_model_legend(ax: plt.Axes, images: dict[str, np.ndarray]) -> None:
         )
         text = TextArea(
             label,
-            textprops={"fontsize": 14.0, "fontfamily": "serif", "color": INK},
+            textprops={"fontsize": 14.0, "fontfamily": "Arial", "color": INK},
         )
         groups.append(HPacker(children=[logo, text], align="center", pad=0, sep=4))
     packed = HPacker(children=groups, align="center", pad=0, sep=28)

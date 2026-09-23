@@ -75,8 +75,9 @@ def setup_style() -> None:
     sns.set_theme(context="talk", style="ticks", palette="dark")
     plt.rcParams.update(
         {
-            "font.family": "serif",
-            "mathtext.fontset": "cm",
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Arial", "DejaVu Sans"],
+            "mathtext.fontset": "dejavusans",
             "axes.spines.top": False,
             "axes.spines.right": False,
             "lines.linewidth": 1,

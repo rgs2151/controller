@@ -1,7 +1,7 @@
 # Figure style guide
 
 A compact, reproducible style for matplotlib + seaborn figures. It targets clean,
-print-ready vector PDF output: serif type, Computer-Modern math, trimmed and offset
+print-ready vector PDF output: Arial type, sans-serif math, trimmed and offset
 spines, endpoint-only ticks, a white background, and a small saturated palette.
 
 Assumed imports for every snippet below:
@@ -22,8 +22,9 @@ Call once before plotting. It sets the theme and rcParams that every figure inhe
 ```python
 def setup_style():
     sns.set_theme(context="talk", style="ticks", palette="dark")
-    plt.rcParams["font.family"] = "serif"          # serif text
-    plt.rcParams["mathtext.fontset"] = "cm"        # Computer-Modern math ($...$)
+    plt.rcParams["font.family"] = "sans-serif"     # sans-serif text
+    plt.rcParams["font.sans-serif"] = ["Arial", "DejaVu Sans"]
+    plt.rcParams["mathtext.fontset"] = "dejavusans" # sans-serif math ($...$)
     plt.rcParams["axes.spines.top"] = False        # drop top + right spines
     plt.rcParams["axes.spines.right"] = False
     plt.rcParams["lines.linewidth"] = 1            # thin lines
@@ -70,7 +71,8 @@ ax.set_xticks([0, xmax])
 
 ## 4. Typography
 
-- Serif body text; math wrapped in `$...$` renders in Computer-Modern (e.g. `r"Scale $s$"`).
+- Arial body text; math wrapped in `$...$` renders in matching sans-serif math
+  (e.g. `r"Scale $s$"`). Use `DejaVu Sans` only as a fallback when Arial is unavailable.
 - Titles are short and specific (include the key parameter, e.g. `f"{name}: L{value}"`).
 - Axis labels name the quantity, not the column (`"Rate"`, not `"judge_rate"`).
 - When rotating tick labels, always set `ha="right"` so labels anchor cleanly to their ticks.
