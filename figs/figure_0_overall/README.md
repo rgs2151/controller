@@ -30,7 +30,7 @@
 ## Legends
 
 - X axis: English and Spanish translation; Direct and Adversaries; Chinese, French, Japanese, Swahili, and Telugu; 8K and 16K.
-- Y axis: Truthful responses, safe responses, accuracy, or citation F1, all in percent and all higher-is-better. Language-shift accuracy is capped at 80% and includes a small unlabeled margin below the zero line so zero-valued model marks remain unobstructed; context-shift citation F1 is capped at 10%.
+- Y axis: Truthful responses, safe responses, accuracy, or citation F1, all in percent and all higher-is-better. Language-shift accuracy is capped at 80%; context-shift citation F1 is capped at 10%. Every panel includes the same proportional 5% unlabeled margin below its zero line so zero-valued model marks remain unobstructed.
 - Color/value: gray bars are the best competitor; teal bars are H∞.
 - Grouping: each x-axis label names the concrete evaluation condition rather than using ID/OOD shorthand.
 - Ordering/sorting: shifts follow truthfulness, adversarial, language, and context; languages follow Chinese, French, Japanese, Swahili, and Telugu.
