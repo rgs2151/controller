@@ -395,7 +395,7 @@ def draw_frontier(
     right_ax.spines["left"].set_color("#AEB4BC")
 
 
-def category_radar_values() -> tuple[
+def category_radar_values(model: str | None = None) -> tuple[
     list[str], dict[str, tuple[list[float], list[float]]]
 ]:
     rows = list(csv.DictReader(CATEGORY_CACHE.open()))
@@ -412,7 +412,9 @@ def category_radar_values() -> tuple[
                 by_model[row["model"]].append(row)
             ours_points: list[float] = []
             best_points: list[float] = []
-            for model, model_rows in by_model.items():
+            for current_model, model_rows in by_model.items():
+                if model is not None and current_model != model:
+                    continue
                 ours = next(row for row in model_rows if row["method"] == "H∞ (ours)")
                 best = max(
                     (row for row in model_rows if row["method"] != "H∞ (ours)"),
@@ -434,8 +436,41 @@ def category_radar_values() -> tuple[
     return categories, values
 
 
-def draw_radar(ax: plt.Axes, split: str) -> None:
-    categories, values = category_radar_values()
+def best_radar_model() -> tuple[str, dict[str, float]]:
+    rows = list(csv.DictReader(CATEGORY_CACHE.open()))
+    grouped: dict[tuple[str, str, str], list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        grouped[(row["split"], row["category"], row["model"])].append(row)
+    margins: dict[str, list[float]] = defaultdict(list)
+    for (_, _, model), model_rows in grouped.items():
+        ours = next(
+            float(row["txi_pct"])
+            for row in model_rows
+            if row["method"] == "H∞ (ours)"
+        )
+        competitor = max(
+            float(row["txi_pct"])
+            for row in model_rows
+            if row["method"] != "H∞ (ours)"
+        )
+        margins[model].append(ours - competitor)
+    mean_margins = {
+        model: float(np.mean(model_margins))
+        for model, model_margins in margins.items()
+    }
+    selected = max(mean_margins, key=mean_margins.get)
+    return selected, mean_margins
+
+
+def draw_radar(
+    ax: plt.Axes,
+    split: str,
+    *,
+    model: str | None = None,
+    label_fontsize: float = 8.6,
+    label_pad: float = 10,
+) -> None:
+    categories, values = category_radar_values(model)
     ours, best = values[split]
     angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False)
     angles = np.r_[angles, angles[0]]
@@ -448,8 +483,8 @@ def draw_radar(ax: plt.Axes, split: str) -> None:
     ax.scatter(angles[:-1], best, s=14, color=GRAY, zorder=4)
     ax.scatter(angles[:-1], ours, s=18, color=TEAL, zorder=5)
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories, fontsize=8.6)
-    ax.tick_params(axis="x", pad=10)
+    ax.set_xticklabels(categories, fontsize=label_fontsize)
+    ax.tick_params(axis="x", pad=label_pad)
     ax.set_theta_offset(np.pi / 2.0)
     ax.set_theta_direction(-1)
     ax.set_ylim(0, 100)
@@ -638,6 +673,57 @@ def render_figure_c() -> None:
     save_figure(fig, "figure_truthful_c")
 
 
+def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
+    model, mean_margins = best_radar_model()
+    fig = plt.figure(figsize=(6.8, 3.5))
+    outer = fig.add_gridspec(
+        1,
+        2,
+        left=0.05,
+        right=0.95,
+        bottom=0.24,
+        top=0.96,
+        wspace=1.85,
+    )
+    radar_id_ax = fig.add_subplot(outer[0], projection="polar")
+    radar_ood_ax = fig.add_subplot(outer[1], projection="polar")
+    draw_radar(
+        radar_id_ax,
+        "ID",
+        model=model,
+        label_fontsize=12.5,
+        label_pad=12,
+    )
+    draw_radar(
+        radar_ood_ax,
+        "OOD",
+        model=model,
+        label_fontsize=12.5,
+        label_pad=12,
+    )
+    fig.legend(
+        handles=[
+            Line2D([0], [0], color=TEAL, linewidth=2.2, label=r"H$\infty$ (ours)"),
+            Line2D(
+                [0],
+                [0],
+                color=GRAY,
+                linewidth=1.7,
+                linestyle="--",
+                label="Best competitor",
+            ),
+        ],
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.015),
+        ncol=2,
+        fontsize=12.0,
+        handlelength=1.8,
+        columnspacing=1.6,
+    )
+    save_figure(fig, "figure_truthful_c_best_model")
+    return model, mean_margins
+
+
 def main() -> None:
     setup_style()
     PLOTS.mkdir(parents=True, exist_ok=True)
@@ -645,6 +731,7 @@ def main() -> None:
     render_figure_a(records, images)
     render_figure_b(records, images)
     render_figure_c()
+    render_figure_c_best_model()
 
 
 if __name__ == "__main__":

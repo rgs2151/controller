@@ -52,6 +52,10 @@
   True–Informative frontiers with marginal distributions.
 - `plots/figure_truthful_c.pdf` and `.png`: paired English/Spanish category
   robustness radars.
+- `plots/figure_truthful_c_best_model.pdf` and `.png`: compact variant using
+  the single model with the largest mean H∞ minus best-competitor category
+  T×I margin across both splits. The current finalized data select
+  **LLaMA-3-8B** (mean margin: 4.856 percentage points).
 - `cache/truthfulqa_category_txi.csv`: auditable category-level source values,
   including the exact scorer artifact paths.
 
