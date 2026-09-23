@@ -53,21 +53,21 @@ MODEL_FAMILIES = {
 }
 
 LOGO_FILES = {
-    "GPT": LOGOS / "openai.png",
-    "LLaMA": LOGOS / "llama_official.png",
-    "Qwen": LOGOS / "qwen_official.png",
-    "Phi": LOGOS / "microsoft.png",
-    "Granite": LOGOS / "ibm.png",
-    "OLMo": LOGOS / "ai2.png",
+    "GPT": LOGOS / "openai_transparent.png",
+    "LLaMA": LOGOS / "llama_transparent.png",
+    "Qwen": LOGOS / "qwen_transparent.png",
+    "Phi": LOGOS / "microsoft_transparent.png",
+    "Granite": LOGOS / "ibm_transparent.png",
+    "OLMo": LOGOS / "ai2_transparent.png",
 }
 
 LOGO_VISUAL_SCALE = {
-    "GPT": 1.65,
-    "LLaMA": 1.05,
+    "GPT": 1.00,
+    "LLaMA": 1.00,
     "Qwen": 0.92,
     "Phi": 0.92,
-    "Granite": 1.20,
-    "OLMo": 0.90,
+    "Granite": 1.12,
+    "OLMo": 1.00,
 }
 
 
@@ -242,7 +242,7 @@ def square_logo(path: Path, side: int = 256) -> np.ndarray:
 
 
 def logo_zoom(size_b: float) -> float:
-    return 0.032 + 0.008 * math.log2(max(size_b, 1.0))
+    return 0.048 + 0.012 * math.log2(max(size_b, 1.0))
 
 
 def add_logo(
@@ -283,7 +283,7 @@ def draw_panel(
     ylabel: str,
     ymax: float,
     logo_images: dict[str, np.ndarray],
-    condition_labels_inside: bool = False,
+    condition_labels: list[str],
 ) -> None:
     group_gap = 3.15 if len(conditions) <= 2 else 2.70
     width = 0.92
@@ -307,37 +307,27 @@ def draw_panel(
                     float(point["score"]),
                     logo_zoom(float(point["size_b"])),
                 )
-        if condition_labels_inside:
-            ax.text(
-                center,
-                ymax * 0.955,
-                condition,
-                ha="center",
-                va="top",
-                fontsize=9.5,
-                fontweight="semibold",
-            )
-        else:
-            ax.text(
-                center,
-                1.025,
-                condition,
-                transform=ax.get_xaxis_transform(),
-                ha="center",
-                va="bottom",
-                fontsize=10.5,
-                fontweight="semibold",
-            )
-
     left = centers[0] - 0.9
     right = centers[-1] + 0.9
     ax.set_xlim(left, right)
     ax.set_ylim(0, ymax)
     ax.set_yticks(np.linspace(0, ymax, 6))
     ax.set_ylabel(ylabel, fontsize=11)
-    ax.set_xticks([])
-    ax.set_title(title, fontsize=14, fontweight="semibold", pad=32)
+    ax.set_xticks(centers)
+    if len(condition_labels) > 2:
+        staggered = [
+            label if index % 2 == 0 else f"\n{label}"
+            for index, label in enumerate(condition_labels)
+        ]
+        ax.set_xticklabels(
+            staggered,
+            fontsize=8.5,
+        )
+    else:
+        ax.set_xticklabels(condition_labels, fontsize=9.5)
+    ax.set_title(title, fontsize=14, fontweight="semibold", pad=20)
     ax.tick_params(axis="y", labelsize=8)
+    ax.tick_params(axis="x", length=0, pad=8)
     ax.spines["left"].set_bounds(0, ymax)
     ax.spines["left"].set_position(("outward", 4))
     ax.spines["bottom"].set_position(("outward", 4))
@@ -389,10 +379,21 @@ def draw_model_legend(ax: plt.Axes, logo_images: dict[str, np.ndarray]) -> None:
     ax.set_ylim(0, 1)
     ax.text(0.5, 1.03, "Model family", ha="center", va="bottom", fontsize=11, fontweight="semibold")
     families = ["GPT", "LLaMA", "Qwen", "Phi", "Granite", "OLMo"]
-    y_positions = np.linspace(0.88, 0.18, len(families))
+    y_positions = np.linspace(0.86, 0.41, len(families))
     for family, y in zip(families, y_positions, strict=True):
-        add_logo(ax, logo_images, family, 0.22, float(y), 0.052)
-        ax.text(0.43, y, family, ha="left", va="center", fontsize=9.5)
+        add_logo(ax, logo_images, family, 0.24, float(y), 0.078)
+        ax.text(0.39, y, family, ha="left", va="center", fontsize=9.5)
+    ax.legend(
+        handles=[
+            Patch(facecolor=GRAY, label="Best competitor"),
+            Patch(facecolor=TEAL, label=r"H$\infty$ (ours)"),
+        ],
+        loc="lower left",
+        bbox_to_anchor=(0.04, 0.08),
+        fontsize=8.5,
+        handlelength=1.4,
+        labelspacing=0.6,
+    )
 
 
 def main() -> None:
@@ -402,15 +403,15 @@ def main() -> None:
     write_values(results)
     logo_images = {family: square_logo(path) for family, path in LOGO_FILES.items()}
 
-    fig = plt.figure(figsize=(20.0, 6.7))
+    fig = plt.figure(figsize=(16.5, 5.53))
     grid = fig.add_gridspec(
         1,
         6,
-        width_ratios=[1.35, 1.35, 0.42, 2.55, 1.35, 0.82],
+        width_ratios=[1.35, 1.35, 0.42, 2.95, 1.35, 0.82],
         left=0.045,
         right=0.985,
-        bottom=0.14,
-        top=0.82,
+        bottom=0.19,
+        top=0.86,
         wspace=0.38,
     )
     axes = [fig.add_subplot(grid[0, index]) for index in [0, 1, 3, 4, 5]]
@@ -422,6 +423,7 @@ def main() -> None:
         "Truthful responses (%)",
         100,
         logo_images,
+        ["English", "Spanish\nTranslation"],
     )
     draw_panel(
         axes[1],
@@ -430,6 +432,7 @@ def main() -> None:
         "Safe responses (%)",
         100,
         logo_images,
+        ["Direct", "Adversaries"],
     )
     draw_panel(
         axes[2],
@@ -438,17 +441,7 @@ def main() -> None:
         "Accuracy (%)",
         100,
         logo_images,
-        condition_labels_inside=True,
-    )
-    axes[2].text(
-        0.5,
-        0.995,
-        "OOD",
-        transform=axes[2].transAxes,
-        ha="center",
-        va="top",
-        fontsize=10.5,
-        fontweight="semibold",
+        ["Chinese", "French", "Japanese", "Swahili", "Telugu"],
     )
     draw_panel(
         axes[3],
@@ -457,21 +450,9 @@ def main() -> None:
         "Citation F1 (%)",
         10,
         logo_images,
+        ["8K", "16K"],
     )
     draw_model_legend(axes[4], logo_images)
-
-    fig.legend(
-        handles=[
-            Patch(facecolor=GRAY, label="Best competitor"),
-            Patch(facecolor=TEAL, label=r"H$\infty$ (ours)"),
-        ],
-        loc="lower center",
-        bbox_to_anchor=(0.48, 0.035),
-        ncol=2,
-        fontsize=10,
-        handlelength=1.6,
-        columnspacing=2.3,
-    )
 
     for suffix in ["pdf", "png"]:
         fig.savefig(
