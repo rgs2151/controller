@@ -1,0 +1,549 @@
+from __future__ import annotations
+
+import csv
+import math
+import re
+from collections import defaultdict
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from matplotlib.offsetbox import AnnotationBbox, OffsetImage
+from matplotlib.patches import FancyArrowPatch, Patch
+from PIL import Image
+
+
+UNIT = Path(__file__).resolve().parent
+REPO = UNIT.parents[1]
+PLOTS = UNIT / "plots"
+LOGOS = REPO / "figs" / "logos"
+
+TEAL = "#398197"
+GRAY = "#A7ADB2"
+INK = "#202124"
+
+MODEL_SIZES = {
+    "GPT-2 XL": 1.5,
+    "Llama-3-8B": 8.0,
+    "Qwen-2.5-14B": 14.0,
+    "OLMo-2-32B": 32.0,
+    "Llama-3.2-1B-Instruct": 1.0,
+    "Llama-3.2-3B-Instruct": 3.0,
+    "Llama-3.1-8B-Instruct": 8.0,
+    "Qwen3-4B": 4.0,
+    "Phi-4-mini": 3.8,
+    "Granite-3.3-2B": 2.0,
+    "Qwen2.5-3B-Instruct": 3.0,
+    "Llama-3.2-1B-Instruct": 1.0,
+}
+
+MODEL_FAMILIES = {
+    "GPT-2 XL": "GPT",
+    "Llama-3-8B": "LLaMA",
+    "Qwen-2.5-14B": "Qwen",
+    "OLMo-2-32B": "OLMo",
+    "Llama-3.2-1B-Instruct": "LLaMA",
+    "Llama-3.2-3B-Instruct": "LLaMA",
+    "Llama-3.1-8B-Instruct": "LLaMA",
+    "Qwen3-4B": "Qwen",
+    "Phi-4-mini": "Phi",
+    "Granite-3.3-2B": "Granite",
+    "Qwen2.5-3B-Instruct": "Qwen",
+}
+
+LOGO_FILES = {
+    "GPT": LOGOS / "openai.png",
+    "LLaMA": LOGOS / "llama_official.png",
+    "Qwen": LOGOS / "qwen_official.png",
+    "Phi": LOGOS / "microsoft.png",
+    "Granite": LOGOS / "ibm.png",
+    "OLMo": LOGOS / "ai2.png",
+}
+
+
+def setup_style() -> None:
+    sns.set_theme(context="talk", style="ticks", palette="dark")
+    plt.rcParams.update(
+        {
+            "font.family": "serif",
+            "mathtext.fontset": "cm",
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "lines.linewidth": 1,
+            "patch.linewidth": 0,
+            "legend.frameon": False,
+            "figure.dpi": 300,
+            "savefig.dpi": 300,
+            "savefig.facecolor": "white",
+            "savefig.transparent": False,
+        }
+    )
+
+
+def read_markdown_table(path: Path) -> list[dict[str, str]]:
+    lines = path.read_text().splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith("| Model |"))
+    header = [cell.strip() for cell in lines[start].strip("|").split("|")]
+    rows: list[dict[str, str]] = []
+    for line in lines[start + 2 :]:
+        if not line.startswith("|"):
+            break
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        rows.append(dict(zip(header, cells, strict=True)))
+    return rows
+
+
+def numeric(cell: str) -> float:
+    match = re.match(r"\s*(-?\d+(?:\.\d+)?)", cell)
+    if match is None:
+        raise ValueError(f"No numeric prefix in {cell!r}")
+    return float(match.group(1))
+
+
+def select_scores(
+    rows: list[dict[str, str]],
+    metric: str,
+    condition_key: str | None = None,
+    condition_value: str | None = None,
+    invert_percent: bool = False,
+) -> dict[str, object]:
+    selected = [
+        row
+        for row in rows
+        if condition_key is None or row[condition_key] == condition_value
+    ]
+    by_model: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in selected:
+        by_model[row["Model"]].append(row)
+
+    baseline: list[dict[str, object]] = []
+    ours: list[dict[str, object]] = []
+    for model, model_rows in by_model.items():
+        if model not in MODEL_SIZES:
+            raise KeyError(f"Missing parameter count for {model}")
+
+        def score(row: dict[str, str]) -> float:
+            value = numeric(row[metric])
+            return 100.0 - value if invert_percent else value
+
+        competitor = max(
+            (row for row in model_rows if row["Method"] != "H∞ (ours)"),
+            key=score,
+        )
+        hinf = next(row for row in model_rows if row["Method"] == "H∞ (ours)")
+        baseline.append(
+            {
+                "model": model,
+                "family": MODEL_FAMILIES[model],
+                "size_b": MODEL_SIZES[model],
+                "method": competitor["Method"],
+                "score": score(competitor),
+            }
+        )
+        ours.append(
+            {
+                "model": model,
+                "family": MODEL_FAMILIES[model],
+                "size_b": MODEL_SIZES[model],
+                "method": hinf["Method"],
+                "score": score(hinf),
+            }
+        )
+
+    def weighted(points: list[dict[str, object]]) -> float:
+        numerator = sum(float(point["score"]) * float(point["size_b"]) for point in points)
+        denominator = sum(float(point["size_b"]) for point in points)
+        return numerator / denominator
+
+    return {
+        "baseline": baseline,
+        "ours": ours,
+        "baseline_mean": weighted(baseline),
+        "ours_mean": weighted(ours),
+    }
+
+
+def build_results() -> dict[str, dict[str, dict[str, object]]]:
+    truth_id = read_markdown_table(
+        REPO / "figs/bench_table/truthfulness/truthfulqa.md"
+    )
+    truth_ood = read_markdown_table(
+        REPO / "figs/bench_table/truthfulness/truthfulqa_spanish.md"
+    )
+    harmful = read_markdown_table(
+        REPO / "figs/bench_table/harmful/harmbench_summary.md"
+    )
+    mgsm = read_markdown_table(REPO / "figs/bench_table/mgsm/mgsm_full.md")
+    lcite = read_markdown_table(
+        REPO / "figs/bench_table/lciteeval/lciteeval_summary.md"
+    )
+
+    return {
+        "Truthfulness shift": {
+            "ID": select_scores(truth_id, "True (%) ↑"),
+            "OOD": select_scores(truth_ood, "True (%) ↑"),
+        },
+        "Adversarial shift": {
+            "ID": select_scores(harmful, "Direct ASR (%) ↓", invert_percent=True),
+            "OOD": select_scores(
+                harmful,
+                "Human-jailbreak average ASR (%) ↓",
+                invert_percent=True,
+            ),
+        },
+        "Language shift": {
+            language: select_scores(
+                mgsm,
+                "Accuracy (%) ↑",
+                condition_key="Language",
+                condition_value=language,
+            )
+            for language in ["Chinese", "French", "Japanese", "Swahili", "Telugu"]
+        },
+        "Context shift": {
+            "ID": select_scores(
+                lcite,
+                "Citation F1 (%) ↑",
+                condition_key="Context",
+                condition_value="8K",
+            ),
+            "OOD": select_scores(
+                lcite,
+                "Citation F1 (%) ↑",
+                condition_key="Context",
+                condition_value="16K",
+            ),
+        },
+    }
+
+
+def square_logo(path: Path, side: int = 256) -> np.ndarray:
+    image = Image.open(path).convert("RGBA")
+    alpha = np.asarray(image)[..., 3]
+    if np.any(alpha < 255):
+        box = image.getbbox()
+        if box is not None:
+            image = image.crop(box)
+    image.thumbnail((side - 24, side - 24), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (side, side), (255, 255, 255, 0))
+    position = ((side - image.width) // 2, (side - image.height) // 2)
+    canvas.alpha_composite(image, position)
+    return np.asarray(canvas)
+
+
+def logo_zoom(size_b: float) -> float:
+    return 0.032 + 0.008 * math.log2(max(size_b, 1.0))
+
+
+def add_logo(
+    ax: plt.Axes,
+    logo_images: dict[str, np.ndarray],
+    family: str,
+    x: float,
+    y: float,
+    zoom: float,
+    frame: bool = True,
+) -> None:
+    image = OffsetImage(logo_images[family], zoom=zoom, resample=True)
+    box = AnnotationBbox(
+        image,
+        (x, y),
+        frameon=frame,
+        pad=0.07,
+        bboxprops={
+            "boxstyle": "round,pad=0.06",
+            "facecolor": "white",
+            "edgecolor": "#5F6368",
+            "linewidth": 0.45,
+        },
+        zorder=8,
+        annotation_clip=False,
+    )
+    ax.add_artist(box)
+
+
+def draw_panel(
+    ax: plt.Axes,
+    title: str,
+    conditions: dict[str, dict[str, object]],
+    ylabel: str,
+    ymax: float,
+    logo_images: dict[str, np.ndarray],
+) -> None:
+    group_gap = 2.55 if len(conditions) <= 2 else 2.15
+    width = 0.60
+    centers = np.arange(len(conditions), dtype=float) * group_gap
+    for center, (condition, values) in zip(centers, conditions.items(), strict=True):
+        positions = [center - 0.36, center + 0.36]
+        heights = [float(values["baseline_mean"]), float(values["ours_mean"])]
+        ax.bar(positions, heights, width=width, color=[GRAY, TEAL], zorder=2)
+
+        for position, height, key in zip(
+            positions, heights, ["baseline", "ours"], strict=True
+        ):
+            points = list(values[key])
+            offsets = np.linspace(-0.13, 0.13, len(points)) if len(points) > 1 else [0.0]
+            for point, offset in zip(points, offsets, strict=True):
+                add_logo(
+                    ax,
+                    logo_images,
+                    str(point["family"]),
+                    position + float(offset),
+                    float(point["score"]),
+                    logo_zoom(float(point["size_b"])),
+                )
+            label_y = height + ymax * 0.025
+            if label_y > ymax * 0.97:
+                label_y = height - ymax * 0.055
+                label_color = "white"
+            else:
+                label_color = INK
+            ax.text(
+                position,
+                label_y,
+                f"{height:.1f}",
+                ha="center",
+                va="center",
+                fontsize=8.5,
+                color=label_color,
+                fontweight="semibold",
+                zorder=9,
+            )
+        ax.text(
+            center,
+            1.035,
+            condition,
+            transform=ax.get_xaxis_transform(),
+            ha="center",
+            va="bottom",
+            fontsize=10.5,
+            fontweight="semibold",
+        )
+
+    left = centers[0] - 0.9
+    right = centers[-1] + 0.9
+    ax.set_xlim(left, right)
+    ax.set_ylim(0, ymax)
+    ax.set_yticks([0, ymax])
+    ax.set_ylabel(ylabel, fontsize=11)
+    ax.set_xticks([])
+    ax.set_title(title, fontsize=14, fontweight="semibold", pad=47)
+    ax.tick_params(axis="y", labelsize=8)
+    ax.spines["left"].set_bounds(0, ymax)
+    ax.spines["left"].set_position(("outward", 4))
+    ax.spines["bottom"].set_position(("outward", 4))
+    ax.axhline(0, color=INK, linewidth=0.8, zorder=3)
+
+
+def write_values(results: dict[str, dict[str, dict[str, object]]]) -> None:
+    path = PLOTS / "figure_0_overall_values.csv"
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "shift",
+                "condition",
+                "series",
+                "model",
+                "family",
+                "parameters_b",
+                "selected_method",
+                "score",
+                "weighted_mean",
+            ],
+        )
+        writer.writeheader()
+        for shift, conditions in results.items():
+            for condition, values in conditions.items():
+                for series in ["baseline", "ours"]:
+                    mean = float(values[f"{series}_mean"])
+                    for point in values[series]:
+                        writer.writerow(
+                            {
+                                "shift": shift,
+                                "condition": condition,
+                                "series": series,
+                                "model": point["model"],
+                                "family": point["family"],
+                                "parameters_b": point["size_b"],
+                                "selected_method": point["method"],
+                                "score": point["score"],
+                                "weighted_mean": mean,
+                            }
+                        )
+
+
+def add_header(fig: plt.Figure) -> None:
+    fig.text(
+        0.245,
+        0.965,
+        "Parallel steering",
+        ha="center",
+        va="top",
+        fontsize=18,
+        fontweight="semibold",
+    )
+    for y in [0.907, 0.892]:
+        fig.add_artist(
+            FancyArrowPatch(
+                (0.12, y),
+                (0.37, y),
+                transform=fig.transFigure,
+                arrowstyle="->",
+                mutation_scale=12,
+                color=INK,
+                linewidth=1.1,
+            )
+        )
+
+    fig.text(
+        0.672,
+        0.965,
+        "Orthogonal steering",
+        ha="center",
+        va="top",
+        fontsize=18,
+        fontweight="semibold",
+    )
+    fig.add_artist(
+        FancyArrowPatch(
+            (0.548, 0.892),
+            (0.79, 0.892),
+            transform=fig.transFigure,
+            arrowstyle="->",
+            mutation_scale=12,
+            color=INK,
+            linewidth=1.1,
+        )
+    )
+    fig.add_artist(
+        FancyArrowPatch(
+            (0.548, 0.868),
+            (0.548, 0.938),
+            transform=fig.transFigure,
+            arrowstyle="->",
+            mutation_scale=12,
+            color=INK,
+            linewidth=1.1,
+        )
+    )
+    fig.lines.extend(
+        [
+            plt.Line2D([0.045, 0.89], [0.835, 0.835], transform=fig.transFigure, color="#666666", linewidth=0.6),
+            plt.Line2D([0.445, 0.445], [0.84, 0.975], transform=fig.transFigure, color="#B0B0B0", linewidth=0.7),
+        ]
+    )
+
+
+def draw_model_legend(ax: plt.Axes, logo_images: dict[str, np.ndarray]) -> None:
+    ax.set_axis_off()
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.text(0.5, 1.03, "Model family", ha="center", va="bottom", fontsize=11, fontweight="semibold")
+    families = ["GPT", "LLaMA", "Qwen", "Phi", "Granite", "OLMo"]
+    y_positions = np.linspace(0.88, 0.18, len(families))
+    for family, y in zip(families, y_positions, strict=True):
+        add_logo(ax, logo_images, family, 0.22, float(y), 0.048)
+        ax.text(0.43, y, family, ha="left", va="center", fontsize=9.5)
+
+
+def main() -> None:
+    setup_style()
+    PLOTS.mkdir(exist_ok=True)
+    results = build_results()
+    write_values(results)
+    logo_images = {family: square_logo(path) for family, path in LOGO_FILES.items()}
+
+    fig = plt.figure(figsize=(17.2, 7.3))
+    grid = fig.add_gridspec(
+        1,
+        5,
+        width_ratios=[1.18, 1.18, 2.05, 1.18, 0.78],
+        left=0.055,
+        right=0.985,
+        bottom=0.16,
+        top=0.73,
+        wspace=0.43,
+    )
+    axes = [fig.add_subplot(grid[0, index]) for index in range(5)]
+
+    draw_panel(
+        axes[0],
+        "Truthfulness shift",
+        results["Truthfulness shift"],
+        "Truthful responses (%)",
+        100,
+        logo_images,
+    )
+    draw_panel(
+        axes[1],
+        "Adversarial shift",
+        results["Adversarial shift"],
+        "Safe responses (%)",
+        100,
+        logo_images,
+    )
+    draw_panel(
+        axes[2],
+        "Language shift",
+        results["Language shift"],
+        "Accuracy (%)",
+        100,
+        logo_images,
+    )
+    axes[2].text(
+        0.5,
+        1.085,
+        "OOD only",
+        transform=axes[2].transAxes,
+        ha="center",
+        va="bottom",
+        fontsize=10.5,
+        fontweight="semibold",
+    )
+    draw_panel(
+        axes[3],
+        "Context shift",
+        results["Context shift"],
+        "Citation F1 (%)",
+        10,
+        logo_images,
+    )
+    draw_model_legend(axes[4], logo_images)
+    add_header(fig)
+
+    fig.legend(
+        handles=[
+            Patch(facecolor=GRAY, label="Best competitor"),
+            Patch(facecolor=TEAL, label=r"H$\infty$ (ours)"),
+        ],
+        loc="lower center",
+        bbox_to_anchor=(0.48, 0.035),
+        ncol=2,
+        fontsize=10,
+        handlelength=1.6,
+        columnspacing=2.3,
+    )
+    fig.text(
+        0.48,
+        0.012,
+        "Bars: parameter-count–weighted means   •   Marks: individual model scores; mark size increases with model size",
+        ha="center",
+        va="bottom",
+        fontsize=8,
+        color="#4A4A4A",
+    )
+
+    for suffix in ["pdf", "png"]:
+        fig.savefig(
+            PLOTS / f"figure_0_overall.{suffix}",
+            bbox_inches="tight",
+            facecolor="white",
+            transparent=False,
+        )
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    main()
