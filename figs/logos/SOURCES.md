@@ -25,6 +25,8 @@
 - `*_transparent.png`: 800-by-800 transparent renders of the corresponding
   SVG marks for consistent reuse in Matplotlib figures. The original GitHub
   organization avatars above remain alongside them as provenance references.
+- `ai2_transparent.png` is rendered specifically from the supplied colored
+  `originals/ai2.svg` reference asset; it is not recolored by the figure code.
 
 The figure code reproduces the marks without recoloring. They identify the
 evaluated model families in academic figures and do not imply endorsement.
