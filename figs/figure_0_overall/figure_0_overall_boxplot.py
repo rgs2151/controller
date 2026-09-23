@@ -75,7 +75,8 @@ def draw_box_panel(
                 )
 
     ax.set_xlim(centers[0] - 1.0, centers[-1] + 1.0)
-    lower_limit = -0.05 * ymax if ymin == 0 else ymin
+    displayed_range = ymax - ymin
+    lower_limit = ymin - 0.05 * displayed_range
     ax.set_ylim(lower_limit, ymax)
     ax.set_yticks(
         np.linspace(0, ymax, 6)
