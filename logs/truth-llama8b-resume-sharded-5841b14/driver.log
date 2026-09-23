@@ -1,0 +1,12 @@
+[1;24rTraceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 472, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 457, in main
+    score_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 300, in score_stage
+    run_jobs(jobs, devices, log_root / "scoring")
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/launcher.py", line 49, in run_jobs
+    time.sleep(0.5)
+KeyboardInterrupt

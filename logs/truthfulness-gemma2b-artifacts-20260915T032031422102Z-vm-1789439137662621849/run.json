@@ -1,0 +1,103 @@
+{
+  "schema_version": 2,
+  "run_id": "truthfulness-gemma2b-artifacts-20260915T032031422102Z-vm-1789439137662621849",
+  "status": "failed",
+  "started_at_utc": "2026-09-15T03:20:31.422384+00:00",
+  "benchmark": "truthfulness",
+  "model": "gemma2b",
+  "stage": "artifacts",
+  "methods": [
+    "original",
+    "iti",
+    "actadd",
+    "mean_act",
+    "linear_act",
+    "pid_act",
+    "odesteer",
+    "spid",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "id",
+    "spanish"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "auto",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "scorers": [],
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py",
+    "artifacts",
+    "--model",
+    "gemma2b",
+    "--methods",
+    "all",
+    "--datasets",
+    "all",
+    "--devices",
+    "auto",
+    "--kv-cache",
+    "off"
+  ],
+  "working_directory": "/teamspace/studios/this_studio/controller",
+  "git": {
+    "commit": "e9c2006ecaa6665035c3c87686f242b24b9c61f4",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "vm-1789439137662621849",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": "01m2ges9x7p9xpz3z1b9208rk6.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA H100 80GB HBM3",
+        "total_memory_bytes": 85017493504
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H100 80GB HBM3",
+        "total_memory_bytes": 85017493504
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H100 80GB HBM3",
+        "total_memory_bytes": 85017493504
+      },
+      {
+        "index": 3,
+        "name": "NVIDIA H100 80GB HBM3",
+        "total_memory_bytes": 85017493504
+      }
+    ],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/truthfulness/gemma2b"
+  },
+  "finished_at_utc": "2026-09-15T03:24:58.471339+00:00",
+  "elapsed_seconds": 266.0144665319999,
+  "error": {
+    "type": "UnpicklingError",
+    "message": "Weights only load failed. This file can still be loaded, to do so you have two options, \u001b[1mdo those steps only if you trust the source of the checkpoint\u001b[0m. \n\t(1) In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.\n\t(2) Alternatively, to load with `weights_only=True` please check the recommended steps in the following error message.\n\tWeightsUnpickler error: Unsupported global: GLOBAL transformers.utils.quantization_config.QuantizationMethod was not an allowed global by default. Please use `torch.serialization.add_safe_globals([transformers.utils.quantization_config.QuantizationMethod])` or the `torch.serialization.safe_globals([transformers.utils.quantization_config.QuantizationMethod])` context manager to allowlist this global if you trust this class/function.\n\nCheck the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html."
+  }
+}

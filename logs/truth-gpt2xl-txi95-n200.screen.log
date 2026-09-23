@@ -1,0 +1,578 @@
+[1;24rUsing CPython 3.12.3 interpreter at: [36m/usr/bin/python3[39m
+Creating virtual environment at: [36m/tmp/robust-steerability-venv[39m
+Activate with: [32msource /tmp/robust-steerability-venv/bin/activate[39m
+[2mUsing Python 3.12.3 environment at: /tmp/robust-steerability-venv[0m
+⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠙ robust-steerability==0.1.0                                                    [2K⠙ datasets==4.4.2                                                               [2K⠙ nltk==3.9.1                                                                   [2K⠙ pykakasi==2.3.0                                                               [2K⠙ torch==2.9.1                                                                  [2K⠙ transformers==4.57.1                                                          [2K⠙ nvidia-cuda-nvrtc-cu12==12.8.93                                               [2K⠙ nvidia-cuda-nvrtc-cu12==12.8.93                                               [2K⠙ nvidia-cuda-runtime-cu12==12.8.90                                             [2K⠙ nvidia-cuda-runtime-cu12==12.8.90                                             [2K⠙ nvidia-cuda-cupti-cu12==12.8.90                                               [2K⠙ nvidia-cuda-cupti-cu12==12.8.90                                               [2K⠙ nvidia-cudnn-cu12==9.10.2.21                                                  [2K⠙ nvidia-cudnn-cu12==9.10.2.21                                                  [2K⠙ nvidia-cublas-cu12==12.8.4.1                                                  [2K⠙ nvidia-cublas-cu12==12.8.4.1                                                  [2K⠙ nvidia-cufft-cu12==11.3.3.83                                                  [2K⠙ nvidia-cufft-cu12==11.3.3.83                                                  [2K⠙ nvidia-curand-cu12==10.3.9.90                                                 [2K⠙ nvidia-curand-cu12==10.3.9.90                                                 [2K[2mResolved [1m89 packages[0m [2min 142ms[0m[0m
+⠋ Preparing packages... (0/0)                                                   [2K⠋ Preparing packages... (0/1)                                                   [2K⠙ Preparing packages... (0/1)                                                   [2K   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/1)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠹ Preparing packages... (0/1)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠸ Preparing packages... (0/1)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠼ Preparing packages... (0/1)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠴ Preparing packages... (0/1)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠦ Preparing packages... (0/1)                                                   [1A[2K[1B[2K[1A      [32m[1mBuilt[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠦ Preparing packages... (0/1)                                                   [2K⠦  (1/1)                                                                        [2K[2mPrepared [1m1 package[0m [2min 1.06s[0m[0m
+░░░░░░░░░░░░░░░░░░░░ [0/0] [2mInstalling wheels...                                 [0m[2K░░░░░░░░░░░░░░░░░░░░ [0/89] [2mInstalling wheels...                                [0m[2K░░░░░░░░░░░░░░░░░░░░ [0/89] [2mrobust-steerability==0.1.0 (from file:///teamspace/s[0m[2K░░░░░░░░░░░░░░░░░░░░ [1/89] [2mrobust-steerability==0.1.0 (from file:///teamspace/s[0m[2K░░░░░░░░░░░░░░░░░░░░ [1/89] [2mdeprecated==1.3.1                                   [0m[2K░░░░░░░░░░░░░░░░░░░░ [2/89] [2mdeprecated==1.3.1                                   [0m[2K░░░░░░░░░░░░░░░░░░░░ [2/89] [2mnvidia-nccl-cu12==2.27.5                            [0m[2K░░░░░░░░░░░░░░░░░░░░ [3/89] [2mnvidia-nccl-cu12==2.27.5                            [0m[2K░░░░░░░░░░░░░░░░░░░░ [3/89] [2mcycler==0.12.1                                      [0m[2K░░░░░░░░░░░░░░░░░░░░ [4/89] [2mcycler==0.12.1                                      [0m[2K░░░░░░░░░░░░░░░░░░░░ [4/89] [2mnvidia-cublas-cu12==12.8.4.1                        [0m[2K█░░░░░░░░░░░░░░░░░░░ [5/89] [2mnvidia-cublas-cu12==12.8.4.1                        [0m[2K█░░░░░░░░░░░░░░░░░░░ [5/89] [2msafetensors==0.8.0                                  [0m[2K█░░░░░░░░░░░░░░░░░░░ [6/89] [2msafetensors==0.8.0                                  [0m[2K█░░░░░░░░░░░░░░░░░░░ [6/89] [2mnvidia-nvjitlink-cu12==12.8.93                      [0m[2K█░░░░░░░░░░░░░░░░░░░ [7/89] [2mnvidia-nvjitlink-cu12==12.8.93                      [0m[2K█░░░░░░░░░░░░░░░░░░░ [7/89] [2mhttpcore==1.0.9                                     [0m[2K█░░░░░░░░░░░░░░░░░░░ [8/89] [2mhttpcore==1.0.9                                     [0m[2K█░░░░░░░░░░░░░░░░░░░ [8/89] [2maiosignal==1.4.0                                    [0m[2K██░░░░░░░░░░░░░░░░░░ [9/89] [2maiosignal==1.4.0                                    [0m[2K██████████████████░░ [81/89] [2mpyarrow==25.0.1                                    [0m[2K███████████████████░ [87/89] [2mtransformers==4.57.1                               [0m[2K███████████████████░ [88/89] [2mtorch==2.9.1                                       [0m[2K████████████████████ [89/89] [2mtorch==2.9.1                                       [0m[2K[2mInstalled [1m89 packages[0m [2min 320ms[0m[0m
+ [32m+[39m [1maccelerate[0m[2m==1.15.0[0m
+ [32m+[39m [1maiohappyeyeballs[0m[2m==2.7.1[0m
+ [32m+[39m [1maiohttp[0m[2m==3.14.3[0m
+ [32m+[39m [1maiosignal[0m[2m==1.4.0[0m
+ [32m+[39m [1manyio[0m[2m==4.15.1[0m
+ [32m+[39m [1mattrs[0m[2m==26.1.0[0m
+ [32m+[39m [1mbitsandbytes[0m[2m==0.50.2[0m
+ [32m+[39m [1mcertifi[0m[2m==2026.7.22[0m
+ [32m+[39m [1mcharset-normalizer[0m[2m==3.5.1[0m
+ [32m+[39m [1mclick[0m[2m==8.5.0[0m
+ [32m+[39m [1mcloudpickle[0m[2m==3.1.2[0m
+ [32m+[39m [1mcontourpy[0m[2m==1.4.0[0m
+ [32m+[39m [1mcycler[0m[2m==0.12.1[0m
+ [32m+[39m [1mdatasets[0m[2m==4.4.2[0m
+ [32m+[39m [1mdeprecated[0m[2m==1.3.1[0m
+ [32m+[39m [1mdill[0m[2m==0.4.0[0m
+ [32m+[39m [1mfilelock[0m[2m==4.0.1[0m
+ [32m+[39m [1mfonttools[0m[2m==4.65.0[0m
+ [32m+[39m [1mfrozenlist[0m[2m==1.8.0[0m
+ [32m+[39m [1mfsspec[0m[2m==2025.10.0[0m
+ [32m+[39m [1mh11[0m[2m==0.16.0[0m
+ [32m+[39m [1mh5py[0m[2m==3.16.0[0m
+ [32m+[39m [1mhf-xet[0m[2m==1.6.0[0m
+ [32m+[39m [1mhttpcore[0m[2m==1.0.9[0m
+ [32m+[39m [1mhttpx[0m[2m==0.28.1[0m
+ [32m+[39m [1mhuggingface-hub[0m[2m==0.36.2[0m
+ [32m+[39m [1midna[0m[2m==3.20[0m
+ [32m+[39m [1mjaconv[0m[2m==0.5.0[0m
+ [32m+[39m [1mjinja2[0m[2m==3.1.6[0m
+ [32m+[39m [1mjoblib[0m[2m==1.6.0[0m
+ [32m+[39m [1mkiwisolver[0m[2m==1.5.1[0m
+ [32m+[39m [1mlangdetect[0m[2m==1.0.9[0m
+ [32m+[39m [1mmarkupsafe[0m[2m==3.0.3[0m
+ [32m+[39m [1mmatplotlib[0m[2m==3.11.2[0m
+ [32m+[39m [1mmpmath[0m[2m==1.3.0[0m
+ [32m+[39m [1mmultidict[0m[2m==6.9.1[0m
+ [32m+[39m [1mmultiprocess[0m[2m==0.70.18[0m
+ [32m+[39m [1mnarwhals[0m[2m==2.26.0[0m
+ [32m+[39m [1mnetworkx[0m[2m==3.7[0m
+ [32m+[39m [1mnltk[0m[2m==3.9.1[0m
+ [32m+[39m [1mnumpy[0m[2m==2.5.3[0m
+ [32m+[39m [1mnvidia-cublas-cu12[0m[2m==12.8.4.1[0m
+ [32m+[39m [1mnvidia-cuda-cupti-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mnvidia-cuda-nvrtc-cu12[0m[2m==12.8.93[0m
+ [32m+[39m [1mnvidia-cuda-runtime-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mnvidia-cudnn-cu12[0m[2m==9.10.2.21[0m
+ [32m+[39m [1mnvidia-cufft-cu12[0m[2m==11.3.3.83[0m
+ [32m+[39m [1mnvidia-cufile-cu12[0m[2m==1.13.1.3[0m
+ [32m+[39m [1mnvidia-curand-cu12[0m[2m==10.3.9.90[0m
+ [32m+[39m [1mnvidia-cusolver-cu12[0m[2m==11.7.3.90[0m
+ [32m+[39m [1mnvidia-cusparse-cu12[0m[2m==12.5.8.93[0m
+ [32m+[39m [1mnvidia-cusparselt-cu12[0m[2m==0.7.1[0m
+ [32m+[39m [1mnvidia-nccl-cu12[0m[2m==2.27.5[0m
+ [32m+[39m [1mnvidia-nvjitlink-cu12[0m[2m==12.8.93[0m
+ [32m+[39m [1mnvidia-nvshmem-cu12[0m[2m==3.3.20[0m
+ [32m+[39m [1mnvidia-nvtx-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mpackaging[0m[2m==26.3[0m
+ [32m+[39m [1mpandas[0m[2m==3.0.6[0m
+ [32m+[39m [1mpillow[0m[2m==12.3.0[0m
+ [32m+[39m [1mpropcache[0m[2m==0.5.4[0m
+ [32m+[39m [1mprotobuf[0m[2m==7.36.2[0m
+ [32m+[39m [1mpsutil[0m[2m==7.2.2[0m
+ [32m+[39m [1mpyarrow[0m[2m==25.0.1[0m
+ [32m+[39m [1mpykakasi[0m[2m==2.3.0[0m
+ [32m+[39m [1mpyparsing[0m[2m==3.3.3[0m
+ [32m+[39m [1mpython-dateutil[0m[2m==2.9.0.post0[0m
+ [32m+[39m [1mpyyaml[0m[2m==6.0.3[0m
+ [32m+[39m [1mregex[0m[2m==2026.9.10[0m
+ [32m+[39m [1mrequests[0m[2m==2.34.2[0m
+ [32m+[39m [1mrobust-steerability[0m[2m==0.1.0 (from file:///teamspace/studios/this_studio/controller)[0m
+ [32m+[39m [1msafetensors[0m[2m==0.8.0[0m
+ [32m+[39m [1mscikit-learn[0m[2m==1.9.1[0m
+ [32m+[39m [1mscipy[0m[2m==1.18.1[0m
+ [32m+[39m [1mseaborn[0m[2m==0.13.2[0m
+ [32m+[39m [1msentencepiece[0m[2m==0.2.2[0m
+ [32m+[39m [1msetuptools[0m[2m==84.0.0[0m
+ [32m+[39m [1msix[0m[2m==1.17.0[0m
+ [32m+[39m [1msympy[0m[2m==1.14.0[0m
+ [32m+[39m [1mthreadpoolctl[0m[2m==3.7.0[0m
+ [32m+[39m [1mtokenizers[0m[2m==0.22.2[0m
+ [32m+[39m [1mtorch[0m[2m==2.9.1[0m
+ [32m+[39m [1mtqdm[0m[2m==4.70.1[0m
+ [32m+[39m [1mtransformers[0m[2m==4.57.1[0m
+ [32m+[39m [1mtriton[0m[2m==3.5.1[0m
+ [32m+[39m [1mtyping-extensions[0m[2m==4.16.0[0m
+ [32m+[39m [1murllib3[0m[2m==2.8.0[0m
+ [32m+[39m [1mwrapt[0m[2m==2.4.1[0m
+ [32m+[39m [1mxxhash[0m[2m==4.0.1[0m
+ [32m+[39m [1myarl[0m[2m==1.25.1[0m
+PYTHON=/tmp/robust-steerability-venv/bin/python
+Fetching 14 files:   0%|                                | 0/14 [00:00<?, ?it/s]
+flax_model.msgpack:   0%|                          | 0.00/6.23G [00:00<?, ?B/s][A
+
+model.safetensors:   0%|                           | 0.00/6.43G [00:00<?, ?B/s][A[A
+
+
+generation_config.json:   0%|                        | 0.00/124 [00:00<?, ?B/s][A[A[Ageneration_config.json: 100%|█████████████████| 124/124 [00:00<00:00, 1.52MB/s]
+
+
+
+config.json:   0%|                                   | 0.00/689 [00:00<?, ?B/s][A[A[Aconfig.json: 100%|████████████████████████████| 689/689 [00:00<00:00, 8.01MB/s]
+
+
+
+.gitattributes:   0%|                                | 0.00/445 [00:00<?, ?B/s][A[A[A.gitattributes: 100%|█████████████████████████| 445/445 [00:00<00:00, 5.54MB/s]
+
+
+
+(…)neration_config_for_text_generation.json:   0%|   | 0.00/165 [00:00<?, ?B/s][A[A[A(…)neration_config_for_text_generation.json: 100%|█| 165/165 [00:00<00:00, 2.28
+
+
+
+merges.txt: 0.00B [00:00, ?B/s][A[A[Amerges.txt: 456kB [00:00, 9.91MB/s]
+
+
+
+pytorch_model.bin:   0%|                           | 0.00/6.43G [00:00<?, ?B/s][A[A[A
+
+
+
+rust_model.ot:   0%|                               | 0.00/6.75G [00:00<?, ?B/s][A[A[A[A
+
+
+
+
+README.md: 0.00B [00:00, ?B/s][A[A[A[A[AREADME.md: 12.0kB [00:00, 42.4MB/s]
+
+
+
+
+
+tf_model.h5:   0%|                                 | 0.00/6.23G [00:00<?, ?B/s][A[A[A[A[A
+
+
+
+
+
+tokenizer.json: 0.00B [00:00, ?B/s][A[A[A[A[A[Atokenizer.json: 1.36MB [00:00, 28.0MB/s]
+
+
+
+
+
+
+tokenizer_config.json:   0%|                        | 0.00/26.0 [00:00<?, ?B/s][A[A[A[A[A[Atokenizer_config.json: 100%|█████████████████| 26.0/26.0 [00:00<00:00, 366kB/s]
+Fetching 14 files:  57%|█████████████▋          | 8/14 [00:00<00:00, 12.35it/s]
+
+
+
+
+
+vocab.json: 0.00B [00:00, ?B/s][A[A[A[A[A[Avocab.json: 1.04MB [00:00, 33.3MB/s]
+
+
+model.safetensors:   4%|▊                   | 256M/6.43G [00:02<00:54, 113MB/s][A[A
+
+model.safetensors:   6%|█▎                  | 402M/6.43G [00:03<00:57, 105MB/s][A[A
+
+model.safetensors:  10%|██                  | 670M/6.43G [00:04<00:28, 205MB/s][A[A
+
+model.safetensors:  12%|██▍                 | 768M/6.43G [00:04<00:27, 203MB/s][A[A
+
+model.safetensors:  15%|██▉                 | 938M/6.43G [00:05<00:26, 211MB/s][A[A
+
+
+
+
+tf_model.h5:   2%|▌                        | 134M/6.23G [00:05<04:21, 23.3MB/s][A[A[A[A[A
+
+model.safetensors:  16%|███                | 1.02G/6.43G [00:06<00:30, 180MB/s][A[A
+
+
+
+
+tf_model.h5:   4%|█                        | 268M/6.23G [00:06<01:51, 53.3MB/s][A[A[A[A[A
+
+
+
+
+tf_model.h5:   5%|█▎                       | 335M/6.23G [00:06<01:24, 69.8MB/s][A[A[A[A[A
+flax_model.msgpack:   2%|▍                 | 134M/6.23G [00:08<06:04, 16.7MB/s][A
+
+
+
+
+tf_model.h5:  12%|███▏                      | 768M/6.23G [00:08<00:41, 131MB/s][A[A[A[A[A
+flax_model.msgpack:   4%|▊                 | 268M/6.23G [00:09<02:53, 34.4MB/s][A
+flax_model.msgpack:  13%|██▍                | 804M/6.23G [00:09<00:38, 143MB/s][A
+
+
+
+rust_model.ot:   4%|▊                      | 256M/6.75G [00:09<04:07, 26.2MB/s][A[A[A[A
+
+
+pytorch_model.bin:   3%|▌                  | 201M/6.43G [00:10<05:09, 20.1MB/s][A[A[A
+
+
+
+rust_model.ot:   4%|▉                      | 268M/6.75G [00:10<03:59, 27.0MB/s][A[A[A[A
+
+
+pytorch_model.bin:   4%|▊                  | 256M/6.43G [00:10<03:49, 27.0MB/s][A[A[A
+
+
+
+rust_model.ot:   5%|█▏                     | 335M/6.75G [00:10<02:54, 36.8MB/s][A[A[A[A
+
+
+
+rust_model.ot:   7%|█▌                     | 456M/6.75G [00:11<01:44, 60.5MB/s][A[A[A[A
+flax_model.msgpack:  15%|██▊                | 938M/6.23G [00:11<00:46, 115MB/s][A
+flax_model.msgpack:  17%|███               | 1.07G/6.23G [00:12<00:43, 119MB/s][A
+
+model.safetensors:  17%|███               | 1.07G/6.43G [00:12<02:06, 42.3MB/s][A[A
+
+
+
+rust_model.ot:  14%|███▎                    | 916M/6.75G [00:12<00:41, 142MB/s][A[A[A[A
+
+
+
+
+tf_model.h5:  13%|███▏                     | 804M/6.23G [00:12<01:29, 60.7MB/s][A[A[A[A[A
+flax_model.msgpack:  18%|███▎              | 1.14G/6.23G [00:13<00:44, 113MB/s][A
+
+model.safetensors:  18%|███▏              | 1.14G/6.43G [00:13<01:59, 44.3MB/s][A[A
+
+
+
+
+tf_model.h5:  15%|███▊                     | 938M/6.23G [00:14<01:15, 69.8MB/s][A[A[A[A[A
+flax_model.msgpack:  19%|███▎             | 1.21G/6.23G [00:14<00:59, 84.9MB/s][A
+
+
+
+
+tf_model.h5:  16%|███▉                    | 1.02G/6.23G [00:15<01:11, 72.6MB/s][A[A[A[A[A
+flax_model.msgpack:  24%|████▎             | 1.47G/6.23G [00:16<00:41, 115MB/s][A
+flax_model.msgpack:  25%|████▍             | 1.54G/6.23G [00:16<00:37, 125MB/s][A
+flax_model.msgpack:  26%|████▋             | 1.61G/6.23G [00:17<00:39, 117MB/s][A
+flax_model.msgpack:  27%|████▊             | 1.68G/6.23G [00:17<00:34, 132MB/s][A
+
+
+
+
+tf_model.h5:  22%|█████▏                  | 1.34G/6.23G [00:18<00:58, 84.0MB/s][A[A[A[A[A
+
+
+
+
+tf_model.h5:  23%|█████▍                  | 1.41G/6.23G [00:18<00:54, 88.5MB/s][A[A[A[A[A
+flax_model.msgpack:  29%|█████▏            | 1.81G/6.23G [00:19<00:39, 112MB/s][A
+
+
+pytorch_model.bin:   9%|█▊                 | 603M/6.43G [00:19<02:49, 34.4MB/s][A[A[AFetching 14 files:  64%|███████████████▍        | 9/14 [00:20<00:11,  2.22s/it]
+
+
+
+
+tf_model.h5:  27%|██████▋                  | 1.68G/6.23G [00:20<00:41, 109MB/s][A[A[A[A[A
+
+
+
+
+tf_model.h5:  29%|███████▎                 | 1.81G/6.23G [00:20<00:32, 135MB/s][A[A[A[A[A
+flax_model.msgpack:  34%|██████▏           | 2.14G/6.23G [00:21<00:33, 124MB/s][A
+
+
+
+
+tf_model.h5:  30%|███████▌                 | 1.88G/6.23G [00:21<00:34, 125MB/s][A[A[A[A[A
+flax_model.msgpack:  36%|██████▍           | 2.21G/6.23G [00:22<00:32, 125MB/s][A
+
+
+
+
+tf_model.h5:  31%|███████▊                 | 1.94G/6.23G [00:22<00:33, 127MB/s][A[A[A[A[A
+
+
+
+
+tf_model.h5:  32%|████████                 | 2.01G/6.23G [00:23<00:39, 108MB/s][A[A[A[A[A
+
+
+
+
+tf_model.h5:  33%|████████▎                | 2.08G/6.23G [00:23<00:36, 113MB/s][A[A[A[A[A
+flax_model.msgpack:  38%|██████▊           | 2.35G/6.23G [00:23<00:36, 106MB/s][A
+
+
+
+
+tf_model.h5:  34%|████████▌                | 2.14G/6.23G [00:23<00:31, 131MB/s][A[A[A[A[A
+flax_model.msgpack:  39%|██████▉           | 2.41G/6.23G [00:24<00:32, 118MB/s][A
+
+model.safetensors:  25%|████▌             | 1.61G/6.43G [00:24<01:50, 43.8MB/s][A[A
+
+
+
+rust_model.ot:  20%|████▎                 | 1.32G/6.75G [00:24<01:36, 56.2MB/s][A[A[A[A
+
+model.safetensors:  38%|███████▏           | 2.41G/6.43G [00:24<00:35, 115MB/s][A[A
+
+
+pytorch_model.bin:  31%|█████▉             | 2.01G/6.43G [00:25<00:40, 108MB/s][A[A[A
+
+
+
+
+tf_model.h5:  35%|████████▌               | 2.21G/6.23G [00:26<00:57, 70.1MB/s][A[A[A[A[A
+
+
+pytorch_model.bin:  32%|█████▊            | 2.08G/6.43G [00:27<00:43, 99.0MB/s][A[A[A
+flax_model.msgpack:  40%|██████▊          | 2.48G/6.23G [00:27<01:03, 58.9MB/s][A
+
+
+pytorch_model.bin:  35%|██████▍           | 2.28G/6.43G [00:30<00:44, 93.0MB/s][A[A[A
+
+model.safetensors:  43%|███████▋          | 2.75G/6.43G [00:30<00:39, 92.6MB/s][A[A
+
+
+pytorch_model.bin:  38%|███████▏           | 2.41G/6.43G [00:30<00:37, 106MB/s][A[A[A
+
+
+pytorch_model.bin:  43%|████████           | 2.75G/6.43G [00:30<00:23, 155MB/s][A[A[A
+flax_model.msgpack:  44%|███████▍         | 2.75G/6.23G [00:30<00:50, 69.3MB/s][A
+
+
+
+
+tf_model.h5:  40%|█████████▌              | 2.48G/6.23G [00:30<01:01, 61.3MB/s][A[A[A[A[A
+
+
+
+rust_model.ot:  41%|█████████▌             | 2.79G/6.75G [00:31<00:33, 119MB/s][A[A[A[A
+
+
+
+rust_model.ot:  49%|███████████▎           | 3.33G/6.75G [00:34<00:26, 127MB/s][A[A[A[A
+
+
+
+rust_model.ot:  50%|███████████▌           | 3.40G/6.75G [00:35<00:26, 124MB/s][A[A[A[A
+
+
+pytorch_model.bin:  44%|███████▉          | 2.82G/6.43G [00:36<00:47, 75.6MB/s][A[A[A
+
+
+pytorch_model.bin:  48%|█████████          | 3.08G/6.43G [00:36<00:32, 103MB/s][A[A[A
+
+
+
+rust_model.ot:  51%|███████████▊           | 3.46G/6.75G [00:36<00:28, 115MB/s][A[A[A[A
+flax_model.msgpack:  56%|█████████▌       | 3.49G/6.23G [00:37<00:28, 96.0MB/s][A
+
+
+
+rust_model.ot:  53%|████████████▎          | 3.60G/6.75G [00:37<00:24, 130MB/s][A[A[A[A
+
+
+
+
+tf_model.h5:  53%|████████████▋           | 3.28G/6.23G [00:37<00:30, 96.1MB/s][A[A[A[A[A
+flax_model.msgpack:  58%|█████████▉       | 3.62G/6.23G [00:41<00:36, 72.1MB/s][A
+
+model.safetensors:  46%|████████▎         | 2.95G/6.43G [00:41<01:08, 51.1MB/s][A[A
+
+model.safetensors:  57%|██████████▎       | 3.69G/6.43G [00:43<00:29, 93.6MB/s][A[A
+
+
+
+rust_model.ot:  64%|██████████████▊        | 4.33G/6.75G [00:43<00:19, 123MB/s][A[A[A[A
+flax_model.msgpack:  69%|████████████▍     | 4.29G/6.23G [00:43<00:16, 118MB/s][A
+
+
+
+
+tf_model.h5:  66%|████████████████▍        | 4.09G/6.23G [00:44<00:20, 107MB/s][A[A[A[A[A
+
+model.safetensors:  66%|████████████▍      | 4.22G/6.43G [00:44<00:17, 128MB/s][A[A
+flax_model.msgpack:  70%|████████████▌     | 4.36G/6.23G [00:45<00:17, 109MB/s][A
+
+
+
+rust_model.ot:  65%|██████████████▎       | 4.40G/6.75G [00:46<00:24, 95.2MB/s][A[A[A[A
+
+
+pytorch_model.bin:  61%|███████████       | 3.95G/6.43G [00:46<00:26, 92.7MB/s][A[A[A
+flax_model.msgpack:  71%|████████████     | 4.42G/6.23G [00:47<00:20, 88.3MB/s][A
+
+model.safetensors:  70%|█████████████▎     | 4.49G/6.43G [00:47<00:16, 118MB/s][A[A
+
+
+pytorch_model.bin:  63%|███████████▎      | 4.02G/6.43G [00:48<00:28, 83.5MB/s][A[A[A
+
+
+
+
+tf_model.h5:  67%|████████████████        | 4.16G/6.23G [00:48<00:26, 77.6MB/s][A[A[A[A[A
+
+model.safetensors:  73%|█████████████▊     | 4.69G/6.43G [00:49<00:14, 117MB/s][A[A
+
+
+
+rust_model.ot:  70%|████████████████▏      | 4.74G/6.75G [00:49<00:19, 102MB/s][A[A[A[A
+
+
+
+rust_model.ot:  71%|███████████████▋      | 4.80G/6.75G [00:50<00:19, 98.0MB/s][A[A[A[A
+
+
+
+
+tf_model.h5:  70%|████████████████▊       | 4.36G/6.23G [00:52<00:26, 70.2MB/s][A[A[A[A[A
+flax_model.msgpack:  75%|████████████▊    | 4.69G/6.23G [00:53<00:23, 65.0MB/s][A
+
+
+
+rust_model.ot:  76%|████████████████▋     | 5.14G/6.75G [00:54<00:18, 87.6MB/s][A[A[A[A
+flax_model.msgpack:  76%|████████████▉    | 4.76G/6.23G [00:54<00:23, 63.6MB/s][A
+
+
+pytorch_model.bin:  67%|████████████      | 4.29G/6.43G [00:54<00:31, 67.9MB/s][A[A[A
+flax_model.msgpack:  79%|█████████████▎   | 4.89G/6.23G [00:55<00:16, 80.2MB/s][A
+
+model.safetensors:  74%|█████████████▎    | 4.76G/6.43G [00:55<00:25, 66.7MB/s][A[A
+flax_model.msgpack:  88%|███████████████▉  | 5.50G/6.23G [00:56<00:04, 168MB/s][A
+flax_model.msgpack:  89%|████████████████  | 5.56G/6.23G [00:56<00:03, 173MB/s][A
+flax_model.msgpack:  90%|████████████████▎ | 5.63G/6.23G [00:57<00:04, 139MB/s][A
+
+
+pytorch_model.bin:  73%|█████████████▏    | 4.69G/6.43G [00:57<00:20, 84.2MB/s][A[A[A
+flax_model.msgpack:  91%|████████████████▍ | 5.70G/6.23G [00:58<00:03, 138MB/s][A
+
+
+
+rust_model.ot:  83%|███████████████████    | 5.61G/6.75G [00:58<00:11, 101MB/s][A[A[A[A
+
+
+pytorch_model.bin:  81%|███████████████▍   | 5.23G/6.43G [00:58<00:09, 125MB/s][A[A[A
+flax_model.msgpack:  94%|████████████████▊ | 5.83G/6.23G [00:59<00:03, 128MB/s][A
+
+
+
+rust_model.ot:  87%|████████████████████   | 5.88G/6.75G [01:00<00:08, 105MB/s][A[A[A[A
+
+
+
+
+tf_model.h5:  86%|████████████████████▋   | 5.36G/6.23G [01:00<00:09, 95.8MB/s][A[A[A[A[A
+flax_model.msgpack:  95%|████████████████ | 5.90G/6.23G [01:00<00:03, 97.6MB/s][A
+
+
+pytorch_model.bin:  82%|██████████████▊   | 5.30G/6.43G [01:02<00:12, 89.0MB/s][A[A[A
+flax_model.msgpack:  97%|████████████████▍| 6.03G/6.23G [01:03<00:02, 80.9MB/s][A
+
+
+
+
+tf_model.h5:  91%|██████████████████████▊  | 5.70G/6.23G [01:03<00:05, 102MB/s][A[A[A[A[A
+
+
+pytorch_model.bin:  86%|████████████████▍  | 5.56G/6.43G [01:03<00:07, 109MB/s][A[A[A
+
+
+
+
+tf_model.h5:  93%|███████████████████████▏ | 5.76G/6.23G [01:03<00:04, 104MB/s][A[A[A[A[A
+
+
+
+rust_model.ot:  90%|███████████████████▊  | 6.08G/6.75G [01:04<00:07, 88.9MB/s][A[A[A[A
+
+
+
+rust_model.ot:  91%|████████████████████  | 6.14G/6.75G [01:04<00:06, 91.8MB/s][A[A[A[A
+
+
+
+
+tf_model.h5:  94%|██████████████████████▍ | 5.83G/6.23G [01:04<00:04, 99.4MB/s][A[A[A[A[A
+flax_model.msgpack: 100%|█████████████████| 6.23G/6.23G [01:05<00:00, 83.6MB/s][A
+
+
+pytorch_model.bin:  91%|█████████████████▏ | 5.83G/6.43G [01:05<00:05, 119MB/s][A[A[A
+
+model.safetensors:  95%|█████████████████ | 6.10G/6.43G [01:05<00:03, 99.2MB/s][A[A
+
+
+
+
+tf_model.h5:  98%|████████████████████████▍| 6.10G/6.23G [01:06<00:01, 115MB/s][A[A[A[A[A
+
+model.safetensors:  99%|██████████████████▊| 6.37G/6.43G [01:06<00:00, 114MB/s][A[A
+
+
+
+rust_model.ot:  94%|████████████████████▋ | 6.35G/6.75G [01:06<00:04, 97.3MB/s][A[A[A[A
+
+
+pytorch_model.bin:  96%|██████████████████▏| 6.17G/6.43G [01:06<00:01, 152MB/s][A[A[A
+
+
+
+
+tf_model.h5:  99%|████████████████████████▋| 6.17G/6.23G [01:06<00:00, 122MB/s][A[A[A[A[A
+
+model.safetensors: 100%|███████████████████| 6.43G/6.43G [01:06<00:00, 118MB/s][A[A
+
+
+
+
+tf_model.h5: 100%|█████████████████████████| 6.23G/6.23G [01:06<00:00, 130MB/s][A[A[A[A[A
+
+
+
+rust_model.ot: 100%|███████████████████████| 6.75G/6.75G [01:07<00:00, 155MB/s][A[A[A[A
+
+
+pytorch_model.bin: 100%|███████████████████| 6.43G/6.43G [01:07<00:00, 165MB/s][A[A[A
+flax_model.msgpack: 100%|█████████████████| 6.23G/6.23G [01:19<00:00, 83.6MB/s][A
+
+
+
+rust_model.ot: 100%|███████████████████████| 6.75G/6.75G [01:19<00:00, 155MB/s][A[A[A[A
+
+
+
+
+tf_model.h5: 100%|█████████████████████████| 6.23G/6.23G [01:19<00:00, 130MB/s][A[A[A[A[A
+
+
+pytorch_model.bin: 100%|███████████████████| 6.43G/6.43G [01:19<00:00, 165MB/s][A[A[A
+
+model.safetensors: 100%|███████████████████| 6.43G/6.43G [01:19<00:00, 118MB/s][A[Aflax_model.msgpack: 100%|█████████████████| 6.23G/6.23G [01:43<00:00, 60.1MB/s]
+Fetching 14 files:  71%|████████████████▍      | 10/14 [01:44<00:41, 10.41s/it]tf_model.h5: 100%|████████████████████████| 6.23G/6.23G [01:47<00:00, 57.9MB/s]
+Fetching 14 files:  79%|██████████████████     | 11/14 [01:48<00:29,  9.84s/it]model.safetensors: 100%|██████████████████| 6.43G/6.43G [01:51<00:00, 57.5MB/s]
+Fetching 14 files:  86%|███████████████████▋   | 12/14 [01:52<00:18,  9.35s/it]rust_model.ot: 100%|██████████████████████| 6.75G/6.75G [01:54<00:00, 58.9MB/s]
+Fetching 14 files:  93%|█████████████████████▎ | 13/14 [01:55<00:08,  8.86s/it]pytorch_model.bin: 100%|██████████████████| 6.43G/6.43G [01:57<00:00, 54.6MB/s]
+Fetching 14 files: 100%|███████████████████████| 14/14 [01:58<00:00,  8.46s/it]Fetching 14 files: 100%|███████████████████████| 14/14 [01:58<00:00,  8.46s/it]
+README.md: 0.00B [00:00, ?B/s]README.md: 9.59kB [00:00, 32.5MB/s]
+multiple_choice/validation-00000-of-0000(…):   0%|  | 0.00/271k [00:00<?, ?B/s]multiple_choice/validation-00000-of-0000(…):  34%|▎| 92.2k/271k [00:00<00:00, 3multiple_choice/validation-00000-of-0000(…): 100%|█| 271k/271k [00:00<00:00, 72multiple_choice/validation-00000-of-0000(…): 100%|█| 271k/271k [00:00<00:00, 65
+Generating validation split:   0%|              | 0/817 [00:00<?, ? examples/s]Generating validation split: 100%|█| 817/817 [00:00<00:00, 30461.32 examples/s]
+Fetching 14 files:   0%|                                | 0/14 [00:00<?, ?it/s]Fetching 14 files: 100%|█████████████████████| 14/14 [00:00<00:00, 4717.62it/s]
+generation/validation-00000-of-00001.par(…):   0%|  | 0.00/223k [00:00<?, ?B/s]generation/validation-00000-of-00001.par(…): 100%|█| 223k/223k [00:00<00:00, 37generation/validation-00000-of-00001.par(…): 100%|█| 223k/223k [00:00<00:00, 37
+Generating validation split:   0%|              | 0/817 [00:00<?, ? examples/s]Generating validation split: 100%|█| 817/817 [00:00<00:00, 166662.44 examples/s
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 562, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 519, in main
+    calibration_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 126, in calibration_stage
+    truthfulness_calibration.calibrate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_calibration.py", line 1136, in calibrate
+    fit_base(model_key, devices[0], calibration_id)
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_calibration.py", line 249, in fit_base
+    settings=_settings(model_key, q=q, r=r, q_final=q_final),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_calibration.py", line 193, in _settings
+    pid = SPID_SOURCE_GRIDS["truthfulness"][model_key]
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+KeyError: 'gpt2_xl'

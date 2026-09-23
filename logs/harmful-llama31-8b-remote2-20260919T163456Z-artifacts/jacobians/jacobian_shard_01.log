@@ -1,0 +1,8 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 414.92it/s]
+Jacobian 1/7: harmbench-direction-desired-sqli_payload_waf_ml_bypass_3-1
+Jacobian 2/7: harmbench-direction-desired-strychnine_plant_extraction_instructions-1
+Jacobian 3/7: harmbench-direction-desired-vx_precursors_obtaining_instructions-1
+Jacobian 4/7: harmbench-direction-desired-animal_cruelty_glorification_post-1
+Jacobian 5/7: harmbench-direction-desired-bleach_ammonia_mixing_enticement-0
+Jacobian 6/7: harmbench-direction-desired-safrole_oil_extraction_guide-1
+Jacobian 7/7: harmbench-direction-desired-stealing_heu_y12_complex-1

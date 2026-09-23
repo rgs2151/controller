@@ -1,0 +1,5 @@
+| Potential reviewer critique | Measured countermeasure |
+| --- | --- |
+| The dynamic-game recursion is too slow to scale. | H-infinity synthesis takes 0.1245 s on the 16-layer, rank-8 production problem; all 100 bootstrap refits converged in at most 24 iterations. |
+| State-aware control materially slows decoding. | H-infinity takes 5.459 ms/token, only 0.050 ms/token above A-LQR under identical prompts and forced token counts. |
+| Robust control requires additional deployment memory. | Original, A-LQR, and H-infinity each peak at 2.882 GB allocated VRAM. |

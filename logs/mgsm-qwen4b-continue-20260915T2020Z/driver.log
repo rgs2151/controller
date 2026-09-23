@@ -1,0 +1,42 @@
+[1;24rLoading checkpoint shards:   0%|                         | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|████████████████| 3/3 [00:00<00:00, 119.76it/s]
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 298, in _score_async
+    destination, result = await future
+                          ^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 627, in _wait_for_one
+    f = await done.get()
+        ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 328, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 293, in main
+    calibration_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 93, in calibration_stage
+    calibration.calibrate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 539, in calibrate
+    score_grid(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 309, in score_grid
+    openai_scoring.score_generations(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 342, in score_generations
+    return asyncio.run(
+           ^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 123, in run
+    raise KeyboardInterrupt()
+KeyboardInterrupt

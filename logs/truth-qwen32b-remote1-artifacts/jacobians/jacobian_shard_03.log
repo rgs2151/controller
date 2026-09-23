@@ -1,0 +1,9 @@
+Loading checkpoint shards:   0%|          | 0/17 [00:00<?, ?it/s]Loading checkpoint shards:   6%|▌         | 1/17 [00:04<01:13,  4.59s/it]Loading checkpoint shards:  12%|█▏        | 2/17 [00:11<01:27,  5.80s/it]Loading checkpoint shards:  18%|█▊        | 3/17 [00:43<04:11, 17.99s/it]Loading checkpoint shards:  24%|██▎       | 4/17 [00:59<03:42, 17.10s/it]Loading checkpoint shards:  29%|██▉       | 5/17 [01:06<02:39, 13.33s/it]Loading checkpoint shards:  35%|███▌      | 6/17 [01:34<03:22, 18.37s/it]Loading checkpoint shards:  41%|████      | 7/17 [01:40<02:24, 14.47s/it]Loading checkpoint shards:  47%|████▋     | 8/17 [01:47<01:47, 11.94s/it]Loading checkpoint shards:  53%|█████▎    | 9/17 [01:53<01:21, 10.16s/it]Loading checkpoint shards:  59%|█████▉    | 10/17 [01:59<01:02,  8.98s/it]Loading checkpoint shards:  65%|██████▍   | 11/17 [02:06<00:48,  8.15s/it]Loading checkpoint shards:  71%|███████   | 12/17 [02:12<00:38,  7.62s/it]Loading checkpoint shards:  76%|███████▋  | 13/17 [02:18<00:28,  7.15s/it]Loading checkpoint shards:  82%|████████▏ | 14/17 [02:24<00:20,  6.74s/it]Loading checkpoint shards:  88%|████████▊ | 15/17 [02:30<00:12,  6.45s/it]Loading checkpoint shards:  94%|█████████▍| 16/17 [02:36<00:06,  6.28s/it]Loading checkpoint shards: 100%|██████████| 17/17 [02:38<00:00,  5.15s/it]Loading checkpoint shards: 100%|██████████| 17/17 [02:38<00:00,  9.33s/it]
+Jacobian 1/8: truthfulqa:mc2:149:0
+Jacobian 2/8: truthfulqa:mc2:367:0
+Jacobian 3/8: truthfulqa:mc2:12:0
+Jacobian 4/8: truthfulqa:mc2:385:0
+Jacobian 5/8: truthfulqa:mc2:412:0
+Jacobian 6/8: truthfulqa:mc2:358:1
+Jacobian 7/8: truthfulqa:mc2:651:1
+Jacobian 8/8: truthfulqa:mc2:337:3

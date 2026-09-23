@@ -1,0 +1,26 @@
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:15<00:15, 15.28s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:20<00:00,  9.22s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:20<00:00, 10.13s/it]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 1080, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 1059, in main
+    score_scorer(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 847, in score_scorer
+    huggingface_scoring.score_generation(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/huggingface.py", line 174, in score_generation
+    scores = score_batch(model, tokenizer, prompts, device)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/huggingface.py", line 69, in score_batch
+    generated = model.generate(
+                ^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/.venv/lib/python3.12/site-packages/transformers/generation/utils.py", line 2564, in generate
+    result = decoding_method(
+             ^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/.venv/lib/python3.12/site-packages/transformers/generation/utils.py", line 2779, in _sample
+    while self._has_unfinished_sequences(this_peer_finished, synced_gpus, device=input_ids.device):
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

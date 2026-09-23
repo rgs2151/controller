@@ -1,0 +1,91 @@
+{
+  "schema_version": 2,
+  "run_id": "lcite-qwen3b-score-a100-20260916",
+  "status": "complete",
+  "started_at_utc": "2026-09-16T01:17:36.928566+00:00",
+  "benchmark": "lciteeval",
+  "model": "qwen25_3b_instruct",
+  "stage": "score",
+  "methods": [
+    "original",
+    "spid",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "8k",
+    "16k"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "auto",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "scorers": [
+      "axbench_concept_relevance",
+      "axbench_fluency",
+      "axbench_instruction_relevance",
+      "axbench_overall",
+      "lcite_answer_overlap",
+      "lcite_citation_nli"
+    ],
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval.py",
+    "score",
+    "--model",
+    "qwen25_3b_instruct",
+    "--methods",
+    "original,spid,alqr,h_infinity",
+    "--datasets",
+    "8k,16k",
+    "--scorers",
+    "default",
+    "--devices",
+    "auto",
+    "--api-concurrency",
+    "500",
+    "--api-batch-size",
+    "20",
+    "--run-id",
+    "lcite-qwen3b-score-a100-20260916"
+  ],
+  "working_directory": "/teamspace/studios/this_studio/controller",
+  "git": {
+    "commit": "63c232fe8f92328a4d47f402c5f679bb00b29c1f",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "150-136-69-86",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": "01m2ges9x7p9xpz3z1b9208rk6.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-60-generic-x86_64-with-glibc2.39",
+    "python": "3.12.11",
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA A100-SXM4-40GB",
+        "total_memory_bytes": 42406903808
+      }
+    ],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/lciteeval/qwen25_3b_instruct"
+  },
+  "finished_at_utc": "2026-09-16T01:18:37.444409+00:00",
+  "elapsed_seconds": 59.89690224900005
+}

@@ -1,0 +1,247 @@
+[1;24rUsing CPython 3.12.3 interpreter at: [36m/usr/bin/python3[39m
+Creating virtual environment at: [36m/tmp/robust-steerability-venv[39m
+Activate with: [32msource /tmp/robust-steerability-venv/bin/activate[39m
+[2mUsing Python 3.12.3 environment at: /tmp/robust-steerability-venv[0m
+⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠙ robust-steerability==0.1.0                                                    [2K⠙ datasets==4.4.2                                                               [2K⠙ nltk==3.9.1                                                                   [2K⠙ pykakasi==2.3.0                                                               [2K⠙ torch==2.9.1                                                                  [2K⠙ transformers==4.57.1                                                          [2K⠙ nvidia-cuda-nvrtc-cu12==12.8.93                                               [2K⠙ nvidia-cuda-nvrtc-cu12==12.8.93                                               [2K⠙ nvidia-cuda-runtime-cu12==12.8.90                                             [2K⠙ nvidia-cuda-runtime-cu12==12.8.90                                             [2K⠙ nvidia-cuda-cupti-cu12==12.8.90                                               [2K⠙ nvidia-cuda-cupti-cu12==12.8.90                                               [2K⠙ nvidia-cudnn-cu12==9.10.2.21                                                  [2K⠙ nvidia-cudnn-cu12==9.10.2.21                                                  [2K⠙ nvidia-cublas-cu12==12.8.4.1                                                  [2K⠙ nvidia-cublas-cu12==12.8.4.1                                                  [2K⠙ nvidia-cufft-cu12==11.3.3.83                                                  [2K⠙ nvidia-cufft-cu12==11.3.3.83                                                  [2K⠙ nvidia-curand-cu12==10.3.9.90                                                 [2K⠙ nvidia-curand-cu12==10.3.9.90                                                 [2K⠙ multidict==6.9.0                                                              [2K⠹ pyparsing==3.3.3                                                              [2K[2mResolved [1m89 packages[0m [2min 217ms[0m[0m
+⠋ Preparing packages... (0/0)                                                   [2K⠋ Preparing packages... (0/2)                                                   [2K⠙ Preparing packages... (0/2)                                                   [2K   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------     0 B/123.46 KiB          [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------ 16.00 KiB/123.46 KiB        [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------ 32.00 KiB/123.46 KiB        [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------ 48.00 KiB/123.46 KiB        [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------ 64.00 KiB/123.46 KiB        [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------ 80.00 KiB/123.46 KiB        [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------ 96.00 KiB/123.46 KiB        [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------ 112.00 KiB/123.46 KiB       [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------ 123.46 KiB/123.46 KiB       [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)
+pyparsing            ------------------------------ 123.46 KiB/123.46 KiB       [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/2)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠹ Preparing packages... (1/2)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠸ Preparing packages... (1/2)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠼ Preparing packages... (1/2)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠴ Preparing packages... (1/2)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠦ Preparing packages... (1/2)                                                   [1A[2K[1B[2K[1A      [32m[1mBuilt[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠦ Preparing packages... (1/2)                                                   [2K⠧ Preparing packages... (1/2)                                                   [2K⠧  (2/2)                                                                        [2K[2mPrepared [1m2 packages[0m [2min 1.30s[0m[0m
+░░░░░░░░░░░░░░░░░░░░ [0/0] [2mInstalling wheels...                                 [0m[2K░░░░░░░░░░░░░░░░░░░░ [0/89] [2mInstalling wheels...                                [0m[2K░░░░░░░░░░░░░░░░░░░░ [0/89] [2mpyparsing==3.3.3                                    [0m[2K░░░░░░░░░░░░░░░░░░░░ [1/89] [2mpyparsing==3.3.3                                    [0m[2K░░░░░░░░░░░░░░░░░░░░ [1/89] [2mfrozenlist==1.8.0                                   [0m[2K░░░░░░░░░░░░░░░░░░░░ [2/89] [2mfrozenlist==1.8.0                                   [0m[2K░░░░░░░░░░░░░░░░░░░░ [2/89] [2mclick==8.5.0                                        [0m[2K░░░░░░░░░░░░░░░░░░░░ [3/89] [2mclick==8.5.0                                        [0m[2K░░░░░░░░░░░░░░░░░░░░ [3/89] [2mrobust-steerability==0.1.0 (from file:///teamspace/s[0m[2K░░░░░░░░░░░░░░░░░░░░ [4/89] [2mrobust-steerability==0.1.0 (from file:///teamspace/s[0m[2K░░░░░░░░░░░░░░░░░░░░ [4/89] [2mnvidia-cufft-cu12==11.3.3.83                        [0m[2K█░░░░░░░░░░░░░░░░░░░ [5/89] [2mnvidia-cufft-cu12==11.3.3.83                        [0m[2K█░░░░░░░░░░░░░░░░░░░ [5/89] [2maiohappyeyeballs==2.7.1                             [0m[2K█░░░░░░░░░░░░░░░░░░░ [6/89] [2maiohappyeyeballs==2.7.1                             [0m[2K█░░░░░░░░░░░░░░░░░░░ [6/89] [2mnvidia-cusolver-cu12==11.7.3.90                     [0m[2K█░░░░░░░░░░░░░░░░░░░ [7/89] [2mnvidia-cusolver-cu12==11.7.3.90                     [0m[2K█░░░░░░░░░░░░░░░░░░░ [7/89] [2mnvidia-cusparselt-cu12==0.7.1                       [0m[2K█░░░░░░░░░░░░░░░░░░░ [8/89] [2mnvidia-cusparselt-cu12==0.7.1                       [0m[2K█░░░░░░░░░░░░░░░░░░░ [8/89] [2msix==1.17.0                                         [0m[2K██░░░░░░░░░░░░░░░░░░ [9/89] [2msix==1.17.0                                         [0m[2K████████████████░░░░ [75/89] [2msetuptools==84.0.0                                 [0m[2K██████████████████░░ [84/89] [2mscipy==1.18.1                                      [0m[2K███████████████████░ [87/89] [2mtransformers==4.57.1                               [0m[2K███████████████████░ [88/89] [2mtorch==2.9.1                                       [0m[2K████████████████████ [89/89] [2mtorch==2.9.1                                       [0m[2K[2mInstalled [1m89 packages[0m [2min 390ms[0m[0m
+ [32m+[39m [1maccelerate[0m[2m==1.15.0[0m
+ [32m+[39m [1maiohappyeyeballs[0m[2m==2.7.1[0m
+ [32m+[39m [1maiohttp[0m[2m==3.14.3[0m
+ [32m+[39m [1maiosignal[0m[2m==1.4.0[0m
+ [32m+[39m [1manyio[0m[2m==4.15.1[0m
+ [32m+[39m [1mattrs[0m[2m==26.1.0[0m
+ [32m+[39m [1mbitsandbytes[0m[2m==0.50.2[0m
+ [32m+[39m [1mcertifi[0m[2m==2026.7.22[0m
+ [32m+[39m [1mcharset-normalizer[0m[2m==3.5.1[0m
+ [32m+[39m [1mclick[0m[2m==8.5.0[0m
+ [32m+[39m [1mcloudpickle[0m[2m==3.1.2[0m
+ [32m+[39m [1mcontourpy[0m[2m==1.4.0[0m
+ [32m+[39m [1mcycler[0m[2m==0.12.1[0m
+ [32m+[39m [1mdatasets[0m[2m==4.4.2[0m
+ [32m+[39m [1mdeprecated[0m[2m==1.3.1[0m
+ [32m+[39m [1mdill[0m[2m==0.4.0[0m
+ [32m+[39m [1mfilelock[0m[2m==4.0.1[0m
+ [32m+[39m [1mfonttools[0m[2m==4.65.0[0m
+ [32m+[39m [1mfrozenlist[0m[2m==1.8.0[0m
+ [32m+[39m [1mfsspec[0m[2m==2025.10.0[0m
+ [32m+[39m [1mh11[0m[2m==0.16.0[0m
+ [32m+[39m [1mh5py[0m[2m==3.16.0[0m
+ [32m+[39m [1mhf-xet[0m[2m==1.6.0[0m
+ [32m+[39m [1mhttpcore[0m[2m==1.0.9[0m
+ [32m+[39m [1mhttpx[0m[2m==0.28.1[0m
+ [32m+[39m [1mhuggingface-hub[0m[2m==0.36.2[0m
+ [32m+[39m [1midna[0m[2m==3.20[0m
+ [32m+[39m [1mjaconv[0m[2m==0.5.0[0m
+ [32m+[39m [1mjinja2[0m[2m==3.1.6[0m
+ [32m+[39m [1mjoblib[0m[2m==1.6.0[0m
+ [32m+[39m [1mkiwisolver[0m[2m==1.5.1[0m
+ [32m+[39m [1mlangdetect[0m[2m==1.0.9[0m
+ [32m+[39m [1mmarkupsafe[0m[2m==3.0.3[0m
+ [32m+[39m [1mmatplotlib[0m[2m==3.11.2[0m
+ [32m+[39m [1mmpmath[0m[2m==1.3.0[0m
+ [32m+[39m [1mmultidict[0m[2m==6.9.0[0m
+ [32m+[39m [1mmultiprocess[0m[2m==0.70.18[0m
+ [32m+[39m [1mnarwhals[0m[2m==2.26.0[0m
+ [32m+[39m [1mnetworkx[0m[2m==3.6.1[0m
+ [32m+[39m [1mnltk[0m[2m==3.9.1[0m
+ [32m+[39m [1mnumpy[0m[2m==2.5.3[0m
+ [32m+[39m [1mnvidia-cublas-cu12[0m[2m==12.8.4.1[0m
+ [32m+[39m [1mnvidia-cuda-cupti-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mnvidia-cuda-nvrtc-cu12[0m[2m==12.8.93[0m
+ [32m+[39m [1mnvidia-cuda-runtime-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mnvidia-cudnn-cu12[0m[2m==9.10.2.21[0m
+ [32m+[39m [1mnvidia-cufft-cu12[0m[2m==11.3.3.83[0m
+ [32m+[39m [1mnvidia-cufile-cu12[0m[2m==1.13.1.3[0m
+ [32m+[39m [1mnvidia-curand-cu12[0m[2m==10.3.9.90[0m
+ [32m+[39m [1mnvidia-cusolver-cu12[0m[2m==11.7.3.90[0m
+ [32m+[39m [1mnvidia-cusparse-cu12[0m[2m==12.5.8.93[0m
+ [32m+[39m [1mnvidia-cusparselt-cu12[0m[2m==0.7.1[0m
+ [32m+[39m [1mnvidia-nccl-cu12[0m[2m==2.27.5[0m
+ [32m+[39m [1mnvidia-nvjitlink-cu12[0m[2m==12.8.93[0m
+ [32m+[39m [1mnvidia-nvshmem-cu12[0m[2m==3.3.20[0m
+ [32m+[39m [1mnvidia-nvtx-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mpackaging[0m[2m==26.3[0m
+ [32m+[39m [1mpandas[0m[2m==3.0.6[0m
+ [32m+[39m [1mpillow[0m[2m==12.3.0[0m
+ [32m+[39m [1mpropcache[0m[2m==0.5.4[0m
+ [32m+[39m [1mprotobuf[0m[2m==7.36.2[0m
+ [32m+[39m [1mpsutil[0m[2m==7.2.2[0m
+ [32m+[39m [1mpyarrow[0m[2m==25.0.1[0m
+ [32m+[39m [1mpykakasi[0m[2m==2.3.0[0m
+ [32m+[39m [1mpyparsing[0m[2m==3.3.3[0m
+ [32m+[39m [1mpython-dateutil[0m[2m==2.9.0.post0[0m
+ [32m+[39m [1mpyyaml[0m[2m==6.0.3[0m
+ [32m+[39m [1mregex[0m[2m==2026.9.10[0m
+ [32m+[39m [1mrequests[0m[2m==2.34.2[0m
+ [32m+[39m [1mrobust-steerability[0m[2m==0.1.0 (from file:///teamspace/studios/this_studio/controller)[0m
+ [32m+[39m [1msafetensors[0m[2m==0.8.0[0m
+ [32m+[39m [1mscikit-learn[0m[2m==1.9.1[0m
+ [32m+[39m [1mscipy[0m[2m==1.18.1[0m
+ [32m+[39m [1mseaborn[0m[2m==0.13.2[0m
+ [32m+[39m [1msentencepiece[0m[2m==0.2.2[0m
+ [32m+[39m [1msetuptools[0m[2m==84.0.0[0m
+ [32m+[39m [1msix[0m[2m==1.17.0[0m
+ [32m+[39m [1msympy[0m[2m==1.14.0[0m
+ [32m+[39m [1mthreadpoolctl[0m[2m==3.7.0[0m
+ [32m+[39m [1mtokenizers[0m[2m==0.22.2[0m
+ [32m+[39m [1mtorch[0m[2m==2.9.1[0m
+ [32m+[39m [1mtqdm[0m[2m==4.70.1[0m
+ [32m+[39m [1mtransformers[0m[2m==4.57.1[0m
+ [32m+[39m [1mtriton[0m[2m==3.5.1[0m
+ [32m+[39m [1mtyping-extensions[0m[2m==4.16.0[0m
+ [32m+[39m [1murllib3[0m[2m==2.8.0[0m
+ [32m+[39m [1mwrapt[0m[2m==2.4.1[0m
+ [32m+[39m [1mxxhash[0m[2m==4.0.1[0m
+ [32m+[39m [1myarl[0m[2m==1.25.1[0m
+NODE_PYTHON=/tmp/robust-steerability-venv/bin/python
+Fetching 13 files:   0%|                                | 0/13 [00:00<?, ?it/s]
+LICENSE.txt: 0.00B [00:00, ?B/s][ALICENSE.txt: 7.71kB [00:00, 35.3MB/s]
+
+README.md: 0.00B [00:00, ?B/s][AREADME.md: 41.7kB [00:00, 16.1MB/s]
+
+USE_POLICY.md: 0.00B [00:00, ?B/s][AUSE_POLICY.md: 6.02kB [00:00, 28.8MB/s]
+
+original/consolidated.00.pth:   0%|                | 0.00/2.47G [00:00<?, ?B/s][A
+
+.gitattributes: 0.00B [00:00, ?B/s][A[A.gitattributes: 1.52kB [00:00, 12.7MB/s]
+
+
+model.safetensors:   0%|                           | 0.00/2.47G [00:00<?, ?B/s][A[A
+
+
+config.json:   0%|                                   | 0.00/877 [00:00<?, ?B/s][A[A[Aconfig.json: 100%|████████████████████████████| 877/877 [00:00<00:00, 9.13MB/s]
+
+
+
+generation_config.json:   0%|                        | 0.00/189 [00:00<?, ?B/s][A[A[Ageneration_config.json: 100%|█████████████████| 189/189 [00:00<00:00, 2.28MB/s]
+
+
+
+params.json:   0%|                                   | 0.00/220 [00:00<?, ?B/s][A[A[Aparams.json: 100%|████████████████████████████| 220/220 [00:00<00:00, 2.51MB/s]
+
+
+
+original/tokenizer.model:   0%|                    | 0.00/2.18M [00:00<?, ?B/s][A[A[A
+
+
+
+special_tokens_map.json:   0%|                       | 0.00/296 [00:00<?, ?B/s][A[A[A[Aspecial_tokens_map.json: 100%|████████████████| 296/296 [00:00<00:00, 3.44MB/s]
+Fetching 13 files:  62%|██████████████▊         | 8/13 [00:00<00:00, 20.29it/s]
+
+
+
+tokenizer_config.json: 0.00B [00:00, ?B/s][A[A[A[Atokenizer_config.json: 54.5kB [00:00, 38.4MB/s]
+
+
+
+
+tokenizer.json: 0.00B [00:00, ?B/s][A[A[A[A
+
+
+
+tokenizer.json: 2.77MB [00:00, 27.6MB/s][A[A[A[A
+
+
+
+tokenizer.json: 5.89MB [00:00, 29.6MB/s][A[A[A[A
+
+
+
+tokenizer.json: 8.86MB [00:00, 28.3MB/s][A[A[A[Atokenizer.json: 9.09MB [00:00, 28.5MB/s]
+
+
+
+original/tokenizer.model: 100%|███████████| 2.18M/2.18M [00:00<00:00, 3.33MB/s][A[A[Aoriginal/tokenizer.model: 100%|███████████| 2.18M/2.18M [00:00<00:00, 3.32MB/s]
+
+original/consolidated.00.pth:   0%|    | 51.7k/2.47G [00:01<17:44:16, 38.7kB/s][A
+
+model.safetensors:   3%|▍                 | 67.1M/2.47G [00:01<00:56, 42.5MB/s][A[A
+
+model.safetensors:  11%|██▏                 | 268M/2.47G [00:01<00:12, 183MB/s][A[A
+original/consolidated.00.pth:   3%|▏      | 67.1M/2.47G [00:02<01:09, 34.7MB/s][A
+original/consolidated.00.pth:  10%|▊       | 256M/2.47G [00:03<00:26, 82.6MB/s][A
+original/consolidated.00.pth:  11%|▊       | 268M/2.47G [00:04<00:27, 78.9MB/s][A
+
+model.safetensors:  16%|███                | 402M/2.47G [00:04<00:23, 89.2MB/s][A[A
+
+model.safetensors:  24%|████▋              | 604M/2.47G [00:15<01:00, 31.1MB/s][A[A
+
+model.safetensors:  33%|██████▏            | 805M/2.47G [00:15<00:32, 51.1MB/s][A[A
+
+model.safetensors:  90%|█████████████████  | 2.21G/2.47G [00:16<00:01, 241MB/s][A[A
+original/consolidated.00.pth:  32%|██▌     | 800M/2.47G [00:16<00:34, 48.2MB/s][A
+original/consolidated.00.pth:  49%|███▍   | 1.20G/2.47G [00:16<00:14, 88.3MB/s][A
+
+model.safetensors: 100%|███████████████████| 2.47G/2.47G [00:19<00:00, 184MB/s][A[A
+original/consolidated.00.pth:  62%|████▎  | 1.53G/2.47G [00:19<00:10, 92.7MB/s][AFetching 13 files:  85%|███████████████████▍   | 11/13 [00:20<00:03,  1.82s/it]
+original/consolidated.00.pth:  70%|█████▌  | 1.73G/2.47G [00:20<00:06, 113MB/s][A
+original/consolidated.00.pth:  86%|██████▉ | 2.13G/2.47G [00:20<00:01, 180MB/s][A
+original/consolidated.00.pth: 100%|████████| 2.47G/2.47G [00:20<00:00, 252MB/s][A
+
+model.safetensors: 100%|███████████████████| 2.47G/2.47G [00:29<00:00, 184MB/s][A[A
+original/consolidated.00.pth: 100%|████████| 2.47G/2.47G [00:39<00:00, 252MB/s][Amodel.safetensors: 100%|██████████████████| 2.47G/2.47G [00:48<00:00, 51.2MB/s]
+Fetching 13 files:  92%|█████████████████████▏ | 12/13 [00:48<00:04,  4.04s/it]original/consolidated.00.pth: 100%|███████| 2.47G/2.47G [00:51<00:00, 48.3MB/s]
+Fetching 13 files: 100%|███████████████████████| 13/13 [00:51<00:00,  3.96s/it]Fetching 13 files: 100%|███████████████████████| 13/13 [00:51<00:00,  3.96s/it]
+README.md: 0.00B [00:00, ?B/s]README.md: 13.0kB [00:00, 56.9MB/s]
+en/train-00000-of-00001.parquet:   0%|             | 0.00/4.97k [00:00<?, ?B/s]en/train-00000-of-00001.parquet: 100%|████| 4.97k/4.97k [00:00<00:00, 19.4kB/s]en/train-00000-of-00001.parquet: 100%|████| 4.97k/4.97k [00:00<00:00, 8.80kB/s]
+en/test-00000-of-00001.parquet:   0%|              | 0.00/39.1k [00:00<?, ?B/s]en/test-00000-of-00001.parquet: 100%|██████| 39.1k/39.1k [00:00<00:00, 152kB/s]en/test-00000-of-00001.parquet: 100%|██████| 39.1k/39.1k [00:00<00:00, 132kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|████████████| 8/8 [00:00<00:00, 248.59 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 109317.76 examples/s]
+es/train-00000-of-00001.parquet:   0%|             | 0.00/5.10k [00:00<?, ?B/s]es/train-00000-of-00001.parquet: 100%|████| 5.10k/5.10k [00:00<00:00, 19.9kB/s]es/train-00000-of-00001.parquet: 100%|████| 5.10k/5.10k [00:00<00:00, 15.0kB/s]
+es/test-00000-of-00001.parquet:   0%|              | 0.00/41.7k [00:00<?, ?B/s]es/test-00000-of-00001.parquet: 100%|██████| 41.7k/41.7k [00:00<00:00, 162kB/s]es/test-00000-of-00001.parquet: 100%|██████| 41.7k/41.7k [00:00<00:00, 108kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 3163.13 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 119414.19 examples/s]
+README.md: 0.00B [00:00, ?B/s]README.md: 5.46kB [00:00, 25.9MB/s]
+L-CiteEval-Data/2wikimultihopqa.json:   0%|        | 0.00/26.0M [00:00<?, ?B/s]L-CiteEval-Data/2wikimultihopqa.json: 100%|█| 26.0M/26.0M [00:00<00:00, 35.7MB/L-CiteEval-Data/2wikimultihopqa.json: 100%|█| 26.0M/26.0M [00:00<00:00, 35.7MB/
+hotpotqa.json: 0.00B [00:00, ?B/s]hotpotqa.json: 9.35MB [00:00, 158MB/s]
+Fetching 13 files:   0%|                                | 0/13 [00:00<?, ?it/s]Fetching 13 files: 100%|█████████████████████| 13/13 [00:00<00:00, 5065.58it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_small.py", line 376, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_small.py", line 339, in main
+    calibration_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_small.py", line 92, in calibration_stage
+    calibration.calibrate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_small_calibration.py", line 643, in calibrate
+    fit_base(model_key, devices[0], calibration_id)
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_small_calibration.py", line 167, in fit_base
+    _artifact, metadata = calibrate_controller(
+                          ^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/experiments/calibration.py", line 530, in calibrate_controller
+    inputs = _fit_controller_inputs(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/experiments/calibration.py", line 240, in _fit_controller_inputs
+    nominal_behavior = {
+                       ^
+KeyError: 'lciteeval_small'

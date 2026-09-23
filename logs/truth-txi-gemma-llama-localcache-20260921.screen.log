@@ -1,0 +1,15 @@
+RUN_START_UTC=2026-09-21T16:50:35Z
+STORAGE=/tmp/truth-txi-cache-home
+Fetching 12 files:   0%|          | 0/12 [00:00<?, ?it/s]Fetching 12 files: 100%|██████████| 12/12 [00:00<00:00, 4808.60it/s]
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:02<00:04,  2.37s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:06<00:03,  3.24s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:06<00:00,  1.94s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:06<00:00,  2.20s/it]
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files:  50%|█████     | 1/2 [00:47<00:47, 47.41s/it]Fetching 2 files: 100%|██████████| 2/2 [01:20<00:00, 40.02s/it]Fetching 2 files: 100%|██████████| 2/2 [01:20<00:00, 40.02s/it]
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:16<00:16, 16.33s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:21<00:00,  9.95s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:21<00:00, 10.91s/it]
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files:  50%|█████     | 1/2 [01:02<01:02, 62.72s/it]Fetching 2 files: 100%|██████████| 2/2 [01:18<00:00, 39.06s/it]Fetching 2 files: 100%|██████████| 2/2 [01:18<00:00, 39.06s/it]
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:15<00:15, 15.05s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:20<00:00,  9.13s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:20<00:00, 10.02s/it]
+Fetching 12 files:   0%|          | 0/12 [00:00<?, ?it/s]Fetching 12 files: 100%|██████████| 12/12 [00:00<00:00, 4520.54it/s]
+GEMMA_COMPLETE_UTC=2026-09-21T17:05:50Z
+WAITING_FOR_LLAMA_ARTIFACTS_UTC=2026-09-21T17:05:50Z
+GEMMA_SYNC_COMPLETE_UTC=2026-09-21T17:05:55Z
+WAITING_FOR_LLAMA_ARTIFACTS_UTC=2026-09-21T17:06:00Z
+WAITING_FOR_LLAMA_ARTIFACTS_UTC=2026-09-21T17:06:10Z
+WAITING_FOR_LLAMA_ARTIFACTS_UTC=2026-09-21T17:06:20Z

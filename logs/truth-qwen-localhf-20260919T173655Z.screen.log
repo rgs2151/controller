@@ -1,0 +1,7 @@
+[1;24rSTART_UTC=2026-09-19T17:36:55Z
+HEAD=e047b21
+GPUS=4xH200
+HF_HUB_CACHE=/tmp/robust-steerability/huggingface
+QWEN14_BATCH=128
+QWEN32_BATCH=128
+PHASE=qwen14b_resume

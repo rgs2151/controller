@@ -1,0 +1,303 @@
+[1;24rUsing CPython 3.12.3 interpreter at: [36m/usr/bin/python3[39m
+Creating virtual environment at: [36m/tmp/robust-steerability-venv[39m
+Activate with: [32msource /tmp/robust-steerability-venv/bin/activate[39m
+[2mUsing Python 3.12.3 environment at: /tmp/robust-steerability-venv[0m
+⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠙ robust-steerability==0.1.0                                                    [2K⠙ datasets==4.4.2                                                               [2K⠙ nltk==3.9.1                                                                   [2K⠙ pykakasi==2.3.0                                                               [2K⠙ torch==2.9.1                                                                  [2K⠙ transformers==4.57.1                                                          [2K⠙ nvidia-cuda-nvrtc-cu12==12.8.93                                               [2K⠙ nvidia-cuda-nvrtc-cu12==12.8.93                                               [2K⠙ nvidia-cuda-runtime-cu12==12.8.90                                             [2K⠙ nvidia-cuda-runtime-cu12==12.8.90                                             [2K⠙ nvidia-cuda-cupti-cu12==12.8.90                                               [2K⠙ nvidia-cuda-cupti-cu12==12.8.90                                               [2K⠙ nvidia-cudnn-cu12==9.10.2.21                                                  [2K⠙ nvidia-cudnn-cu12==9.10.2.21                                                  [2K⠙ nvidia-cublas-cu12==12.8.4.1                                                  [2K⠙ nvidia-cublas-cu12==12.8.4.1                                                  [2K⠙ nvidia-cufft-cu12==11.3.3.83                                                  [2K⠙ nvidia-cufft-cu12==11.3.3.83                                                  [2K⠙ nvidia-curand-cu12==10.3.9.90                                                 [2K⠙ nvidia-curand-cu12==10.3.9.90                                                 [2K⠙ nvidia-cusolver-cu12==11.7.3.90                                               [2K⠹ networkx==3.7                                                                 [2K⠹ h11==0.16.0                                                                   [2K[2mResolved [1m89 packages[0m [2min 289ms[0m[0m
+⠋ Preparing packages... (0/0)                                                   [2K⠋ Preparing packages... (0/3)                                                   [2K⠙ Preparing packages... (0/3)                                                   [2K   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------     0 B/328.99 KiB          [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 16.00 KiB/328.99 KiB        [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 16.00 KiB/328.99 KiB        [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 16.00 KiB/328.99 KiB
+networkx             ------------------------------     0 B/2.04 MiB            [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 16.00 KiB/328.99 KiB
+networkx             ------------------------------ 14.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 32.00 KiB/328.99 KiB
+networkx             ------------------------------ 14.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 48.00 KiB/328.99 KiB
+networkx             ------------------------------ 14.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 62.05 KiB/328.99 KiB
+networkx             ------------------------------ 14.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 62.05 KiB/328.99 KiB
+networkx             ------------------------------ 30.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 78.05 KiB/328.99 KiB
+networkx             ------------------------------ 30.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 78.05 KiB/328.99 KiB
+networkx             ------------------------------ 46.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 94.05 KiB/328.99 KiB
+networkx             ------------------------------ 46.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 94.05 KiB/328.99 KiB
+networkx             ------------------------------ 62.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 110.05 KiB/328.99 KiB
+networkx             ------------------------------ 62.79 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 110.05 KiB/328.99 KiB
+networkx             ------------------------------ 77.65 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 126.05 KiB/328.99 KiB
+networkx             ------------------------------ 77.65 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 126.05 KiB/328.99 KiB
+networkx             ------------------------------ 93.65 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 190.05 KiB/328.99 KiB
+networkx             ------------------------------ 173.65 KiB/2.04 MiB         [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+networkx             ------------------------------ 349.65 KiB/2.04 MiB         [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)
+networkx             ------------------------------ 1.31 MiB/2.04 MiB           [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠙ Preparing packages... (0/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠹ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠸ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠼ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A      [32m[1mBuilt[0m[39m robust-steerability[2m @ file:///teamspace/studios/this_studio/controll[0m
+⠼ Preparing packages... (2/3)                                                   [2K⠼  (3/3)                                                                        [2K[2mPrepared [1m3 packages[0m [2min 755ms[0m[0m
+░░░░░░░░░░░░░░░░░░░░ [0/0] [2mInstalling wheels...                                 [0m[2K░░░░░░░░░░░░░░░░░░░░ [0/89] [2mInstalling wheels...                                [0m[2K░░░░░░░░░░░░░░░░░░░░ [0/89] [2mmultidict==6.9.1                                    [0m[2K░░░░░░░░░░░░░░░░░░░░ [1/89] [2mmultidict==6.9.1                                    [0m[2K░░░░░░░░░░░░░░░░░░░░ [1/89] [2mjaconv==0.5.0                                       [0m[2K░░░░░░░░░░░░░░░░░░░░ [2/89] [2mjaconv==0.5.0                                       [0m[2K░░░░░░░░░░░░░░░░░░░░ [2/89] [2mh11==0.16.0                                         [0m[2K░░░░░░░░░░░░░░░░░░░░ [3/89] [2mh11==0.16.0                                         [0m[2K░░░░░░░░░░░░░░░░░░░░ [3/89] [2mtokenizers==0.22.2                                  [0m[2K░░░░░░░░░░░░░░░░░░░░ [4/89] [2mtokenizers==0.22.2                                  [0m[2K░░░░░░░░░░░░░░░░░░░░ [4/89] [2mpykakasi==2.3.0                                     [0m[2K█░░░░░░░░░░░░░░░░░░░ [5/89] [2mpykakasi==2.3.0                                     [0m[2K█░░░░░░░░░░░░░░░░░░░ [5/89] [2mnvidia-nvtx-cu12==12.8.90                           [0m[2K█░░░░░░░░░░░░░░░░░░░ [6/89] [2mnvidia-nvtx-cu12==12.8.90                           [0m[2K█░░░░░░░░░░░░░░░░░░░ [6/89] [2mtyping-extensions==4.16.0                           [0m[2K█░░░░░░░░░░░░░░░░░░░ [7/89] [2mtyping-extensions==4.16.0                           [0m[2K█░░░░░░░░░░░░░░░░░░░ [7/89] [2mcycler==0.12.1                                      [0m[2K█░░░░░░░░░░░░░░░░░░░ [8/89] [2mcycler==0.12.1                                      [0m[2K█░░░░░░░░░░░░░░░░░░░ [8/89] [2mcloudpickle==3.1.2                                  [0m[2K██░░░░░░░░░░░░░░░░░░ [9/89] [2mcloudpickle==3.1.2                                  [0m[2K██████████████████░░ [81/89] [2mpyarrow==25.0.1                                    [0m[2K███████████████████░ [87/89] [2mtransformers==4.57.1                               [0m[2K███████████████████░ [88/89] [2mtorch==2.9.1                                       [0m[2K████████████████████ [89/89] [2mtorch==2.9.1                                       [0m[2K[2mInstalled [1m89 packages[0m [2min 233ms[0m[0m
+ [32m+[39m [1maccelerate[0m[2m==1.15.0[0m
+ [32m+[39m [1maiohappyeyeballs[0m[2m==2.7.1[0m
+ [32m+[39m [1maiohttp[0m[2m==3.14.3[0m
+ [32m+[39m [1maiosignal[0m[2m==1.4.0[0m
+ [32m+[39m [1manyio[0m[2m==4.15.1[0m
+ [32m+[39m [1mattrs[0m[2m==26.1.0[0m
+ [32m+[39m [1mbitsandbytes[0m[2m==0.50.2[0m
+ [32m+[39m [1mcertifi[0m[2m==2026.7.22[0m
+ [32m+[39m [1mcharset-normalizer[0m[2m==3.5.1[0m
+ [32m+[39m [1mclick[0m[2m==8.5.0[0m
+ [32m+[39m [1mcloudpickle[0m[2m==3.1.2[0m
+ [32m+[39m [1mcontourpy[0m[2m==1.4.0[0m
+ [32m+[39m [1mcycler[0m[2m==0.12.1[0m
+ [32m+[39m [1mdatasets[0m[2m==4.4.2[0m
+ [32m+[39m [1mdeprecated[0m[2m==1.3.1[0m
+ [32m+[39m [1mdill[0m[2m==0.4.0[0m
+ [32m+[39m [1mfilelock[0m[2m==4.0.1[0m
+ [32m+[39m [1mfonttools[0m[2m==4.65.0[0m
+ [32m+[39m [1mfrozenlist[0m[2m==1.8.0[0m
+ [32m+[39m [1mfsspec[0m[2m==2025.10.0[0m
+ [32m+[39m [1mh11[0m[2m==0.16.0[0m
+ [32m+[39m [1mh5py[0m[2m==3.16.0[0m
+ [32m+[39m [1mhf-xet[0m[2m==1.6.0[0m
+ [32m+[39m [1mhttpcore[0m[2m==1.0.9[0m
+ [32m+[39m [1mhttpx[0m[2m==0.28.1[0m
+ [32m+[39m [1mhuggingface-hub[0m[2m==0.36.2[0m
+ [32m+[39m [1midna[0m[2m==3.20[0m
+ [32m+[39m [1mjaconv[0m[2m==0.5.0[0m
+ [32m+[39m [1mjinja2[0m[2m==3.1.6[0m
+ [32m+[39m [1mjoblib[0m[2m==1.6.0[0m
+ [32m+[39m [1mkiwisolver[0m[2m==1.5.1[0m
+ [32m+[39m [1mlangdetect[0m[2m==1.0.9[0m
+ [32m+[39m [1mmarkupsafe[0m[2m==3.0.3[0m
+ [32m+[39m [1mmatplotlib[0m[2m==3.11.2[0m
+ [32m+[39m [1mmpmath[0m[2m==1.3.0[0m
+ [32m+[39m [1mmultidict[0m[2m==6.9.1[0m
+ [32m+[39m [1mmultiprocess[0m[2m==0.70.18[0m
+ [32m+[39m [1mnarwhals[0m[2m==2.26.0[0m
+ [32m+[39m [1mnetworkx[0m[2m==3.7[0m
+ [32m+[39m [1mnltk[0m[2m==3.9.1[0m
+ [32m+[39m [1mnumpy[0m[2m==2.5.3[0m
+ [32m+[39m [1mnvidia-cublas-cu12[0m[2m==12.8.4.1[0m
+ [32m+[39m [1mnvidia-cuda-cupti-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mnvidia-cuda-nvrtc-cu12[0m[2m==12.8.93[0m
+ [32m+[39m [1mnvidia-cuda-runtime-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mnvidia-cudnn-cu12[0m[2m==9.10.2.21[0m
+ [32m+[39m [1mnvidia-cufft-cu12[0m[2m==11.3.3.83[0m
+ [32m+[39m [1mnvidia-cufile-cu12[0m[2m==1.13.1.3[0m
+ [32m+[39m [1mnvidia-curand-cu12[0m[2m==10.3.9.90[0m
+ [32m+[39m [1mnvidia-cusolver-cu12[0m[2m==11.7.3.90[0m
+ [32m+[39m [1mnvidia-cusparse-cu12[0m[2m==12.5.8.93[0m
+ [32m+[39m [1mnvidia-cusparselt-cu12[0m[2m==0.7.1[0m
+ [32m+[39m [1mnvidia-nccl-cu12[0m[2m==2.27.5[0m
+ [32m+[39m [1mnvidia-nvjitlink-cu12[0m[2m==12.8.93[0m
+ [32m+[39m [1mnvidia-nvshmem-cu12[0m[2m==3.3.20[0m
+ [32m+[39m [1mnvidia-nvtx-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mpackaging[0m[2m==26.3[0m
+ [32m+[39m [1mpandas[0m[2m==3.0.6[0m
+ [32m+[39m [1mpillow[0m[2m==12.3.0[0m
+ [32m+[39m [1mpropcache[0m[2m==0.5.4[0m
+ [32m+[39m [1mprotobuf[0m[2m==7.36.2[0m
+ [32m+[39m [1mpsutil[0m[2m==7.2.2[0m
+ [32m+[39m [1mpyarrow[0m[2m==25.0.1[0m
+ [32m+[39m [1mpykakasi[0m[2m==2.3.0[0m
+ [32m+[39m [1mpyparsing[0m[2m==3.3.3[0m
+ [32m+[39m [1mpython-dateutil[0m[2m==2.9.0.post0[0m
+ [32m+[39m [1mpyyaml[0m[2m==6.0.3[0m
+ [32m+[39m [1mregex[0m[2m==2026.9.10[0m
+ [32m+[39m [1mrequests[0m[2m==2.34.2[0m
+ [32m+[39m [1mrobust-steerability[0m[2m==0.1.0 (from file:///teamspace/studios/this_studio/controller)[0m
+ [32m+[39m [1msafetensors[0m[2m==0.8.0[0m
+ [32m+[39m [1mscikit-learn[0m[2m==1.9.1[0m
+ [32m+[39m [1mscipy[0m[2m==1.18.1[0m
+ [32m+[39m [1mseaborn[0m[2m==0.13.2[0m
+ [32m+[39m [1msentencepiece[0m[2m==0.2.2[0m
+ [32m+[39m [1msetuptools[0m[2m==84.0.0[0m
+ [32m+[39m [1msix[0m[2m==1.17.0[0m
+ [32m+[39m [1msympy[0m[2m==1.14.0[0m
+ [32m+[39m [1mthreadpoolctl[0m[2m==3.7.0[0m
+ [32m+[39m [1mtokenizers[0m[2m==0.22.2[0m
+ [32m+[39m [1mtorch[0m[2m==2.9.1[0m
+ [32m+[39m [1mtqdm[0m[2m==4.70.1[0m
+ [32m+[39m [1mtransformers[0m[2m==4.57.1[0m
+ [32m+[39m [1mtriton[0m[2m==3.5.1[0m
+ [32m+[39m [1mtyping-extensions[0m[2m==4.16.0[0m
+ [32m+[39m [1murllib3[0m[2m==2.8.0[0m
+ [32m+[39m [1mwrapt[0m[2m==2.4.1[0m
+ [32m+[39m [1mxxhash[0m[2m==4.0.1[0m
+ [32m+[39m [1myarl[0m[2m==1.25.1[0m
+Fetching 13 files:   0%|                                | 0/13 [00:00<?, ?it/s]
+model-00001-of-00002.safetensors:   0%|            | 0.00/5.00G [00:00<?, ?B/s][A
+
+model-00002-of-00002.safetensors:   0%|            | 0.00/67.1M [00:00<?, ?B/s][A[A
+
+
+config.json:   0%|                                   | 0.00/787 [00:00<?, ?B/s][A[A[Aconfig.json: 100%|████████████████████████████| 787/787 [00:00<00:00, 9.19MB/s]
+
+
+
+generation_config.json:   0%|                        | 0.00/132 [00:00<?, ?B/s][A[A[Ageneration_config.json: 100%|█████████████████| 132/132 [00:00<00:00, 1.65MB/s]
+
+
+
+added_tokens.json:   0%|                             | 0.00/207 [00:00<?, ?B/s][A[A[Aadded_tokens.json: 100%|██████████████████████| 207/207 [00:00<00:00, 3.71MB/s]
+
+
+
+README.md: 0.00B [00:00, ?B/s][A[A[AREADME.md: 37.0kB [00:00, 149MB/s]
+
+
+
+merges.txt: 0.00B [00:00, ?B/s][A[A[A
+
+model-00002-of-00002.safetensors:   0%|            | 0.00/67.1M [00:00<?, ?B/s][A[A
+model-00001-of-00002.safetensors:   0%|            | 0.00/5.00G [00:00<?, ?B/s][A
+
+
+
+model.safetensors.index.json: 0.00B [00:00, ?B/s][A[A[A[A
+
+
+
+
+.gitattributes: 0.00B [00:00, ?B/s][A[A[A[A[Amodel.safetensors.index.json: 29.8kB [00:00, 47.2MB/s]
+.gitattributes: 1.52kB [00:00, 8.37MB/s]
+merges.txt: 442kB [00:00, 7.42MB/s]
+
+
+
+special_tokens_map.json:   0%|                       | 0.00/801 [00:00<?, ?B/s][A[A[Aspecial_tokens_map.json: 100%|████████████████| 801/801 [00:00<00:00, 15.7MB/s]
+Fetching 13 files:  62%|██████████████▊         | 8/13 [00:00<00:00, 14.49it/s]
+
+
+tokenizer.json: 0.00B [00:00, ?B/s][A[A[A
+
+
+
+vocab.json: 0.00B [00:00, ?B/s][A[A[A[A
+
+
+
+
+tokenizer_config.json: 0.00B [00:00, ?B/s][A[A[A[A[Atokenizer_config.json: 9.93kB [00:00, 58.8MB/s]
+
+
+
+tokenizer.json: 2.56MB [00:00, 25.6MB/s][A[A[Avocab.json: 777kB [00:00, 16.5MB/s]
+tokenizer.json: 3.48MB [00:00, 25.4MB/s]
+
+model-00001-of-00002.safetensors:   0%| | 51.0k/5.00G [00:01<27:11:21, 51.1kB/s[A
+
+model-00002-of-00002.safetensors: 100%|███| 67.1M/67.1M [00:01<00:00, 62.5MB/s][A[Amodel-00002-of-00002.safetensors: 100%|███| 67.1M/67.1M [00:01<00:00, 56.3MB/s]
+
+model-00001-of-00002.safetensors:   0%|   | 16.7M/5.00G [00:01<05:58, 13.9MB/s][A
+model-00001-of-00002.safetensors:   3%|    | 134M/5.00G [00:02<00:50, 96.3MB/s][A
+model-00001-of-00002.safetensors:  13%|▋    | 671M/5.00G [00:02<00:11, 371MB/s][A
+model-00001-of-00002.safetensors:  16%|▊    | 810M/5.00G [00:03<00:10, 404MB/s][A
+model-00001-of-00002.safetensors:  19%|▉    | 939M/5.00G [00:03<00:11, 355MB/s][A
+model-00001-of-00002.safetensors:  27%|█   | 1.34G/5.00G [00:04<00:08, 431MB/s][A
+model-00001-of-00002.safetensors:  38%|█▌  | 1.90G/5.00G [00:09<00:18, 164MB/s][A
+model-00001-of-00002.safetensors:  46%|█▊  | 2.28G/5.00G [00:11<00:14, 185MB/s][A
+model-00001-of-00002.safetensors:  67%|██▋ | 3.36G/5.00G [00:11<00:03, 410MB/s][AFetching 13 files:  92%|█████████████████████▏ | 12/13 [00:20<00:01,  1.67s/it]
+model-00001-of-00002.safetensors:  83%|███▎| 4.16G/5.00G [00:22<00:05, 154MB/s][A
+model-00001-of-00002.safetensors: 100%|████| 5.00G/5.00G [00:22<00:00, 236MB/s][Amodel-00001-of-00002.safetensors: 100%|████| 5.00G/5.00G [00:24<00:00, 206MB/s]
+Fetching 13 files: 100%|███████████████████████| 13/13 [00:24<00:00,  1.89s/it]Fetching 13 files: 100%|███████████████████████| 13/13 [00:24<00:00,  1.89s/it]
+README.md: 0.00B [00:00, ?B/s]README.md: 13.0kB [00:00, 70.1MB/s]
+en/train-00000-of-00001.parquet:   0%|             | 0.00/4.97k [00:00<?, ?B/s]en/train-00000-of-00001.parquet: 100%|████| 4.97k/4.97k [00:00<00:00, 22.9kB/s]en/train-00000-of-00001.parquet: 100%|████| 4.97k/4.97k [00:00<00:00, 22.9kB/s]
+en/test-00000-of-00001.parquet:   0%|              | 0.00/39.1k [00:00<?, ?B/s]en/test-00000-of-00001.parquet: 100%|██████| 39.1k/39.1k [00:00<00:00, 116kB/s]en/test-00000-of-00001.parquet: 100%|██████| 39.1k/39.1k [00:00<00:00, 115kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|████████████| 8/8 [00:00<00:00, 449.26 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 156084.55 examples/s]
+es/train-00000-of-00001.parquet:   0%|             | 0.00/5.10k [00:00<?, ?B/s]es/train-00000-of-00001.parquet: 100%|████| 5.10k/5.10k [00:00<00:00, 28.3kB/s]es/train-00000-of-00001.parquet: 100%|████| 5.10k/5.10k [00:00<00:00, 28.2kB/s]
+es/test-00000-of-00001.parquet:   0%|              | 0.00/41.7k [00:00<?, ?B/s]es/test-00000-of-00001.parquet: 100%|██████| 41.7k/41.7k [00:00<00:00, 165kB/s]es/test-00000-of-00001.parquet: 100%|██████| 41.7k/41.7k [00:00<00:00, 165kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 6117.49 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 193535.62 examples/s]
+README.md: 0.00B [00:00, ?B/s]README.md: 7.93kB [00:00, 68.6MB/s]
+main/train-00000-of-00001.parquet:   0%|           | 0.00/2.31M [00:00<?, ?B/s]main/train-00000-of-00001.parquet: 100%|██| 2.31M/2.31M [00:00<00:00, 11.8MB/s]main/train-00000-of-00001.parquet: 100%|██| 2.31M/2.31M [00:00<00:00, 11.8MB/s]
+main/test-00000-of-00001.parquet:   0%|             | 0.00/419k [00:00<?, ?B/s]main/test-00000-of-00001.parquet: 100%|█████| 419k/419k [00:00<00:00, 2.67MB/s]main/test-00000-of-00001.parquet: 100%|█████| 419k/419k [00:00<00:00, 2.66MB/s]
+Generating train split:   0%|                  | 0/7473 [00:00<?, ? examples/s]Generating train split: 100%|███| 7473/7473 [00:00<00:00, 752160.53 examples/s]
+Generating test split:   0%|                   | 0/1319 [00:00<?, ? examples/s]Generating test split: 100%|████| 1319/1319 [00:00<00:00, 615587.74 examples/s]
+bn/train-00000-of-00001.parquet:   0%|             | 0.00/7.65k [00:00<?, ?B/s]bn/train-00000-of-00001.parquet: 100%|████| 7.65k/7.65k [00:00<00:00, 35.8kB/s]bn/train-00000-of-00001.parquet: 100%|████| 7.65k/7.65k [00:00<00:00, 35.7kB/s]
+bn/test-00000-of-00001.parquet:   0%|              | 0.00/62.0k [00:00<?, ?B/s]bn/test-00000-of-00001.parquet: 100%|██████| 62.0k/62.0k [00:00<00:00, 286kB/s]bn/test-00000-of-00001.parquet: 100%|██████| 62.0k/62.0k [00:00<00:00, 286kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 3751.61 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 162418.84 examples/s]
+zh/train-00000-of-00001.parquet:   0%|             | 0.00/4.94k [00:00<?, ?B/s]zh/train-00000-of-00001.parquet: 100%|████| 4.94k/4.94k [00:00<00:00, 31.1kB/s]zh/train-00000-of-00001.parquet: 100%|████| 4.94k/4.94k [00:00<00:00, 31.0kB/s]
+zh/test-00000-of-00001.parquet:   0%|              | 0.00/39.8k [00:00<?, ?B/s]zh/test-00000-of-00001.parquet: 100%|██████| 39.8k/39.8k [00:00<00:00, 238kB/s]zh/test-00000-of-00001.parquet: 100%|██████| 39.8k/39.8k [00:00<00:00, 237kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 4658.40 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 176349.82 examples/s]
+fr/train-00000-of-00001.parquet:   0%|             | 0.00/5.18k [00:00<?, ?B/s]fr/train-00000-of-00001.parquet: 100%|████| 5.18k/5.18k [00:00<00:00, 28.4kB/s]fr/train-00000-of-00001.parquet: 100%|████| 5.18k/5.18k [00:00<00:00, 28.4kB/s]
+fr/test-00000-of-00001.parquet:   0%|              | 0.00/43.5k [00:00<?, ?B/s]fr/test-00000-of-00001.parquet: 100%|██████| 43.5k/43.5k [00:00<00:00, 216kB/s]fr/test-00000-of-00001.parquet: 100%|██████| 43.5k/43.5k [00:00<00:00, 215kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 5805.27 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 170030.16 examples/s]
+de/train-00000-of-00001.parquet:   0%|             | 0.00/5.29k [00:00<?, ?B/s]de/train-00000-of-00001.parquet: 100%|████| 5.29k/5.29k [00:00<00:00, 29.7kB/s]de/train-00000-of-00001.parquet: 100%|████| 5.29k/5.29k [00:00<00:00, 29.6kB/s]
+de/test-00000-of-00001.parquet:   0%|              | 0.00/43.3k [00:00<?, ?B/s]de/test-00000-of-00001.parquet: 100%|██████| 43.3k/43.3k [00:00<00:00, 180kB/s]de/test-00000-of-00001.parquet: 100%|██████| 43.3k/43.3k [00:00<00:00, 180kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 5378.17 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 174879.25 examples/s]
+ja/train-00000-of-00001.parquet:   0%|             | 0.00/5.73k [00:00<?, ?B/s]ja/train-00000-of-00001.parquet: 100%|████| 5.73k/5.73k [00:00<00:00, 34.6kB/s]ja/train-00000-of-00001.parquet: 100%|████| 5.73k/5.73k [00:00<00:00, 34.5kB/s]
+ja/test-00000-of-00001.parquet:   0%|              | 0.00/46.1k [00:00<?, ?B/s]ja/test-00000-of-00001.parquet: 100%|██████| 46.1k/46.1k [00:00<00:00, 148kB/s]ja/test-00000-of-00001.parquet: 100%|██████| 46.1k/46.1k [00:00<00:00, 148kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 5104.11 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 175493.89 examples/s]
+ru/train-00000-of-00001.parquet:   0%|             | 0.00/6.50k [00:00<?, ?B/s]ru/train-00000-of-00001.parquet: 100%|████| 6.50k/6.50k [00:00<00:00, 32.5kB/s]ru/train-00000-of-00001.parquet: 100%|████| 6.50k/6.50k [00:00<00:00, 32.5kB/s]
+ru/test-00000-of-00001.parquet:   0%|              | 0.00/56.5k [00:00<?, ?B/s]ru/test-00000-of-00001.parquet: 100%|██████| 56.5k/56.5k [00:00<00:00, 228kB/s]ru/test-00000-of-00001.parquet: 100%|██████| 56.5k/56.5k [00:00<00:00, 228kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 5535.21 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 169892.42 examples/s]
+sw/train-00000-of-00001.parquet:   0%|             | 0.00/4.98k [00:00<?, ?B/s]sw/train-00000-of-00001.parquet: 100%|████| 4.98k/4.98k [00:00<00:00, 13.6kB/s]sw/train-00000-of-00001.parquet: 100%|████| 4.98k/4.98k [00:00<00:00, 13.6kB/s]
+sw/test-00000-of-00001.parquet:   0%|              | 0.00/40.5k [00:00<?, ?B/s]sw/test-00000-of-00001.parquet: 100%|██████| 40.5k/40.5k [00:00<00:00, 133kB/s]sw/test-00000-of-00001.parquet: 100%|██████| 40.5k/40.5k [00:00<00:00, 133kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 5435.68 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 181823.48 examples/s]
+te/train-00000-of-00001.parquet:   0%|             | 0.00/9.02k [00:00<?, ?B/s]te/train-00000-of-00001.parquet: 100%|████| 9.02k/9.02k [00:00<00:00, 37.0kB/s]te/train-00000-of-00001.parquet: 100%|████| 9.02k/9.02k [00:00<00:00, 37.0kB/s]
+te/test-00000-of-00001.parquet:   0%|              | 0.00/66.5k [00:00<?, ?B/s]te/test-00000-of-00001.parquet: 100%|██████| 66.5k/66.5k [00:00<00:00, 319kB/s]te/test-00000-of-00001.parquet: 100%|██████| 66.5k/66.5k [00:00<00:00, 318kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 6325.06 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 159965.83 examples/s]
+th/train-00000-of-00001.parquet:   0%|             | 0.00/7.85k [00:00<?, ?B/s]th/train-00000-of-00001.parquet: 100%|████| 7.85k/7.85k [00:00<00:00, 24.1kB/s]th/train-00000-of-00001.parquet: 100%|████| 7.85k/7.85k [00:00<00:00, 24.1kB/s]
+th/test-00000-of-00001.parquet:   0%|              | 0.00/61.8k [00:00<?, ?B/s]th/test-00000-of-00001.parquet: 100%|██████| 61.8k/61.8k [00:00<00:00, 164kB/s]th/test-00000-of-00001.parquet: 100%|██████| 61.8k/61.8k [00:00<00:00, 163kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 5593.34 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 161567.95 examples/s]
+Loading checkpoint shards:   0%|                         | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|████████████████| 2/2 [00:00<00:00, 140.77it/s]
+Fetching 13 files:   0%|                                | 0/13 [00:00<?, ?it/s]Fetching 13 files: 100%|█████████████████████| 13/13 [00:00<00:00, 5323.76it/s]
+Loading checkpoint shards:   0%|                         | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|████████████████| 2/2 [00:00<00:00, 167.37it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 335, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 300, in main
+    calibration_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 95, in calibration_stage
+    calibration.calibrate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 986, in calibrate
+    fit_base(model_key, devices[0], calibration_id)
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 171, in fit_base
+    multilingual = multilingual_calibration_splits()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/datasets/mgsm.py", line 201, in multilingual_calibration_splits
+    raise ValueError("Frozen multilingual MGSM calibration counts changed")
+ValueError: Frozen multilingual MGSM calibration counts changed

@@ -1,0 +1,14 @@
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00, 64.98it/s]
+Jacobian 1/13: axbench-499-desired-36145
+Jacobian 2/13: axbench-499-desired-36149
+Jacobian 3/13: axbench-499-desired-36153
+Jacobian 4/13: axbench-499-desired-36157
+Jacobian 5/13: axbench-499-desired-36161
+Jacobian 6/13: axbench-499-desired-36165
+Jacobian 7/13: axbench-499-desired-36169
+Jacobian 8/13: axbench-499-desired-36173
+Jacobian 9/13: axbench-499-desired-36177
+Jacobian 10/13: axbench-499-desired-36181
+Jacobian 11/13: axbench-499-desired-36185
+Jacobian 12/13: axbench-499-desired-36189
+Jacobian 13/13: axbench-499-desired-36193

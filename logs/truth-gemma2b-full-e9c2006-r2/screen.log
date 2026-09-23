@@ -1,0 +1,93 @@
+[1;24rtokenizer_config.json: 0.00B [00:00, ?B/s]tokenizer_config.json: 46.4kB [00:00, 135MB/s]
+tokenizer.model:   0%|                             | 0.00/4.24M [00:00<?, ?B/s]tokenizer.model: 100%|████████████████████| 4.24M/4.24M [00:00<00:00, 5.22MB/s]tokenizer.model: 100%|████████████████████| 4.24M/4.24M [00:00<00:00, 5.21MB/s]
+tokenizer.json:   0%|                              | 0.00/17.5M [00:00<?, ?B/s]tokenizer.json: 100%|█████████████████████| 17.5M/17.5M [00:00<00:00, 25.6MB/s]tokenizer.json: 100%|█████████████████████| 17.5M/17.5M [00:00<00:00, 25.6MB/s]
+special_tokens_map.json:   0%|                       | 0.00/636 [00:00<?, ?B/s]special_tokens_map.json: 100%|████████████████| 636/636 [00:00<00:00, 5.43MB/s]
+config.json:   0%|                                   | 0.00/818 [00:00<?, ?B/s]config.json: 100%|████████████████████████████| 818/818 [00:00<00:00, 9.64MB/s]
+model.safetensors.index.json: 0.00B [00:00, ?B/s]model.safetensors.index.json: 24.2kB [00:00, 106MB/s]
+Fetching 3 files:   0%|                                  | 0/3 [00:00<?, ?it/s]
+model-00001-of-00003.safetensors:   0%|            | 0.00/4.99G [00:00<?, ?B/s][A
+
+model-00002-of-00003.safetensors:   0%|            | 0.00/4.98G [00:00<?, ?B/s][A[A
+
+
+model-00003-of-00003.safetensors:   0%|             | 0.00/481M [00:00<?, ?B/s][A[A[A
+model-00001-of-00003.safetensors:   4%|▏   | 201M/4.99G [00:02<01:05, 73.0MB/s][A
+model-00001-of-00003.safetensors:   5%|▏   | 268M/4.99G [00:03<01:06, 70.9MB/s][A
+model-00001-of-00003.safetensors:  13%|▋    | 671M/4.99G [00:04<00:20, 215MB/s][A
+model-00001-of-00003.safetensors:  21%|▊   | 1.02G/4.99G [00:05<00:16, 243MB/s][A
+
+model-00002-of-00003.safetensors:   5%|▏   | 268M/4.98G [00:05<01:36, 48.7MB/s][A[A
+
+model-00002-of-00003.safetensors:  11%|▌    | 537M/4.98G [00:05<00:40, 111MB/s][A[A
+model-00001-of-00003.safetensors:  21%|▊   | 1.07G/4.99G [00:07<00:26, 146MB/s][A
+model-00001-of-00003.safetensors:  27%|█   | 1.34G/4.99G [00:07<00:17, 207MB/s][A
+
+
+model-00003-of-00003.safetensors: 100%|█████| 481M/481M [00:07<00:00, 60.7MB/s][A[A[Amodel-00003-of-00003.safetensors: 100%|█████| 481M/481M [00:07<00:00, 60.7MB/s]
+Fetching 3 files:  33%|████████▋                 | 1/3 [00:08<00:16,  8.14s/it]
+
+model-00002-of-00003.safetensors:  22%|▊   | 1.07G/4.98G [00:09<00:27, 140MB/s][A[A
+
+model-00002-of-00003.safetensors:  24%|▉   | 1.21G/4.98G [00:10<00:28, 132MB/s][A[A
+
+model-00002-of-00003.safetensors:  30%|█▏  | 1.48G/4.98G [00:10<00:18, 189MB/s][A[A
+
+model-00002-of-00003.safetensors:  31%|█▏  | 1.54G/4.98G [00:10<00:17, 196MB/s][A[A
+
+model-00002-of-00003.safetensors:  34%|█▎  | 1.68G/4.98G [00:11<00:15, 209MB/s][A[A
+
+model-00002-of-00003.safetensors:  36%|█▍  | 1.81G/4.98G [00:11<00:12, 247MB/s][A[A
+
+model-00002-of-00003.safetensors:  39%|█▌  | 1.94G/4.98G [00:11<00:10, 289MB/s][A[A
+model-00001-of-00003.safetensors:  43%|█▋  | 2.15G/4.99G [00:12<00:16, 175MB/s][A
+
+model-00002-of-00003.safetensors:  52%|██  | 2.62G/4.98G [00:13<00:06, 344MB/s][A[A
+model-00001-of-00003.safetensors:  51%|██  | 2.55G/4.99G [00:14<00:11, 204MB/s][A
+
+model-00002-of-00003.safetensors:  55%|██▏ | 2.75G/4.98G [00:14<00:07, 301MB/s][A[A
+model-00001-of-00003.safetensors:  75%|███ | 3.76G/4.99G [00:14<00:03, 408MB/s][A
+model-00001-of-00003.safetensors:  81%|███▏| 4.02G/4.99G [00:15<00:02, 451MB/s][A
+model-00001-of-00003.safetensors:  83%|███▎| 4.16G/4.99G [00:15<00:01, 422MB/s][A
+
+model-00002-of-00003.safetensors:  57%|██▎ | 2.82G/4.98G [00:15<00:10, 205MB/s][A[A
+
+model-00002-of-00003.safetensors:  61%|██▍ | 3.02G/4.98G [00:16<00:08, 221MB/s][A[A
+
+model-00002-of-00003.safetensors:  63%|██▌ | 3.15G/4.98G [00:17<00:08, 210MB/s][A[A
+model-00001-of-00003.safetensors:  97%|███▊| 4.83G/4.99G [00:18<00:00, 309MB/s][A
+model-00001-of-00003.safetensors: 100%|████| 4.99G/4.99G [00:20<00:00, 251MB/s][A
+
+model-00002-of-00003.safetensors:  71%|██▊ | 3.55G/4.98G [00:20<00:08, 164MB/s][A[A
+
+model-00002-of-00003.safetensors: 100%|████| 4.98G/4.98G [00:20<00:00, 472MB/s][A[A
+
+model-00002-of-00003.safetensors: 100%|████| 4.98G/4.98G [00:33<00:00, 472MB/s][A[A
+model-00001-of-00003.safetensors: 100%|████| 4.99G/4.99G [00:33<00:00, 251MB/s][Amodel-00001-of-00003.safetensors: 100%|████| 4.99G/4.99G [00:36<00:00, 137MB/s]
+Fetching 3 files:  67%|█████████████████▎        | 2/3 [00:36<00:18, 18.31s/it]model-00002-of-00003.safetensors: 100%|████| 4.98G/4.98G [00:39<00:00, 126MB/s]
+Fetching 3 files: 100%|██████████████████████████| 3/3 [00:39<00:00, 13.21s/it]Fetching 3 files: 100%|██████████████████████████| 3/3 [00:39<00:00, 13.21s/it]
+Loading checkpoint shards:   0%|                         | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|█████▋           | 1/3 [00:02<00:04,  2.39s/it]Loading checkpoint shards:  67%|███████████▎     | 2/3 [00:06<00:03,  3.16s/it]Loading checkpoint shards: 100%|█████████████████| 3/3 [00:06<00:00,  1.89s/it]Loading checkpoint shards: 100%|█████████████████| 3/3 [00:06<00:00,  2.15s/it]
+generation_config.json:   0%|                        | 0.00/168 [00:00<?, ?B/s]generation_config.json: 100%|█████████████████| 168/168 [00:00<00:00, 2.08MB/s]
+Asking to truncate to max_length but no maximum length is provided and the model has no predefined maximum length. Default to no truncation.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 392, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 354, in main
+    artifact_stage(arguments.model, devices, log_root)
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 67, in artifact_stage
+    artifacts.fit_jacobians(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 497, in fit_jacobians
+    dynamics = aggregate_jacobian_partials(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 392, in aggregate_jacobian_partials
+    partial = torch.load(path, map_location="cpu", weights_only=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/.venv/lib/python3.12/site-packages/torch/serialization.py", line 1529, in load
+    raise pickle.UnpicklingError(_get_wo_message(str(e))) from None
+_pickle.UnpicklingError: Weights only load failed. This file can still be loaded, to do so you have two options, [1mdo those steps only if you trust the source of the checkpoint[0m. 
+        (1) In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.
+        (2) Alternatively, to load with `weights_only=True` please check the recommended steps in the following error message.
+        WeightsUnpickler error: Unsupported global: GLOBAL transformers.utils.quantization_config.QuantizationMethod was not an allowed global by default. Please use `torch.serialization.add_safe_globals([transformers.utils.quantization_config.QuantizationMethod])` or the `torch.serialization.safe_globals([transformers.utils.quantization_config.QuantizationMethod])` context manager to allowlist this global if you trust this class/function.
+
+Check the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html.

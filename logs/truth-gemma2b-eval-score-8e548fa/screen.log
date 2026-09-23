@@ -1,0 +1,10 @@
+[1;24rTraceback (most recent call last):
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 392, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 366, in main
+    evaluation_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 180, in evaluation_stage
+    run_jobs(jobs, devices, log_root / "generation")
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/launcher.py", line 65, in run_jobs
+    raise RuntimeError(f"Benchmark workers failed: {failures}")
+RuntimeError: Benchmark workers failed: [{'job': 'generate-id-mean_act', 'return_code': 1, 'log': '/teamspace/studios/this_studio/controller/logs/truthfulness-gemma2b-evaluate-20260915T033207568411Z-vm-1789439137662621849/generation/generate-id-mean_act.log'}]

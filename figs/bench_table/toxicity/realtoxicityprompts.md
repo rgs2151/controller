@@ -42,6 +42,26 @@
 | Qwen-2.5-32B | S-PID | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-32B | A-LQR | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | Qwen-2.5-32B | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | Original | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | ITI | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | ActAdd | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | Mean-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | Linear-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | PID-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | ODESteer | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | S-PID | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | A-LQR | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| OLMo-2-32B | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | Original | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | ITI | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | ActAdd | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | Mean-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | Linear-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | PID-AcT | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | ODESteer | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | S-PID | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | A-LQR | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| GPT-2 XL | H∞ (ours) | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
 ## Method
 

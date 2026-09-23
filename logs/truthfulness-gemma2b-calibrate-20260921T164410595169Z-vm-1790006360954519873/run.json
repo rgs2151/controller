@@ -1,0 +1,120 @@
+{
+  "schema_version": 2,
+  "run_id": "truthfulness-gemma2b-calibrate-20260921T164410595169Z-vm-1790006360954519873",
+  "status": "running",
+  "started_at_utc": "2026-09-21T16:44:10.595462+00:00",
+  "benchmark": "truthfulness",
+  "model": "gemma2b",
+  "stage": "calibrate",
+  "methods": [
+    "h_infinity"
+  ],
+  "datasets": [
+    "id",
+    "spanish",
+    "mmlu"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "auto",
+  "calibration_id": "txi_fluency_95_05",
+  "parameters": {
+    "generation_batch_size": 512,
+    "evaluation_samples": null,
+    "evaluation_repetitions": null,
+    "scorers": [],
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "selection_metric": "truthfulqa_txi_fluency_composite",
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py",
+    "calibrate",
+    "--model",
+    "gemma2b",
+    "--methods",
+    "h_infinity",
+    "--calibration-id",
+    "txi_fluency_95_05",
+    "--selection-metric",
+    "truthfulqa_txi_fluency_composite",
+    "--generation-batch-size",
+    "512",
+    "--api-concurrency",
+    "500",
+    "--api-batch-size",
+    "20",
+    "--devices",
+    "auto"
+  ],
+  "working_directory": "/teamspace/studios/this_studio/controller",
+  "git": {
+    "commit": "21ef6f97a0fc08542c88ffed06a5a7bce65ab147",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "vm-1790006360954519873",
+    "lightning_cloudspace_id": "01m2ges9x7p9xpz3z1b9208rk6",
+    "lightning_cloudspace_host": "01m2ges9x7p9xpz3z1b9208rk6.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 3,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 4,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 5,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 6,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 7,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      }
+    ],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/truthfulness/gemma2b",
+    "huggingface_model_cache": "/tmp/robust-steerability/huggingface",
+    "staged_model_snapshot": "/tmp/robust-steerability/huggingface/models--google--gemma-2-2b/snapshots/c5ebcd40d208330abc697524c919956e692655cf"
+  }
+}

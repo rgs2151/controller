@@ -1,0 +1,97 @@
+{
+  "schema_version": 2,
+  "run_id": "truthfulness-gpt2_xl-calibrate-20260921T232049065534Z-vm-1790025467370457119",
+  "status": "complete",
+  "started_at_utc": "2026-09-21T23:20:49.065867+00:00",
+  "benchmark": "truthfulness",
+  "model": "gpt2_xl",
+  "stage": "calibrate",
+  "methods": [
+    "original",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "id",
+    "spanish"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "cuda:0,cuda:1",
+  "calibration_id": "txi95_fluency05_n200_r1",
+  "parameters": {
+    "generation_batch_size": 256,
+    "evaluation_samples": null,
+    "evaluation_repetitions": 1,
+    "scorers": [],
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "selection_metric": "truthfulqa_txi_fluency_composite",
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py",
+    "calibrate",
+    "--model",
+    "gpt2_xl",
+    "--methods",
+    "original,alqr,h_infinity",
+    "--datasets",
+    "id,spanish",
+    "--devices",
+    "cuda:0,cuda:1",
+    "--calibration-id",
+    "txi95_fluency05_n200_r1",
+    "--generation-batch-size",
+    "256",
+    "--evaluation-repetitions",
+    "1",
+    "--selection-metric",
+    "truthfulqa_txi_fluency_composite",
+    "--api-concurrency",
+    "500",
+    "--api-batch-size",
+    "20"
+  ],
+  "working_directory": "/teamspace/studios/this_studio/controller",
+  "git": {
+    "commit": "3c5d83029f57ebd7b22c54a0908c6c5211bc6e12",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "vm-1790025467370457119",
+    "lightning_cloudspace_id": "01m2ges9x7p9xpz3z1b9208rk6",
+    "lightning_cloudspace_host": "01m2ges9x7p9xpz3z1b9208rk6.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      }
+    ],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/truthfulness/gpt2_xl",
+    "huggingface_model_cache": "/tmp/robust-steerability/huggingface",
+    "staged_model_snapshot": "/tmp/robust-steerability/huggingface/models--openai-community--gpt2-xl/snapshots/15ea56dee5df4983c59b2538573817e1667135e2"
+  },
+  "finished_at_utc": "2026-09-21T23:42:08.569052+00:00",
+  "elapsed_seconds": 1278.920287082
+}

@@ -1,0 +1,119 @@
+[1;24rFetching 14 files:   0%|                                | 0/14 [00:00<?, ?it/s]Fetching 14 files: 100%|█████████████████████| 14/14 [00:00<00:00, 4752.37it/s]
+tokenizer_config.json: 0.00B [00:00, ?B/s]tokenizer_config.json: 1.20kB [00:00, 7.46MB/s]
+tokenizer.model:   0%|                              | 0.00/500k [00:00<?, ?B/s]tokenizer.model: 100%|███████████████████████| 500k/500k [00:00<00:00, 961kB/s]tokenizer.model: 100%|███████████████████████| 500k/500k [00:00<00:00, 960kB/s]
+added_tokens.json:   0%|                            | 0.00/60.0 [00:00<?, ?B/s]added_tokens.json: 100%|█████████████████████| 60.0/60.0 [00:00<00:00, 742kB/s]
+special_tokens_map.json:   0%|                      | 0.00/96.0 [00:00<?, ?B/s]special_tokens_map.json: 100%|███████████████| 96.0/96.0 [00:00<00:00, 870kB/s]
+config.json:   0%|                                   | 0.00/681 [00:00<?, ?B/s]config.json: 100%|████████████████████████████| 681/681 [00:00<00:00, 8.87MB/s]
+pytorch_model.bin.index.json: 0.00B [00:00, ?B/s]pytorch_model.bin.index.json: 23.9kB [00:00, 110MB/s]
+Fetching 2 files:   0%|                                  | 0/2 [00:00<?, ?it/s]
+pytorch_model-00001-of-00002.bin:   0%|            | 0.00/9.98G [00:00<?, ?B/s][A
+
+pytorch_model-00002-of-00002.bin:   0%|            | 0.00/3.50G [00:00<?, ?B/s][A[A
+
+
+model.safetensors.index.json: 0.00B [00:00, ?B/s][A[A[Amodel.safetensors.index.json: 25.1kB [00:00, 124MB/s]
+
+pytorch_model-00001-of-00002.bin:   3%|    | 256M/9.98G [00:02<01:44, 92.8MB/s][A
+
+pytorch_model-00002-of-00002.bin:   4%|▏   | 134M/3.50G [00:03<01:15, 44.6MB/s][A[A
+pytorch_model-00001-of-00002.bin:   3%|    | 279M/9.98G [00:03<01:56, 83.1MB/s][A
+
+pytorch_model-00002-of-00002.bin:   7%|▎   | 256M/3.50G [00:03<00:39, 82.8MB/s][A[A
+pytorch_model-00001-of-00002.bin:   3%|▏   | 346M/9.98G [00:04<02:04, 77.2MB/s][A
+pytorch_model-00001-of-00002.bin:   5%|▏   | 547M/9.98G [00:06<01:45, 89.2MB/s][A
+
+pytorch_model-00002-of-00002.bin:  10%|▍   | 335M/3.50G [00:06<01:09, 45.4MB/s][A[A
+
+pytorch_model-00002-of-00002.bin:  17%|▊    | 604M/3.50G [00:07<00:27, 106MB/s][A[A
+pytorch_model-00001-of-00002.bin:  10%|▍   | 1.02G/9.98G [00:07<00:52, 170MB/s][A
+
+pytorch_model-00002-of-00002.bin:  33%|█▎  | 1.14G/3.50G [00:08<00:11, 205MB/s][A[A
+
+pytorch_model-00002-of-00002.bin:  46%|█▊  | 1.61G/3.50G [00:09<00:06, 273MB/s][A[A
+
+pytorch_model-00002-of-00002.bin:  54%|██▏ | 1.88G/3.50G [00:09<00:04, 341MB/s][A[A
+pytorch_model-00001-of-00002.bin:  11%|▎  | 1.08G/9.98G [00:10<01:30, 98.8MB/s][A
+pytorch_model-00001-of-00002.bin:  12%|▍   | 1.15G/9.98G [00:10<01:21, 109MB/s][A
+pytorch_model-00001-of-00002.bin:  16%|▋   | 1.62G/9.98G [00:13<00:57, 145MB/s][A
+
+pytorch_model-00002-of-00002.bin:  90%|███▌| 3.15G/3.50G [00:15<00:01, 262MB/s][A[A
+pytorch_model-00001-of-00002.bin:  24%|▉   | 2.36G/9.98G [00:16<00:38, 196MB/s][A
+
+pytorch_model-00002-of-00002.bin: 100%|████| 3.50G/3.50G [00:16<00:00, 255MB/s][A[A
+pytorch_model-00001-of-00002.bin:  34%|█▍  | 3.43G/9.98G [00:19<00:25, 260MB/s][A
+pytorch_model-00001-of-00002.bin:  36%|█▍  | 3.63G/9.98G [00:19<00:22, 285MB/s][A
+pytorch_model-00001-of-00002.bin:  45%|█▊  | 4.50G/9.98G [00:20<00:14, 384MB/s][Apytorch_model-00002-of-00002.bin: 100%|████| 3.50G/3.50G [00:21<00:00, 167MB/s]
+Fetching 2 files:  50%|█████████████             | 1/2 [00:21<00:21, 21.20s/it]
+pytorch_model-00001-of-00002.bin:  46%|█▊  | 4.57G/9.98G [00:22<00:20, 260MB/s][A
+pytorch_model-00001-of-00002.bin:  47%|█▉  | 4.70G/9.98G [00:24<00:25, 203MB/s][A
+pytorch_model-00001-of-00002.bin:  63%|██▌ | 6.31G/9.98G [00:25<00:07, 486MB/s][A
+pytorch_model-00001-of-00002.bin:  75%|███ | 7.52G/9.98G [00:25<00:03, 728MB/s][A
+pytorch_model-00001-of-00002.bin:  77%|███ | 7.72G/9.98G [00:28<00:05, 422MB/s][A
+pytorch_model-00001-of-00002.bin:  84%|███▎| 8.33G/9.98G [00:29<00:03, 488MB/s][A
+pytorch_model-00001-of-00002.bin:  89%|███▌| 8.83G/9.98G [00:29<00:01, 599MB/s][A
+pytorch_model-00001-of-00002.bin:  95%|███▊| 9.51G/9.98G [00:29<00:00, 803MB/s][A
+pytorch_model-00001-of-00002.bin: 100%|████| 9.98G/9.98G [00:30<00:00, 684MB/s][Apytorch_model-00001-of-00002.bin: 100%|████| 9.98G/9.98G [00:43<00:00, 232MB/s]
+Fetching 2 files: 100%|██████████████████████████| 2/2 [00:43<00:00, 21.63s/it]Fetching 2 files: 100%|██████████████████████████| 2/2 [00:43<00:00, 21.63s/it]
+Loading checkpoint shards:   0%|                         | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|████████▌        | 1/2 [00:14<00:14, 14.70s/it]Loading checkpoint shards: 100%|█████████████████| 2/2 [00:19<00:00,  8.86s/it]Loading checkpoint shards: 100%|█████████████████| 2/2 [00:19<00:00,  9.73s/it]
+tokenizer_config.json: 0.00B [00:00, ?B/s]tokenizer_config.json: 1.20kB [00:00, 9.79MB/s]
+tokenizer.model:   0%|                              | 0.00/500k [00:00<?, ?B/s]tokenizer.model: 100%|██████████████████████| 500k/500k [00:00<00:00, 1.12MB/s]tokenizer.model: 100%|██████████████████████| 500k/500k [00:00<00:00, 1.12MB/s]
+added_tokens.json:   0%|                            | 0.00/60.0 [00:00<?, ?B/s]added_tokens.json: 100%|█████████████████████| 60.0/60.0 [00:00<00:00, 828kB/s]
+special_tokens_map.json:   0%|                      | 0.00/96.0 [00:00<?, ?B/s]special_tokens_map.json: 100%|██████████████| 96.0/96.0 [00:00<00:00, 1.39MB/s]
+config.json:   0%|                                   | 0.00/681 [00:00<?, ?B/s]config.json: 100%|████████████████████████████| 681/681 [00:00<00:00, 8.58MB/s]
+pytorch_model.bin.index.json: 0.00B [00:00, ?B/s]pytorch_model.bin.index.json: 23.9kB [00:00, 120MB/s]
+Fetching 2 files:   0%|                                  | 0/2 [00:00<?, ?it/s]
+pytorch_model-00001-of-00002.bin:   0%|            | 0.00/9.98G [00:00<?, ?B/s][A
+
+pytorch_model-00002-of-00002.bin:   0%|            | 0.00/3.50G [00:00<?, ?B/s][A[A
+
+
+model.safetensors.index.json: 0.00B [00:00, ?B/s][A[A[Amodel.safetensors.index.json: 25.1kB [00:00, 107MB/s]
+
+pytorch_model-00001-of-00002.bin:   3%|    | 279M/9.98G [00:04<02:19, 69.6MB/s][A
+pytorch_model-00001-of-00002.bin:   8%|▍    | 768M/9.98G [00:04<00:41, 223MB/s][A
+
+pytorch_model-00002-of-00002.bin:   2%|   | 67.1M/3.50G [00:04<03:37, 15.8MB/s][A[A
+pytorch_model-00001-of-00002.bin:   9%|▍    | 882M/9.98G [00:07<01:26, 105MB/s][A
+pytorch_model-00001-of-00002.bin:  18%|▋   | 1.82G/9.98G [00:08<00:29, 274MB/s][A
+
+pytorch_model-00002-of-00002.bin:  42%|█▋  | 1.48G/3.50G [00:09<00:10, 188MB/s][A[A
+pytorch_model-00001-of-00002.bin:  25%|▉   | 2.49G/9.98G [00:09<00:18, 409MB/s][A
+
+pytorch_model-00002-of-00002.bin:  44%|█▊  | 1.54G/3.50G [00:12<00:15, 129MB/s][A[A
+
+pytorch_model-00002-of-00002.bin:  46%|█▊  | 1.61G/3.50G [00:12<00:14, 135MB/s][A[A
+
+pytorch_model-00002-of-00002.bin:  53%|██  | 1.84G/3.50G [00:12<00:09, 179MB/s][A[A
+pytorch_model-00001-of-00002.bin:  26%|█   | 2.63G/9.98G [00:12<00:36, 202MB/s][A
+pytorch_model-00001-of-00002.bin:  33%|█▎  | 3.30G/9.98G [00:13<00:22, 303MB/s][A
+pytorch_model-00001-of-00002.bin:  35%|█▍  | 3.50G/9.98G [00:15<00:28, 231MB/s][A
+
+pytorch_model-00002-of-00002.bin:  57%|██▎ | 1.98G/3.50G [00:16<00:14, 102MB/s][A[A
+pytorch_model-00001-of-00002.bin:  39%|█▌  | 3.90G/9.98G [00:17<00:26, 230MB/s][A
+pytorch_model-00001-of-00002.bin:  56%|██▏ | 5.58G/9.98G [00:18<00:08, 522MB/s][A
+pytorch_model-00001-of-00002.bin:  59%|██▎ | 5.85G/9.98G [00:19<00:08, 465MB/s][A
+
+pytorch_model-00002-of-00002.bin:  72%|██▉ | 2.53G/3.50G [00:19<00:07, 133MB/s][A[A
+
+pytorch_model-00002-of-00002.bin:  79%|███▏| 2.77G/3.50G [00:19<00:04, 169MB/s][A[A
+pytorch_model-00001-of-00002.bin:  61%|██▍ | 6.05G/9.98G [00:20<00:09, 427MB/s][A
+pytorch_model-00001-of-00002.bin:  61%|██▍ | 6.11G/9.98G [00:20<00:09, 414MB/s][A
+
+pytorch_model-00002-of-00002.bin:  84%|███▎| 2.93G/3.50G [00:20<00:03, 160MB/s][A[A
+
+pytorch_model-00002-of-00002.bin:  87%|███▍| 3.03G/3.50G [00:21<00:02, 165MB/s][A[A
+pytorch_model-00001-of-00002.bin:  63%|██▌ | 6.31G/9.98G [00:21<00:12, 296MB/s][A
+pytorch_model-00001-of-00002.bin:  65%|██▌ | 6.45G/9.98G [00:24<00:21, 167MB/s][A
+pytorch_model-00001-of-00002.bin:  68%|██▋ | 6.78G/9.98G [00:25<00:14, 214MB/s][A
+pytorch_model-00001-of-00002.bin:  84%|███▎| 8.39G/9.98G [00:26<00:02, 554MB/s][A
+
+pytorch_model-00002-of-00002.bin: 100%|████| 3.50G/3.50G [00:26<00:00, 120MB/s][A[A
+pytorch_model-00001-of-00002.bin:  90%|███▌| 9.00G/9.98G [00:26<00:01, 652MB/s][A
+pytorch_model-00001-of-00002.bin:  92%|███▋| 9.13G/9.98G [00:27<00:01, 641MB/s][A
+pytorch_model-00001-of-00002.bin:  95%|███▊| 9.47G/9.98G [00:28<00:01, 489MB/s][Apytorch_model-00002-of-00002.bin: 100%|████| 3.50G/3.50G [00:28<00:00, 121MB/s]
+Fetching 2 files:  50%|█████████████             | 1/2 [00:29<00:29, 29.09s/it]
+pytorch_model-00001-of-00002.bin: 100%|████| 9.98G/9.98G [00:29<00:00, 428MB/s][Apytorch_model-00001-of-00002.bin: 100%|████| 9.98G/9.98G [00:36<00:00, 277MB/s]
+Fetching 2 files: 100%|██████████████████████████| 2/2 [00:36<00:00, 18.09s/it]Fetching 2 files: 100%|██████████████████████████| 2/2 [00:36<00:00, 18.09s/it]
+Loading checkpoint shards:   0%|                         | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|████████▌        | 1/2 [00:14<00:14, 14.60s/it]Loading checkpoint shards: 100%|█████████████████| 2/2 [00:19<00:00,  8.92s/it]Loading checkpoint shards: 100%|█████████████████| 2/2 [00:19<00:00,  9.77s/it]
+Fetching 14 files:   0%|                                | 0/14 [00:00<?, ?it/s]Fetching 14 files: 100%|█████████████████████| 14/14 [00:00<00:00, 5071.71it/s]
+RUN_COMPLETE

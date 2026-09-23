@@ -1,0 +1,29 @@
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_calibration.py", line 977, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_calibration.py", line 949, in main
+    generate_worker(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_calibration.py", line 391, in generate_worker
+    generate_one(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_calibration.py", line 299, in generate_one
+    completions, generated = runtime.generate_completions(
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval_runtime.py", line 241, in generate_completions
+    output = model.generate(
+             ^^^^^^^^^^^^^^^
+  File "/tmp/robust-steerability-venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/robust-steerability-venv/lib/python3.12/site-packages/transformers/generation/utils.py", line 2564, in generate
+    result = decoding_method(
+             ^^^^^^^^^^^^^^^^
+  File "/tmp/robust-steerability-venv/lib/python3.12/site-packages/transformers/generation/utils.py", line 2790, in _sample
+    model_kwargs = self._update_model_kwargs_for_generation(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/robust-steerability-venv/lib/python3.12/site-packages/transformers/generation/utils.py", line 1002, in _update_model_kwargs_for_generation
+    new_positions = torch.arange(
+                    ^^^^^^^^^^^^^
+KeyboardInterrupt

@@ -1,0 +1,134 @@
+{
+  "schema_version": 2,
+  "run_id": "mgsm-llama32-hinf-multilingual-calibrate-20260920",
+  "status": "complete",
+  "started_at_utc": "2026-09-20T13:15:17.905948+00:00",
+  "benchmark": "mgsm",
+  "model": "llama32_3b_instruct",
+  "stage": "calibrate",
+  "methods": [
+    "h_infinity"
+  ],
+  "datasets": [
+    "zh",
+    "fr",
+    "ja",
+    "sw",
+    "te"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "auto",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": 64,
+    "scorers": "default",
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "h_infinity_fixed_parameters": null,
+    "h_infinity_lambda_sweep": {
+      "enabled": false,
+      "values": [
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0,
+        1.5
+      ],
+      "fixed_q_over_r": 0.1,
+      "fixed_q_final_over_r": 0.1,
+      "fixed_r": 1.0,
+      "selection_metric": "mean_axbench_overall"
+    }
+  },
+  "command": [
+    "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py",
+    "calibrate",
+    "--model",
+    "llama32_3b_instruct",
+    "--methods",
+    "h_infinity",
+    "--devices",
+    "auto",
+    "--generation-batch-size",
+    "64",
+    "--api-concurrency",
+    "500",
+    "--api-batch-size",
+    "20",
+    "--run-id",
+    "mgsm-llama32-hinf-multilingual-calibrate-20260920"
+  ],
+  "working_directory": "/teamspace/studios/this_studio/controller",
+  "git": {
+    "commit": "cc956f1395d3b02aea8c850fb84de6f30ab7b5d4",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "cs-01m2zde4vy1ge8m9bgj1abfet8-shk4",
+    "lightning_cloudspace_id": "01m2ghmtb6yhfgyjh1s1pxt5g3",
+    "lightning_cloudspace_host": "01m2ghmtb6yhfgyjh1s1pxt5g3.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-1067-gcp-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": "0,1,2,3,4,5,6,7",
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 3,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 4,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 5,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 6,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      },
+      {
+        "index": 7,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+        "total_memory_bytes": 101973950464
+      }
+    ],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/mgsm/llama32_3b_instruct",
+    "huggingface_model_cache": "/tmp/robust-steerability/huggingface",
+    "staged_model_snapshot": "/tmp/robust-steerability/huggingface/models--meta-llama--Llama-3.2-3B-Instruct/snapshots/0cb88a4f764b7a12671c53f0838cd831a0843b95"
+  },
+  "finished_at_utc": "2026-09-20T14:10:18.472985+00:00",
+  "elapsed_seconds": 3299.715051075
+}

@@ -1,0 +1,17 @@
+MGSM_START_20260915T1940Z
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 328, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 291, in main
+    artifact_stage(arguments.model, devices, log_root)
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 73, in artifact_stage
+    artifacts.prepare(model_key)
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_artifacts.py", line 146, in prepare
+    token=load_access_token(REPO_ROOT),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/modeling/huggingface.py", line 45, in load_access_token
+    raise RuntimeError(f"HF_TOKEN is not set and was not found in {env_path}")
+RuntimeError: HF_TOKEN is not set and was not found in /teamspace/studios/this_studio/controller/.env
+MGSM_FINISHED

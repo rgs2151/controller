@@ -1,0 +1,86 @@
+{
+  "schema_version": 2,
+  "run_id": "lcite-qwen3b-hotpot8k-calibrate-20260921T101913Z",
+  "status": "running",
+  "started_at_utc": "2026-09-21T10:19:16.567963+00:00",
+  "benchmark": "lciteeval",
+  "model": "qwen25_3b_instruct",
+  "stage": "calibrate",
+  "methods": [
+    "h_infinity"
+  ],
+  "datasets": [
+    "8k"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "cuda:0,cuda:1",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": 4,
+    "scorers": [],
+    "api_concurrency": 100,
+    "api_batch_size": 20,
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "/home/dev/controller/code/robust_steerability/benchmarks/lciteeval.py",
+    "calibrate",
+    "--model",
+    "qwen25_3b_instruct",
+    "--methods",
+    "h_infinity",
+    "--datasets",
+    "8k",
+    "--devices",
+    "cuda:0,cuda:1",
+    "--generation-batch-size",
+    "4",
+    "--calibration-id",
+    "selected",
+    "--api-concurrency",
+    "100",
+    "--api-batch-size",
+    "20",
+    "--run-id",
+    "lcite-qwen3b-hotpot8k-calibrate-20260921T101913Z"
+  ],
+  "working_directory": "/home/dev/controller/code",
+  "git": {
+    "commit": "3a8a8809ce2e63340c5578638b94e1439a8add58",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "dev",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": null,
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python": "3.11.16",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 5090",
+        "total_memory_bytes": 33670758400
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA GeForce RTX 5090",
+        "total_memory_bytes": 33667612672
+      }
+    ],
+    "packages": {
+      "accelerate": "1.14.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "local",
+    "benchmark_cache_root": "/home/dev/controller/code/benchmarks/lciteeval/cache/qwen25_3b_instruct",
+    "huggingface_model_cache": "default"
+  }
+}

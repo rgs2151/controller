@@ -1,0 +1,106 @@
+{
+  "schema_version": 2,
+  "run_id": "mgsm-qwen4b-calibrate-continue-20260915T2020Z",
+  "status": "failed",
+  "started_at_utc": "2026-09-15T20:14:20.841756+00:00",
+  "benchmark": "mgsm",
+  "model": "qwen3_4b",
+  "stage": "calibrate",
+  "methods": [
+    "original",
+    "spid",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "en",
+    "es",
+    "bn",
+    "zh",
+    "fr",
+    "de",
+    "ja",
+    "ru",
+    "sw",
+    "te",
+    "th"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "auto",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "scorers": "default",
+    "api_concurrency": 100,
+    "api_batch_size": 20,
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py",
+    "calibrate",
+    "--model",
+    "qwen3_4b",
+    "--devices",
+    "auto",
+    "--api-concurrency",
+    "100",
+    "--api-batch-size",
+    "20",
+    "--run-id",
+    "mgsm-qwen4b-calibrate-continue-20260915T2020Z"
+  ],
+  "working_directory": "/teamspace/studios/this_studio/controller",
+  "git": {
+    "commit": "c8df43b3c21554b15e1074997d2e571a38903170",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "vm-1789500246026276470",
+    "lightning_cloudspace_id": null,
+    "lightning_cloudspace_host": "01m2ghmtb6yhfgyjh1s1pxt5g3.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA H100 80GB HBM3",
+        "total_memory_bytes": 85017493504
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H100 80GB HBM3",
+        "total_memory_bytes": 85017493504
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H100 80GB HBM3",
+        "total_memory_bytes": 85017493504
+      },
+      {
+        "index": 3,
+        "name": "NVIDIA H100 80GB HBM3",
+        "total_memory_bytes": 85017493504
+      }
+    ],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/mgsm/qwen3_4b"
+  },
+  "finished_at_utc": "2026-09-15T20:16:24.321453+00:00",
+  "elapsed_seconds": 122.43129226700012,
+  "error": {
+    "type": "KeyboardInterrupt",
+    "message": ""
+  }
+}

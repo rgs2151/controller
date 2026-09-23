@@ -1,0 +1,63 @@
+MGSM_RESUME_START
+Loading checkpoint shards:   0%|                         | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|████████████████| 3/3 [00:00<00:00, 129.45it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 328, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 293, in main
+    calibration_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 93, in calibration_stage
+    calibration.calibrate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 539, in calibrate
+    score_grid(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 309, in score_grid
+    openai_scoring.score_generations(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 274, in score_generations
+    return asyncio.run(
+           ^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 232, in _score_async
+    destination, result = await future
+                          ^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/asyncio/tasks.py", line 631, in _wait_for_one
+    return f.result()  # May raise f.exception().
+           ^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 219, in run_job
+    result = await _request(
+             ^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 138, in _request
+    raise RuntimeError(
+RuntimeError: OpenAI scorer batch 2 did not finish cleanly
+Task exception was never retrieved
+future: <Task finished name='Task-53' coro=<_score_async.<locals>.run_job() done, defined at /teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py:218> exception=ServerDisconnectedError('Server disconnected')>
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 219, in run_job
+    result = await _request(
+             ^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 132, in _request
+    async with session.post(ENDPOINT, headers=headers, json=body) as response:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client.py", line 1693, in __aenter__
+    self._resp: _RetType_co = await self._coro
+                              ^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client.py", line 858, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client.py", line 836, in _connect_and_send_request
+    await resp.start(conn)
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client_reqrep.py", line 558, in start
+    message, payload = await protocol.read()  # type: ignore[union-attr]
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/streams.py", line 705, in read
+    await self._waiter
+aiohttp.client_exceptions.ServerDisconnectedError: Server disconnected
+MGSM_RESUME_FINISHED

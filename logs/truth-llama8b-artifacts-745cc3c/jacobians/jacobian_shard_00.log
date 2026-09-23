@@ -1,0 +1,19 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:06<00:18,  6.27s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:13<00:14,  7.02s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:21<00:07,  7.25s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:21<00:00,  4.53s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:21<00:00,  5.43s/it]
+Jacobian 1/9: truthfulqa:mc2:522:0
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 649, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 611, in main
+    fit_jacobian_shard(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 356, in fit_jacobian_shard
+    shard_mean = average_prompt_jacobians(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/calibration/nominal.py", line 66, in average_prompt_jacobians
+    derivative = layer_last_token_jacobian(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/modeling/jacobians.py", line 106, in layer_last_token_jacobian
+    rows.append(gradient.detach().cpu())
+                ^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

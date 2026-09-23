@@ -1,0 +1,17 @@
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:02<00:04,  2.34s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:05<00:03,  3.07s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:06<00:00,  1.83s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:06<00:00,  2.10s/it]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 1001, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 944, in main
+    generate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 692, in generate
+    run_generation_job(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/source_methods/id_benchmark.py", line 796, in run_generation_job
+    steerer = ActAddSteerer(direction, parameters["layer"], parameters["strength"])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 6, in __init__
+  File "/teamspace/studios/this_studio/controller/robust_steerability/source_methods/actadd.py", line 100, in __post_init__
+    raise ValueError("direction must have shape (sequence, hidden)")
+ValueError: direction must have shape (sequence, hidden)

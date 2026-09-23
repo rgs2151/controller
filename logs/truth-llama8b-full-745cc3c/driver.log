@@ -1,0 +1,242 @@
+[1;24rtokenizer_config.json: 0.00B [00:00, ?B/s]tokenizer_config.json: 50.6kB [00:00, 57.4MB/s]
+tokenizer.json: 0.00B [00:00, ?B/s]tokenizer.json: 2.52MB [00:00, 25.0MB/s]tokenizer.json: 5.03MB [00:00, 20.9MB/s]tokenizer.json: 7.70MB [00:00, 23.2MB/s]tokenizer.json: 9.09MB [00:00, 22.0MB/s]
+special_tokens_map.json:   0%|                      | 0.00/73.0 [00:00<?, ?B/s]special_tokens_map.json: 100%|███████████████| 73.0/73.0 [00:00<00:00, 178kB/s]
+config.json:   0%|                                   | 0.00/654 [00:00<?, ?B/s]config.json: 100%|████████████████████████████| 654/654 [00:00<00:00, 1.93MB/s]
+model.safetensors.index.json: 0.00B [00:00, ?B/s]model.safetensors.index.json: 23.9kB [00:00, 37.0MB/s]
+Fetching 4 files:   0%|                                  | 0/4 [00:00<?, ?it/s]
+model-00002-of-00004.safetensors:   0%|            | 0.00/5.00G [00:00<?, ?B/s][A
+
+model-00004-of-00004.safetensors:   0%|            | 0.00/1.17G [00:00<?, ?B/s][A[A
+
+
+model-00001-of-00004.safetensors:   0%|            | 0.00/4.98G [00:00<?, ?B/s][A[A[A
+
+
+
+model-00003-of-00004.safetensors:   0%|            | 0.00/4.92G [00:00<?, ?B/s][A[A[A[A
+
+model-00004-of-00004.safetensors:   0%|            | 0.00/1.17G [00:00<?, ?B/s][A[A
+
+
+model-00001-of-00004.safetensors:   0%|            | 0.00/4.98G [00:00<?, ?B/s][A[A[A
+
+
+
+model-00003-of-00004.safetensors:   0%|            | 0.00/4.92G [00:00<?, ?B/s][A[A[A[A
+model-00002-of-00004.safetensors:   0%|            | 0.00/5.00G [00:00<?, ?B/s][A
+model-00002-of-00004.safetensors:   0%|   | 4.35M/5.00G [00:01<23:50, 3.49MB/s][A
+
+
+model-00001-of-00004.safetensors:   1%|   | 66.9M/4.98G [00:01<01:31, 53.5MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:   4%|▏    | 201M/4.98G [00:01<00:29, 161MB/s][A[A[A
+model-00002-of-00004.safetensors:   1%|   | 71.4M/5.00G [00:02<01:53, 43.3MB/s][A
+
+
+model-00001-of-00004.safetensors:   5%|▎    | 256M/4.98G [00:02<00:33, 141MB/s][A[A[A
+model-00002-of-00004.safetensors:   5%|▎    | 256M/5.00G [00:02<00:28, 169MB/s][A
+
+
+model-00001-of-00004.safetensors:   7%|▎    | 335M/4.98G [00:02<00:31, 147MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:  12%|▌    | 603M/4.98G [00:03<00:15, 279MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:  15%|▊    | 768M/4.98G [00:03<00:11, 352MB/s][A[A[A
+
+
+
+model-00003-of-00004.safetensors:   5%|▏   | 256M/4.92G [00:03<01:03, 73.2MB/s][A[A[A[A
+
+
+
+model-00003-of-00004.safetensors:   6%|▏   | 302M/4.92G [00:04<00:55, 83.7MB/s][A[A[A[A
+
+model-00004-of-00004.safetensors:   2%|   | 25.1M/1.17G [00:04<03:02, 6.27MB/s][A[A
+
+
+
+model-00003-of-00004.safetensors:   8%|▍    | 370M/4.92G [00:04<00:43, 105MB/s][A[A[A[A
+
+model-00004-of-00004.safetensors:  13%|▌   | 149M/1.17G [00:05<00:23, 42.8MB/s][A[A
+
+
+
+model-00003-of-00004.safetensors:  14%|▋    | 705M/4.92G [00:04<00:17, 247MB/s][A[A[A[A
+
+model-00004-of-00004.safetensors:  30%|█▍   | 350M/1.17G [00:05<00:06, 117MB/s][A[A
+
+
+
+model-00003-of-00004.safetensors:  16%|▊    | 768M/4.92G [00:05<00:16, 248MB/s][A[A[A[A
+
+model-00004-of-00004.safetensors:  47%|██▎  | 551M/1.17G [00:05<00:03, 201MB/s][A[A
+
+model-00004-of-00004.safetensors:  66%|███▎ | 768M/1.17G [00:05<00:01, 301MB/s][A[A
+
+
+model-00001-of-00004.safetensors:  18%|▉    | 872M/4.98G [00:05<00:30, 134MB/s][A[A[A
+
+model-00004-of-00004.safetensors:  88%|███▌| 1.02G/1.17G [00:06<00:00, 364MB/s][A[A
+
+
+model-00001-of-00004.safetensors:  21%|▊   | 1.02G/4.98G [00:06<00:23, 165MB/s][A[A[A
+model-00002-of-00004.safetensors:   9%|▎   | 428M/5.00G [00:06<01:07, 67.5MB/s][A
+model-00002-of-00004.safetensors:  18%|▉    | 876M/5.00G [00:07<00:22, 183MB/s][A
+
+model-00004-of-00004.safetensors:  97%|███▉| 1.13G/1.17G [00:07<00:00, 246MB/s][A[A
+
+
+
+model-00003-of-00004.safetensors:  17%|▊    | 839M/4.92G [00:07<00:36, 113MB/s][A[A[A[A
+
+
+
+model-00003-of-00004.safetensors:  21%|▊   | 1.04G/4.92G [00:07<00:21, 183MB/s][A[A[A[A
+
+
+model-00001-of-00004.safetensors:  22%|▉   | 1.09G/4.98G [00:07<00:29, 132MB/s][A[A[A
+model-00002-of-00004.safetensors:  24%|▉   | 1.22G/5.00G [00:08<00:16, 229MB/s][A
+
+
+model-00001-of-00004.safetensors:  23%|▉   | 1.16G/4.98G [00:07<00:28, 132MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:  28%|█▏  | 1.40G/4.98G [00:08<00:15, 236MB/s][A[A[A
+model-00002-of-00004.safetensors:  30%|█▏  | 1.48G/5.00G [00:08<00:11, 300MB/s][A
+
+
+
+model-00003-of-00004.safetensors:  23%|▉   | 1.11G/4.92G [00:08<00:27, 141MB/s][A[A[A[A
+
+
+
+model-00003-of-00004.safetensors:  25%|█   | 1.24G/4.92G [00:08<00:19, 187MB/s][A[A[A[A
+model-00002-of-00004.safetensors:  33%|█▎  | 1.67G/5.00G [00:08<00:10, 316MB/s][A
+model-00002-of-00004.safetensors:  35%|█▍  | 1.75G/5.00G [00:09<00:10, 317MB/s][A
+
+
+
+model-00003-of-00004.safetensors:  28%|█   | 1.38G/4.92G [00:08<00:14, 236MB/s][A[A[A[A
+
+
+model-00001-of-00004.safetensors:  30%|█▏  | 1.49G/4.98G [00:08<00:17, 197MB/s][A[A[A
+
+
+
+model-00003-of-00004.safetensors:  31%|█▏  | 1.51G/4.92G [00:09<00:13, 245MB/s][A[A[A[A
+
+
+model-00001-of-00004.safetensors:  31%|█▎  | 1.56G/4.98G [00:09<00:21, 161MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:  33%|█▎  | 1.63G/4.98G [00:09<00:19, 176MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:  39%|█▌  | 1.96G/4.98G [00:10<00:08, 366MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:  41%|█▋  | 2.03G/4.98G [00:10<00:08, 347MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:  45%|█▊  | 2.23G/4.98G [00:10<00:06, 445MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:  48%|█▉  | 2.37G/4.98G [00:10<00:05, 466MB/s][A[A[A
+
+
+
+model-00003-of-00004.safetensors:  39%|█▌  | 1.91G/4.92G [00:11<00:12, 236MB/s][A[A[A[A
+
+
+model-00001-of-00004.safetensors:  49%|█▉  | 2.43G/4.98G [00:11<00:09, 278MB/s][A[A[Amodel-00004-of-00004.safetensors: 100%|███| 1.17G/1.17G [00:11<00:00, 98.8MB/s]
+Fetching 4 files:  25%|██████▌                   | 1/4 [00:12<00:36, 12.14s/it]
+
+
+model-00001-of-00004.safetensors:  65%|██▌ | 3.22G/4.98G [00:14<00:05, 305MB/s][A[A[A
+
+
+
+model-00003-of-00004.safetensors:  48%|█▉  | 2.34G/4.92G [00:14<00:14, 173MB/s][A[A[A[A
+model-00002-of-00004.safetensors:  52%|██  | 2.62G/5.00G [00:14<00:13, 183MB/s][A
+
+
+
+model-00003-of-00004.safetensors:  63%|██▌ | 3.12G/4.92G [00:15<00:05, 335MB/s][A[A[A[A
+
+
+model-00001-of-00004.safetensors:  68%|██▋ | 3.37G/4.98G [00:15<00:05, 278MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors:  74%|██▉ | 3.67G/4.98G [00:15<00:03, 371MB/s][A[A[A
+model-00002-of-00004.safetensors:  70%|██▊ | 3.49G/5.00G [00:15<00:04, 326MB/s][A
+
+
+
+model-00003-of-00004.safetensors:  70%|██▊ | 3.45G/4.92G [00:15<00:03, 415MB/s][A[A[A[A
+
+
+
+model-00003-of-00004.safetensors:  73%|██▉ | 3.59G/4.92G [00:15<00:03, 428MB/s][A[A[A[A
+model-00002-of-00004.safetensors:  74%|██▉ | 3.69G/5.00G [00:17<00:05, 260MB/s][A
+model-00002-of-00004.safetensors:  75%|███ | 3.76G/5.00G [00:18<00:06, 191MB/s][A
+
+
+
+model-00003-of-00004.safetensors:  80%|███▏| 3.92G/4.92G [00:18<00:04, 206MB/s][A[A[A[A
+model-00002-of-00004.safetensors:  94%|███▊| 4.70G/5.00G [00:20<00:00, 325MB/s][A
+
+
+
+model-00003-of-00004.safetensors:  87%|███▍| 4.26G/4.92G [00:19<00:02, 233MB/s][A[A[A[A
+
+
+model-00001-of-00004.safetensors:  79%|███▏| 3.91G/4.98G [00:20<00:07, 137MB/s][A[A[A
+model-00002-of-00004.safetensors: 100%|████| 5.00G/5.00G [00:20<00:00, 380MB/s][A
+
+
+
+model-00003-of-00004.safetensors: 100%|████| 4.92G/4.92G [00:20<00:00, 402MB/s][A[A[A[A
+
+
+model-00001-of-00004.safetensors:  91%|███▋| 4.54G/4.98G [00:20<00:01, 226MB/s][A[A[A
+
+
+model-00001-of-00004.safetensors: 100%|████| 4.98G/4.98G [00:21<00:00, 318MB/s][A[A[A
+model-00002-of-00004.safetensors: 100%|████| 5.00G/5.00G [00:35<00:00, 380MB/s][A
+
+
+model-00001-of-00004.safetensors: 100%|████| 4.98G/4.98G [00:34<00:00, 318MB/s][A[A[A
+
+
+
+model-00003-of-00004.safetensors: 100%|████| 4.92G/4.92G [00:34<00:00, 402MB/s][A[A[A[Amodel-00001-of-00004.safetensors: 100%|███| 4.98G/4.98G [01:00<00:00, 82.6MB/s]
+Fetching 4 files:  50%|█████████████             | 2/4 [01:00<01:00, 30.30s/it]model-00003-of-00004.safetensors: 100%|███| 4.92G/4.92G [01:04<00:00, 76.3MB/s]
+Fetching 4 files:  75%|███████████████████▌      | 3/4 [01:04<00:21, 21.60s/it]model-00002-of-00004.safetensors: 100%|███| 5.00G/5.00G [01:05<00:00, 76.8MB/s]
+Fetching 4 files: 100%|██████████████████████████| 4/4 [01:05<00:00, 16.35s/it]Fetching 4 files: 100%|██████████████████████████| 4/4 [01:05<00:00, 16.35s/it]
+Loading checkpoint shards:   0%|                         | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|████▎            | 1/4 [00:06<00:18,  6.17s/it]Loading checkpoint shards:  50%|████████▌        | 2/4 [00:13<00:13,  6.98s/it]Loading checkpoint shards:  75%|████████████▊    | 3/4 [00:21<00:07,  7.23s/it]Loading checkpoint shards: 100%|█████████████████| 4/4 [00:21<00:00,  4.52s/it]Loading checkpoint shards: 100%|█████████████████| 4/4 [00:21<00:00,  5.40s/it]
+generation_config.json:   0%|                        | 0.00/177 [00:00<?, ?B/s]generation_config.json: 100%|██████████████████| 177/177 [00:00<00:00, 584kB/s]
+Asking to truncate to max_length but no maximum length is provided and the model has no predefined maximum length. Default to no truncation.
+^CTraceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 392, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 354, in main
+    artifact_stage(arguments.model, devices, log_root)
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py", line 67, in artifact_stage
+    artifacts.fit_jacobians(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 468, in fit_jacobians
+    process.wait()
+  File "/usr/lib/python3.12/subprocess.py", line 1264, in wait
+    return self._wait(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2053, in _wait
+    (pid, sts) = self._try_wait(0)
+                 ^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2011, in _try_wait
+    (pid, sts) = os.waitpid(self.pid, wait_flags)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

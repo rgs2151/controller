@@ -1,0 +1,17 @@
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:00<00:00,  3.26it/s]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:00<00:00,  3.25it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00,  4.72it/s]
+Asking to truncate to max_length but no maximum length is provided and the model has no predefined maximum length. Default to no truncation.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 1001, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 944, in main
+    generate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness_runtime.py", line 692, in generate
+    run_generation_job(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/source_methods/id_benchmark.py", line 907, in run_generation_job
+    str(path.relative_to(Path(__file__).resolve().parents[2]))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 682, in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+ValueError: '/teamspace/studios/this_studio/robust-steering-cache/truthfulness/gemma2b/calibrations/mean_act/fixed_q0p1_qf0p31622777_r1/mean_act.json' is not in the subpath of '/teamspace/studios/this_studio/controller'

@@ -1,0 +1,25 @@
+[1;24rFetching 13 files:   0%|                                | 0/13 [00:00<?, ?it/s]Fetching 13 files: 100%|█████████████████████| 13/13 [00:00<00:00, 5686.90it/s]
+Loading checkpoint shards:   0%|                         | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|████████████████| 2/2 [00:00<00:00, 182.80it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 335, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 300, in main
+    calibration_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 95, in calibration_stage
+    calibration.calibrate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 986, in calibrate
+    fit_base(model_key, devices[0], calibration_id)
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 183, in fit_base
+    _artifact, metadata = calibrate_controller(
+                          ^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/experiments/calibration.py", line 545, in calibrate_controller
+    inputs = _fit_controller_inputs(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/experiments/calibration.py", line 274, in _fit_controller_inputs
+    fit_states = collect_last_token_states(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/experiments/calibration.py", line 171, in collect_last_token_states
+    raise ValueError(
+ValueError: Attention-head capture unsupported for granite
