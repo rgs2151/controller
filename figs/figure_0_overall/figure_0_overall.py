@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
-from matplotlib.patches import FancyArrowPatch, Patch
+from matplotlib.patches import Patch
 from PIL import Image
 
 
@@ -59,6 +59,15 @@ LOGO_FILES = {
     "Phi": LOGOS / "microsoft.png",
     "Granite": LOGOS / "ibm.png",
     "OLMo": LOGOS / "ai2.png",
+}
+
+LOGO_VISUAL_SCALE = {
+    "GPT": 1.65,
+    "LLaMA": 1.05,
+    "Qwen": 0.92,
+    "Phi": 0.92,
+    "Granite": 1.20,
+    "OLMo": 0.90,
 }
 
 
@@ -220,11 +229,11 @@ def build_results() -> dict[str, dict[str, dict[str, object]]]:
 
 def square_logo(path: Path, side: int = 256) -> np.ndarray:
     image = Image.open(path).convert("RGBA")
-    alpha = np.asarray(image)[..., 3]
-    if np.any(alpha < 255):
-        box = image.getbbox()
-        if box is not None:
-            image = image.crop(box)
+    pixels = np.asarray(image)
+    visible = (pixels[..., 3] > 10) & (np.min(pixels[..., :3], axis=2) < 246)
+    if np.any(visible):
+        ys, xs = np.where(visible)
+        image = image.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
     image.thumbnail((side - 24, side - 24), Image.Resampling.LANCZOS)
     canvas = Image.new("RGBA", (side, side), (255, 255, 255, 0))
     position = ((side - image.width) // 2, (side - image.height) // 2)
@@ -243,14 +252,18 @@ def add_logo(
     x: float,
     y: float,
     zoom: float,
-    frame: bool = True,
+    frame: bool = False,
 ) -> None:
-    image = OffsetImage(logo_images[family], zoom=zoom, resample=True)
+    image = OffsetImage(
+        logo_images[family],
+        zoom=zoom * LOGO_VISUAL_SCALE[family],
+        resample=True,
+    )
     box = AnnotationBbox(
         image,
         (x, y),
         frameon=frame,
-        pad=0.07,
+        pad=0,
         bboxprops={
             "boxstyle": "round,pad=0.06",
             "facecolor": "white",
@@ -270,12 +283,13 @@ def draw_panel(
     ylabel: str,
     ymax: float,
     logo_images: dict[str, np.ndarray],
+    condition_labels_inside: bool = False,
 ) -> None:
-    group_gap = 2.55 if len(conditions) <= 2 else 2.15
-    width = 0.60
+    group_gap = 3.15 if len(conditions) <= 2 else 2.70
+    width = 0.92
     centers = np.arange(len(conditions), dtype=float) * group_gap
     for center, (condition, values) in zip(centers, conditions.items(), strict=True):
-        positions = [center - 0.36, center + 0.36]
+        positions = [center - 0.53, center + 0.53]
         heights = [float(values["baseline_mean"]), float(values["ours_mean"])]
         ax.bar(positions, heights, width=width, color=[GRAY, TEAL], zorder=2)
 
@@ -283,7 +297,7 @@ def draw_panel(
             positions, heights, ["baseline", "ours"], strict=True
         ):
             points = list(values[key])
-            offsets = np.linspace(-0.13, 0.13, len(points)) if len(points) > 1 else [0.0]
+            offsets = np.linspace(-0.30, 0.30, len(points)) if len(points) > 1 else [0.0]
             for point, offset in zip(points, offsets, strict=True):
                 add_logo(
                     ax,
@@ -293,47 +307,42 @@ def draw_panel(
                     float(point["score"]),
                     logo_zoom(float(point["size_b"])),
                 )
-            label_y = height + ymax * 0.025
-            if label_y > ymax * 0.97:
-                label_y = height - ymax * 0.055
-                label_color = "white"
-            else:
-                label_color = INK
+        if condition_labels_inside:
             ax.text(
-                position,
-                label_y,
-                f"{height:.1f}",
+                center,
+                ymax * 0.955,
+                condition,
                 ha="center",
-                va="center",
-                fontsize=8.5,
-                color=label_color,
+                va="top",
+                fontsize=9.5,
                 fontweight="semibold",
-                zorder=9,
             )
-        ax.text(
-            center,
-            1.035,
-            condition,
-            transform=ax.get_xaxis_transform(),
-            ha="center",
-            va="bottom",
-            fontsize=10.5,
-            fontweight="semibold",
-        )
+        else:
+            ax.text(
+                center,
+                1.025,
+                condition,
+                transform=ax.get_xaxis_transform(),
+                ha="center",
+                va="bottom",
+                fontsize=10.5,
+                fontweight="semibold",
+            )
 
     left = centers[0] - 0.9
     right = centers[-1] + 0.9
     ax.set_xlim(left, right)
     ax.set_ylim(0, ymax)
-    ax.set_yticks([0, ymax])
+    ax.set_yticks(np.linspace(0, ymax, 6))
     ax.set_ylabel(ylabel, fontsize=11)
     ax.set_xticks([])
-    ax.set_title(title, fontsize=14, fontweight="semibold", pad=47)
+    ax.set_title(title, fontsize=14, fontweight="semibold", pad=32)
     ax.tick_params(axis="y", labelsize=8)
     ax.spines["left"].set_bounds(0, ymax)
     ax.spines["left"].set_position(("outward", 4))
     ax.spines["bottom"].set_position(("outward", 4))
     ax.axhline(0, color=INK, linewidth=0.8, zorder=3)
+    ax.yaxis.grid(True, color="#E5E7E9", linewidth=0.6, zorder=0)
 
 
 def write_values(results: dict[str, dict[str, dict[str, object]]]) -> None:
@@ -374,68 +383,6 @@ def write_values(results: dict[str, dict[str, dict[str, object]]]) -> None:
                         )
 
 
-def add_header(fig: plt.Figure) -> None:
-    fig.text(
-        0.245,
-        0.965,
-        "Parallel steering",
-        ha="center",
-        va="top",
-        fontsize=18,
-        fontweight="semibold",
-    )
-    for y in [0.907, 0.892]:
-        fig.add_artist(
-            FancyArrowPatch(
-                (0.12, y),
-                (0.37, y),
-                transform=fig.transFigure,
-                arrowstyle="->",
-                mutation_scale=12,
-                color=INK,
-                linewidth=1.1,
-            )
-        )
-
-    fig.text(
-        0.672,
-        0.965,
-        "Orthogonal steering",
-        ha="center",
-        va="top",
-        fontsize=18,
-        fontweight="semibold",
-    )
-    fig.add_artist(
-        FancyArrowPatch(
-            (0.548, 0.892),
-            (0.79, 0.892),
-            transform=fig.transFigure,
-            arrowstyle="->",
-            mutation_scale=12,
-            color=INK,
-            linewidth=1.1,
-        )
-    )
-    fig.add_artist(
-        FancyArrowPatch(
-            (0.548, 0.868),
-            (0.548, 0.938),
-            transform=fig.transFigure,
-            arrowstyle="->",
-            mutation_scale=12,
-            color=INK,
-            linewidth=1.1,
-        )
-    )
-    fig.lines.extend(
-        [
-            plt.Line2D([0.045, 0.89], [0.835, 0.835], transform=fig.transFigure, color="#666666", linewidth=0.6),
-            plt.Line2D([0.445, 0.445], [0.84, 0.975], transform=fig.transFigure, color="#B0B0B0", linewidth=0.7),
-        ]
-    )
-
-
 def draw_model_legend(ax: plt.Axes, logo_images: dict[str, np.ndarray]) -> None:
     ax.set_axis_off()
     ax.set_xlim(0, 1)
@@ -444,7 +391,7 @@ def draw_model_legend(ax: plt.Axes, logo_images: dict[str, np.ndarray]) -> None:
     families = ["GPT", "LLaMA", "Qwen", "Phi", "Granite", "OLMo"]
     y_positions = np.linspace(0.88, 0.18, len(families))
     for family, y in zip(families, y_positions, strict=True):
-        add_logo(ax, logo_images, family, 0.22, float(y), 0.048)
+        add_logo(ax, logo_images, family, 0.22, float(y), 0.052)
         ax.text(0.43, y, family, ha="left", va="center", fontsize=9.5)
 
 
@@ -455,18 +402,18 @@ def main() -> None:
     write_values(results)
     logo_images = {family: square_logo(path) for family, path in LOGO_FILES.items()}
 
-    fig = plt.figure(figsize=(17.2, 7.3))
+    fig = plt.figure(figsize=(20.0, 6.7))
     grid = fig.add_gridspec(
         1,
-        5,
-        width_ratios=[1.18, 1.18, 2.05, 1.18, 0.78],
-        left=0.055,
+        6,
+        width_ratios=[1.35, 1.35, 0.42, 2.55, 1.35, 0.82],
+        left=0.045,
         right=0.985,
-        bottom=0.16,
-        top=0.73,
-        wspace=0.43,
+        bottom=0.14,
+        top=0.82,
+        wspace=0.38,
     )
-    axes = [fig.add_subplot(grid[0, index]) for index in range(5)]
+    axes = [fig.add_subplot(grid[0, index]) for index in [0, 1, 3, 4, 5]]
 
     draw_panel(
         axes[0],
@@ -491,14 +438,15 @@ def main() -> None:
         "Accuracy (%)",
         100,
         logo_images,
+        condition_labels_inside=True,
     )
     axes[2].text(
         0.5,
-        1.085,
-        "OOD only",
+        0.995,
+        "OOD",
         transform=axes[2].transAxes,
         ha="center",
-        va="bottom",
+        va="top",
         fontsize=10.5,
         fontweight="semibold",
     )
@@ -511,7 +459,6 @@ def main() -> None:
         logo_images,
     )
     draw_model_legend(axes[4], logo_images)
-    add_header(fig)
 
     fig.legend(
         handles=[
@@ -524,15 +471,6 @@ def main() -> None:
         fontsize=10,
         handlelength=1.6,
         columnspacing=2.3,
-    )
-    fig.text(
-        0.48,
-        0.012,
-        "Bars: parameter-count–weighted means   •   Marks: individual model scores; mark size increases with model size",
-        ha="center",
-        va="bottom",
-        fontsize=8,
-        color="#4A4A4A",
     )
 
     for suffix in ["pdf", "png"]:
