@@ -24,7 +24,7 @@ SOURCE = REPO / "figs/bench_table/lciteeval/lciteeval_full.md"
 LOGOS = REPO / "figs/logos"
 PLOTS = UNIT / "plots"
 
-TEAL = "#398197"
+TEAL = "#007C7C"
 INK = "#25282D"
 MUTED = "#687078"
 GRID = "#E2E5E8"
@@ -63,10 +63,10 @@ METHOD_COLORS = {
     "H-infinity": TEAL,
 }
 LOGO_METHOD_COLORS = {
-    "Original": "#747E87",
-    "S-PID": "#B97A60",
-    "A-LQR": "#7B78A8",
-    "H-infinity": "#008C95",
+    "Original": "#697680",
+    "S-PID": "#BF7558",
+    "A-LQR": "#756FA6",
+    "H-infinity": TEAL,
 }
 METHOD_MARKERS = {
     "Original": "o",

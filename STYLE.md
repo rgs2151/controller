@@ -79,20 +79,27 @@ ax.set_xticks([0, xmax])
 
 ## 5. Lines and colour
 
-Categorical series use a small set of dark, saturated, named colours; reserve **black**
-for emphasis and markers. Pick one fixed mapping and keep it consistent across figures.
+The exact project teal is **`#007C7C`**. Use it consistently for every H∞ series and
+every visual element labeled **ours**, including lines, markers, logos, bars, fills, and
+highlighted table/figure accents. Do not substitute a nearby teal.
+
+Competing methods use distinct muted-but-chromatic colors: sufficiently saturated to
+remain legible, but quieter than the project teal so H∞ remains the clear focal series.
+Avoid both dull near-gray palettes and bright colors that compete with `#007C7C`.
+Reserve black for neutral text and exceptional reference marks rather than a competing
+method. Pick one baseline mapping within a figure and keep it consistent across panels.
 
 ```python
 COLORS = {
-    "a": "darkred",
-    "b": "midnightblue",
-    "c": "darkgreen",
-    "derived": "purple",     # e.g. a combined/derived series, drawn dashed
+    "original": "#697680",   # muted steel
+    "spid": "#BF7558",       # muted terracotta
+    "alqr": "#756FA6",       # muted indigo
+    "h_infinity": "#007C7C", # exact project teal; H∞ / ours only
 }
 EMPHASIS = "black"           # peak markers, reference series
 
-ax.plot(x, y, color=COLORS["a"])
-ax.plot(x, z, color=COLORS["derived"], linestyle="--")
+ax.plot(x, y, color=COLORS["original"])
+ax.plot(x, z, color=COLORS["h_infinity"], linewidth=2)
 ax.plot(x_peak, y_peak, marker="*", color=EMPHASIS,
         markersize=14, fillstyle="none", linestyle="None")
 ```

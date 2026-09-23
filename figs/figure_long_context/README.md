@@ -29,7 +29,7 @@
 
 - X axis: 8K matched and 16K long-context conditions.
 - Y axis: answer recall (%) or citation F1 (%), depending on panel.
-- Color/value: method identity; H∞ uses project teal `#398197`.
+- Color/value: method identity; H∞ uses the exact project teal `#007C7C`.
 - Grouping: one line per method.
 - Ordering/sorting: 8K precedes 16K.
 - Lines/markers/labels: each method has a stable color, line style, and marker; the official Qwen logo identifies the model.
@@ -81,7 +81,7 @@
 
 - X axis: 8K matched and 16K long-context conditions.
 - Y axis: answer recall (%) or citation F1 (%), depending on panel.
-- Color/value: method identity; H∞ uses project teal `#398197`.
+- Color/value: method identity; H∞ uses the exact project teal `#007C7C`.
 - Grouping: one line per method.
 - Ordering/sorting: 8K precedes 16K.
 - Lines/markers/labels: each method has a stable color, line style, and marker; the official Meta/Llama logo identifies the model.
