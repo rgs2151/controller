@@ -395,7 +395,10 @@ def draw_frontier(
     right_ax.spines["left"].set_color("#AEB4BC")
 
 
-def category_radar_values(model: str | None = None) -> tuple[
+def category_radar_values(
+    model: str | None = None,
+    metric: str = "txi_pct",
+) -> tuple[
     list[str], dict[str, tuple[list[float], list[float]]]
 ]:
     rows = list(csv.DictReader(CATEGORY_CACHE.open()))
@@ -418,10 +421,10 @@ def category_radar_values(model: str | None = None) -> tuple[
                 ours = next(row for row in model_rows if row["method"] == "H∞ (ours)")
                 best = max(
                     (row for row in model_rows if row["method"] != "H∞ (ours)"),
-                    key=lambda row: float(row["txi_pct"]),
+                    key=lambda row: float(row[metric]),
                 )
-                ours_points.append(float(ours["txi_pct"]))
-                best_points.append(float(best["txi_pct"]))
+                ours_points.append(float(ours[metric]))
+                best_points.append(float(best[metric]))
 
             ours_by_split[(split, category)] = float(np.mean(ours_points))
             best_by_split[(split, category)] = float(np.mean(best_points))
@@ -436,7 +439,7 @@ def category_radar_values(model: str | None = None) -> tuple[
     return categories, values
 
 
-def best_radar_model() -> tuple[str, dict[str, float]]:
+def best_radar_model(metric: str) -> tuple[str, dict[str, float]]:
     rows = list(csv.DictReader(CATEGORY_CACHE.open()))
     grouped: dict[tuple[str, str, str], list[dict[str, str]]] = defaultdict(list)
     for row in rows:
@@ -444,12 +447,12 @@ def best_radar_model() -> tuple[str, dict[str, float]]:
     margins: dict[str, list[float]] = defaultdict(list)
     for (_, _, model), model_rows in grouped.items():
         ours = next(
-            float(row["txi_pct"])
+            float(row[metric])
             for row in model_rows
             if row["method"] == "H∞ (ours)"
         )
         competitor = max(
-            float(row["txi_pct"])
+            float(row[metric])
             for row in model_rows
             if row["method"] != "H∞ (ours)"
         )
@@ -467,10 +470,11 @@ def draw_radar(
     split: str,
     *,
     model: str | None = None,
+    metric: str = "txi_pct",
     label_fontsize: float = 8.6,
     label_pad: float = 10,
 ) -> None:
-    categories, values = category_radar_values(model)
+    categories, values = category_radar_values(model, metric)
     ours, best = values[split]
     angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False)
     angles = np.r_[angles, angles[0]]
@@ -674,7 +678,7 @@ def render_figure_c() -> None:
 
 
 def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
-    model, mean_margins = best_radar_model()
+    model, mean_margins = best_radar_model("true_pct")
     fig = plt.figure(figsize=(6.8, 3.5))
     outer = fig.add_gridspec(
         1,
@@ -691,6 +695,7 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         radar_id_ax,
         "ID",
         model=model,
+        metric="true_pct",
         label_fontsize=12.5,
         label_pad=12,
     )
@@ -698,6 +703,7 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         radar_ood_ax,
         "OOD",
         model=model,
+        metric="true_pct",
         label_fontsize=12.5,
         label_pad=12,
     )
