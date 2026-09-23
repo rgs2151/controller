@@ -14,12 +14,13 @@
   encoded by the surrounding color. The background field and dashed contours
   report `T×I = True × Informative / 100`. Marginals show each method's
   distribution across the four model families.
-- Panel (d) uses the ten largest pinned TruthfulQA categories. Per-question
+- The two radar panels use the ten largest pinned TruthfulQA categories and
+  report ID and OOD separately. Per-question
   truth and informativeness scores are averaged within prompt and category,
   then multiplied at the aggregate-category level. For each model/category,
   the best competitor is the maximum T×I over every non-H∞ method, including
-  Original. H∞ and competitor category scores are parameter-weighted across
-  models and averaged over the matched English ID and Spanish OOD splits.
+  Original. H∞ and competitor category scores are averaged equally across the
+  four models within each split.
 
 ## Inputs
 
@@ -36,10 +37,11 @@
 
 - Teal `#398197`: H∞ (ours).
 - Gray `#A7ADB2`: strongest competitor.
-- Frontier ring/line color: controller method.
+- Frontier logo color: controller method; no enclosing marker is used.
 - Frontier logo: GPT, LLaMA, Qwen, or OLMo model family; logo size increases
   with parameter count.
-- Radar spoke: one of the ten most frequent TruthfulQA categories.
+- Radar spoke: one of the ten most frequent TruthfulQA categories; ID and OOD
+  are plotted independently.
 
 ## Outputs
 
