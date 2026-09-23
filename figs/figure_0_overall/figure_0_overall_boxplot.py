@@ -25,11 +25,11 @@ def draw_box_panel(
 ) -> None:
     if group_gap is None:
         group_gap = 3.15 if len(conditions) <= 2 else 2.70
-    width = 0.92
+    width = 0.72
     centers = np.arange(len(conditions), dtype=float) * group_gap
 
     for center, (_, values) in zip(centers, conditions.items(), strict=True):
-        positions = [center - 0.53, center + 0.53]
+        positions = [center - 0.60, center + 0.60]
         for position, key, color in zip(
             positions,
             ["baseline", "ours"],
@@ -59,7 +59,7 @@ def draw_box_panel(
             )
 
             offsets = (
-                np.linspace(-0.30, 0.30, len(points))
+                np.linspace(-0.22, 0.22, len(points))
                 if len(points) > 1
                 else [0.0]
             )
@@ -73,7 +73,7 @@ def draw_box_panel(
                     base.logo_zoom(float(point["size_b"])),
                 )
 
-    ax.set_xlim(centers[0] - 0.9, centers[-1] + 0.9)
+    ax.set_xlim(centers[0] - 1.0, centers[-1] + 1.0)
     ax.set_ylim(-0.05 * ymax, ymax)
     ax.set_yticks(np.linspace(0, ymax, 6))
     ax.set_ylabel(ylabel, fontsize=11)
@@ -97,11 +97,13 @@ def main() -> None:
         family: base.square_logo(path) for family, path in base.LOGO_FILES.items()
     }
 
-    fig = plt.figure(figsize=(18.6, 5.53))
+    # Reduce the canvas in lockstep with the dedicated spacer so the other
+    # panels retain their established physical sizes.
+    fig = plt.figure(figsize=(18.02, 5.53))
     grid = fig.add_gridspec(
         1,
         6,
-        width_ratios=[1.35, 1.35, 0.58, 3.84, 1.35, 0.82],
+        width_ratios=[1.35, 1.35, 0.29, 3.84, 1.35, 0.82],
         left=0.045,
         right=0.985,
         bottom=0.19,
