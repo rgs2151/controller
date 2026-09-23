@@ -21,7 +21,9 @@
   `plots/figure_0_overall_boxplot.pdf` and `.png` using the identical data,
   layout, logos, colors, and axes. It replaces each aggregate bar with a
   30%-opacity box spanning the model-score quartiles, a median line, and
-  min/max whiskers; model logos retain their exact individual scores.
+  min/max whiskers; model logos retain their exact individual scores. The
+  paired boxes are narrower and slightly farther apart than the bar centers,
+  with tighter within-box logo jitter for clearer series membership.
 
 ## Statistics
 
