@@ -22,6 +22,7 @@ def draw_box_panel(
     logo_images: dict[str, np.ndarray],
     condition_labels: list[str],
     group_gap: float | None = None,
+    ymin: float = 0.0,
 ) -> None:
     if group_gap is None:
         group_gap = 3.15 if len(conditions) <= 2 else 2.70
@@ -74,18 +75,22 @@ def draw_box_panel(
                 )
 
     ax.set_xlim(centers[0] - 1.0, centers[-1] + 1.0)
-    ax.set_ylim(-0.05 * ymax, ymax)
-    ax.set_yticks(np.linspace(0, ymax, 6))
+    lower_limit = -0.05 * ymax if ymin == 0 else ymin
+    ax.set_ylim(lower_limit, ymax)
+    ax.set_yticks(
+        np.linspace(ymin, ymax, 6 if ymin == 0 else 5)
+    )
     ax.set_ylabel(ylabel, fontsize=11)
     ax.set_xticks(centers)
     ax.set_xticklabels(condition_labels, fontsize=9.5)
     ax.set_title(title, fontsize=14, fontweight="semibold", pad=20)
     ax.tick_params(axis="y", labelsize=8)
     ax.tick_params(axis="x", length=0, pad=8)
-    ax.spines["left"].set_bounds(0, ymax)
+    ax.spines["left"].set_bounds(ymin, ymax)
     ax.spines["left"].set_position(("outward", 4))
     ax.spines["bottom"].set_position(("outward", 4))
-    ax.axhline(0, color=base.INK, linewidth=0.8, zorder=3)
+    if ymin == 0:
+        ax.axhline(0, color=base.INK, linewidth=0.8, zorder=3)
     ax.yaxis.grid(True, color="#E5E7E9", linewidth=0.6, zorder=0)
 
 
@@ -129,6 +134,7 @@ def main() -> None:
         100,
         logo_images,
         ["Direct", "Adversaries"],
+        ymin=60,
     )
     draw_box_panel(
         axes[2],
