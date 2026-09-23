@@ -12,7 +12,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.lines import Line2D
-from matplotlib.offsetbox import AnnotationBbox, OffsetImage
+from matplotlib.offsetbox import (
+    AnchoredOffsetbox,
+    AnnotationBbox,
+    HPacker,
+    OffsetImage,
+    TextArea,
+)
 from matplotlib.patches import Patch
 from PIL import Image
 
@@ -455,23 +461,33 @@ def draw_radar(ax: plt.Axes, split: str) -> None:
 
 def draw_model_legend(ax: plt.Axes, images: dict[str, np.ndarray]) -> None:
     ax.set_axis_off()
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
     models = list(MODEL_SIZES)
     labels = ["GPT-2 XL", "LLaMA-3-8B", "Qwen-2.5-14B", "OLMo-2-32B"]
-    for model, label, x in zip(
-        models, labels, [0.125, 0.375, 0.625, 0.875], strict=True
-    ):
-        add_logo(
-            ax,
-            images,
-            model,
-            float(x) - 0.060,
-            0.5,
-            zoom=0.054,
-            coordinates=ax.transAxes,
+    groups = []
+    for model, label in zip(models, labels, strict=True):
+        family = MODEL_FAMILIES[model]
+        logo = OffsetImage(
+            images[family],
+            zoom=0.105 * LOGO_SCALE[family],
+            resample=True,
         )
-        ax.text(float(x) - 0.018, 0.5, label, ha="left", va="center", fontsize=8.2)
+        text = TextArea(
+            label,
+            textprops={"fontsize": 14.0, "fontfamily": "serif", "color": INK},
+        )
+        groups.append(HPacker(children=[logo, text], align="center", pad=0, sep=4))
+    packed = HPacker(children=groups, align="center", pad=0, sep=28)
+    ax.add_artist(
+        AnchoredOffsetbox(
+            loc="center",
+            child=packed,
+            pad=0,
+            frameon=False,
+            bbox_to_anchor=(0.5, 0.5),
+            bbox_transform=ax.transAxes,
+            borderpad=0,
+        )
+    )
 
 
 def method_handles() -> list[Line2D]:
@@ -544,7 +560,7 @@ def render_figure_b(records: list[Result], images: dict[str, np.ndarray]) -> Non
     outer = fig.add_gridspec(
         2,
         2,
-        height_ratios=[0.14, 0.86],
+        height_ratios=[0.20, 0.80],
         left=0.07,
         right=0.97,
         bottom=0.25,
@@ -592,8 +608,8 @@ def render_figure_c() -> None:
         2,
         left=0.08,
         right=0.94,
-        bottom=0.07,
-        top=0.80,
+        bottom=0.20,
+        top=0.96,
         wspace=0.58,
     )
     radar_id_ax = fig.add_subplot(outer[0], projection="polar")
@@ -612,8 +628,8 @@ def render_figure_c() -> None:
                 label="Best competitor",
             ),
         ],
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.98),
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.015),
         ncol=2,
         fontsize=10.0,
         handlelength=1.8,
