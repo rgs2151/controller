@@ -54,9 +54,10 @@
   robustness radars.
 - `plots/figure_truthful_c_best_model.pdf` and `.png`: compact variant using
   category-level True (%) only. It selects the single model with the largest
-  mean H∞ minus best-competitor truthfulness margin across both splits, then
-  plots H∞ and that strongest truthfulness competitor. The current finalized
-  data select **Qwen-2.5-14B** (mean margin: 6.107 percentage points).
+  mean H∞ minus best-steering-competitor truthfulness margin across both
+  splits, then plots Original, that strongest non-Original competitor, and
+  H∞. The current finalized data select **Qwen-2.5-14B** (mean margin: 6.107
+  percentage points).
 - `cache/truthfulqa_category_txi.csv`: auditable category-level source values,
   including the exact scorer artifact paths.
 

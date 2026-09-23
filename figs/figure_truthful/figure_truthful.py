@@ -398,6 +398,7 @@ def draw_frontier(
 def category_radar_values(
     model: str | None = None,
     metric: str = "txi_pct",
+    exclude_original_from_competitor: bool = False,
 ) -> tuple[
     list[str], dict[str, tuple[list[float], list[float]]]
 ]:
@@ -420,7 +421,15 @@ def category_radar_values(
                     continue
                 ours = next(row for row in model_rows if row["method"] == "H∞ (ours)")
                 best = max(
-                    (row for row in model_rows if row["method"] != "H∞ (ours)"),
+                    (
+                        row
+                        for row in model_rows
+                        if row["method"] != "H∞ (ours)"
+                        and not (
+                            exclude_original_from_competitor
+                            and row["method"] == "Original"
+                        )
+                    ),
                     key=lambda row: float(row[metric]),
                 )
                 ours_points.append(float(ours[metric]))
@@ -439,7 +448,11 @@ def category_radar_values(
     return categories, values
 
 
-def best_radar_model(metric: str) -> tuple[str, dict[str, float]]:
+def best_radar_model(
+    metric: str,
+    *,
+    exclude_original_from_competitor: bool = False,
+) -> tuple[str, dict[str, float]]:
     rows = list(csv.DictReader(CATEGORY_CACHE.open()))
     grouped: dict[tuple[str, str, str], list[dict[str, str]]] = defaultdict(list)
     for row in rows:
@@ -455,6 +468,9 @@ def best_radar_model(metric: str) -> tuple[str, dict[str, float]]:
             float(row[metric])
             for row in model_rows
             if row["method"] != "H∞ (ours)"
+            and not (
+                exclude_original_from_competitor and row["method"] == "Original"
+            )
         )
         margins[model].append(ours - competitor)
     mean_margins = {
@@ -471,15 +487,39 @@ def draw_radar(
     *,
     model: str | None = None,
     metric: str = "txi_pct",
+    include_original: bool = False,
     label_fontsize: float = 8.6,
     label_pad: float = 10,
 ) -> None:
-    categories, values = category_radar_values(model, metric)
+    categories, values = category_radar_values(
+        model,
+        metric,
+        exclude_original_from_competitor=include_original,
+    )
     ours, best = values[split]
     angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False)
     angles = np.r_[angles, angles[0]]
     ours_closed = np.r_[ours, ours[0]]
     best_closed = np.r_[best, best[0]]
+    if include_original:
+        if model is None:
+            raise ValueError("Original radar requires a concrete model")
+        rows = list(csv.DictReader(CATEGORY_CACHE.open()))
+        original = [
+            next(
+                float(row[metric])
+                for row in rows
+                if row["split"] == split
+                and row["category"] == category
+                and row["model"] == model
+                and row["method"] == "Original"
+            )
+            for category in categories
+        ]
+        original_closed = np.r_[original, original[0]]
+        ax.plot(angles, original_closed, color="#737B82", linewidth=1.8)
+        ax.fill(angles, original_closed, color="#737B82", alpha=0.16)
+        ax.scatter(angles[:-1], original, s=18, color="#737B82", zorder=3)
     ax.plot(angles, best_closed, color=GRAY, linewidth=1.7, linestyle="--")
     ax.fill(angles, best_closed, color=GRAY, alpha=0.08)
     ax.plot(angles, ours_closed, color=TEAL, linewidth=2.2)
@@ -678,7 +718,10 @@ def render_figure_c() -> None:
 
 
 def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
-    model, mean_margins = best_radar_model("true_pct")
+    model, mean_margins = best_radar_model(
+        "true_pct",
+        exclude_original_from_competitor=True,
+    )
     fig = plt.figure(figsize=(6.8, 3.5))
     outer = fig.add_gridspec(
         1,
@@ -696,6 +739,7 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         "ID",
         model=model,
         metric="true_pct",
+        include_original=True,
         label_fontsize=12.5,
         label_pad=12,
     )
@@ -704,12 +748,13 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         "OOD",
         model=model,
         metric="true_pct",
+        include_original=True,
         label_fontsize=12.5,
         label_pad=12,
     )
     fig.legend(
         handles=[
-            Line2D([0], [0], color=TEAL, linewidth=2.2, label=r"H$\infty$ (ours)"),
+            Line2D([0], [0], color="#737B82", linewidth=1.8, label="Original"),
             Line2D(
                 [0],
                 [0],
@@ -718,11 +763,12 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
                 linestyle="--",
                 label="Best competitor",
             ),
+            Line2D([0], [0], color=TEAL, linewidth=2.2, label=r"H$\infty$ (ours)"),
         ],
         loc="lower center",
         bbox_to_anchor=(0.5, 0.015),
-        ncol=2,
-        fontsize=12.0,
+        ncol=3,
+        fontsize=10.5,
         handlelength=1.8,
         columnspacing=1.6,
     )
