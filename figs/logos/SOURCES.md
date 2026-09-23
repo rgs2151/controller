@@ -20,6 +20,11 @@
   collection, <https://github.com/lobehub/lobe-icons>.
 - `gemma.png` and `llama.png`: 1600-by-1600 transparent renders of the vector
   marks for reliable Matplotlib embedding.
+- `openai.svg`, `microsoft.svg`, `ibm.svg`, and `ai2.svg`: transparent vector
+  marks from the MIT-licensed Lobe Icons collection.
+- `*_transparent.png`: 800-by-800 transparent renders of the corresponding
+  SVG marks for consistent reuse in Matplotlib figures. The original GitHub
+  organization avatars above remain alongside them as provenance references.
 
 The figure code reproduces the marks without recoloring. They identify the
 evaluated model families in academic figures and do not imply endorsement.

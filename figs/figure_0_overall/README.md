@@ -12,7 +12,7 @@
 ## Variables
 
 - Data/input: `figs/bench_table/truthfulness/truthfulqa.md`, `truthfulqa_spanish.md`, `harmful/harmbench_summary.md`, `mgsm/mgsm_full.md`, and `lciteeval/lciteeval_summary.md`.
-- Conditions: Truthfulness ID = English and OOD = Spanish questions; adversarial ID = direct requests and OOD = mean across the five human-jailbreak templates; language OOD = Chinese, French, Japanese, Swahili, and Telugu; context ID = 8K and OOD = 16K.
+- Conditions: Truthfulness groups are English and Spanish translation; adversarial groups are direct requests and the mean across five adversarial templates; language groups are Chinese, French, Japanese, Swahili, and Telugu; context groups are 8K and 16K.
 - Measures: truthful-response percentage; safe-response percentage; exact-answer accuracy percentage; citation F1 percentage.
 - Model-size weights: GPT-2 XL 1.5B, Llama-3-8B 8B, Qwen-2.5-14B 14B, OLMo-2-32B 32B; HarmBench Llama models 1B/3B/8B; MGSM Qwen/Phi/Granite 4B/3.8B/2B; L-CiteEval Qwen/Llama 3B/1B.
 - Colors: H∞ `#398197`; best competitor `#A7ADB2`.
@@ -29,10 +29,10 @@
 
 ## Legends
 
-- X axis: benchmark condition within each shift; language shift shows each held-out language separately.
+- X axis: English and Spanish translation; Direct and Adversaries; Chinese, French, Japanese, Swahili, and Telugu; 8K and 16K.
 - Y axis: Truthful responses, safe responses, accuracy, or citation F1, all in percent and all higher-is-better. Context-shift citation F1 is capped at 10%.
 - Color/value: gray bars are the best competitor; teal bars are H∞.
-- Grouping: the first, second, and fourth panels show ID and OOD groups; language shift contains OOD groups only.
+- Grouping: each x-axis label names the concrete evaluation condition rather than using ID/OOD shorthand.
 - Ordering/sorting: shifts follow truthfulness, adversarial, language, and context; languages follow Chinese, French, Japanese, Swahili, and Telugu.
 - Lines/markers/labels: unboxed logos mark individual model scores; logo size increases with model parameters; the model-family legend uses a common display size.
 - Panels: the first pair contains truthfulness and adversarial shifts; additional horizontal space separates it from the language and context pair.
