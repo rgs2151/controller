@@ -27,33 +27,33 @@ Adversarial shift,OOD,baseline,Llama-3.1-8B-Instruct,LLaMA,8.0,A-LQR,89.17,89.42
 Adversarial shift,OOD,ours,Llama-3.2-1B-Instruct,LLaMA,1.0,H∞ (ours),99.08,98.6725
 Adversarial shift,OOD,ours,Llama-3.2-3B-Instruct,LLaMA,3.0,H∞ (ours),96.33,98.6725
 Adversarial shift,OOD,ours,Llama-3.1-8B-Instruct,LLaMA,8.0,H∞ (ours),99.5,98.6725
-Language shift,Chinese,baseline,Qwen3-4B,Qwen,4.0,Original,71.0,60.95918367346938
-Language shift,Chinese,baseline,Phi-4-mini,Phi,3.8,Original,63.0,60.95918367346938
-Language shift,Chinese,baseline,Granite-3.3-2B,Granite,2.0,Original,37.0,60.95918367346938
+Language shift,Chinese,baseline,Qwen3-4B,Qwen,4.0,A-LQR,20.0,14.285714285714285
+Language shift,Chinese,baseline,Phi-4-mini,Phi,3.8,A-LQR,0.0,14.285714285714285
+Language shift,Chinese,baseline,Granite-3.3-2B,Granite,2.0,A-LQR,30.0,14.285714285714285
 Language shift,Chinese,ours,Qwen3-4B,Qwen,4.0,H∞ (ours),51.0,47.0
 Language shift,Chinese,ours,Phi-4-mini,Phi,3.8,H∞ (ours),47.0,47.0
 Language shift,Chinese,ours,Granite-3.3-2B,Granite,2.0,H∞ (ours),39.0,47.0
-Language shift,French,baseline,Qwen3-4B,Qwen,4.0,Original,60.0,54.12244897959183
-Language shift,French,baseline,Phi-4-mini,Phi,3.8,Original,58.0,54.12244897959183
-Language shift,French,baseline,Granite-3.3-2B,Granite,2.0,A-LQR,35.0,54.12244897959183
+Language shift,French,baseline,Qwen3-4B,Qwen,4.0,A-LQR,29.0,18.97959183673469
+Language shift,French,baseline,Phi-4-mini,Phi,3.8,A-LQR,0.0,18.97959183673469
+Language shift,French,baseline,Granite-3.3-2B,Granite,2.0,A-LQR,35.0,18.97959183673469
 Language shift,French,ours,Qwen3-4B,Qwen,4.0,H∞ (ours),48.0,44.306122448979586
 Language shift,French,ours,Phi-4-mini,Phi,3.8,H∞ (ours),49.0,44.306122448979586
 Language shift,French,ours,Granite-3.3-2B,Granite,2.0,H∞ (ours),28.0,44.306122448979586
-Language shift,Japanese,baseline,Qwen3-4B,Qwen,4.0,Original,56.0,47.77551020408163
-Language shift,Japanese,baseline,Phi-4-mini,Phi,3.8,Original,49.0,47.77551020408163
-Language shift,Japanese,baseline,Granite-3.3-2B,Granite,2.0,Original,29.0,47.77551020408163
+Language shift,Japanese,baseline,Qwen3-4B,Qwen,4.0,A-LQR,32.0,17.755102040816325
+Language shift,Japanese,baseline,Phi-4-mini,Phi,3.8,A-LQR,0.0,17.755102040816325
+Language shift,Japanese,baseline,Granite-3.3-2B,Granite,2.0,A-LQR,23.0,17.755102040816325
 Language shift,Japanese,ours,Qwen3-4B,Qwen,4.0,H∞ (ours),40.0,37.938775510204074
 Language shift,Japanese,ours,Phi-4-mini,Phi,3.8,H∞ (ours),41.0,37.938775510204074
 Language shift,Japanese,ours,Granite-3.3-2B,Granite,2.0,H∞ (ours),28.0,37.938775510204074
-Language shift,Swahili,baseline,Qwen3-4B,Qwen,4.0,Original,15.0,19.755102040816325
-Language shift,Swahili,baseline,Phi-4-mini,Phi,3.8,Original,32.0,19.755102040816325
-Language shift,Swahili,baseline,Granite-3.3-2B,Granite,2.0,Original,6.0,19.755102040816325
+Language shift,Swahili,baseline,Qwen3-4B,Qwen,4.0,A-LQR,12.0,5.3061224489795915
+Language shift,Swahili,baseline,Phi-4-mini,Phi,3.8,A-LQR,0.0,5.3061224489795915
+Language shift,Swahili,baseline,Granite-3.3-2B,Granite,2.0,A-LQR,2.0,5.3061224489795915
 Language shift,Swahili,ours,Qwen3-4B,Qwen,4.0,H∞ (ours),14.0,15.081632653061224
 Language shift,Swahili,ours,Phi-4-mini,Phi,3.8,H∞ (ours),21.0,15.081632653061224
 Language shift,Swahili,ours,Granite-3.3-2B,Granite,2.0,H∞ (ours),6.0,15.081632653061224
-Language shift,Telugu,baseline,Qwen3-4B,Qwen,4.0,A-LQR,19.0,18.6734693877551
-Language shift,Telugu,baseline,Phi-4-mini,Phi,3.8,Original,25.0,18.6734693877551
-Language shift,Telugu,baseline,Granite-3.3-2B,Granite,2.0,Original,6.0,18.6734693877551
+Language shift,Telugu,baseline,Qwen3-4B,Qwen,4.0,A-LQR,19.0,8.571428571428571
+Language shift,Telugu,baseline,Phi-4-mini,Phi,3.8,A-LQR,0.0,8.571428571428571
+Language shift,Telugu,baseline,Granite-3.3-2B,Granite,2.0,A-LQR,4.0,8.571428571428571
 Language shift,Telugu,ours,Qwen3-4B,Qwen,4.0,H∞ (ours),8.0,11.265306122448978
 Language shift,Telugu,ours,Phi-4-mini,Phi,3.8,H∞ (ours),18.0,11.265306122448978
 Language shift,Telugu,ours,Granite-3.3-2B,Granite,2.0,H∞ (ours),5.0,11.265306122448978
