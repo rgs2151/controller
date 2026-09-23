@@ -13,6 +13,7 @@ mpl.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
+from matplotlib.ticker import MaxNLocator
 from PIL import Image
 
 
@@ -141,14 +142,24 @@ def read_results() -> list[Result]:
     return results
 
 
-def style_axis(ax: plt.Axes, *, ylim: tuple[float, float], yticks: list[float]) -> None:
+def tight_limits(values: list[float]) -> tuple[float, float]:
+    """Return compact limits with enough padding to keep markers unclipped."""
+
+    low = min(values)
+    high = max(values)
+    span = max(high - low, 1.0)
+    padding = 0.10 * span
+    return low - padding, high + padding
+
+
+def style_axis(ax: plt.Axes, *, ylim: tuple[float, float]) -> None:
     ax.axvspan(-0.5, 0.5, color=ID_SHADE, zorder=0)
     ax.axvspan(0.5, 1.5, color=OOD_SHADE, zorder=0)
     ax.grid(True, axis="y", color=GRID, linewidth=0.75, zorder=1)
     ax.set_axisbelow(True)
     ax.set_xlim(-0.20, 1.20)
     ax.set_ylim(*ylim)
-    ax.set_yticks(yticks)
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]))
     ax.set_xticks([0, 1], ["8K\nmatched", "16K\nlong-context"])
     ax.tick_params(length=3.5, width=0.8, labelsize=10.0)
     for spine in ax.spines.values():
@@ -188,12 +199,17 @@ def render_model(model: str, results: list[Result]) -> None:
 
     fig, axes = plt.subplots(1, 2, figsize=(7.7, 3.55), gridspec_kw={"wspace": 0.25})
     metrics = (
-        ("answer_recall", "Answer recall (%) ↑", (40.0, 75.0), [40, 50, 60, 70]),
-        ("citation_f1", "Citation F1 (%) ↑", (0.0, 9.0), [0, 2, 4, 6, 8]),
+        ("answer_recall", "Answer recall (%) ↑"),
+        ("citation_f1", "Citation F1 (%) ↑"),
     )
 
-    for ax, (field, title, ylim, yticks) in zip(axes, metrics, strict=True):
-        style_axis(ax, ylim=ylim, yticks=yticks)
+    for ax, (field, title) in zip(axes, metrics, strict=True):
+        all_values = [
+            getattr(lookup[(context, method)], field)
+            for method in methods
+            for context in CONTEXTS
+        ]
+        style_axis(ax, ylim=tight_limits(all_values))
         ax.set_title(title, pad=10)
         for method in methods:
             values = [getattr(lookup[(context, method)], field) for context in CONTEXTS]
