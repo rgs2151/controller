@@ -259,10 +259,10 @@ def draw_box_panel(
     ax.set_xlim(-1.0, centers[-1] + 1.0)
     ax.set_ylim(-5, 100)
     ax.set_yticks(np.arange(0, 101, 20))
-    ax.set_xticks(centers, ["English", "Spanish"], fontsize=8.0)
+    ax.set_xticks(centers, ["English", "Spanish"], fontsize=10.0)
     ax.set_ylabel("True (%)", fontsize=10.5)
     ax.tick_params(axis="y", labelsize=8)
-    ax.tick_params(axis="x", length=0, pad=7, labelsize=7.0)
+    ax.tick_params(axis="x", length=0, pad=7, labelsize=10.0)
     ax.spines["left"].set_bounds(0, 100)
     ax.spines["left"].set_position(("outward", 4))
     ax.spines["bottom"].set_position(("outward", 4))
@@ -460,18 +460,18 @@ def draw_model_legend(ax: plt.Axes, images: dict[str, np.ndarray]) -> None:
     models = list(MODEL_SIZES)
     labels = ["GPT-2 XL", "LLaMA-3-8B", "Qwen-2.5-14B", "OLMo-2-32B"]
     for model, label, x in zip(
-        models, labels, np.linspace(0.17, 0.83, len(models)), strict=True
+        models, labels, [0.125, 0.375, 0.625, 0.875], strict=True
     ):
         add_logo(
             ax,
             images,
             model,
-            float(x) - 0.040,
+            float(x) - 0.060,
             0.5,
             zoom=0.054,
             coordinates=ax.transAxes,
         )
-        ax.text(float(x) + 0.010, 0.5, label, ha="left", va="center", fontsize=8.0)
+        ax.text(float(x) - 0.018, 0.5, label, ha="left", va="center", fontsize=8.2)
 
 
 def method_handles() -> list[Line2D]:
@@ -494,9 +494,7 @@ def method_handles() -> list[Line2D]:
     ]
 
 
-def main() -> None:
-    setup_style()
-    PLOTS.mkdir(parents=True, exist_ok=True)
+def load_inputs() -> tuple[list[Result], dict[str, np.ndarray]]:
     records = read_table(
         REPO / "figs/bench_table/truthfulness/truthfulqa.md", "ID"
     ) + read_table(
@@ -508,24 +506,58 @@ def main() -> None:
             images[f"{family}::{method}"] = tinted_logo(
                 images[family], METHOD_COLORS[method]
             )
+    return records, images
 
-    fig = plt.figure(figsize=(15.4, 4.8))
-    outer = fig.add_gridspec(
-        1,
-        9,
-        width_ratios=[1.68, 0.38, 3.00, 0.22, 3.00, 0.46, 2.10, 1.18, 2.10],
-        left=0.035,
-        right=0.985,
-        bottom=0.24,
-        top=0.86,
-        wspace=0.12,
+
+def save_figure(fig: plt.Figure, stem: str) -> None:
+    for suffix in ["pdf", "png"]:
+        fig.savefig(
+            PLOTS / f"{stem}.{suffix}",
+            bbox_inches="tight",
+            facecolor="white",
+            transparent=False,
+        )
+    plt.close(fig)
+
+
+def render_figure_a(records: list[Result], images: dict[str, np.ndarray]) -> None:
+    fig, ax = plt.subplots(figsize=(3.8, 4.5))
+    fig.subplots_adjust(left=0.18, right=0.98, bottom=0.23, top=0.97)
+    draw_box_panel(ax, records, images)
+    ax.legend(
+        handles=[
+            Patch(facecolor=GRAY, alpha=0.30, label="Best competitor"),
+            Patch(facecolor=TEAL, alpha=0.30, label=r"H$\infty$ (ours)"),
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.20),
+        ncol=2,
+        fontsize=9.0,
+        handlelength=1.4,
+        columnspacing=1.2,
     )
-    bar_ax = fig.add_subplot(outer[0])
-    draw_box_panel(bar_ax, records, images)
+    save_figure(fig, "figure_truthful_a")
+
+
+def render_figure_b(records: list[Result], images: dict[str, np.ndarray]) -> None:
+    fig = plt.figure(figsize=(9.6, 4.8))
+    outer = fig.add_gridspec(
+        2,
+        2,
+        height_ratios=[0.14, 0.86],
+        left=0.07,
+        right=0.97,
+        bottom=0.25,
+        top=0.98,
+        wspace=0.25,
+        hspace=0.04,
+    )
+    model_ax = fig.add_subplot(outer[0, :])
+    draw_model_legend(model_ax, images)
 
     frontier_axes: list[tuple[plt.Axes, plt.Axes, plt.Axes]] = []
-    for index in [2, 4]:
-        nested = outer[index].subgridspec(
+    for index in [0, 1]:
+        nested = outer[1, index].subgridspec(
             2,
             2,
             width_ratios=[8.0, 1.15],
@@ -540,35 +572,34 @@ def main() -> None:
 
     draw_frontier(*frontier_axes[0], records, "ID", images)
     draw_frontier(*frontier_axes[1], records, "OOD", images)
-    model_ax = fig.add_axes([0.245, 0.885, 0.370, 0.075])
-    draw_model_legend(model_ax, images)
-    radar_id_ax = fig.add_subplot(outer[6], projection="polar")
-    radar_ood_ax = fig.add_subplot(outer[8], projection="polar")
-    draw_radar(radar_id_ax, "ID")
-    draw_radar(radar_ood_ax, "OOD")
-
-    bar_ax.legend(
-        handles=[
-            Patch(facecolor=GRAY, label="Best competitor"),
-            Patch(facecolor=TEAL, label=r"H$\infty$ (ours)"),
-        ],
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.21),
-        ncol=1,
-        fontsize=8.0,
-        handlelength=1.4,
-        labelspacing=0.45,
-    )
     fig.legend(
         handles=method_handles(),
         loc="lower center",
-        bbox_to_anchor=(0.405, 0.025),
+        bbox_to_anchor=(0.5, 0.015),
         ncol=5,
         fontsize=8.4,
         handlelength=1.6,
         handletextpad=0.35,
         columnspacing=0.9,
     )
+    save_figure(fig, "figure_truthful_b")
+
+
+def render_figure_c() -> None:
+    fig = plt.figure(figsize=(8.4, 4.2))
+    outer = fig.add_gridspec(
+        1,
+        2,
+        left=0.08,
+        right=0.94,
+        bottom=0.07,
+        top=0.80,
+        wspace=0.58,
+    )
+    radar_id_ax = fig.add_subplot(outer[0], projection="polar")
+    radar_ood_ax = fig.add_subplot(outer[1], projection="polar")
+    draw_radar(radar_id_ax, "ID")
+    draw_radar(radar_ood_ax, "OOD")
     fig.legend(
         handles=[
             Line2D([0], [0], color=TEAL, linewidth=2.2, label=r"H$\infty$ (ours)"),
@@ -582,21 +613,22 @@ def main() -> None:
             ),
         ],
         loc="upper center",
-        bbox_to_anchor=(0.825, 0.965),
+        bbox_to_anchor=(0.5, 0.98),
         ncol=2,
-        fontsize=9.0,
+        fontsize=10.0,
         handlelength=1.8,
-        columnspacing=1.4,
+        columnspacing=1.6,
     )
+    save_figure(fig, "figure_truthful_c")
 
-    for suffix in ["pdf", "png"]:
-        fig.savefig(
-            PLOTS / f"figure_truthful.{suffix}",
-            bbox_inches="tight",
-            facecolor="white",
-            transparent=False,
-        )
-    plt.close(fig)
+
+def main() -> None:
+    setup_style()
+    PLOTS.mkdir(parents=True, exist_ok=True)
+    records, images = load_inputs()
+    render_figure_a(records, images)
+    render_figure_b(records, images)
+    render_figure_c()
 
 
 if __name__ == "__main__":
