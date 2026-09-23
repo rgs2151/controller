@@ -164,6 +164,15 @@ def logo_zoom(size_b: float, base: float = 0.040) -> float:
     return base + 0.010 * math.log2(max(size_b, 1.0))
 
 
+def tinted_logo(image: np.ndarray, color: str) -> np.ndarray:
+    tinted = np.zeros_like(image)
+    tinted[..., :3] = np.round(255 * np.asarray(mpl.colors.to_rgb(color))).astype(
+        np.uint8
+    )
+    tinted[..., 3] = image[..., 3]
+    return tinted
+
+
 def add_logo(
     ax: plt.Axes,
     images: dict[str, np.ndarray],
@@ -178,23 +187,18 @@ def add_logo(
     family = MODEL_FAMILIES[model]
     if zoom is None:
         zoom = logo_zoom(MODEL_SIZES[model])
-    image = OffsetImage(images[family], zoom=zoom * LOGO_SCALE[family], resample=True)
-    frame = method is not None
-    edge = METHOD_COLORS[method] if method is not None else "none"
-    alpha = 1.0 if method == "H∞ (ours)" else 0.72
+    image_key = family if method is None else f"{family}::{method}"
+    image = OffsetImage(
+        images[image_key], zoom=zoom * LOGO_SCALE[family], resample=True
+    )
+    image.set_alpha(1.0 if method in {None, "H∞ (ours)"} else 0.70)
     transform_kwargs = {} if coordinates == "data" else {"xycoords": coordinates}
     ax.add_artist(
         AnnotationBbox(
             image,
             (x, y),
-            frameon=frame,
-            pad=0.09,
-            bboxprops={
-                "boxstyle": "circle,pad=0.06",
-                "facecolor": (1, 1, 1, 0.90),
-                "edgecolor": mpl.colors.to_rgba(edge, alpha),
-                "linewidth": 2.0 if method == "H∞ (ours)" else 1.15,
-            },
+            frameon=False,
+            pad=0,
             zorder=12 if method == "H∞ (ours)" else 7,
             annotation_clip=False,
             **transform_kwargs,
@@ -237,7 +241,6 @@ def draw_bar_panel(
     ax.set_yticks(np.arange(0, 101, 20))
     ax.set_xticks(centers, ["English", "Spanish"], fontsize=9.5)
     ax.set_ylabel("True (%)", fontsize=10.5)
-    ax.set_title("(a) Truthfulness shift", fontsize=13.5, fontweight="semibold", pad=16)
     ax.tick_params(axis="y", labelsize=8)
     ax.tick_params(axis="x", length=0, pad=7)
     ax.spines["left"].set_bounds(0, 100)
@@ -357,7 +360,6 @@ def draw_frontier(
     top_ax.set_yticks([])
     top_ax.spines[["top", "left", "right"]].set_visible(False)
     top_ax.spines["bottom"].set_color("#AEB4BC")
-    top_ax.set_title(split, fontsize=14, fontweight="semibold", pad=7)
 
     right_ax.set_xlim(0, 1.08)
     right_ax.set_ylim(0, 100)
@@ -367,7 +369,9 @@ def draw_frontier(
     right_ax.spines["left"].set_color("#AEB4BC")
 
 
-def category_radar_values() -> tuple[list[str], list[float], list[float]]:
+def category_radar_values() -> tuple[
+    list[str], dict[str, tuple[list[float], list[float]]]
+]:
     rows = list(csv.DictReader(CATEGORY_CACHE.open()))
     categories = list(dict.fromkeys(row["category"] for row in rows))
     ours_by_split: dict[tuple[str, str], float] = {}
@@ -380,39 +384,33 @@ def category_radar_values() -> tuple[list[str], list[float], list[float]]:
             by_model: dict[str, list[dict[str, str]]] = defaultdict(list)
             for row in relevant:
                 by_model[row["model"]].append(row)
-            ours_points: list[tuple[float, float]] = []
-            best_points: list[tuple[float, float]] = []
+            ours_points: list[float] = []
+            best_points: list[float] = []
             for model, model_rows in by_model.items():
                 ours = next(row for row in model_rows if row["method"] == "H∞ (ours)")
                 best = max(
                     (row for row in model_rows if row["method"] != "H∞ (ours)"),
                     key=lambda row: float(row["txi_pct"]),
                 )
-                weight = MODEL_SIZES[model]
-                ours_points.append((weight, float(ours["txi_pct"])))
-                best_points.append((weight, float(best["txi_pct"])))
+                ours_points.append(float(ours["txi_pct"]))
+                best_points.append(float(best["txi_pct"]))
 
-            def weighted_pairs(points: list[tuple[float, float]]) -> float:
-                return sum(weight * value for weight, value in points) / sum(
-                    weight for weight, _ in points
-                )
+            ours_by_split[(split, category)] = float(np.mean(ours_points))
+            best_by_split[(split, category)] = float(np.mean(best_points))
 
-            ours_by_split[(split, category)] = weighted_pairs(ours_points)
-            best_by_split[(split, category)] = weighted_pairs(best_points)
-
-    ours_values = [
-        np.mean([ours_by_split[("ID", category)], ours_by_split[("OOD", category)]])
-        for category in categories
-    ]
-    best_values = [
-        np.mean([best_by_split[("ID", category)], best_by_split[("OOD", category)]])
-        for category in categories
-    ]
-    return categories, ours_values, best_values
+    values = {
+        split: (
+            [ours_by_split[(split, category)] for category in categories],
+            [best_by_split[(split, category)] for category in categories],
+        )
+        for split in ["ID", "OOD"]
+    }
+    return categories, values
 
 
-def draw_radar(ax: plt.Axes) -> None:
-    categories, ours, best = category_radar_values()
+def draw_radar(ax: plt.Axes, split: str) -> None:
+    categories, values = category_radar_values()
+    ours, best = values[split]
     angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False)
     angles = np.r_[angles, angles[0]]
     ours_closed = np.r_[ours, ours[0]]
@@ -424,7 +422,7 @@ def draw_radar(ax: plt.Axes) -> None:
     ax.scatter(angles[:-1], best, s=14, color=GRAY, zorder=4)
     ax.scatter(angles[:-1], ours, s=18, color=TEAL, zorder=5)
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories, fontsize=7.2)
+    ax.set_xticklabels(categories, fontsize=6.5)
     ax.set_theta_offset(np.pi / 2.0)
     ax.set_theta_direction(-1)
     ax.set_ylim(0, 100)
@@ -432,11 +430,15 @@ def draw_radar(ax: plt.Axes) -> None:
     ax.set_yticklabels([])
     ax.grid(color="#C9CED3", linewidth=0.6, linestyle=":")
     ax.spines["polar"].set_color("#AEB4BC")
-    ax.set_title(
-        "(d) Category robustness\nT×I (ID/OOD mean)",
-        fontsize=12.5,
+    ax.text(
+        0.5,
+        -0.16,
+        split,
+        transform=ax.transAxes,
+        ha="center",
+        va="top",
+        fontsize=10.5,
         fontweight="semibold",
-        pad=22,
     )
     ax.legend(
         handles=[
@@ -444,7 +446,7 @@ def draw_radar(ax: plt.Axes) -> None:
             Line2D([0], [0], color=GRAY, linewidth=1.7, linestyle="--", label="Best competitor"),
         ],
         loc="lower center",
-        bbox_to_anchor=(0.5, -0.25),
+        bbox_to_anchor=(0.5, -0.35),
         ncol=1,
         fontsize=8,
     )
@@ -454,11 +456,14 @@ def draw_model_legend(ax: plt.Axes, images: dict[str, np.ndarray]) -> None:
     ax.set_axis_off()
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.text(0.5, 0.96, "Model family", ha="center", va="top", fontsize=11, fontweight="semibold")
+    ax.text(0.5, 0.84, "Models", ha="center", va="top", fontsize=10.5, fontweight="semibold")
     models = list(MODEL_SIZES)
-    for model, y in zip(models, np.linspace(0.78, 0.36, len(models)), strict=True):
-        add_logo(ax, images, model, 0.24, float(y), zoom=0.075, coordinates=ax.transAxes)
-        ax.text(0.40, y, MODEL_FAMILIES[model], ha="left", va="center", fontsize=9.2)
+    labels = ["GPT-2 XL (1.5B)", "LLaMA-3-8B", "Qwen-2.5-14B", "OLMo-2-32B"]
+    for model, label, y in zip(
+        models, labels, np.linspace(0.68, 0.35, len(models)), strict=True
+    ):
+        add_logo(ax, images, model, 0.17, float(y), zoom=0.067, coordinates=ax.transAxes)
+        ax.text(0.31, y, label, ha="left", va="center", fontsize=8.2)
 
 
 def method_handles() -> list[Line2D]:
@@ -490,17 +495,22 @@ def main() -> None:
         REPO / "figs/bench_table/truthfulness/truthfulqa_spanish.md", "OOD"
     )
     images = {family: square_logo(path) for family, path in LOGO_FILES.items()}
+    for family in LOGO_FILES:
+        for method in METHOD_ORDER:
+            images[f"{family}::{method}"] = tinted_logo(
+                images[family], METHOD_COLORS[method]
+            )
 
-    fig = plt.figure(figsize=(23.5, 6.45))
+    fig = plt.figure(figsize=(18.2, 5.2))
     outer = fig.add_gridspec(
         1,
-        5,
-        width_ratios=[1.55, 3.25, 3.25, 1.05, 2.55],
+        7,
+        width_ratios=[1.40, 3.00, 3.00, 1.05, 2.10, 0.24, 2.10],
         left=0.035,
         right=0.985,
-        bottom=0.21,
-        top=0.86,
-        wspace=0.34,
+        bottom=0.24,
+        top=0.94,
+        wspace=0.20,
     )
     bar_ax = fig.add_subplot(outer[0])
     draw_bar_panel(bar_ax, records, images)
@@ -522,44 +532,29 @@ def main() -> None:
 
     draw_frontier(*frontier_axes[0], records, "ID", images)
     draw_frontier(*frontier_axes[1], records, "OOD", images)
-    frontier_axes[0][1].text(
-        -0.10,
-        1.35,
-        "(b)",
-        transform=frontier_axes[0][1].transAxes,
-        fontsize=12,
-        fontweight="semibold",
-    )
-    frontier_axes[1][1].text(
-        -0.10,
-        1.35,
-        "(c)",
-        transform=frontier_axes[1][1].transAxes,
-        fontsize=12,
-        fontweight="semibold",
-    )
-
     model_ax = fig.add_subplot(outer[3])
     draw_model_legend(model_ax, images)
-    radar_ax = fig.add_subplot(outer[4], projection="polar")
-    draw_radar(radar_ax)
+    radar_id_ax = fig.add_subplot(outer[4], projection="polar")
+    radar_ood_ax = fig.add_subplot(outer[6], projection="polar")
+    draw_radar(radar_id_ax, "ID")
+    draw_radar(radar_ood_ax, "OOD")
 
-    fig.legend(
+    bar_ax.legend(
         handles=[
             Patch(facecolor=GRAY, label="Best competitor"),
             Patch(facecolor=TEAL, label=r"H$\infty$ (ours)"),
         ],
-        loc="upper left",
-        bbox_to_anchor=(0.035, 0.985),
-        ncol=2,
-        fontsize=10.5,
-        handlelength=1.5,
-        columnspacing=1.3,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.21),
+        ncol=1,
+        fontsize=8.0,
+        handlelength=1.4,
+        labelspacing=0.45,
     )
     fig.legend(
         handles=method_handles(),
         loc="lower center",
-        bbox_to_anchor=(0.48, 0.025),
+        bbox_to_anchor=(0.405, 0.025),
         ncol=5,
         fontsize=8.4,
         handlelength=1.6,
