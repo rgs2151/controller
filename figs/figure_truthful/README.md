@@ -46,8 +46,12 @@
 
 ## Outputs
 
-- `plots/figure_truthful.pdf`: vector paper figure.
-- `plots/figure_truthful.png`: 300-DPI raster preview.
+- `plots/figure_truthful_a.pdf` and `.png`: model-level English/Spanish box
+  plots for H∞ and the best competitor.
+- `plots/figure_truthful_b.pdf` and `.png`: paired English/Spanish
+  True–Informative frontiers with marginal distributions.
+- `plots/figure_truthful_c.pdf` and `.png`: paired English/Spanish category
+  robustness radars.
 - `cache/truthfulqa_category_txi.csv`: auditable category-level source values,
   including the exact scorer artifact paths.
 
