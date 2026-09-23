@@ -49,7 +49,7 @@ def draw_box_panel(
                 boxprops={
                     "facecolor": color,
                     "edgecolor": color,
-                    "alpha": 0.5,
+                    "alpha": 0.3,
                     "linewidth": 1.15,
                 },
                 medianprops={"color": base.INK, "linewidth": 1.25},
@@ -151,8 +151,8 @@ def main() -> None:
 
     fig.legend(
         handles=[
-            Patch(facecolor=base.GRAY, alpha=0.5, label="Best competitor"),
-            Patch(facecolor=base.TEAL, alpha=0.5, label=r"H$\infty$ (ours)"),
+            Patch(facecolor=base.GRAY, alpha=0.3, label="Best competitor"),
+            Patch(facecolor=base.TEAL, alpha=0.3, label=r"H$\infty$ (ours)"),
         ],
         loc="upper center",
         bbox_to_anchor=(0.5, 0.995),
