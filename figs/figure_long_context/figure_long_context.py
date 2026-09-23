@@ -29,8 +29,6 @@ INK = "#25282D"
 MUTED = "#687078"
 GRID = "#E2E5E8"
 SPINE = "#AEB4BA"
-ID_SHADE = "#F3F5F6"
-OOD_SHADE = "#FBF4EC"
 
 CONTEXTS = ("8K", "16K")
 MODEL_SPECS = {
@@ -160,8 +158,6 @@ def tight_limits(values: list[float]) -> tuple[float, float]:
 
 
 def style_axis(ax: plt.Axes, *, ylim: tuple[float, float]) -> None:
-    ax.axvspan(-0.5, 0.5, color=ID_SHADE, zorder=0)
-    ax.axvspan(0.5, 1.5, color=OOD_SHADE, zorder=0)
     ax.grid(True, axis="y", color=GRID, linewidth=0.75, zorder=1)
     ax.set_axisbelow(True)
     ax.set_xlim(-0.20, 1.20)
