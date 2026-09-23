@@ -38,6 +38,10 @@ parking/*/cache/*/*
 benchmarks/*/cache/*
 !benchmarks/*/cache/.gitkeep
 ref/pre_portable_benchmark_units/*/cache/*
+# Large user-supplied reference bundles are preserved locally under this
+# directory; analysis units version their adapted plotting code and outputs.
+ref/summary_figs/*.zip
+ref/summary_figs/robust LQR/
 debug/*/cache/*
 !debug/*/cache/.gitkeep
 
