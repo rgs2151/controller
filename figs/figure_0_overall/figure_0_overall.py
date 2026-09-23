@@ -430,7 +430,7 @@ def main() -> None:
         "Language shift",
         results["Language shift"],
         "Accuracy (%)",
-        80,
+        60,
         logo_images,
         ["Chinese", "French", "Japanese", "Swahili", "Telugu"],
         group_gap=3.10,
