@@ -414,7 +414,7 @@ def main() -> None:
         "Truthful responses (%)",
         100,
         logo_images,
-        ["English", "Spanish\nTranslation"],
+        ["English", "Spanish"],
     )
     draw_panel(
         axes[1],
