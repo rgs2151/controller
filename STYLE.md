@@ -88,10 +88,14 @@ remain legible, but quieter than the project teal so H∞ remains the clear foca
 Avoid both dull near-gray palettes and bright colors that compete with `#007C7C`.
 Reserve black for neutral text and exceptional reference marks rather than a competing
 method. Pick one baseline mapping within a figure and keep it consistent across panels.
+When an aggregate figure uses a single **best competitor** series rather than named
+methods, its exact gray is **`#737B80`**. Logos placed on that series are recolored to
+the same gray; logos placed on H∞ are recolored to `#007C7C`. Native company colors are
+reserved for the separate model-family legend.
 
 ```python
 COLORS = {
-    "original": "#697680",   # muted steel
+    "original": "#737B80",   # exact aggregate best-competitor gray
     "spid": "#BF7558",       # muted terracotta
     "alqr": "#756FA6",       # muted indigo
     "h_infinity": "#007C7C", # exact project teal; H∞ / ours only
