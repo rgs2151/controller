@@ -490,6 +490,7 @@ def draw_radar(
     include_original: bool = False,
     label_fontsize: float = 8.6,
     label_pad: float = 10,
+    extend_label_spokes: bool = False,
 ) -> None:
     categories, values = category_radar_values(
         model,
@@ -536,6 +537,17 @@ def draw_radar(
     ax.set_yticklabels([])
     ax.grid(color="#C9CED3", linewidth=0.6, linestyle=":")
     ax.spines["polar"].set_color("#AEB4BC")
+    if extend_label_spokes:
+        for angle in angles[:-1]:
+            ax.plot(
+                [angle, angle],
+                [100, 111],
+                color="#C9CED3",
+                linewidth=0.8,
+                linestyle=":",
+                clip_on=False,
+                zorder=0,
+            )
 
 
 def draw_model_legend(ax: plt.Axes, images: dict[str, np.ndarray]) -> None:
@@ -741,7 +753,8 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         metric="true_pct",
         include_original=True,
         label_fontsize=12.5,
-        label_pad=12,
+        label_pad=22,
+        extend_label_spokes=True,
     )
     draw_radar(
         radar_ood_ax,
@@ -750,7 +763,8 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         metric="true_pct",
         include_original=True,
         label_fontsize=12.5,
-        label_pad=12,
+        label_pad=22,
+        extend_label_spokes=True,
     )
     fig.legend(
         handles=[
