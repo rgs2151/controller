@@ -34,8 +34,8 @@
 - Color/value: gray bars are the best competitor; teal bars are H∞.
 - Grouping: the first, second, and fourth panels show ID and OOD groups; language shift contains OOD groups only.
 - Ordering/sorting: shifts follow truthfulness, adversarial, language, and context; languages follow Chinese, French, Japanese, Swahili, and Telugu.
-- Lines/markers/labels: logos mark individual model scores; logo size increases with model parameters; numeric labels give weighted bar heights.
-- Panels: truthfulness and adversarial shifts are parallel steering; language and context shifts are orthogonal steering.
+- Lines/markers/labels: unboxed logos mark individual model scores; logo size increases with model parameters; the model-family legend uses a common display size.
+- Panels: the first pair contains truthfulness and adversarial shifts; additional horizontal space separates it from the language and context pair.
 
 ## Interpretation
 
