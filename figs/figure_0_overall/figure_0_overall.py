@@ -292,6 +292,7 @@ def draw_panel(
     logo_images: dict[str, np.ndarray],
     condition_labels: list[str],
     group_gap: float | None = None,
+    lower_margin: float = 0.0,
 ) -> None:
     if group_gap is None:
         group_gap = 3.15 if len(conditions) <= 2 else 2.70
@@ -319,7 +320,7 @@ def draw_panel(
     left = centers[0] - 0.9
     right = centers[-1] + 0.9
     ax.set_xlim(left, right)
-    ax.set_ylim(0, ymax)
+    ax.set_ylim(lower_margin, ymax)
     ax.set_yticks(np.linspace(0, ymax, 6))
     ax.set_ylabel(ylabel, fontsize=11)
     ax.set_xticks(centers)
@@ -434,6 +435,7 @@ def main() -> None:
         logo_images,
         ["Chinese", "French", "Japanese", "Swahili", "Telugu"],
         group_gap=3.10,
+        lower_margin=-4.0,
     )
     draw_panel(
         axes[3],
