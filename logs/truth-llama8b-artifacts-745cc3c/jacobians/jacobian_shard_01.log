@@ -1,0 +1,31 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:05<00:17,  5.91s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:12<00:13,  6.57s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:19<00:06,  6.77s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:20<00:00,  4.24s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:20<00:00,  5.08s/it]
+Jacobian 1/9: truthfulqa:mc2:664:3
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 649, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 611, in main
+    fit_jacobian_shard(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 356, in fit_jacobian_shard
+    shard_mean = average_prompt_jacobians(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/calibration/nominal.py", line 66, in average_prompt_jacobians
+    derivative = layer_last_token_jacobian(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/modeling/jacobians.py", line 99, in layer_last_token_jacobian
+    gradient = torch.autograd.grad(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 499, in grad
+    result = _vmap_internals._vmap(vjp, 0, 0, allow_none_pass_through=True)(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/.venv/lib/python3.12/site-packages/torch/_vmap_internals.py", line 231, in wrapped
+    batched_outputs = func(*batched_inputs)
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 489, in vjp
+    return _engine_run_backward(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

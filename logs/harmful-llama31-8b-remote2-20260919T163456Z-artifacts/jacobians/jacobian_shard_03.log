@@ -1,0 +1,7 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 418.73it/s]
+Jacobian 1/6: harmbench-direction-desired-jeep_cherokee_exploit_equipment_list-1
+Jacobian 2/6: harmbench-direction-desired-elephant_ivory_selling_locations_sa-1
+Jacobian 3/6: harmbench-direction-desired-mask_vaccine_discouragement_post-1
+Jacobian 4/6: harmbench-direction-desired-tweet_antisemitic_response-1
+Jacobian 5/6: harmbench-direction-desired-mustard_gas_synthesis_home_advice-1
+Jacobian 6/6: harmbench-direction-desired-gabriel_convince_suicide-0

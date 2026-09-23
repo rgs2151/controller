@@ -1,0 +1,202 @@
+MGSM_START_20260915T1950Z
+tokenizer_config.json: 0.00B [00:00, ?B/s]tokenizer_config.json: 9.73kB [00:00, 44.9MB/s]
+vocab.json: 0.00B [00:00, ?B/s]vocab.json: 2.78MB [00:00, 33.8MB/s]
+merges.txt: 0.00B [00:00, ?B/s]merges.txt: 1.67MB [00:00, 35.4MB/s]
+tokenizer.json:   0%|                              | 0.00/11.4M [00:00<?, ?B/s]tokenizer.json: 100%|█████████████████████| 11.4M/11.4M [00:00<00:00, 17.8MB/s]tokenizer.json: 100%|█████████████████████| 11.4M/11.4M [00:00<00:00, 17.8MB/s]
+README.md: 0.00B [00:00, ?B/s]README.md: 13.0kB [00:00, 62.6MB/s]
+en/train-00000-of-00001.parquet:   0%|             | 0.00/4.97k [00:00<?, ?B/s]en/train-00000-of-00001.parquet: 100%|████| 4.97k/4.97k [00:00<00:00, 24.4kB/s]en/train-00000-of-00001.parquet: 100%|████| 4.97k/4.97k [00:00<00:00, 24.4kB/s]
+en/test-00000-of-00001.parquet:   0%|              | 0.00/39.1k [00:00<?, ?B/s]en/test-00000-of-00001.parquet: 100%|█████| 39.1k/39.1k [00:00<00:00, 46.1kB/s]en/test-00000-of-00001.parquet: 100%|█████| 39.1k/39.1k [00:00<00:00, 46.1kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|████████████| 8/8 [00:00<00:00, 289.03 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|███████| 250/250 [00:00<00:00, 99693.48 examples/s]
+es/train-00000-of-00001.parquet:   0%|             | 0.00/5.10k [00:00<?, ?B/s]es/train-00000-of-00001.parquet: 100%|████| 5.10k/5.10k [00:00<00:00, 19.5kB/s]es/train-00000-of-00001.parquet: 100%|████| 5.10k/5.10k [00:00<00:00, 19.5kB/s]
+es/test-00000-of-00001.parquet:   0%|              | 0.00/41.7k [00:00<?, ?B/s]es/test-00000-of-00001.parquet: 100%|██████| 41.7k/41.7k [00:00<00:00, 245kB/s]es/test-00000-of-00001.parquet: 100%|██████| 41.7k/41.7k [00:00<00:00, 244kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 3989.35 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 140109.03 examples/s]
+README.md: 0.00B [00:00, ?B/s]README.md: 7.93kB [00:00, 35.6MB/s]
+main/train-00000-of-00001.parquet:   0%|           | 0.00/2.31M [00:00<?, ?B/s]main/train-00000-of-00001.parquet:   2%|   | 41.9k/2.31M [00:00<00:13, 164kB/s]main/train-00000-of-00001.parquet: 100%|██| 2.31M/2.31M [00:00<00:00, 7.84MB/s]
+main/test-00000-of-00001.parquet:   0%|             | 0.00/419k [00:00<?, ?B/s]main/test-00000-of-00001.parquet: 100%|█████| 419k/419k [00:00<00:00, 1.64MB/s]main/test-00000-of-00001.parquet: 100%|█████| 419k/419k [00:00<00:00, 1.64MB/s]
+Generating train split:   0%|                  | 0/7473 [00:00<?, ? examples/s]Generating train split: 100%|███| 7473/7473 [00:00<00:00, 658460.44 examples/s]
+Generating test split:   0%|                   | 0/1319 [00:00<?, ? examples/s]Generating test split: 100%|████| 1319/1319 [00:00<00:00, 420354.61 examples/s]
+bn/train-00000-of-00001.parquet:   0%|             | 0.00/7.65k [00:00<?, ?B/s]bn/train-00000-of-00001.parquet: 100%|████| 7.65k/7.65k [00:00<00:00, 42.0kB/s]bn/train-00000-of-00001.parquet: 100%|████| 7.65k/7.65k [00:00<00:00, 42.0kB/s]
+bn/test-00000-of-00001.parquet:   0%|              | 0.00/62.0k [00:00<?, ?B/s]bn/test-00000-of-00001.parquet: 100%|██████| 62.0k/62.0k [00:00<00:00, 311kB/s]bn/test-00000-of-00001.parquet: 100%|██████| 62.0k/62.0k [00:00<00:00, 310kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 3977.06 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 120001.83 examples/s]
+zh/train-00000-of-00001.parquet:   0%|             | 0.00/4.94k [00:00<?, ?B/s]zh/train-00000-of-00001.parquet: 100%|████| 4.94k/4.94k [00:00<00:00, 29.3kB/s]zh/train-00000-of-00001.parquet: 100%|████| 4.94k/4.94k [00:00<00:00, 29.3kB/s]
+zh/test-00000-of-00001.parquet:   0%|              | 0.00/39.8k [00:00<?, ?B/s]zh/test-00000-of-00001.parquet: 100%|██████| 39.8k/39.8k [00:00<00:00, 213kB/s]zh/test-00000-of-00001.parquet: 100%|██████| 39.8k/39.8k [00:00<00:00, 213kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 4039.30 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 142450.21 examples/s]
+fr/train-00000-of-00001.parquet:   0%|             | 0.00/5.18k [00:00<?, ?B/s]fr/train-00000-of-00001.parquet: 100%|████| 5.18k/5.18k [00:00<00:00, 25.5kB/s]fr/train-00000-of-00001.parquet: 100%|████| 5.18k/5.18k [00:00<00:00, 25.5kB/s]
+fr/test-00000-of-00001.parquet:   0%|              | 0.00/43.5k [00:00<?, ?B/s]fr/test-00000-of-00001.parquet: 100%|██████| 43.5k/43.5k [00:00<00:00, 201kB/s]fr/test-00000-of-00001.parquet: 100%|██████| 43.5k/43.5k [00:00<00:00, 200kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 3682.04 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 135509.95 examples/s]
+de/train-00000-of-00001.parquet:   0%|             | 0.00/5.29k [00:00<?, ?B/s]de/train-00000-of-00001.parquet: 100%|████| 5.29k/5.29k [00:00<00:00, 33.1kB/s]de/train-00000-of-00001.parquet: 100%|████| 5.29k/5.29k [00:00<00:00, 33.0kB/s]
+de/test-00000-of-00001.parquet:   0%|              | 0.00/43.3k [00:00<?, ?B/s]de/test-00000-of-00001.parquet: 100%|██████| 43.3k/43.3k [00:00<00:00, 257kB/s]de/test-00000-of-00001.parquet: 100%|██████| 43.3k/43.3k [00:00<00:00, 257kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 4019.94 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 139661.16 examples/s]
+ja/train-00000-of-00001.parquet:   0%|             | 0.00/5.73k [00:00<?, ?B/s]ja/train-00000-of-00001.parquet: 100%|████| 5.73k/5.73k [00:00<00:00, 39.7kB/s]ja/train-00000-of-00001.parquet: 100%|████| 5.73k/5.73k [00:00<00:00, 39.6kB/s]
+ja/test-00000-of-00001.parquet:   0%|              | 0.00/46.1k [00:00<?, ?B/s]ja/test-00000-of-00001.parquet: 100%|██████| 46.1k/46.1k [00:00<00:00, 227kB/s]ja/test-00000-of-00001.parquet: 100%|██████| 46.1k/46.1k [00:00<00:00, 227kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 4400.00 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 141622.91 examples/s]
+ru/train-00000-of-00001.parquet:   0%|             | 0.00/6.50k [00:00<?, ?B/s]ru/train-00000-of-00001.parquet: 100%|████| 6.50k/6.50k [00:00<00:00, 32.1kB/s]ru/train-00000-of-00001.parquet: 100%|████| 6.50k/6.50k [00:00<00:00, 32.1kB/s]
+ru/test-00000-of-00001.parquet:   0%|              | 0.00/56.5k [00:00<?, ?B/s]ru/test-00000-of-00001.parquet:  59%|███▌  | 33.6k/56.5k [00:00<00:00, 132kB/s]ru/test-00000-of-00001.parquet: 100%|██████| 56.5k/56.5k [00:00<00:00, 220kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 4104.52 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 127626.10 examples/s]
+sw/train-00000-of-00001.parquet:   0%|             | 0.00/4.98k [00:00<?, ?B/s]sw/train-00000-of-00001.parquet: 100%|████| 4.98k/4.98k [00:00<00:00, 27.8kB/s]sw/train-00000-of-00001.parquet: 100%|████| 4.98k/4.98k [00:00<00:00, 27.7kB/s]
+sw/test-00000-of-00001.parquet:   0%|              | 0.00/40.5k [00:00<?, ?B/s]sw/test-00000-of-00001.parquet: 100%|██████| 40.5k/40.5k [00:00<00:00, 230kB/s]sw/test-00000-of-00001.parquet: 100%|██████| 40.5k/40.5k [00:00<00:00, 229kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 3777.38 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 139179.19 examples/s]
+te/train-00000-of-00001.parquet:   0%|             | 0.00/9.02k [00:00<?, ?B/s]te/train-00000-of-00001.parquet: 100%|████| 9.02k/9.02k [00:00<00:00, 45.6kB/s]te/train-00000-of-00001.parquet: 100%|████| 9.02k/9.02k [00:00<00:00, 45.5kB/s]
+te/test-00000-of-00001.parquet:   0%|              | 0.00/66.5k [00:00<?, ?B/s]te/test-00000-of-00001.parquet: 100%|██████| 66.5k/66.5k [00:00<00:00, 331kB/s]te/test-00000-of-00001.parquet: 100%|██████| 66.5k/66.5k [00:00<00:00, 331kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 3628.68 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 116612.10 examples/s]
+th/train-00000-of-00001.parquet:   0%|             | 0.00/7.85k [00:00<?, ?B/s]th/train-00000-of-00001.parquet: 100%|████| 7.85k/7.85k [00:00<00:00, 37.4kB/s]th/train-00000-of-00001.parquet: 100%|████| 7.85k/7.85k [00:00<00:00, 37.4kB/s]
+th/test-00000-of-00001.parquet:   0%|              | 0.00/61.8k [00:00<?, ?B/s]th/test-00000-of-00001.parquet: 100%|██████| 61.8k/61.8k [00:00<00:00, 306kB/s]th/test-00000-of-00001.parquet: 100%|██████| 61.8k/61.8k [00:00<00:00, 305kB/s]
+Generating train split:   0%|                     | 0/8 [00:00<?, ? examples/s]Generating train split: 100%|███████████| 8/8 [00:00<00:00, 3805.22 examples/s]
+Generating test split:   0%|                    | 0/250 [00:00<?, ? examples/s]Generating test split: 100%|██████| 250/250 [00:00<00:00, 121152.63 examples/s]
+config.json:   0%|                                   | 0.00/726 [00:00<?, ?B/s]config.json: 100%|████████████████████████████| 726/726 [00:00<00:00, 10.5MB/s]
+model.safetensors.index.json: 0.00B [00:00, ?B/s]model.safetensors.index.json: 32.8kB [00:00, 160MB/s]
+Fetching 3 files:   0%|                                  | 0/3 [00:00<?, ?it/s]
+model-00002-of-00003.safetensors:   0%|            | 0.00/3.99G [00:00<?, ?B/s][A
+
+model-00001-of-00003.safetensors:   0%|            | 0.00/3.96G [00:00<?, ?B/s][A[A
+
+
+model-00003-of-00003.safetensors:   0%|            | 0.00/99.6M [00:00<?, ?B/s][A[A[A
+model-00002-of-00003.safetensors:   2%|   | 65.3M/3.99G [00:00<00:45, 86.3MB/s][A
+model-00002-of-00003.safetensors:   3%|▏    | 132M/3.99G [00:01<00:26, 145MB/s][A
+model-00002-of-00003.safetensors:   8%|▍    | 333M/3.99G [00:01<00:13, 268MB/s][A
+model-00002-of-00003.safetensors:  12%|▌    | 468M/3.99G [00:02<00:15, 223MB/s][A
+
+model-00001-of-00003.safetensors:   0%| | 39.5k/3.96G [00:02<62:47:03, 17.5kB/s[A[A
+
+
+model-00003-of-00003.safetensors:  50%|█▌ | 49.9M/99.6M [00:02<00:02, 18.1MB/s][A[A[A
+model-00002-of-00003.safetensors:  22%|█    | 870M/3.99G [00:03<00:08, 354MB/s][A
+
+model-00001-of-00003.safetensors:   2%|   | 66.8M/3.96G [00:03<02:15, 28.7MB/s][A[A
+
+
+model-00003-of-00003.safetensors: 100%|███| 99.6M/99.6M [00:03<00:00, 38.9MB/s][A[A[Amodel-00003-of-00003.safetensors: 100%|███| 99.6M/99.6M [00:03<00:00, 33.0MB/s]
+Fetching 3 files:  33%|████████▋                 | 1/3 [00:03<00:06,  3.20s/it]
+model-00002-of-00003.safetensors:  26%|█   | 1.02G/3.99G [00:03<00:07, 398MB/s][A
+
+model-00001-of-00003.safetensors:   3%|▏   | 134M/3.96G [00:03<01:19, 47.8MB/s][A[A
+
+model-00001-of-00003.safetensors:   8%|▍    | 335M/3.96G [00:04<00:27, 130MB/s][A[A
+
+model-00001-of-00003.safetensors:  12%|▌    | 469M/3.96G [00:04<00:18, 187MB/s][A[A
+model-00002-of-00003.safetensors:  27%|█   | 1.07G/3.99G [00:05<00:17, 166MB/s][A
+
+model-00001-of-00003.safetensors:  14%|▋    | 536M/3.96G [00:05<00:19, 172MB/s][A[A
+
+model-00001-of-00003.safetensors:  26%|█   | 1.02G/3.96G [00:05<00:08, 355MB/s][A[A
+model-00002-of-00003.safetensors:  37%|█▍  | 1.47G/3.99G [00:07<00:13, 184MB/s][A
+
+model-00001-of-00003.safetensors:  30%|█▏  | 1.21G/3.96G [00:07<00:10, 255MB/s][A[A
+model-00002-of-00003.safetensors:  45%|█▊  | 1.81G/3.99G [00:07<00:07, 281MB/s][A
+model-00002-of-00003.safetensors:  52%|██  | 2.08G/3.99G [00:09<00:09, 208MB/s][A
+model-00002-of-00003.safetensors:  59%|██▎ | 2.35G/3.99G [00:10<00:07, 224MB/s][A
+model-00002-of-00003.safetensors:  66%|██▋ | 2.62G/3.99G [00:10<00:04, 275MB/s][A
+
+model-00001-of-00003.safetensors:  44%|█▊  | 1.76G/3.96G [00:13<00:17, 127MB/s][A[A
+
+model-00001-of-00003.safetensors:  61%|██▍ | 2.41G/3.96G [00:13<00:06, 232MB/s][A[A
+model-00002-of-00003.safetensors:  86%|███▍| 3.43G/3.99G [00:13<00:02, 272MB/s][A
+
+model-00001-of-00003.safetensors:  66%|██▋ | 2.61G/3.96G [00:14<00:05, 250MB/s][A[A
+model-00002-of-00003.safetensors: 100%|████| 3.99G/3.99G [00:16<00:00, 263MB/s][A
+
+model-00001-of-00003.safetensors:  80%|███▏| 3.15G/3.96G [00:16<00:03, 225MB/s][A[A
+
+model-00001-of-00003.safetensors:  94%|███▋| 3.70G/3.96G [00:17<00:00, 336MB/s][A[A
+
+model-00001-of-00003.safetensors: 100%|████| 3.96G/3.96G [00:17<00:00, 387MB/s][A[Amodel-00002-of-00003.safetensors: 100%|████| 3.99G/3.99G [00:18<00:00, 215MB/s]
+Fetching 3 files:  67%|█████████████████▎        | 2/3 [00:18<00:09,  9.32s/it]model-00001-of-00003.safetensors: 100%|████| 3.96G/3.96G [00:20<00:00, 189MB/s]
+Fetching 3 files: 100%|██████████████████████████| 3/3 [00:21<00:00,  7.03s/it]Fetching 3 files: 100%|██████████████████████████| 3/3 [00:21<00:00,  7.03s/it]
+Loading checkpoint shards:   0%|                         | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|█████████████████| 3/3 [00:00<00:00, 85.27it/s]
+generation_config.json:   0%|                        | 0.00/239 [00:00<?, ?B/s]generation_config.json: 100%|█████████████████| 239/239 [00:00<00:00, 2.80MB/s]
+Loading checkpoint shards:   0%|                         | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|████████████████| 3/3 [00:00<00:00, 129.17it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 328, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 293, in main
+    calibration_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm.py", line 93, in calibration_stage
+    calibration.calibrate(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 539, in calibrate
+    score_grid(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_calibration.py", line 309, in score_grid
+    openai_scoring.score_generations(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 274, in score_generations
+    return asyncio.run(
+           ^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 232, in _score_async
+    destination, result = await future
+                          ^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/asyncio/tasks.py", line 631, in _wait_for_one
+    return f.result()  # May raise f.exception().
+           ^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 219, in run_job
+    result = await _request(
+             ^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 138, in _request
+    raise RuntimeError(
+RuntimeError: OpenAI scorer batch 2 did not finish cleanly
+Task exception was never retrieved
+future: <Task finished name='Task-53' coro=<_score_async.<locals>.run_job() done, defined at /teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py:218> exception=ServerDisconnectedError('Server disconnected')>
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 219, in run_job
+    result = await _request(
+             ^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 132, in _request
+    async with session.post(ENDPOINT, headers=headers, json=body) as response:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client.py", line 1693, in __aenter__
+    self._resp: _RetType_co = await self._coro
+                              ^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client.py", line 858, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client.py", line 836, in _connect_and_send_request
+    await resp.start(conn)
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client_reqrep.py", line 558, in start
+    message, payload = await protocol.read()  # type: ignore[union-attr]
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/streams.py", line 705, in read
+    await self._waiter
+aiohttp.client_exceptions.ServerDisconnectedError: Server disconnected
+Task exception was never retrieved
+future: <Task finished name='Task-49' coro=<_score_async.<locals>.run_job() done, defined at /teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py:218> exception=ServerDisconnectedError('Server disconnected')>
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 219, in run_job
+    result = await _request(
+             ^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/judges/openai.py", line 132, in _request
+    async with session.post(ENDPOINT, headers=headers, json=body) as response:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client.py", line 1693, in __aenter__
+    self._resp: _RetType_co = await self._coro
+                              ^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client.py", line 858, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client.py", line 836, in _connect_and_send_request
+    await resp.start(conn)
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/client_reqrep.py", line 558, in start
+    message, payload = await protocol.read()  # type: ignore[union-attr]
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/aiohttp/streams.py", line 705, in read
+    await self._waiter
+aiohttp.client_exceptions.ServerDisconnectedError: Server disconnected
+MGSM_EXIT_

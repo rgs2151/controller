@@ -1,0 +1,247 @@
+[1;24rUsing CPython 3.12.3 interpreter at: [36m/usr/bin/python3[39m
+Creating virtual environment at: [36m/tmp/robust-steerability-venv[39m
+Activate with: [32msource /tmp/robust-steerability-venv/bin/activate[39m
+[2mUsing Python 3.12.3 environment at: /tmp/robust-steerability-venv[0m
+⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠋ Resolving dependencies...                                                     [2K⠙ Resolving dependencies...                                                     [2K⠙ robust-steerability==0.1.0                                                    [2K⠙ datasets==4.4.2                                                               [2K⠙ nltk==3.9.1                                                                   [2K⠙ pykakasi==2.3.0                                                               [2K⠙ torch==2.9.1                                                                  [2K⠙ transformers==4.57.1                                                          [2K⠙ nvidia-cuda-nvrtc-cu12==12.8.93                                               [2K⠙ nvidia-cuda-nvrtc-cu12==12.8.93                                               [2K⠙ nvidia-cuda-runtime-cu12==12.8.90                                             [2K⠙ nvidia-cuda-runtime-cu12==12.8.90                                             [2K⠙ nvidia-cuda-cupti-cu12==12.8.90                                               [2K⠙ nvidia-cuda-cupti-cu12==12.8.90                                               [2K⠙ nvidia-cudnn-cu12==9.10.2.21                                                  [2K⠙ nvidia-cudnn-cu12==9.10.2.21                                                  [2K⠙ nvidia-cublas-cu12==12.8.4.1                                                  [2K⠙ nvidia-cublas-cu12==12.8.4.1                                                  [2K⠙ nvidia-cufft-cu12==11.3.3.83                                                  [2K⠙ nvidia-cufft-cu12==11.3.3.83                                                  [2K⠙ nvidia-curand-cu12==10.3.9.90                                                 [2K⠙ triton==3.5.1                                                                 [2K⠙ multidict==6.9.1                                                              [2K[2mResolved [1m89 packages[0m [2min 161ms[0m[0m
+⠋ Preparing packages... (0/0)                                                   [2K⠋ Preparing packages... (0/3)                                                   [2K⠙ Preparing packages... (0/3)                                                   [2K   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+networkx             ------------------------------     0 B/2.04 MiB            [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+networkx             ------------------------------     0 B/2.04 MiB            [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------     0 B/328.99 KiB
+networkx             ------------------------------     0 B/2.04 MiB            [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------     0 B/328.99 KiB
+networkx             ------------------------------ 16.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 14.80 KiB/328.99 KiB
+networkx             ------------------------------ 16.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 14.80 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 30.80 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 46.80 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 62.80 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 75.27 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 91.27 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 107.27 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 123.27 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 139.27 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 155.27 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+multidict            ------------------------------ 171.27 KiB/328.99 KiB
+networkx             ------------------------------ 32.00 KiB/2.04 MiB          [3A[2K[1B[2K[1B[2K[1B[2K[3A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+networkx             ------------------------------ 48.00 KiB/2.04 MiB          [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+networkx             ------------------------------ 557.84 KiB/2.04 MiB         [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)
+networkx             ------------------------------ 1.83 MiB/2.04 MiB           [2A[2K[1B[2K[1B[2K[2A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (0/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠹ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠸ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠼ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠴ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠦ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠧ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠇ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠋ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠙ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠹ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A   [36m[1mBuilding[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠸ Preparing packages... (2/3)                                                   [1A[2K[1B[2K[1A      [32m[1mBuilt[0m[39m robust-steerability[2m @ file:///tmp/controller-lcite16[0m
+⠸ Preparing packages... (2/3)                                                   [2K⠸  (3/3)                                                                        [2K[2mPrepared [1m3 packages[0m [2min 2.24s[0m[0m
+░░░░░░░░░░░░░░░░░░░░ [0/0] [2mInstalling wheels...                                 [0m[2K░░░░░░░░░░░░░░░░░░░░ [0/89] [2mInstalling wheels...                                [0m[2K░░░░░░░░░░░░░░░░░░░░ [0/89] [2mrobust-steerability==0.1.0 (from file:///tmp/control[0m[2K░░░░░░░░░░░░░░░░░░░░ [1/89] [2mrobust-steerability==0.1.0 (from file:///tmp/control[0m[2K░░░░░░░░░░░░░░░░░░░░ [1/89] [2mmultidict==6.9.1                                    [0m[2K░░░░░░░░░░░░░░░░░░░░ [2/89] [2mmultidict==6.9.1                                    [0m[2K░░░░░░░░░░░░░░░░░░░░ [2/89] [2mjaconv==0.5.0                                       [0m[2K░░░░░░░░░░░░░░░░░░░░ [3/89] [2mjaconv==0.5.0                                       [0m[2K░░░░░░░░░░░░░░░░░░░░ [3/89] [2mpropcache==0.5.4                                    [0m[2K░░░░░░░░░░░░░░░░░░░░ [4/89] [2mpropcache==0.5.4                                    [0m[2K░░░░░░░░░░░░░░░░░░░░ [4/89] [2mnvidia-nvtx-cu12==12.8.90                           [0m[2K█░░░░░░░░░░░░░░░░░░░ [5/89] [2mnvidia-nvtx-cu12==12.8.90                           [0m[2K█░░░░░░░░░░░░░░░░░░░ [5/89] [2mpykakasi==2.3.0                                     [0m[2K█░░░░░░░░░░░░░░░░░░░ [6/89] [2mpykakasi==2.3.0                                     [0m[2K█░░░░░░░░░░░░░░░░░░░ [6/89] [2mfrozenlist==1.8.0                                   [0m[2K█░░░░░░░░░░░░░░░░░░░ [7/89] [2mfrozenlist==1.8.0                                   [0m[2K█░░░░░░░░░░░░░░░░░░░ [7/89] [2mmarkupsafe==3.0.3                                   [0m[2K█░░░░░░░░░░░░░░░░░░░ [8/89] [2mmarkupsafe==3.0.3                                   [0m[2K█░░░░░░░░░░░░░░░░░░░ [8/89] [2mkiwisolver==1.5.1                                   [0m[2K██░░░░░░░░░░░░░░░░░░ [9/89] [2mkiwisolver==1.5.1                                   [0m[2K████████████████░░░░ [75/89] [2msetuptools==84.0.0                                 [0m[2K███████████████████░ [85/89] [2mpandas==3.0.6                                      [0m[2K███████████████████░ [87/89] [2mtransformers==4.57.1                               [0m[2K███████████████████░ [88/89] [2mtorch==2.9.1                                       [0m[2K████████████████████ [89/89] [2mtorch==2.9.1                                       [0m[2K[2mInstalled [1m89 packages[0m [2min 382ms[0m[0m
+ [32m+[39m [1maccelerate[0m[2m==1.15.0[0m
+ [32m+[39m [1maiohappyeyeballs[0m[2m==2.7.1[0m
+ [32m+[39m [1maiohttp[0m[2m==3.14.3[0m
+ [32m+[39m [1maiosignal[0m[2m==1.4.0[0m
+ [32m+[39m [1manyio[0m[2m==4.15.1[0m
+ [32m+[39m [1mattrs[0m[2m==26.1.0[0m
+ [32m+[39m [1mbitsandbytes[0m[2m==0.50.2[0m
+ [32m+[39m [1mcertifi[0m[2m==2026.7.22[0m
+ [32m+[39m [1mcharset-normalizer[0m[2m==3.5.1[0m
+ [32m+[39m [1mclick[0m[2m==8.5.0[0m
+ [32m+[39m [1mcloudpickle[0m[2m==3.1.2[0m
+ [32m+[39m [1mcontourpy[0m[2m==1.4.0[0m
+ [32m+[39m [1mcycler[0m[2m==0.12.1[0m
+ [32m+[39m [1mdatasets[0m[2m==4.4.2[0m
+ [32m+[39m [1mdeprecated[0m[2m==1.3.1[0m
+ [32m+[39m [1mdill[0m[2m==0.4.0[0m
+ [32m+[39m [1mfilelock[0m[2m==4.0.1[0m
+ [32m+[39m [1mfonttools[0m[2m==4.65.0[0m
+ [32m+[39m [1mfrozenlist[0m[2m==1.8.0[0m
+ [32m+[39m [1mfsspec[0m[2m==2025.10.0[0m
+ [32m+[39m [1mh11[0m[2m==0.16.0[0m
+ [32m+[39m [1mh5py[0m[2m==3.16.0[0m
+ [32m+[39m [1mhf-xet[0m[2m==1.6.0[0m
+ [32m+[39m [1mhttpcore[0m[2m==1.0.9[0m
+ [32m+[39m [1mhttpx[0m[2m==0.28.1[0m
+ [32m+[39m [1mhuggingface-hub[0m[2m==0.36.2[0m
+ [32m+[39m [1midna[0m[2m==3.20[0m
+ [32m+[39m [1mjaconv[0m[2m==0.5.0[0m
+ [32m+[39m [1mjinja2[0m[2m==3.1.6[0m
+ [32m+[39m [1mjoblib[0m[2m==1.6.0[0m
+ [32m+[39m [1mkiwisolver[0m[2m==1.5.1[0m
+ [32m+[39m [1mlangdetect[0m[2m==1.0.9[0m
+ [32m+[39m [1mmarkupsafe[0m[2m==3.0.3[0m
+ [32m+[39m [1mmatplotlib[0m[2m==3.11.2[0m
+ [32m+[39m [1mmpmath[0m[2m==1.3.0[0m
+ [32m+[39m [1mmultidict[0m[2m==6.9.1[0m
+ [32m+[39m [1mmultiprocess[0m[2m==0.70.18[0m
+ [32m+[39m [1mnarwhals[0m[2m==2.26.0[0m
+ [32m+[39m [1mnetworkx[0m[2m==3.7[0m
+ [32m+[39m [1mnltk[0m[2m==3.9.1[0m
+ [32m+[39m [1mnumpy[0m[2m==2.5.3[0m
+ [32m+[39m [1mnvidia-cublas-cu12[0m[2m==12.8.4.1[0m
+ [32m+[39m [1mnvidia-cuda-cupti-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mnvidia-cuda-nvrtc-cu12[0m[2m==12.8.93[0m
+ [32m+[39m [1mnvidia-cuda-runtime-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mnvidia-cudnn-cu12[0m[2m==9.10.2.21[0m
+ [32m+[39m [1mnvidia-cufft-cu12[0m[2m==11.3.3.83[0m
+ [32m+[39m [1mnvidia-cufile-cu12[0m[2m==1.13.1.3[0m
+ [32m+[39m [1mnvidia-curand-cu12[0m[2m==10.3.9.90[0m
+ [32m+[39m [1mnvidia-cusolver-cu12[0m[2m==11.7.3.90[0m
+ [32m+[39m [1mnvidia-cusparse-cu12[0m[2m==12.5.8.93[0m
+ [32m+[39m [1mnvidia-cusparselt-cu12[0m[2m==0.7.1[0m
+ [32m+[39m [1mnvidia-nccl-cu12[0m[2m==2.27.5[0m
+ [32m+[39m [1mnvidia-nvjitlink-cu12[0m[2m==12.8.93[0m
+ [32m+[39m [1mnvidia-nvshmem-cu12[0m[2m==3.3.20[0m
+ [32m+[39m [1mnvidia-nvtx-cu12[0m[2m==12.8.90[0m
+ [32m+[39m [1mpackaging[0m[2m==26.3[0m
+ [32m+[39m [1mpandas[0m[2m==3.0.6[0m
+ [32m+[39m [1mpillow[0m[2m==12.3.0[0m
+ [32m+[39m [1mpropcache[0m[2m==0.5.4[0m
+ [32m+[39m [1mprotobuf[0m[2m==7.36.2[0m
+ [32m+[39m [1mpsutil[0m[2m==7.2.2[0m
+ [32m+[39m [1mpyarrow[0m[2m==25.0.1[0m
+ [32m+[39m [1mpykakasi[0m[2m==2.3.0[0m
+ [32m+[39m [1mpyparsing[0m[2m==3.3.3[0m
+ [32m+[39m [1mpython-dateutil[0m[2m==2.9.0.post0[0m
+ [32m+[39m [1mpyyaml[0m[2m==6.0.3[0m
+ [32m+[39m [1mregex[0m[2m==2026.9.10[0m
+ [32m+[39m [1mrequests[0m[2m==2.34.2[0m
+ [32m+[39m [1mrobust-steerability[0m[2m==0.1.0 (from file:///tmp/controller-lcite16)[0m
+ [32m+[39m [1msafetensors[0m[2m==0.8.0[0m
+ [32m+[39m [1mscikit-learn[0m[2m==1.9.1[0m
+ [32m+[39m [1mscipy[0m[2m==1.18.1[0m
+ [32m+[39m [1mseaborn[0m[2m==0.13.2[0m
+ [32m+[39m [1msentencepiece[0m[2m==0.2.2[0m
+ [32m+[39m [1msetuptools[0m[2m==84.0.0[0m
+ [32m+[39m [1msix[0m[2m==1.17.0[0m
+ [32m+[39m [1msympy[0m[2m==1.14.0[0m
+ [32m+[39m [1mthreadpoolctl[0m[2m==3.7.0[0m
+ [32m+[39m [1mtokenizers[0m[2m==0.22.2[0m
+ [32m+[39m [1mtorch[0m[2m==2.9.1[0m
+ [32m+[39m [1mtqdm[0m[2m==4.70.1[0m
+ [32m+[39m [1mtransformers[0m[2m==4.57.1[0m
+ [32m+[39m [1mtriton[0m[2m==3.5.1[0m
+ [32m+[39m [1mtyping-extensions[0m[2m==4.16.0[0m
+ [32m+[39m [1murllib3[0m[2m==2.8.0[0m
+ [32m+[39m [1mwrapt[0m[2m==2.4.1[0m
+ [32m+[39m [1mxxhash[0m[2m==4.0.1[0m
+ [32m+[39m [1myarl[0m[2m==1.25.1[0m
+Fetching 13 files:   0%|                                | 0/13 [00:00<?, ?it/s]
+.gitattributes: 0.00B [00:00, ?B/s][A.gitattributes: 1.52kB [00:00, 6.82MB/s]
+
+config.json:   0%|                                   | 0.00/877 [00:00<?, ?B/s][Aconfig.json: 100%|████████████████████████████| 877/877 [00:00<00:00, 7.88MB/s]
+
+README.md: 0.00B [00:00, ?B/s][AREADME.md: 41.7kB [00:00, 69.5MB/s]
+
+generation_config.json:   0%|                        | 0.00/189 [00:00<?, ?B/s][Ageneration_config.json: 100%|█████████████████| 189/189 [00:00<00:00, 2.00MB/s]
+
+LICENSE.txt: 0.00B [00:00, ?B/s][ALICENSE.txt: 7.71kB [00:00, 30.9MB/s]
+
+USE_POLICY.md: 0.00B [00:00, ?B/s][AUSE_POLICY.md: 6.02kB [00:00, 30.6MB/s]
+
+original/consolidated.00.pth:   0%|                | 0.00/2.47G [00:00<?, ?B/s][A
+
+model.safetensors:   0%|                           | 0.00/2.47G [00:00<?, ?B/s][A[A
+
+
+params.json:   0%|                                   | 0.00/220 [00:00<?, ?B/s][A[A[Aparams.json: 100%|████████████████████████████| 220/220 [00:00<00:00, 2.43MB/s]
+
+
+
+special_tokens_map.json:   0%|                       | 0.00/296 [00:00<?, ?B/s][A[A[Aspecial_tokens_map.json: 100%|████████████████| 296/296 [00:00<00:00, 3.09MB/s]
+Fetching 13 files:  62%|██████████████▊         | 8/13 [00:00<00:00, 18.54it/s]
+
+
+original/tokenizer.model:   0%|                    | 0.00/2.18M [00:00<?, ?B/s][A[A[A
+
+
+
+tokenizer_config.json: 0.00B [00:00, ?B/s][A[A[A[Atokenizer_config.json: 54.5kB [00:00, 169MB/s]
+
+
+
+
+tokenizer.json: 0.00B [00:00, ?B/s][A[A[A[A
+
+
+
+tokenizer.json: 2.86MB [00:00, 28.2MB/s][A[A[A[A
+
+
+
+tokenizer.json: 8.68MB [00:00, 45.7MB/s][A[A[A[Atokenizer.json: 9.09MB [00:00, 42.8MB/s]
+
+original/consolidated.00.pth:   0%|    | 51.7k/2.47G [00:00<10:45:59, 63.8kB/s][A
+original/consolidated.00.pth:   3%|▏      | 67.1M/2.47G [00:01<00:38, 62.8MB/s][A
+
+
+original/tokenizer.model: 100%|███████████| 2.18M/2.18M [00:01<00:00, 1.47MB/s][A[A[Aoriginal/tokenizer.model: 100%|███████████| 2.18M/2.18M [00:01<00:00, 1.47MB/s]
+
+
+model.safetensors:   5%|█                  | 134M/2.47G [00:02<00:35, 65.2MB/s][A[A
+original/consolidated.00.pth:  10%|▉        | 256M/2.47G [00:02<00:18, 118MB/s][A
+original/consolidated.00.pth:  11%|▊       | 268M/2.47G [00:03<00:32, 67.0MB/s][A
+
+model.safetensors:  38%|███████▌            | 939M/2.47G [00:04<00:07, 214MB/s][A[A
+original/consolidated.00.pth:  16%|█▎      | 402M/2.47G [00:08<00:50, 40.6MB/s][A
+
+model.safetensors:  41%|███████▍          | 1.02G/2.47G [00:09<00:14, 99.4MB/s][A[A
+
+model.safetensors:  49%|████████▊         | 1.21G/2.47G [00:11<00:13, 90.7MB/s][A[AFetching 13 files:  85%|███████████████████▍   | 11/13 [00:20<00:03,  1.82s/it]
+original/consolidated.00.pth:  16%|█▎      | 402M/2.47G [00:19<00:50, 40.6MB/s][A
+
+model.safetensors:  49%|████████▊         | 1.21G/2.47G [00:29<00:13, 90.7MB/s][A[A
+
+model.safetensors:  52%|█████████▎        | 1.27G/2.47G [00:45<01:26, 13.8MB/s][A[A
+
+model.safetensors:  60%|██████████▋       | 1.48G/2.47G [00:51<00:56, 17.7MB/s][A[A
+
+model.safetensors:  60%|██████████▋       | 1.48G/2.47G [01:09<00:56, 17.7MB/s][A[A
+original/consolidated.00.pth:  27%|██▏     | 674M/2.47G [01:10<04:22, 6.84MB/s][A
+original/consolidated.00.pth:  41%|██▊    | 1.01G/2.47G [01:10<01:44, 14.0MB/s][A
+original/consolidated.00.pth:  62%|████▎  | 1.52G/2.47G [01:10<00:32, 29.6MB/s][A
+original/consolidated.00.pth:  87%|██████ | 2.16G/2.47G [01:10<00:05, 56.7MB/s][A
+original/consolidated.00.pth:  94%|██████▌| 2.32G/2.47G [01:21<00:03, 39.5MB/s][A
+
+model.safetensors:  65%|███████████▋      | 1.61G/2.47G [01:22<01:26, 9.94MB/s][A[A
+
+model.safetensors:  95%|█████████████████ | 2.35G/2.47G [01:23<00:04, 28.5MB/s][A[A
+original/consolidated.00.pth:  98%|██████▊| 2.42G/2.47G [01:23<00:01, 41.2MB/s][Aoriginal/consolidated.00.pth: 100%|███████| 2.47G/2.47G [01:27<00:00, 28.3MB/s]
+Fetching 13 files:  92%|█████████████████████▏ | 12/13 [01:27<00:07,  7.32s/it]
+
+model.safetensors: 100%|██████████████████| 2.47G/2.47G [01:29<00:00, 27.5MB/s][A[Amodel.safetensors: 100%|██████████████████| 2.47G/2.47G [01:34<00:00, 26.0MB/s]
+Fetching 13 files: 100%|███████████████████████| 13/13 [01:35<00:00,  7.33s/it]Fetching 13 files: 100%|███████████████████████| 13/13 [01:35<00:00,  7.33s/it]

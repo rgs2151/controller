@@ -1,0 +1,9 @@
+LLAMA_RUN_START_UTC=2026-09-21T17:06:25Z
+CALIBRATION_BATCH_SIZE=512
+EVALUATION_BATCH_SIZE=104
+Fetching 17 files:   0%|          | 0/17 [00:00<?, ?it/s]Fetching 17 files:  47%|████▋     | 8/17 [00:00<00:00, 16.05it/s]Fetching 17 files:  71%|███████   | 12/17 [00:20<00:08,  1.67s/it]Fetching 17 files:  76%|███████▋  | 13/17 [00:30<00:09,  2.32s/it]Fetching 17 files:  82%|████████▏ | 14/17 [01:03<00:13,  4.54s/it]Fetching 17 files:  88%|████████▊ | 15/17 [01:12<00:09,  4.80s/it]Fetching 17 files:  94%|█████████▍| 16/17 [01:19<00:04,  4.97s/it]Fetching 17 files: 100%|██████████| 17/17 [01:49<00:00,  6.45s/it]Fetching 17 files: 100%|██████████| 17/17 [01:49<00:00,  6.45s/it]
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:05<00:17,  5.91s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:13<00:13,  6.71s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:20<00:06,  6.95s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:20<00:00,  4.36s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:20<00:00,  5.20s/it]
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:11<00:11, 11.27s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:15<00:00,  6.92s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:15<00:00,  7.57s/it]
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:14<00:14, 14.30s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:19<00:00,  8.66s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:19<00:00,  9.51s/it]
+Fetching 17 files:   0%|          | 0/17 [00:00<?, ?it/s]Fetching 17 files: 100%|██████████| 17/17 [00:00<00:00, 3510.22it/s]
+LLAMA_RUN_COMPLETE_UTC=2026-09-21T17:23:20Z

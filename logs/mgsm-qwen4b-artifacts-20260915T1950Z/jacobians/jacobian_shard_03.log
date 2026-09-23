@@ -1,0 +1,13 @@
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 130.09it/s]
+Jacobian 1/12: mgsm-pair-003-es
+Jacobian 2/12: mgsm-pair-007-es
+Jacobian 3/12: mgsm-pair-011-es
+Jacobian 4/12: mgsm-pair-015-es
+Jacobian 5/12: mgsm-pair-019-es
+Jacobian 6/12: mgsm-pair-023-es
+Jacobian 7/12: mgsm-pair-027-es
+Jacobian 8/12: mgsm-pair-031-es
+Jacobian 9/12: mgsm-pair-035-es
+Jacobian 10/12: mgsm-pair-039-es
+Jacobian 11/12: mgsm-pair-043-es
+Jacobian 12/12: mgsm-pair-047-es

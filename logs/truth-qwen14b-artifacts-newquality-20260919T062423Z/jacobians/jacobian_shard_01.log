@@ -1,0 +1,33 @@
+Loading checkpoint shards:   0%|          | 0/8 [00:00<?, ?it/s]Loading checkpoint shards:  12%|█▎        | 1/8 [00:04<00:28,  4.08s/it]Loading checkpoint shards:  25%|██▌       | 2/8 [00:10<00:33,  5.60s/it]Loading checkpoint shards:  38%|███▊      | 3/8 [00:17<00:31,  6.27s/it]Loading checkpoint shards:  50%|█████     | 4/8 [00:24<00:25,  6.44s/it]Loading checkpoint shards:  62%|██████▎   | 5/8 [00:30<00:19,  6.36s/it]Loading checkpoint shards:  75%|███████▌  | 6/8 [00:37<00:12,  6.35s/it]Loading checkpoint shards:  88%|████████▊ | 7/8 [00:43<00:06,  6.31s/it]Loading checkpoint shards: 100%|██████████| 8/8 [00:45<00:00,  4.89s/it]Loading checkpoint shards: 100%|██████████| 8/8 [00:45<00:00,  5.64s/it]
+Jacobian 1/17: truthfulqa:mc2:664:3
+Jacobian 2/17: truthfulqa:mc2:149:0
+Jacobian 3/17: truthfulqa:mc2:483:3
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 655, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 617, in main
+    fit_jacobian_shard(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 362, in fit_jacobian_shard
+    shard_mean = average_prompt_jacobians(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/calibration/nominal.py", line 66, in average_prompt_jacobians
+    derivative = layer_last_token_jacobian(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/modeling/jacobians.py", line 90, in layer_last_token_jacobian
+    gradient = torch.autograd.grad(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/autograd/__init__.py", line 499, in grad
+    result = _vmap_internals._vmap(vjp, 0, 0, allow_none_pass_through=True)(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/_vmap_internals.py", line 231, in wrapped
+    batched_outputs = func(*batched_inputs)
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/autograd/__init__.py", line 489, in vjp
+    return _engine_run_backward(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/autograd/graph.py", line 829, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

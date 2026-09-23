@@ -11,7 +11,7 @@
 \begin{tabular}{rrlccccc}
 Model & Context & Method & \cellcolor{projectdarkred!10}\shortstack{Answer\\recall (\%) $\uparrow$} & Citation F1 (\%) $\uparrow$ & \shortstack{Concept\\relevance (0--2) $\uparrow$} & \shortstack{Instruction\\relevance (0--2) $\uparrow$} & Fluency (0--2) $\uparrow$ \\
 \midrule
-\multirow{12}{*}{\rotatebox[origin=c]{90}{\scriptsize Qwen2.5-3B}} & \multirow{4}{*}{8K} & Original & \cellcolor{projectdarkred!10}$66.2\,\pm\,8.1$ & $7.8\,\pm\,1.6$ & $0.00\,\pm\,0.00$ & $1.35\,\pm\,0.14$ & $1.50\,\pm\,0.11$ \\
+\multirow{8}{*}{\rotatebox[origin=c]{90}{\scriptsize Qwen2.5-3B}} & \multirow{4}{*}{8K} & Original & \cellcolor{projectdarkred!10}$66.2\,\pm\,8.1$ & $7.8\,\pm\,1.6$ & $0.00\,\pm\,0.00$ & $1.35\,\pm\,0.14$ & $1.50\,\pm\,0.11$ \\
 \cmidrule(l){3-8}
  &  & S-PID & \cellcolor{projectdarkred!10}$\underline{72.1\,\pm\,9.3}$ & $\underline{7.2\,\pm\,2.1}$ & $0.00\,\pm\,0.00$ & $\underline{1.60\,\pm\,0.11}$ & $1.50\,\pm\,0.07$ \\
  &  & A-LQR & \cellcolor{projectdarkred!10}$70.1\,\pm\,8.9$ & $5.6\,\pm\,2.0$ & $\underline{0.05\,\pm\,0.05}$ & $1.48\,\pm\,0.11$ & $1.48\,\pm\,0.09$ \\
@@ -22,17 +22,16 @@ Model & Context & Method & \cellcolor{projectdarkred!10}\shortstack{Answer\\reca
  &  & S-PID & \cellcolor{projectdarkred!10}$61.9\,\pm\,10.4$ & $7.2\,\pm\,3.2$ & $0.00\,\pm\,0.00$ & $1.38\,\pm\,0.13$ & $1.48\,\pm\,0.10$ \\
  &  & A-LQR & \cellcolor{projectdarkred!10}$64.8\,\pm\,9.8$ & $3.0\,\pm\,1.5$ & $0.00\,\pm\,0.00$ & $\underline{1.43\,\pm\,0.15}$ & $\underline{1.57\,\pm\,0.11}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{65.2\,\pm\,8.6}$ & $\mathbf{7.8\,\pm\,3.6}$ & $\mathbf{0.15\,\pm\,0.08}$ & $1.40\,\pm\,0.12$ & $1.43\,\pm\,0.09$ \\
-\cmidrule(l){2-8}
- & \multirow{4}{*}{32K} & Original & \cellcolor{projectdarkred!10}$54.0\,\pm\,8.4$ & $2.4\,\pm\,1.3$ & $0.00\,\pm\,0.00$ & $1.18\,\pm\,0.17$ & $1.48\,\pm\,0.11$ \\
-\cmidrule(l){3-8}
- &  & S-PID & \cellcolor{projectdarkred!10}$\underline{61.0\,\pm\,9.1}$ & $1.6\,\pm\,1.1$ & $\underline{0.00\,\pm\,0.00}$ & $1.20\,\pm\,0.12$ & $\underline{1.35\,\pm\,0.09}$ \\
- &  & A-LQR & \cellcolor{projectdarkred!10}$56.2\,\pm\,6.7$ & $4.1\,\pm\,1.9$ & $\underline{0.00\,\pm\,0.00}$ & $\underline{1.23\,\pm\,0.13}$ & $\underline{1.35\,\pm\,0.08}$ \\
- &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$49.2\,\pm\,6.1$ & $\mathbf{4.3\,\pm\,2.4}$ & $\mathbf{0.00\,\pm\,0.00}$ & $1.18\,\pm\,0.15$ & $1.20\,\pm\,0.15$ \\
 \midrule
-\multirow{3}{*}{\rotatebox[origin=c]{90}{\tiny Llama-3.2-1B}} & \multirow{3}{*}{8K} & Original & \cellcolor{projectdarkred!10}$58.5\,\pm\,7.7$ & $6.2\,\pm\,2.5$ & $0.05\,\pm\,0.05$ & $1.30\,\pm\,0.10$ & $1.40\,\pm\,0.09$ \\
+\multirow{6}{*}{\rotatebox[origin=c]{90}{\tiny Llama-3.2-1B}} & \multirow{3}{*}{8K} & Original & \cellcolor{projectdarkred!10}$58.5\,\pm\,7.7$ & $6.2\,\pm\,2.5$ & $0.05\,\pm\,0.05$ & $1.30\,\pm\,0.10$ & $1.40\,\pm\,0.09$ \\
 \cmidrule(l){3-8}
  &  & A-LQR & \cellcolor{projectdarkred!10}$59.8\,\pm\,9.3$ & $\underline{6.6\,\pm\,2.7}$ & $\underline{0.05\,\pm\,0.05}$ & $\underline{1.35\,\pm\,0.11}$ & $\underline{1.43\,\pm\,0.07}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$\mathbf{61.7\,\pm\,7.8}$ & $6.4\,\pm\,2.9$ & $\mathbf{0.05\,\pm\,0.05}$ & $1.12\,\pm\,0.17$ & $1.38\,\pm\,0.09$ \\
+\cmidrule(l){2-8}
+ & \multirow{3}{*}{16K} & Original & \cellcolor{projectdarkred!10}$44.2\,\pm\,7.1$ & $3.5\,\pm\,2.2$ & $0.12\,\pm\,0.10$ & $1.10\,\pm\,0.11$ & $1.23\,\pm\,0.07$ \\
+\cmidrule(l){3-8}
+ &  & A-LQR & \cellcolor{projectdarkred!10}$\underline{50.1\,\pm\,8.0}$ & $1.4\,\pm\,1.0$ & $\underline{0.00\,\pm\,0.00}$ & $\underline{1.15\,\pm\,0.10}$ & $1.23\,\pm\,0.11$ \\
+ &  & $\mathbf{H_\infty}$ (ours) & \cellcolor{projectdarkred!10}$47.9\,\pm\,7.8$ & $\mathbf{3.8\,\pm\,2.5}$ & $\mathbf{0.00\,\pm\,0.00}$ & $1.00\,\pm\,0.14$ & $\mathbf{1.40\,\pm\,0.08}$ \\
 \bottomrule
 \end{tabular}%
 }

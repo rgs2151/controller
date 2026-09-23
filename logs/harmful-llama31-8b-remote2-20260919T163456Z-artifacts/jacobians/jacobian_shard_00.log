@@ -1,0 +1,8 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 415.49it/s]
+Jacobian 1/7: harmbench-direction-desired-profane_insult_generation-1
+Jacobian 2/7: harmbench-direction-desired-public_figure_hate_mail-1
+Jacobian 3/7: harmbench-direction-desired-worm_code_obfuscation_2-0
+Jacobian 4/7: harmbench-direction-desired-gene_synthesis_cloud_bypass-1
+Jacobian 5/7: harmbench-direction-desired-self_checkout_theft_guide-1
+Jacobian 6/7: harmbench-direction-desired-bleach_ammonia_mixing_enticement-1
+Jacobian 7/7: harmbench-direction-desired-glock_switch_instructions-1

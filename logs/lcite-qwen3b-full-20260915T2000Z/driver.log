@@ -1,0 +1,60 @@
+LCITE_START_20260915T2000Z
+tokenizer_config.json: 0.00B [00:00, ?B/s]tokenizer_config.json: 7.30kB [00:00, 28.4MB/s]
+vocab.json: 0.00B [00:00, ?B/s]vocab.json: 2.78MB [00:00, 30.2MB/s]
+merges.txt: 0.00B [00:00, ?B/s]merges.txt: 1.40MB [00:00, 13.1MB/s]merges.txt: 1.67MB [00:00, 9.49MB/s]
+tokenizer.json: 0.00B [00:00, ?B/s]tokenizer.json: 3.53MB [00:00, 35.3MB/s]tokenizer.json: 7.03MB [00:00, 34.2MB/s]
+alpaca_eval.json: 0.00B [00:00, ?B/s]alpaca_eval.json: 621kB [00:00, 165MB/s]
+hotpotqa.json: 0.00B [00:00, ?B/s]hotpotqa.json: 3.89MB [00:00, 38.8MB/s]hotpotqa.json: 7.79MB [00:00, 26.4MB/s]hotpotqa.json: 9.35MB [00:00, 27.2MB/s]
+config.json:   0%|                                   | 0.00/661 [00:00<?, ?B/s]config.json: 100%|████████████████████████████| 661/661 [00:00<00:00, 8.77MB/s]
+model.safetensors.index.json: 0.00B [00:00, ?B/s]model.safetensors.index.json: 35.6kB [00:00, 164MB/s]
+Fetching 2 files:   0%|                                  | 0/2 [00:00<?, ?it/s]
+model-00002-of-00002.safetensors:   0%|            | 0.00/2.20G [00:00<?, ?B/s][A
+
+model-00001-of-00002.safetensors:   0%|            | 0.00/3.97G [00:00<?, ?B/s][A[A
+
+model-00001-of-00002.safetensors:   0%| | 20.3k/3.97G [00:00<28:29:21, 38.7kB/s[A[A
+
+model-00001-of-00002.safetensors:   2%|   | 67.0M/3.97G [00:01<00:50, 77.2MB/s][A[A
+
+model-00001-of-00002.safetensors:   3%|▏    | 134M/3.97G [00:01<00:28, 133MB/s][A[A
+
+model-00001-of-00002.safetensors:  12%|▌    | 469M/3.97G [00:02<00:15, 224MB/s][A[A
+model-00002-of-00002.safetensors:   4%|   | 90.8M/2.20G [00:02<01:04, 32.6MB/s][A
+
+model-00001-of-00002.safetensors:  17%|▊    | 671M/3.97G [00:03<00:13, 241MB/s][A[A
+model-00002-of-00002.safetensors:  12%|▍   | 256M/2.20G [00:03<00:20, 93.4MB/s][A
+model-00002-of-00002.safetensors:  13%|▌   | 292M/2.20G [00:03<00:19, 99.8MB/s][A
+
+model-00001-of-00002.safetensors:  21%|█    | 841M/3.97G [00:03<00:10, 306MB/s][A[A
+model-00002-of-00002.safetensors:  16%|▊    | 359M/2.20G [00:03<00:14, 126MB/s][A
+model-00002-of-00002.safetensors:  19%|▉    | 426M/2.20G [00:04<00:13, 128MB/s][A
+model-00002-of-00002.safetensors:  23%|█▏   | 498M/2.20G [00:04<00:10, 157MB/s][A
+model-00002-of-00002.safetensors:  30%|█▌   | 662M/2.20G [00:04<00:05, 258MB/s][A
+model-00002-of-00002.safetensors:  38%|█▉   | 828M/2.20G [00:05<00:04, 286MB/s][A
+model-00002-of-00002.safetensors:  44%|██▏  | 970M/2.20G [00:05<00:04, 285MB/s][A
+
+model-00001-of-00002.safetensors:  26%|█   | 1.02G/3.97G [00:06<00:21, 138MB/s][A[A
+
+model-00001-of-00002.safetensors:  28%|█   | 1.11G/3.97G [00:07<00:21, 133MB/s][A[A
+
+model-00001-of-00002.safetensors:  30%|█▏  | 1.18G/3.97G [00:08<00:24, 114MB/s][A[A
+model-00002-of-00002.safetensors:  64%|██▌ | 1.41G/2.20G [00:08<00:04, 195MB/s][A
+model-00002-of-00002.safetensors:  93%|███▋| 2.05G/2.20G [00:08<00:00, 398MB/s][A
+model-00002-of-00002.safetensors: 100%|████| 2.20G/2.20G [00:09<00:00, 422MB/s][Amodel-00002-of-00002.safetensors: 100%|████| 2.20G/2.20G [00:11<00:00, 193MB/s]
+Fetching 2 files:  50%|█████████████             | 1/2 [00:11<00:11, 11.52s/it]
+
+model-00001-of-00002.safetensors:  47%|█▊  | 1.85G/3.97G [00:13<00:18, 117MB/s][A[A
+
+model-00001-of-00002.safetensors:  57%|██▎ | 2.25G/3.97G [00:14<00:09, 178MB/s][A[A
+
+model-00001-of-00002.safetensors:  73%|██▉ | 2.89G/3.97G [00:14<00:03, 313MB/s][A[A
+
+model-00001-of-00002.safetensors:  84%|███▎| 3.32G/3.97G [00:14<00:01, 418MB/s][A[A
+
+model-00001-of-00002.safetensors:  92%|███▋| 3.65G/3.97G [00:14<00:00, 505MB/s][A[A
+
+model-00001-of-00002.safetensors: 100%|████| 3.97G/3.97G [00:15<00:00, 598MB/s][A[Amodel-00001-of-00002.safetensors: 100%|████| 3.97G/3.97G [00:20<00:00, 197MB/s]
+Fetching 2 files: 100%|██████████████████████████| 2/2 [00:20<00:00, 10.14s/it]Fetching 2 files: 100%|██████████████████████████| 2/2 [00:20<00:00, 10.14s/it]
+Loading checkpoint shards:   0%|                         | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|█████████████████| 2/2 [00:00<00:00, 58.95it/s]
+generation_config.json:   0%|                        | 0.00/242 [00:00<?, ?B/s]generation_config.json: 100%|█████████████████| 242/242 [00:00<00:00, 2.94MB/s]
+Loading checkpoint shards:   0%|                         | 0/2 [00:00<?, ?it/s]Loading checkpoint shards: 100%|█████████████████| 2/2 [00:00<00:00, 78.14it/s]

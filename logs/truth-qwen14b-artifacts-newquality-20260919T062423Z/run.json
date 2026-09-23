@@ -1,0 +1,108 @@
+{
+  "schema_version": 2,
+  "run_id": "truth-qwen14b-artifacts-newquality-20260919T062423Z",
+  "status": "failed",
+  "started_at_utc": "2026-09-19T06:24:31.198167+00:00",
+  "benchmark": "truthfulness",
+  "model": "qwen14b",
+  "stage": "artifacts",
+  "methods": [
+    "original",
+    "iti",
+    "actadd",
+    "mean_act",
+    "linear_act",
+    "pid_act",
+    "odesteer",
+    "spid",
+    "alqr",
+    "h_infinity"
+  ],
+  "datasets": [
+    "id",
+    "spanish"
+  ],
+  "evaluated_model_kv_cache": false,
+  "devices": "cuda:0,cuda:1",
+  "calibration_id": "selected",
+  "parameters": {
+    "generation_batch_size": null,
+    "scorers": [],
+    "api_concurrency": 500,
+    "api_batch_size": 20,
+    "selection_metric": "truthfulness_quality_composite",
+    "h_infinity_fixed_parameters": null
+  },
+  "command": [
+    "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/truthfulness.py",
+    "artifacts",
+    "--model",
+    "qwen14b",
+    "--methods",
+    "original,iti,actadd,mean_act,linear_act,pid_act,odesteer,spid,alqr,h_infinity",
+    "--datasets",
+    "id,spanish",
+    "--devices",
+    "cuda:0,cuda:1",
+    "--kv-cache",
+    "off",
+    "--run-id",
+    "truth-qwen14b-artifacts-newquality-20260919T062423Z"
+  ],
+  "working_directory": "/teamspace/studios/this_studio/controller",
+  "git": {
+    "commit": "ff7c07e62f1eb01141d888607921025ee36eb812",
+    "dirty": true,
+    "branch": "main"
+  },
+  "machine": {
+    "hostname": "vm-1789791044607788771",
+    "lightning_cloudspace_id": "01m2ges9x7p9xpz3z1b9208rk6",
+    "lightning_cloudspace_host": "01m2ges9x7p9xpz3z1b9208rk6.cloudspaces.litng.ai",
+    "platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.39",
+    "python": "3.12.11",
+    "torch": "2.8.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_visible_devices": null,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      },
+      {
+        "index": 3,
+        "name": "NVIDIA H200",
+        "total_memory_bytes": 150109880320
+      }
+    ],
+    "packages": {
+      "accelerate": "1.15.0",
+      "bitsandbytes": "0.50.2",
+      "datasets": "4.4.2",
+      "transformers": "4.57.1"
+    }
+  },
+  "storage": {
+    "backend": "lightning_teamspace_drive",
+    "benchmark_cache_root": "/teamspace/studios/this_studio/robust-steering-cache/truthfulness/qwen14b",
+    "huggingface_model_cache": "/tmp/robust-steerability/huggingface",
+    "staged_model_snapshot": "/tmp/robust-steerability/huggingface/models--Qwen--Qwen2.5-14B/snapshots/97e1e76335b7017d8f67c08a19d103c0504298c9"
+  },
+  "finished_at_utc": "2026-09-19T06:50:54.865149+00:00",
+  "elapsed_seconds": 1581.9670824070008,
+  "error": {
+    "type": "KeyboardInterrupt",
+    "message": ""
+  }
+}

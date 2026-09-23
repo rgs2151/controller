@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_runtime.py", line 536, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_runtime.py", line 521, in main
+    generate_shard(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_runtime.py", line 310, in generate_shard
+    "parameters": _selection_parameters(model_key, method, calibration_id),
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/mgsm_runtime.py", line 129, in _selection_parameters
+    raise ValueError(
+ValueError: MGSM H-infinity evaluation requires a selection calibrated on 100 prompts; found 50. Run calibration before evaluation.

@@ -1,0 +1,3 @@
+Method,Synthesis complexity,Synthesis time (s),Latency (ms/token),Delta vs original (%),Peak memory (GB)
+A-LQR,O(L d^3),0.2015,5.409,+1.16,2.882
+H-infinity (ours),O(N_iter L r_x^3),0.1245,5.459,+2.09,2.882

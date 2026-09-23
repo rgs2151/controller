@@ -1,0 +1,12 @@
+[1;24rTraceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval.py", line 367, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval.py", line 353, in main
+    score_stage(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/lciteeval.py", line 215, in score_stage
+    run_jobs(citation_jobs, devices, log_root / "citation-scoring")
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/launcher.py", line 65, in run_jobs
+    raise RuntimeError(f"Benchmark workers failed: {failures}")
+RuntimeError: Benchmark workers failed: [{'job': 'citation-8k-original', 'return_code': 1, 'log': '/teamspace/studios/this_studio/controller/logs/lcite-qwen3b-score-reduced-20260915T2045Z/citation-scoring/citation-8k-original.log'}]

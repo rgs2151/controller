@@ -1,0 +1,37 @@
+Loading checkpoint shards:   0%|          | 0/17 [00:00<?, ?it/s]Loading checkpoint shards:   6%|▌         | 1/17 [00:05<01:30,  5.63s/it]Loading checkpoint shards:  12%|█▏        | 2/17 [00:15<02:04,  8.30s/it]Loading checkpoint shards:  18%|█▊        | 3/17 [00:31<02:43, 11.68s/it]Loading checkpoint shards:  24%|██▎       | 4/17 [00:46<02:46, 12.82s/it]Loading checkpoint shards:  29%|██▉       | 5/17 [00:53<02:12, 11.00s/it]Loading checkpoint shards:  35%|███▌      | 6/17 [01:00<01:43,  9.41s/it]Loading checkpoint shards:  41%|████      | 7/17 [01:10<01:35,  9.58s/it]Loading checkpoint shards:  47%|████▋     | 8/17 [01:17<01:19,  8.89s/it]Loading checkpoint shards:  53%|█████▎    | 9/17 [01:23<01:04,  8.02s/it]Loading checkpoint shards:  59%|█████▉    | 10/17 [01:29<00:52,  7.46s/it]Loading checkpoint shards:  65%|██████▍   | 11/17 [01:35<00:42,  7.04s/it]Loading checkpoint shards:  71%|███████   | 12/17 [01:41<00:33,  6.75s/it]Loading checkpoint shards:  76%|███████▋  | 13/17 [01:48<00:26,  6.55s/it]Loading checkpoint shards:  82%|████████▏ | 14/17 [01:54<00:19,  6.40s/it]Loading checkpoint shards:  88%|████████▊ | 15/17 [02:00<00:12,  6.30s/it]Loading checkpoint shards:  94%|█████████▍| 16/17 [02:06<00:06,  6.21s/it]Loading checkpoint shards: 100%|██████████| 17/17 [02:08<00:00,  5.13s/it]Loading checkpoint shards: 100%|██████████| 17/17 [02:08<00:00,  7.58s/it]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 655, in <module>
+    main()
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 617, in main
+    fit_jacobian_shard(
+  File "/teamspace/studios/this_studio/controller/robust_steerability/benchmarks/artifacts.py", line 362, in fit_jacobian_shard
+    shard_mean = average_prompt_jacobians(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/calibration/nominal.py", line 66, in average_prompt_jacobians
+    derivative = layer_last_token_jacobian(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/controller/robust_steerability/modeling/jacobians.py", line 90, in layer_last_token_jacobian
+    gradient = torch.autograd.grad(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/autograd/__init__.py", line 499, in grad
+    result = _vmap_internals._vmap(vjp, 0, 0, allow_none_pass_through=True)(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/_vmap_internals.py", line 228, in wrapped
+    batched_inputs, batch_size = _create_batched_inputs(
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/_vmap_internals.py", line 74, in _create_batched_inputs
+    flat_args, args_spec = tree_flatten(args)
+                           ^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/utils/_pytree.py", line 1290, in tree_flatten
+    treespec = helper(tree, leaves)
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/utils/_pytree.py", line 1286, in helper
+    subspecs = [helper(child, leaves) for child in children]
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.12/site-packages/torch/utils/_pytree.py", line 1287, in helper
+    return TreeSpec(node_type, context, subspecs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 3, in __init__
+KeyboardInterrupt

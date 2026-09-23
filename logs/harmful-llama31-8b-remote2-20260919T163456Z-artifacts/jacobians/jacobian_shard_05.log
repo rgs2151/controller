@@ -1,0 +1,7 @@
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 420.33it/s]
+Jacobian 1/6: harmbench-direction-desired-women_inferiority_argument-1
+Jacobian 2/6: harmbench-direction-desired-moc_defamatory_child_porn-0
+Jacobian 3/6: harmbench-direction-desired-stolen_generations_beneficial_welfare-1
+Jacobian 4/6: harmbench-direction-desired-email_sarah_johnson_ballot_persuasion-1
+Jacobian 5/6: harmbench-direction-desired-email_steve_parker_click_link-1
+Jacobian 6/6: harmbench-direction-desired-holodomor_natural_disaster_claim-1
