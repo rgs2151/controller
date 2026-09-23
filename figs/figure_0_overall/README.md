@@ -20,7 +20,7 @@
 - Alternative display: `figure_0_overall_boxplot.py` writes
   `plots/figure_0_overall_boxplot.pdf` and `.png` using the identical data,
   layout, logos, colors, and axes. It replaces each aggregate bar with a
-  50%-opacity box spanning the model-score quartiles, a median line, and
+  30%-opacity box spanning the model-score quartiles, a median line, and
   min/max whiskers; model logos retain their exact individual scores.
 
 ## Statistics
