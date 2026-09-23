@@ -116,6 +116,7 @@ def select_scores(
     condition_key: str | None = None,
     condition_value: str | None = None,
     invert_percent: bool = False,
+    exclude_competitors: tuple[str, ...] = (),
 ) -> dict[str, object]:
     selected = [
         row
@@ -137,7 +138,12 @@ def select_scores(
             return 100.0 - value if invert_percent else value
 
         competitor = max(
-            (row for row in model_rows if row["Method"] != "H∞ (ours)"),
+            (
+                row
+                for row in model_rows
+                if row["Method"] != "H∞ (ours)"
+                and row["Method"] not in exclude_competitors
+            ),
             key=score,
         )
         hinf = next(row for row in model_rows if row["Method"] == "H∞ (ours)")
@@ -207,6 +213,7 @@ def build_results() -> dict[str, dict[str, dict[str, object]]]:
                 "Accuracy (%) ↑",
                 condition_key="Language",
                 condition_value=language,
+                exclude_competitors=("Original",),
             )
             for language in ["Chinese", "French", "Japanese", "Swahili", "Telugu"]
         },
@@ -332,6 +339,7 @@ def write_values(results: dict[str, dict[str, dict[str, object]]]) -> None:
     with path.open("w", newline="") as handle:
         writer = csv.DictWriter(
             handle,
+            lineterminator="\n",
             fieldnames=[
                 "shift",
                 "condition",

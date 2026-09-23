@@ -4,7 +4,7 @@
 
 - Read only the finalized Markdown tables under `figs/bench_table/` for TruthfulQA, Spanish TruthfulQA, HarmBench, MGSM, and L-CiteEval.
 - Define the four shifts as English-to-Spanish TruthfulQA transfer, direct-to-human-jailbreak HarmBench transfer, multilingual MGSM evaluation, and 8K-to-16K L-CiteEval transfer.
-- For each model and condition, select the highest-performing reported non-H∞ row as the best competitor. HarmBench attack success rate is converted to safe-response rate as `100 - ASR`; all other measures are already higher-is-better.
+- For each model and condition, select the highest-performing reported non-H∞ row as the best competitor. For MGSM language shift, `Original` is not a steering competitor and is explicitly excluded, leaving the strongest reported alternative steering method. HarmBench attack success rate is converted to safe-response rate as `100 - ASR`; all other measures are already higher-is-better.
 - Compute each bar as `sum(model score × model parameters in billions) / sum(model parameters in billions)` across the models reported for that benchmark.
 - Overlay each model-family logo at that model's unaggregated score. Logo display size increases monotonically with parameter count; the separate model-family legend uses equal logo sizes.
 - Write a vector PDF, a 300-DPI PNG, and an audit CSV containing every selected method, individual score, parameter count, and weighted mean.
@@ -45,7 +45,7 @@
 ## Notes
 
 - Only rows present in the finalized benchmark tables are eligible; exploratory or superseded runs are excluded.
-- “Best competitor” may be a different method for different models and conditions; the audit CSV records each selection.
+- “Best competitor” may be a different method for different models and conditions; the audit CSV records each selection. In language shift, the unsteered `Original` row is never eligible.
 
 ## References
 
