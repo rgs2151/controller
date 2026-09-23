@@ -27,8 +27,8 @@ MGSM_DATA = ROOT / "cache" / "mgsm_transfer_results.csv"
 LCITE_DATA = ROOT / "cache" / "lciteeval_context_results.csv"
 PDF_DIR = ROOT / "plots" / "pdf"
 PNG_DIR = ROOT / "plots" / "figures"
-QWEN_LOGO = ROOT / "assets" / "logos" / "qwen-icon-transparent.png"
-LLAMA_LOGO = ROOT / "assets" / "model_logos" / "llama_hq.png"
+QWEN_LOGO = ROOT.parent / "logos" / "qwen.png"
+LLAMA_LOGO = ROOT.parent / "logos" / "llama.png"
 
 METHOD_ORDER = ["H-infinity", "A-LQR", "S-PID", "Original"]
 METHOD_LABEL = {

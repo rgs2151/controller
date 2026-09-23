@@ -34,10 +34,10 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "cache" / "truthfulqa_figure_data.csv"
 PDF_DIR = ROOT / "plots" / "pdf"
 PNG_DIR = ROOT / "plots" / "figures"
-QWEN_LOGO = ROOT / "assets" / "logos" / "qwen-icon.svg"
-QWEN_LOGO_PNG = ROOT / "assets" / "logos" / "qwen-icon-transparent.png"
-LLAMA_LOGO = ROOT / "assets" / "model_logos" / "llama_hq.png"
-GEMMA_LOGO = ROOT / "assets" / "model_logos" / "gemma_hq.png"
+QWEN_LOGO = ROOT.parent / "logos" / "qwen.svg"
+QWEN_LOGO_PNG = ROOT.parent / "logos" / "qwen.png"
+LLAMA_LOGO = ROOT.parent / "logos" / "llama.png"
+GEMMA_LOGO = ROOT.parent / "logos" / "gemma.png"
 
 METHOD_ORDER = [
     "H-infinity",

@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "cache" / "harmbench_refusal_results.csv"
 PDF_DIR = ROOT / "plots" / "pdf"
 PNG_DIR = ROOT / "plots" / "figures"
-LLAMA_LOGO = ROOT / "assets" / "model_logos" / "llama_hq.png"
+LLAMA_LOGO = ROOT.parent / "logos" / "llama.png"
 
 TEMPLATES = [
     "Direct",
