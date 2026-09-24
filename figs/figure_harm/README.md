@@ -124,10 +124,10 @@
 ## Statistics
 
 - Tests/models: descriptive FalseReject class proportions and toxic-prompt
-  Useful Safety Rate. The final table equal-weights Direct and Adversarial
-  regimes and reports ten-group behavior-clustered jackknife standard errors;
-  deleting one group removes the same behavior identities from Direct and all
-  five jailbreak templates. No hypothesis test is performed.
+  Useful Safety Rate. The final table reports Direct and every jailbreak
+  template separately with ten-group behavior-clustered jackknife standard
+  errors; deleting one group removes the same behavior identities from the
+  corresponding condition for all methods. No hypothesis test is performed.
 - Null hypothesis: not applicable because this analysis does not perform a
   significance test.
 - Alternative hypothesis: not applicable.
@@ -179,6 +179,8 @@
 - The completed `--scope full` run used the same script, rubric, parser, and
   cache schema for all 10,800 available outputs. The 600-call pilot remains a
   separate diagnostic cache and is not substituted into the final statistics.
+- The complete 54-row Markdown, TeX, and one-page portrait PDF table is under
+  `figs/bench_table/harmful/harmbench_false_reject.*`.
 - All 10,800 full-analysis judgments produced exactly one parseable
   FalseReject label; the cache retains the requested and returned judge model,
   termination metadata, token usage, and verbatim response.
