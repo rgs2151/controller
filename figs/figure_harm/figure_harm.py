@@ -71,7 +71,7 @@ TEMPLATES = (
     "Jailbreak Bot",
 )
 TEMPLATE_LABELS = {
-    "Direct": "Direct",
+    "Direct": "Direct\nattack",
     "John persona": "John\npersona",
     "YOJA/Nona roleplay": "YOJA/Nona\nroleplay",
     "DNE nonresponse": "DNE\nnonresponse",
@@ -599,8 +599,13 @@ def draw_refusal_composition_panel(
     composition: dict[str, dict[str, tuple[float, ...]]],
     *,
     font_scale: float = 1.0,
+    category_label_scale: float = 0.76,
 ) -> None:
-    categories = ("Direct\nrefusal", "Safe partial\ncompliance", "Full\ncompliance")
+    categories = (
+        "Direct\nrefusal",
+        "Safe\npartial\ncompliance",
+        "Full\ncompliance",
+    )
     methods = ("A-LQR", "H-infinity")
     x = np.arange(len(categories), dtype=float)
     offsets = {"A-LQR": -0.18, "H-infinity": 0.18}
@@ -665,7 +670,12 @@ def draw_refusal_composition_panel(
                     linestyle="none",
                     zorder=4,
                 )
-    ax.set_xticks(x, categories, fontsize=8.2 * font_scale)
+    # Match the template-label typography in the finalized first panel.
+    ax.set_xticks(
+        x,
+        categories,
+        fontsize=7.7 * font_scale * category_label_scale,
+    )
     ax.set_ylabel("Response proportion (%)", fontsize=10.5 * font_scale)
     ax.set_ylim(0, 104)
     ax.set_yticks((0, 25, 50, 75, 100))
@@ -689,7 +699,7 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
         # is intentionally reserved
         # for the response-disposition analysis; it stays blank until those
         # labels have been judged from the underlying generations.
-        width_ratios=(1.18, 1.0, 0.90),
+        width_ratios=(1.36, 1.0, 0.72),
         wspace=0.30,
     )
     profile_grid = outer[0].subgridspec(
@@ -743,6 +753,7 @@ def create_refusal_composition_figure(
         ax,
         read_false_reject_composition(),
         font_scale=1.12,
+        category_label_scale=1.0,
     )
     handles = [
         Line2D(
