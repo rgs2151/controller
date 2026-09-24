@@ -264,9 +264,12 @@ def draw_profile_panel(
     colors: dict[str, str] = METHOD_COLORS,
     font_scale: float = 1.0,
     bottom_spine_at_zero: bool = True,
+    template_font_scale: float = 1.0,
 ) -> None:
     indexed = {(str(row["model"]), str(row["template"]), str(row["method"])): float(row["asr"]) for row in rows}
-    x = np.arange(len(TEMPLATES))
+    # Give the two longest adjacent labels (DNE nonresponse and APM
+    # programmer) a little extra room without widening the whole figure.
+    x = np.asarray([0.0, 0.90, 1.90, 3.25, 4.65, 5.65])
     displayed_values: list[float] = []
     for model in MODEL_SIZES:
         for method in METHODS:
@@ -279,7 +282,11 @@ def draw_profile_panel(
                     colors=colors,
                 )
     ax.set_xticks(x)
-    ax.set_xticklabels([TEMPLATE_LABELS[t] for t in TEMPLATES], fontsize=7.7 * font_scale)
+    ax.set_xticklabels(
+        [TEMPLATE_LABELS[t] for t in TEMPLATES],
+        fontsize=7.7 * font_scale * template_font_scale,
+    )
+    ax.set_xlim(x[0] - 0.38, x[-1] + 0.38)
     ax.set_ylabel("Attack success rate (%)", fontsize=10.5 * font_scale)
     ax.set_xlabel(
         "Jailbreak template",
@@ -543,12 +550,12 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
         method: tinted_logo(LOGO_METHOD_COLORS[method]) for method in METHODS
     }
     font_scale = 1.28
-    fig = plt.figure(figsize=(12.6, 5.35))
+    fig = plt.figure(figsize=(11.2, 5.35))
     outer = fig.add_gridspec(
         1,
         2,
-        width_ratios=(1.48, 1.0),
-        wspace=0.27,
+        width_ratios=(1.18, 1.0),
+        wspace=0.30,
     )
     profile_grid = outer[0].subgridspec(
         2,
@@ -566,6 +573,7 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
         colors=LOGO_METHOD_COLORS,
         font_scale=font_scale,
         bottom_spine_at_zero=False,
+        template_font_scale=0.76,
     )
     draw_frontier_panel(
         fig,
@@ -577,7 +585,7 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
     )
     draw_logo_size_legend(
         fig,
-        bounds=(0.25, 0.885, 0.50, 0.09),
+        bounds=(0.17, 0.885, 0.66, 0.09),
         fontsize=14.0,
         separation=24.0,
     )

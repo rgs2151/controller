@@ -62,7 +62,10 @@
   composition. In `figure_harm_main`, a blank marginal-height spacer aligns
   the jailbreak-template axis with the frontier axis, extra negative-y room
   prevents zero-ASR Llama marks from clipping, and the x-axis label is offset
-  below the two-line template labels.
+  below the two-line template labels. The compact near-equal panel footprints
+  leave room for neighboring manuscript panels; explicit endpoint padding and
+  nonuniform categorical spacing keep Direct, the long central labels, and
+  Jailbreak Bot clear of the axis boundaries without stretching the panel.
 
 ## References
 
