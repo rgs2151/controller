@@ -69,7 +69,7 @@
   leave room for neighboring manuscript panels; explicit endpoint padding and
   nonuniform categorical spacing keep Direct, the long central labels, and
   Jailbreak Bot clear of the axis boundaries without stretching the panel. The
-  first two panels now occupy only the left portion of a three-column canvas;
+  first two panels now occupy roughly 70% of a three-column canvas;
   the native-color Llama scale legend and method legend remain centered over
   those two panels, not over the reserved response-disposition slot.
 
