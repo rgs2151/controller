@@ -41,6 +41,9 @@
 - Frontier logo color: controller method; no enclosing marker is used.
 - Frontier logo: GPT, LLaMA, Qwen, or OLMo model family; logo size increases
   with parameter count.
+- Bottom legends use color dots rather than miniature line samples. H∞ is
+  emphasized with the largest fully opaque dot in exact teal `#007C7C` and a
+  bold label; competitor dots are smaller and quieter.
 - Radar spoke: one of the ten most frequent TruthfulQA categories; ID and OOD
   are plotted independently.
 

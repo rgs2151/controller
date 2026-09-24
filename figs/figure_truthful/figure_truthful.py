@@ -596,21 +596,50 @@ def draw_model_legend(ax: plt.Axes, images: dict[str, np.ndarray]) -> None:
 def method_handles() -> list[Line2D]:
     return [
         Line2D(
-            [0],
-            [0],
-            color=METHOD_COLORS[method],
-            linestyle=METHOD_STYLES[method],
-            linewidth=2.0 if method == "H∞ (ours)" else 1.2,
+            [],
+            [],
+            linestyle="None",
             marker="o",
-            markerfacecolor="white",
+            markerfacecolor=METHOD_COLORS[method],
             markeredgecolor=METHOD_COLORS[method],
-            markeredgewidth=1.4 if method == "H∞ (ours)" else 1.0,
-            markersize=6,
+            markersize=8.0 if method == "H∞ (ours)" else 5.8,
             alpha=1.0 if method == "H∞ (ours)" else 0.72,
             label=method,
         )
         for method in METHOD_ORDER
     ]
+
+
+def radar_handles(include_original: bool = False) -> list[Line2D]:
+    entries = []
+    if include_original:
+        entries.append(("Original", "#737B82", 6.5, 0.82))
+    entries.extend(
+        [
+            ("Best competitor", GRAY, 6.5, 0.82),
+            (r"H$\infty$ (ours)", TEAL, 9.0, 1.0),
+        ]
+    )
+    return [
+        Line2D(
+            [],
+            [],
+            linestyle="None",
+            marker="o",
+            markerfacecolor=color,
+            markeredgecolor=color,
+            markersize=size,
+            alpha=alpha,
+            label=label,
+        )
+        for label, color, size, alpha in entries
+    ]
+
+
+def emphasize_ours(legend: plt.Legend) -> None:
+    for text in legend.get_texts():
+        if "ours" in text.get_text():
+            text.set_fontweight("bold")
 
 
 def load_inputs() -> tuple[list[Result], dict[str, np.ndarray]]:
@@ -691,16 +720,17 @@ def render_figure_b(records: list[Result], images: dict[str, np.ndarray]) -> Non
 
     draw_frontier(*frontier_axes[0], records, "ID", images)
     draw_frontier(*frontier_axes[1], records, "OOD", images)
-    fig.legend(
+    legend = fig.legend(
         handles=method_handles(),
         loc="lower center",
         bbox_to_anchor=(0.5, 0.015),
         ncol=5,
         fontsize=8.4,
-        handlelength=1.6,
-        handletextpad=0.35,
+        handlelength=0.7,
+        handletextpad=0.25,
         columnspacing=0.9,
     )
+    emphasize_ours(legend)
     save_figure(fig, "figure_truthful_b")
 
 
@@ -719,25 +749,17 @@ def render_figure_c() -> None:
     radar_ood_ax = fig.add_subplot(outer[1], projection="polar")
     draw_radar(radar_id_ax, "ID")
     draw_radar(radar_ood_ax, "OOD")
-    fig.legend(
-        handles=[
-            Line2D([0], [0], color=TEAL, linewidth=2.2, label=r"H$\infty$ (ours)"),
-            Line2D(
-                [0],
-                [0],
-                color=GRAY,
-                linewidth=1.7,
-                linestyle="--",
-                label="Best competitor",
-            ),
-        ],
+    legend = fig.legend(
+        handles=radar_handles(),
         loc="lower center",
         bbox_to_anchor=(0.5, 0.015),
         ncol=2,
         fontsize=10.0,
-        handlelength=1.8,
+        handlelength=0.8,
+        handletextpad=0.3,
         columnspacing=1.6,
     )
+    emphasize_ours(legend)
     save_figure(fig, "figure_truthful_c")
 
 
@@ -786,26 +808,17 @@ def render_figure_c_model(model: str, stem: str) -> None:
         rotation=90,
         fontsize=9.5,
     )
-    fig.legend(
-        handles=[
-            Line2D([0], [0], color="#737B82", linewidth=1.8, label="Original"),
-            Line2D(
-                [0],
-                [0],
-                color=GRAY,
-                linewidth=1.7,
-                linestyle="--",
-                label="Best competitor",
-            ),
-            Line2D([0], [0], color=TEAL, linewidth=2.2, label=r"H$\infty$ (ours)"),
-        ],
+    legend = fig.legend(
+        handles=radar_handles(include_original=True),
         loc="lower center",
         bbox_to_anchor=(0.5, 0.015),
         ncol=3,
         fontsize=9.5,
-        handlelength=1.8,
+        handlelength=0.8,
+        handletextpad=0.3,
         columnspacing=1.6,
     )
+    emphasize_ours(legend)
     save_figure(fig, stem)
 
 
