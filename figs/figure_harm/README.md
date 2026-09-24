@@ -17,6 +17,9 @@
 - Outputs: `plots/figure_harm.pdf` and `plots/figure_harm.png`.
   The preserved geometric-marker version remains unchanged; the iterative
   logo-based variant is written separately as `figure_harm_logos.pdf/.png`.
+  The active main figure is `figure_harm_main.pdf/.png` (template profile plus
+  safety frontier), while the detached rejection panel is retained as
+  `figure_harm_rejection.pdf/.png`.
 
 ## Statistics
 
@@ -39,6 +42,9 @@
   is tinted by method. Log-scaled logo size distinguishes 1B, 3B, and 8B;
   H∞ uses exact project teal `#007C7C`. The top native-color model legend uses
   the same ordered size hierarchy, while the bottom method legend uses dots.
+  Original uses gray with reduced opacity; A-LQR uses a distinct muted violet
+  (`#6558A6`) so it remains separable without competing with the teal focal
+  series.
 - Panels: rejection summary, robustness profile, and safety frontier.
 
 ## Interpretation
@@ -52,6 +58,11 @@
 - `figure_harm_logos` is the active iterative variant. It uses enlarged
   MGSM-style axis, tick, template, and legend typography without overwriting
   the preserved initial figure.
+- The final organization separates the former first panel from the main
+  composition. In `figure_harm_main`, a blank marginal-height spacer aligns
+  the jailbreak-template axis with the frontier axis, extra negative-y room
+  prevents zero-ASR Llama marks from clipping, and the x-axis label is offset
+  below the two-line template labels.
 
 ## References
 
