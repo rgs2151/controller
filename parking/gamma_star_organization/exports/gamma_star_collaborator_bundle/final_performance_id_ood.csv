@@ -1,0 +1,851 @@
+benchmark,distribution,condition_axis,condition,model_key,model_label,method,metric,value,standard_error,higher_is_better,unit,source_path
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Original,true,28.89,1.56,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Original,informative,94.25,0.42,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Original,true_times_informative,27.22,1.35,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Original,instruction_relevance,0.82,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Original,fluency,1.08,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ITI,true,30.11,0.73,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ITI,informative,95.84,0.66,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ITI,true_times_informative,28.86,0.58,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ITI,instruction_relevance,0.9,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ITI,fluency,1.08,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ActAdd,true,36.6,2.1,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ActAdd,informative,88.86,1.46,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ActAdd,true_times_informative,32.52,1.5,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ActAdd,instruction_relevance,0.78,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ActAdd,fluency,1.02,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Mean-AcT,true,30.35,1.37,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Mean-AcT,informative,95.84,1.07,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Mean-AcT,true_times_informative,29.09,1.4,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Mean-AcT,instruction_relevance,0.91,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Mean-AcT,fluency,1.02,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Linear-AcT,true,29.5,1.28,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Linear-AcT,informative,96.33,0.91,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Linear-AcT,true_times_informative,28.42,1.12,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Linear-AcT,instruction_relevance,0.87,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,Linear-AcT,fluency,1.11,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,PID-AcT,true,29.87,1.66,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,PID-AcT,informative,96.57,1.05,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,PID-AcT,true_times_informative,28.84,1.48,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,PID-AcT,instruction_relevance,0.89,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,PID-AcT,fluency,1.09,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ODESteer,true,37.58,2.86,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ODESteer,informative,92.9,0.64,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ODESteer,true_times_informative,34.91,2.58,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ODESteer,instruction_relevance,0.89,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,ODESteer,fluency,1.06,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,S-PID,true,28.4,1.16,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,S-PID,informative,86.9,1.49,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,S-PID,true_times_informative,24.68,1.0,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,S-PID,instruction_relevance,0.84,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,S-PID,fluency,0.84,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,A-LQR,true,31.21,1.98,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,A-LQR,informative,92.04,1.0,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,A-LQR,true_times_informative,28.73,1.85,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,A-LQR,instruction_relevance,0.84,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,A-LQR,fluency,1.05,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,H∞ (ours),true,46.51,1.17,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,H∞ (ours),informative,75.64,1.74,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,H∞ (ours),true_times_informative,35.18,0.43,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,H∞ (ours),instruction_relevance,0.78,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,gpt2_xl,GPT-2 XL,H∞ (ours),fluency,0.76,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Original,true,49.28,0.98,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Original,informative,96.99,0.29,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Original,true_times_informative,47.79,0.96,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Original,instruction_relevance,1.33,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Original,fluency,1.3,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ITI,true,57.14,0.79,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ITI,informative,97.53,0.09,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ITI,true_times_informative,55.72,0.77,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ITI,instruction_relevance,1.38,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ITI,fluency,1.3,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ActAdd,true,56.72,0.99,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ActAdd,informative,88.69,0.82,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ActAdd,true_times_informative,50.3,0.99,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ActAdd,instruction_relevance,1.23,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ActAdd,fluency,1.17,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Mean-AcT,true,47.47,0.71,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Mean-AcT,informative,97.55,0.26,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Mean-AcT,true_times_informative,46.3,0.7,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Mean-AcT,instruction_relevance,1.36,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Mean-AcT,fluency,1.31,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Linear-AcT,true,48.2,0.69,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Linear-AcT,informative,97.5,0.19,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Linear-AcT,true_times_informative,47.0,0.68,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Linear-AcT,instruction_relevance,1.35,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,Linear-AcT,fluency,1.33,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,PID-AcT,true,47.69,0.21,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,PID-AcT,informative,97.6,0.26,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,PID-AcT,true_times_informative,46.54,0.24,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,PID-AcT,instruction_relevance,1.34,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,PID-AcT,fluency,1.31,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ODESteer,true,95.81,0.06,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ODESteer,informative,9.28,0.36,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ODESteer,true_times_informative,8.89,0.35,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ODESteer,instruction_relevance,0.01,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,ODESteer,fluency,0.03,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,S-PID,true,57.55,0.21,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,S-PID,informative,97.8,0.27,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,S-PID,true_times_informative,56.28,0.26,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,S-PID,instruction_relevance,1.41,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,S-PID,fluency,1.27,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,A-LQR,true,58.95,0.27,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,A-LQR,informative,98.07,0.2,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,A-LQR,true_times_informative,57.81,0.29,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,A-LQR,instruction_relevance,1.44,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,A-LQR,fluency,1.21,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,H∞ (ours),true,76.5,1.11,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,H∞ (ours),informative,80.29,0.59,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,H∞ (ours),true_times_informative,61.42,1.15,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,H∞ (ours),instruction_relevance,0.99,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,llama31_8b,Llama-3-8B,H∞ (ours),fluency,1.0,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Original,true,55.89,0.33,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Original,informative,96.47,0.15,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Original,true_times_informative,53.92,0.33,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Original,instruction_relevance,1.46,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Original,fluency,1.24,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ITI,true,61.62,0.62,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ITI,informative,95.32,0.35,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ITI,true_times_informative,58.73,0.63,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ITI,instruction_relevance,1.52,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ITI,fluency,1.25,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ActAdd,true,64.04,0.42,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ActAdd,informative,87.61,0.61,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ActAdd,true_times_informative,56.11,0.53,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ActAdd,instruction_relevance,1.17,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ActAdd,fluency,0.99,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Mean-AcT,true,55.35,1.09,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Mean-AcT,informative,96.03,0.21,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Mean-AcT,true_times_informative,53.15,1.05,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Mean-AcT,instruction_relevance,1.5,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Mean-AcT,fluency,1.24,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Linear-AcT,true,56.28,0.95,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Linear-AcT,informative,96.18,0.28,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Linear-AcT,true_times_informative,54.13,0.93,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Linear-AcT,instruction_relevance,1.5,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,Linear-AcT,fluency,1.23,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,PID-AcT,true,56.08,0.89,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,PID-AcT,informative,96.28,0.15,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,PID-AcT,true_times_informative,54.0,0.86,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,PID-AcT,instruction_relevance,1.49,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,PID-AcT,fluency,1.24,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ODESteer,true,61.4,0.6,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ODESteer,informative,94.0,0.15,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ODESteer,true_times_informative,57.71,0.57,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ODESteer,instruction_relevance,1.41,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,ODESteer,fluency,1.21,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,S-PID,true,66.93,0.93,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,S-PID,informative,96.52,0.22,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,S-PID,true_times_informative,64.6,0.91,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,S-PID,instruction_relevance,1.51,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,S-PID,fluency,1.26,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,A-LQR,true,71.82,0.6,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,A-LQR,informative,96.99,0.28,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,A-LQR,true_times_informative,69.66,0.62,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,A-LQR,instruction_relevance,1.53,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,A-LQR,fluency,1.26,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,H∞ (ours),true,85.31,0.33,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,H∞ (ours),informative,89.4,0.35,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,H∞ (ours),true_times_informative,76.27,0.42,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,H∞ (ours),instruction_relevance,1.34,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,qwen25_14b,Qwen-2.5-14B,H∞ (ours),fluency,1.15,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,Original,true,56.92,2.36,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,Original,informative,98.78,0.34,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,Original,true_times_informative,56.22,2.15,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,Original,instruction_relevance,1.59,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,Original,fluency,1.43,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,A-LQR,true,87.76,1.5,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,A-LQR,informative,93.15,1.22,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,A-LQR,true_times_informative,81.74,0.65,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,A-LQR,instruction_relevance,1.31,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,A-LQR,fluency,1.02,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,H∞ (ours),true,92.66,0.73,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,H∞ (ours),informative,93.15,0.8,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,H∞ (ours),true_times_informative,86.31,0.42,true,percent,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,H∞ (ours),instruction_relevance,1.38,0.03,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,id,language,English,olmo2_32b,OLMo-2-32B,H∞ (ours),fluency,1.12,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Original,true,66.1,0.86,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Original,informative,11.51,0.77,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Original,true_times_informative,7.6,0.44,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Original,instruction_relevance,0.05,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Original,fluency,0.15,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ITI,true,60.1,1.13,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ITI,informative,16.52,1.65,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ITI,true_times_informative,9.93,0.95,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ITI,instruction_relevance,0.1,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ITI,fluency,0.33,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ActAdd,true,65.61,2.12,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ActAdd,informative,14.44,1.04,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ActAdd,true_times_informative,9.48,0.52,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ActAdd,instruction_relevance,0.05,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ActAdd,fluency,0.24,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Mean-AcT,true,69.65,1.32,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Mean-AcT,informative,12.97,1.64,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Mean-AcT,true_times_informative,9.04,1.22,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Mean-AcT,instruction_relevance,0.02,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Mean-AcT,fluency,0.07,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Linear-AcT,true,61.93,0.84,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Linear-AcT,informative,14.44,1.18,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Linear-AcT,true_times_informative,8.95,0.74,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Linear-AcT,instruction_relevance,0.1,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,Linear-AcT,fluency,0.26,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,PID-AcT,true,65.85,3.25,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,PID-AcT,informative,13.95,0.76,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,PID-AcT,true_times_informative,9.19,0.65,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,PID-AcT,instruction_relevance,0.07,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,PID-AcT,fluency,0.21,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ODESteer,true,73.93,1.61,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ODESteer,informative,12.48,1.01,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ODESteer,true_times_informative,9.23,0.81,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ODESteer,instruction_relevance,0.07,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,ODESteer,fluency,0.13,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,S-PID,true,67.2,1.7,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,S-PID,informative,10.89,1.39,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,S-PID,true_times_informative,7.32,1.0,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,S-PID,instruction_relevance,0.02,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,S-PID,fluency,0.07,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,A-LQR,true,74.3,0.93,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,A-LQR,informative,8.69,0.8,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,A-LQR,true_times_informative,6.46,0.58,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,A-LQR,instruction_relevance,0.06,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,A-LQR,fluency,0.11,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,H∞ (ours),true,84.21,1.55,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,H∞ (ours),informative,21.54,1.68,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,H∞ (ours),true_times_informative,18.14,1.31,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,H∞ (ours),instruction_relevance,0.04,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,gpt2_xl,GPT-2 XL,H∞ (ours),fluency,0.06,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Original,true,42.86,0.49,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Original,informative,94.52,0.24,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Original,true_times_informative,40.51,0.47,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Original,instruction_relevance,1.59,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Original,fluency,1.39,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ITI,true,55.47,0.88,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ITI,informative,94.37,0.2,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ITI,true_times_informative,52.35,0.84,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ITI,instruction_relevance,1.61,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ITI,fluency,1.39,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ActAdd,true,43.94,0.53,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ActAdd,informative,93.78,0.29,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ActAdd,true_times_informative,41.21,0.51,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ActAdd,instruction_relevance,1.57,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ActAdd,fluency,1.35,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Mean-AcT,true,46.61,0.69,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Mean-AcT,informative,94.83,0.49,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Mean-AcT,true_times_informative,44.2,0.69,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Mean-AcT,instruction_relevance,1.61,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Mean-AcT,fluency,1.41,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Linear-AcT,true,47.15,0.41,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Linear-AcT,informative,94.96,0.39,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Linear-AcT,true_times_informative,44.77,0.43,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Linear-AcT,instruction_relevance,1.61,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,Linear-AcT,fluency,1.42,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,PID-AcT,true,47.12,0.63,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,PID-AcT,informative,95.08,0.51,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,PID-AcT,true_times_informative,44.8,0.64,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,PID-AcT,instruction_relevance,1.62,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,PID-AcT,fluency,1.41,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ODESteer,true,95.67,0.15,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ODESteer,informative,11.21,0.45,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ODESteer,true_times_informative,10.73,0.43,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ODESteer,instruction_relevance,0.0,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,ODESteer,fluency,0.02,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,S-PID,true,52.09,0.56,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,S-PID,informative,94.37,0.22,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,S-PID,true_times_informative,49.16,0.54,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,S-PID,instruction_relevance,1.59,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,S-PID,fluency,1.33,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,A-LQR,true,55.57,0.71,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,A-LQR,informative,95.03,0.25,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,A-LQR,true_times_informative,52.81,0.69,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,A-LQR,instruction_relevance,1.56,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,A-LQR,fluency,1.27,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,H∞ (ours),true,68.54,0.95,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,H∞ (ours),informative,80.66,0.81,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,H∞ (ours),true_times_informative,55.29,0.35,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,H∞ (ours),instruction_relevance,1.24,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,llama31_8b,Llama-3-8B,H∞ (ours),fluency,1.05,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Original,true,68.13,0.28,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Original,informative,97.31,0.13,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Original,true_times_informative,66.29,0.28,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Original,instruction_relevance,1.82,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Original,fluency,1.51,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ITI,true,67.91,0.33,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ITI,informative,97.36,0.07,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ITI,true_times_informative,66.11,0.33,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ITI,instruction_relevance,1.82,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ITI,fluency,1.53,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ActAdd,true,72.09,0.9,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ActAdd,informative,89.62,1.54,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ActAdd,true_times_informative,64.61,1.37,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ActAdd,instruction_relevance,1.63,0.04,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ActAdd,fluency,1.37,0.04,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Mean-AcT,true,68.27,0.26,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Mean-AcT,informative,97.48,0.08,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Mean-AcT,true_times_informative,66.55,0.26,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Mean-AcT,instruction_relevance,1.82,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Mean-AcT,fluency,1.55,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Linear-AcT,true,68.25,0.21,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Linear-AcT,informative,97.55,0.19,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Linear-AcT,true_times_informative,66.58,0.24,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Linear-AcT,instruction_relevance,1.83,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,Linear-AcT,fluency,1.55,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,PID-AcT,true,68.27,0.22,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,PID-AcT,informative,97.28,0.2,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,PID-AcT,true_times_informative,66.42,0.25,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,PID-AcT,instruction_relevance,1.82,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,PID-AcT,fluency,1.55,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ODESteer,true,74.88,0.46,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ODESteer,informative,92.83,0.26,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ODESteer,true_times_informative,69.51,0.47,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ODESteer,instruction_relevance,1.67,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,ODESteer,fluency,1.44,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,S-PID,true,82.82,0.28,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,S-PID,informative,93.56,0.47,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,S-PID,true_times_informative,77.48,0.47,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,S-PID,instruction_relevance,1.64,0.0,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,S-PID,fluency,1.43,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,A-LQR,true,85.24,0.5,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,A-LQR,informative,94.32,0.27,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,A-LQR,true_times_informative,80.4,0.52,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,A-LQR,instruction_relevance,1.64,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,A-LQR,fluency,1.41,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,H∞ (ours),true,88.74,0.28,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,H∞ (ours),informative,93.05,0.48,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,H∞ (ours),true_times_informative,82.57,0.5,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,H∞ (ours),instruction_relevance,1.53,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,qwen25_14b,Qwen-2.5-14B,H∞ (ours),fluency,1.29,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,Original,true,62.55,2.0,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,Original,informative,97.55,0.61,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,Original,true_times_informative,61.01,1.81,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,Original,instruction_relevance,1.76,0.02,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,Original,fluency,1.55,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,A-LQR,true,90.45,1.22,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,A-LQR,informative,91.43,1.14,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,A-LQR,true_times_informative,82.7,1.14,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,A-LQR,instruction_relevance,1.41,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,A-LQR,fluency,1.02,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,H∞ (ours),true,95.59,0.71,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,H∞ (ours),informative,95.72,0.61,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,H∞ (ours),true_times_informative,91.5,1.07,true,percent,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,H∞ (ours),instruction_relevance,1.53,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+truthfulness,ood,language,Spanish,olmo2_32b,OLMo-2-32B,H∞ (ours),fluency,1.08,0.01,true,score_0_2,figs/bench_table/truthfulness/truthfulqa_spanish.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,Original,attack_success_rate,10.0,2.08,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,Original,safe_concept_relevance,1.91,0.04,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,Original,instruction_relevance,1.73,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,Original,fluency,1.85,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,Original,overall_steering,1.62,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,attack_success_rate,9.58,1.76,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,safe_concept_relevance,1.95,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,instruction_relevance,1.51,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,fluency,1.89,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,overall_steering,1.46,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),attack_success_rate,2.92,1.4,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),safe_concept_relevance,1.96,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),instruction_relevance,1.29,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),fluency,1.74,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),overall_steering,1.22,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,Original,attack_success_rate,5.83,1.67,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,Original,safe_concept_relevance,1.97,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,Original,instruction_relevance,0.68,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,Original,fluency,1.6,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,Original,overall_steering,0.65,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,attack_success_rate,6.25,1.67,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,safe_concept_relevance,1.97,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,instruction_relevance,0.62,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,fluency,1.52,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,overall_steering,0.55,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),attack_success_rate,1.25,0.89,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),safe_concept_relevance,1.98,0.01,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),instruction_relevance,0.39,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),fluency,1.19,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),overall_steering,0.34,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,Original,attack_success_rate,6.25,1.55,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,Original,safe_concept_relevance,1.99,0.01,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,Original,instruction_relevance,0.63,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,Original,fluency,1.59,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,Original,overall_steering,0.64,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,attack_success_rate,4.17,1.08,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,safe_concept_relevance,1.99,0.01,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,instruction_relevance,0.57,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,fluency,1.53,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,overall_steering,0.56,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),attack_success_rate,1.67,0.68,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),safe_concept_relevance,1.98,0.01,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),instruction_relevance,0.38,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),fluency,1.18,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),overall_steering,0.3,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,Original,attack_success_rate,4.58,1.45,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,Original,safe_concept_relevance,1.96,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,Original,instruction_relevance,0.64,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,Original,fluency,1.62,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,Original,overall_steering,0.63,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,attack_success_rate,3.33,1.5,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,safe_concept_relevance,1.96,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,instruction_relevance,0.56,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,fluency,1.53,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,overall_steering,0.53,0.1,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),attack_success_rate,0.42,0.42,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),safe_concept_relevance,1.98,0.01,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),instruction_relevance,0.38,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),fluency,1.17,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),overall_steering,0.3,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,Original,attack_success_rate,8.33,1.08,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,Original,safe_concept_relevance,1.97,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,Original,instruction_relevance,0.63,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,Original,fluency,1.56,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,Original,overall_steering,0.62,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,attack_success_rate,8.75,1.45,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,safe_concept_relevance,1.97,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,instruction_relevance,0.55,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,fluency,1.5,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,overall_steering,0.51,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),attack_success_rate,0.83,0.56,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),safe_concept_relevance,1.98,0.01,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),instruction_relevance,0.37,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),fluency,1.15,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),overall_steering,0.29,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,Original,attack_success_rate,2.92,0.89,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,Original,safe_concept_relevance,1.94,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,Original,instruction_relevance,0.64,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,Original,fluency,1.56,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,Original,overall_steering,0.64,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,attack_success_rate,5.0,1.5,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,safe_concept_relevance,1.97,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,instruction_relevance,0.57,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,fluency,1.51,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,overall_steering,0.53,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),attack_success_rate,0.42,0.42,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),safe_concept_relevance,1.98,0.01,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),instruction_relevance,0.37,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),fluency,1.12,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),overall_steering,0.3,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,Original,attack_success_rate,16.67,2.48,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,Original,safe_concept_relevance,1.88,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,Original,instruction_relevance,1.21,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,Original,fluency,1.88,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,Original,overall_steering,1.19,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,attack_success_rate,20.0,2.9,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,safe_concept_relevance,1.91,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,instruction_relevance,1.18,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,fluency,1.86,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,overall_steering,1.15,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),attack_success_rate,8.33,1.86,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),safe_concept_relevance,1.99,0.01,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),instruction_relevance,1.19,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),fluency,1.9,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),overall_steering,1.18,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,Original,attack_success_rate,11.67,2.31,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,Original,safe_concept_relevance,1.9,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,Original,instruction_relevance,0.61,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,Original,fluency,1.54,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,Original,overall_steering,0.58,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,attack_success_rate,11.67,2.69,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,safe_concept_relevance,1.96,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,instruction_relevance,0.69,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,fluency,1.52,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,overall_steering,0.63,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),attack_success_rate,4.17,1.08,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),safe_concept_relevance,1.94,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),instruction_relevance,0.6,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),fluency,1.65,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),overall_steering,0.59,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,Original,attack_success_rate,10.83,2.08,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,Original,safe_concept_relevance,1.93,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,Original,instruction_relevance,0.57,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,Original,fluency,1.52,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,Original,overall_steering,0.55,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,attack_success_rate,10.42,2.17,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,safe_concept_relevance,1.95,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,instruction_relevance,0.63,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,fluency,1.52,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,overall_steering,0.59,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),attack_success_rate,3.75,0.97,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),safe_concept_relevance,1.95,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),instruction_relevance,0.59,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),fluency,1.66,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),overall_steering,0.58,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,Original,attack_success_rate,14.17,2.17,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,Original,safe_concept_relevance,1.9,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,Original,instruction_relevance,0.57,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,Original,fluency,1.54,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,Original,overall_steering,0.56,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,attack_success_rate,12.92,1.7,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,safe_concept_relevance,1.97,0.01,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,instruction_relevance,0.64,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,fluency,1.51,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,overall_steering,0.6,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),attack_success_rate,3.75,1.15,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),safe_concept_relevance,1.93,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),instruction_relevance,0.59,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),fluency,1.67,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),overall_steering,0.58,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,Original,attack_success_rate,11.25,1.53,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,Original,safe_concept_relevance,1.91,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,Original,instruction_relevance,0.59,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,Original,fluency,1.52,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,Original,overall_steering,0.55,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,attack_success_rate,11.67,1.04,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,safe_concept_relevance,1.95,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,instruction_relevance,0.65,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,fluency,1.51,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,overall_steering,0.59,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),attack_success_rate,4.17,0.88,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),safe_concept_relevance,1.94,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),instruction_relevance,0.56,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),fluency,1.64,0.04,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),overall_steering,0.56,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,Original,attack_success_rate,10.83,2.26,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,Original,safe_concept_relevance,1.91,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,Original,instruction_relevance,0.56,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,Original,fluency,1.48,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,Original,overall_steering,0.53,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,attack_success_rate,11.25,2.49,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,safe_concept_relevance,1.97,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,instruction_relevance,0.65,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,fluency,1.47,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,A-LQR,overall_steering,0.6,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),attack_success_rate,2.5,1.11,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),safe_concept_relevance,1.96,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),instruction_relevance,0.58,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),fluency,1.6,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama32_3b,Llama-3.2-3B-Instruct,H∞ (ours),overall_steering,0.58,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,Original,attack_success_rate,15.83,4.02,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,Original,safe_concept_relevance,1.83,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,Original,instruction_relevance,1.06,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,Original,fluency,1.73,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,Original,overall_steering,0.98,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,attack_success_rate,15.83,3.82,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,safe_concept_relevance,1.76,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,instruction_relevance,1.32,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,fluency,1.77,0.04,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,overall_steering,1.24,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),attack_success_rate,3.33,1.84,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),safe_concept_relevance,1.94,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),instruction_relevance,0.99,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),fluency,1.76,0.04,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,id,attack_template,Direct,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),overall_steering,1.0,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,Original,attack_success_rate,23.33,2.08,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,Original,safe_concept_relevance,1.8,0.05,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,Original,instruction_relevance,0.52,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,Original,fluency,1.39,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,Original,overall_steering,0.37,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,attack_success_rate,15.0,3.24,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,safe_concept_relevance,1.87,0.03,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,instruction_relevance,0.68,0.1,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,fluency,1.44,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,overall_steering,0.6,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),attack_success_rate,1.67,1.11,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),safe_concept_relevance,1.98,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),instruction_relevance,0.31,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),fluency,0.87,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,John persona,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),overall_steering,0.31,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,Original,attack_success_rate,14.17,4.31,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,Original,safe_concept_relevance,1.83,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,Original,instruction_relevance,0.42,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,Original,fluency,1.43,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,Original,overall_steering,0.34,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,attack_success_rate,11.67,4.68,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,safe_concept_relevance,1.88,0.04,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,instruction_relevance,0.58,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,fluency,1.46,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,overall_steering,0.54,0.1,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),attack_success_rate,0.0,0.0,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),safe_concept_relevance,1.98,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),instruction_relevance,0.33,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),fluency,0.9,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,DNE nonresponse,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),overall_steering,0.32,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,Original,attack_success_rate,9.17,2.62,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,Original,safe_concept_relevance,1.78,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,Original,instruction_relevance,0.44,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,Original,fluency,1.39,0.11,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,Original,overall_steering,0.32,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,attack_success_rate,7.5,2.62,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,safe_concept_relevance,1.87,0.04,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,instruction_relevance,0.58,0.11,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,fluency,1.48,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,overall_steering,0.55,0.1,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),attack_success_rate,0.0,0.0,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),safe_concept_relevance,1.95,0.04,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),instruction_relevance,0.31,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),fluency,0.88,0.1,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,Jailbreak Bot,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),overall_steering,0.28,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,Original,attack_success_rate,15.0,4.78,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,Original,safe_concept_relevance,1.77,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,Original,instruction_relevance,0.45,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,Original,fluency,1.49,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,Original,overall_steering,0.33,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,attack_success_rate,9.17,3.15,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,safe_concept_relevance,1.86,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,instruction_relevance,0.67,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,fluency,1.46,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,overall_steering,0.63,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),attack_success_rate,0.0,0.0,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),safe_concept_relevance,1.95,0.04,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),instruction_relevance,0.29,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),fluency,0.88,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,YOJA/Nona roleplay,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),overall_steering,0.28,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,Original,attack_success_rate,11.67,3.56,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,Original,safe_concept_relevance,1.77,0.06,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,Original,instruction_relevance,0.42,0.1,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,Original,fluency,1.38,0.11,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,Original,overall_steering,0.34,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,attack_success_rate,10.83,3.06,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,safe_concept_relevance,1.85,0.04,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,instruction_relevance,0.62,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,fluency,1.41,0.08,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,A-LQR,overall_steering,0.55,0.1,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),attack_success_rate,0.83,0.83,false,percent,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),safe_concept_relevance,1.98,0.02,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),instruction_relevance,0.3,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),fluency,0.88,0.09,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+harmful,ood,attack_template,APM programmer,llama31_8b,Llama-3.1-8B-Instruct,H∞ (ours),overall_steering,0.28,0.07,true,score_0_2,figs/bench_table/harmful/harmbench_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,Original,accuracy,71.0,4.1,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,Original,instruction_relevance,1.8,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,Original,fluency,1.71,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,A-LQR,accuracy,20.0,2.6,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,A-LQR,spanish_relevance,1.98,0.02,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,A-LQR,instruction_relevance,1.53,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,A-LQR,fluency,1.15,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,H∞ (ours),accuracy,51.0,3.5,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,H∞ (ours),spanish_relevance,2.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,H∞ (ours),instruction_relevance,1.87,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,qwen3_4b,Qwen3-4B,H∞ (ours),fluency,1.52,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,Original,accuracy,60.0,4.5,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,Original,instruction_relevance,1.93,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,Original,fluency,1.7,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,A-LQR,accuracy,29.0,5.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,A-LQR,spanish_relevance,1.94,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,A-LQR,instruction_relevance,1.62,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,A-LQR,fluency,1.11,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,H∞ (ours),accuracy,48.0,4.7,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,H∞ (ours),spanish_relevance,1.96,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,H∞ (ours),instruction_relevance,1.96,0.02,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,qwen3_4b,Qwen3-4B,H∞ (ours),fluency,1.42,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,Original,accuracy,56.0,4.8,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,Original,instruction_relevance,1.8,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,Original,fluency,1.64,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,A-LQR,accuracy,32.0,2.5,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,A-LQR,spanish_relevance,1.84,0.06,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,A-LQR,instruction_relevance,1.63,0.06,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,A-LQR,fluency,1.01,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,H∞ (ours),accuracy,40.0,4.9,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,H∞ (ours),spanish_relevance,1.98,0.02,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,H∞ (ours),instruction_relevance,1.71,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,qwen3_4b,Qwen3-4B,H∞ (ours),fluency,1.2,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,Original,accuracy,15.0,4.3,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,Original,instruction_relevance,1.43,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,Original,fluency,1.23,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,A-LQR,accuracy,12.0,3.6,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,A-LQR,spanish_relevance,1.4,0.09,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,A-LQR,instruction_relevance,1.32,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,A-LQR,fluency,0.97,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,H∞ (ours),accuracy,14.0,3.7,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,H∞ (ours),spanish_relevance,0.92,0.12,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,H∞ (ours),instruction_relevance,1.44,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,qwen3_4b,Qwen3-4B,H∞ (ours),fluency,1.06,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,Original,accuracy,6.0,2.7,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,Original,instruction_relevance,1.83,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,Original,fluency,1.05,0.02,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,A-LQR,accuracy,19.0,2.8,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,A-LQR,spanish_relevance,1.88,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,A-LQR,instruction_relevance,1.46,0.06,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,A-LQR,fluency,1.18,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,H∞ (ours),accuracy,8.0,2.5,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,H∞ (ours),spanish_relevance,0.34,0.08,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,H∞ (ours),instruction_relevance,1.33,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,qwen3_4b,Qwen3-4B,H∞ (ours),fluency,1.05,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,Original,accuracy,63.0,5.2,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,Original,instruction_relevance,1.9,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,Original,fluency,1.8,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,A-LQR,accuracy,0.0,0.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,A-LQR,spanish_relevance,1.24,0.08,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,A-LQR,instruction_relevance,0.07,0.02,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,A-LQR,fluency,0.1,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,H∞ (ours),accuracy,47.0,4.2,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,H∞ (ours),spanish_relevance,1.64,0.09,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,H∞ (ours),instruction_relevance,1.72,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,phi4_mini,Phi-4-mini,H∞ (ours),fluency,1.39,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,Original,accuracy,58.0,3.6,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,Original,instruction_relevance,1.91,0.02,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,Original,fluency,1.64,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,A-LQR,accuracy,0.0,0.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,A-LQR,spanish_relevance,0.7,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,A-LQR,instruction_relevance,0.11,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,A-LQR,fluency,0.07,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,H∞ (ours),accuracy,49.0,5.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,H∞ (ours),spanish_relevance,1.4,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,H∞ (ours),instruction_relevance,1.9,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,phi4_mini,Phi-4-mini,H∞ (ours),fluency,0.98,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,Original,accuracy,49.0,3.8,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,Original,instruction_relevance,1.91,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,Original,fluency,1.57,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,A-LQR,accuracy,0.0,0.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,A-LQR,spanish_relevance,0.94,0.09,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,A-LQR,instruction_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,A-LQR,fluency,0.03,0.02,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,H∞ (ours),accuracy,41.0,4.1,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,H∞ (ours),spanish_relevance,0.62,0.1,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,H∞ (ours),instruction_relevance,1.68,0.06,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,phi4_mini,Phi-4-mini,H∞ (ours),fluency,1.2,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,Original,accuracy,32.0,3.9,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,Original,instruction_relevance,1.67,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,Original,fluency,1.36,0.08,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,A-LQR,accuracy,0.0,0.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,A-LQR,spanish_relevance,0.92,0.1,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,A-LQR,instruction_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,A-LQR,fluency,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,H∞ (ours),accuracy,21.0,2.8,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,H∞ (ours),spanish_relevance,1.0,0.14,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,H∞ (ours),instruction_relevance,1.18,0.09,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,phi4_mini,Phi-4-mini,H∞ (ours),fluency,0.77,0.08,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,Original,accuracy,25.0,3.7,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,Original,instruction_relevance,1.57,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,Original,fluency,1.25,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,A-LQR,accuracy,0.0,0.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,A-LQR,spanish_relevance,1.64,0.1,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,A-LQR,instruction_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,A-LQR,fluency,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,H∞ (ours),accuracy,18.0,2.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,H∞ (ours),spanish_relevance,1.38,0.1,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,H∞ (ours),instruction_relevance,1.34,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,phi4_mini,Phi-4-mini,H∞ (ours),fluency,0.89,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,Original,accuracy,37.0,5.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,Original,instruction_relevance,1.67,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,Original,fluency,1.5,0.06,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,A-LQR,accuracy,30.0,3.0,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,A-LQR,spanish_relevance,0.06,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,A-LQR,instruction_relevance,1.59,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,A-LQR,fluency,1.12,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,H∞ (ours),accuracy,39.0,3.1,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,H∞ (ours),spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,H∞ (ours),instruction_relevance,1.7,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Chinese,granite33_2b,Granite-3.3-2B,H∞ (ours),fluency,1.53,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,Original,accuracy,33.0,4.5,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,Original,instruction_relevance,1.68,0.06,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,Original,fluency,1.43,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,A-LQR,accuracy,35.0,4.8,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,A-LQR,spanish_relevance,0.02,0.02,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,A-LQR,instruction_relevance,1.53,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,A-LQR,fluency,1.31,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,H∞ (ours),accuracy,28.0,4.4,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,H∞ (ours),spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,H∞ (ours),instruction_relevance,1.71,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,French,granite33_2b,Granite-3.3-2B,H∞ (ours),fluency,1.39,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,Original,accuracy,29.0,3.8,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,Original,instruction_relevance,1.6,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,Original,fluency,1.33,0.06,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,A-LQR,accuracy,23.0,4.2,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,A-LQR,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,A-LQR,instruction_relevance,1.48,0.06,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,A-LQR,fluency,1.19,0.06,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,H∞ (ours),accuracy,28.0,3.6,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,H∞ (ours),spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,H∞ (ours),instruction_relevance,1.67,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Japanese,granite33_2b,Granite-3.3-2B,H∞ (ours),fluency,1.38,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,Original,accuracy,6.0,2.2,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,Original,instruction_relevance,0.69,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,Original,fluency,0.64,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,A-LQR,accuracy,2.0,1.3,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,A-LQR,spanish_relevance,0.04,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,A-LQR,instruction_relevance,0.32,0.08,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,A-LQR,fluency,0.4,0.07,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,H∞ (ours),accuracy,6.0,3.4,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,H∞ (ours),spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,H∞ (ours),instruction_relevance,0.48,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Swahili,granite33_2b,Granite-3.3-2B,H∞ (ours),fluency,0.6,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,Original,accuracy,6.0,2.7,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,Original,spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,Original,instruction_relevance,1.07,0.05,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,Original,fluency,1.01,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,A-LQR,accuracy,4.0,2.2,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,A-LQR,spanish_relevance,0.06,0.03,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,A-LQR,instruction_relevance,0.28,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,A-LQR,fluency,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,H∞ (ours),accuracy,5.0,2.2,true,percent,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,H∞ (ours),spanish_relevance,0.0,0.0,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,H∞ (ours),instruction_relevance,1.08,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+mgsm,ood,language,Telugu,granite33_2b,Granite-3.3-2B,H∞ (ours),fluency,0.98,0.04,true,score_0_2,figs/bench_table/mgsm/mgsm_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,Original,answer_recall,66.2,8.1,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,Original,citation_f1,7.8,1.6,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,Original,concept_relevance,0.0,0.0,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,Original,instruction_relevance,1.35,0.14,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,Original,fluency,1.5,0.11,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,answer_recall,72.1,9.3,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,citation_f1,7.2,2.1,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,concept_relevance,0.0,0.0,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,instruction_relevance,1.6,0.11,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,fluency,1.5,0.07,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,answer_recall,70.1,8.9,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,citation_f1,5.6,2.0,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,concept_relevance,0.05,0.05,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,instruction_relevance,1.48,0.11,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,fluency,1.48,0.09,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),answer_recall,66.4,7.9,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),citation_f1,6.4,2.0,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),concept_relevance,0.0,0.0,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),instruction_relevance,1.55,0.09,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),fluency,1.55,0.08,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,Original,answer_recall,65.2,7.6,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,Original,citation_f1,5.8,2.2,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,Original,concept_relevance,0.2,0.08,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,Original,instruction_relevance,1.4,0.16,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,Original,fluency,1.52,0.13,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,answer_recall,61.9,10.4,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,citation_f1,7.2,3.2,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,concept_relevance,0.0,0.0,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,instruction_relevance,1.38,0.13,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,S-PID,fluency,1.48,0.1,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,answer_recall,64.8,9.8,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,citation_f1,3.0,1.5,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,concept_relevance,0.0,0.0,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,instruction_relevance,1.43,0.15,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,A-LQR,fluency,1.57,0.11,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),answer_recall,65.2,8.6,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),citation_f1,7.8,3.6,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),concept_relevance,0.15,0.08,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),instruction_relevance,1.4,0.12,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,qwen25_3b,Qwen2.5-3B-Instruct,H∞ (ours),fluency,1.43,0.09,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,Original,answer_recall,58.5,7.7,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,Original,citation_f1,6.2,2.5,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,Original,concept_relevance,0.05,0.05,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,Original,instruction_relevance,1.3,0.1,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,Original,fluency,1.4,0.09,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,answer_recall,59.8,9.3,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,citation_f1,6.6,2.7,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,concept_relevance,0.05,0.05,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,instruction_relevance,1.35,0.11,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,fluency,1.43,0.07,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),answer_recall,61.7,7.8,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),citation_f1,6.4,2.9,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),concept_relevance,0.05,0.05,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),instruction_relevance,1.12,0.17,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,id,context_length,8K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),fluency,1.38,0.09,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,Original,answer_recall,44.2,7.1,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,Original,citation_f1,3.5,2.2,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,Original,concept_relevance,0.12,0.1,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,Original,instruction_relevance,1.1,0.11,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,Original,fluency,1.23,0.07,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,answer_recall,50.1,8.0,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,citation_f1,1.4,1.0,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,concept_relevance,0.0,0.0,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,instruction_relevance,1.15,0.1,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,A-LQR,fluency,1.23,0.11,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),answer_recall,47.9,7.8,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),citation_f1,3.8,2.5,true,percent,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),concept_relevance,0.0,0.0,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),instruction_relevance,1.0,0.14,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md
+lciteeval,ood,context_length,16K,llama32_1b,Llama-3.2-1B-Instruct,H∞ (ours),fluency,1.4,0.08,true,score_0_2,figs/bench_table/lciteeval/lciteeval_full.md

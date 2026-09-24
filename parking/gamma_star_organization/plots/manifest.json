@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-24T11:26:45.185150+00:00",
+  "definitions": {
+    "gamma_star": "minimum feasible H-infinity attenuation boundary saved by synthesis",
+    "s_rob": "1 / gamma_star in the saved controller coordinates",
+    "negative_log_gamma_star": "-log(gamma_star)",
+    "ood_reliability": "benchmark-native higher-is-better H-infinity outcome; ASR is transformed as 100-ASR",
+    "hinf_advantage": "H-infinity reliability minus the best non-H-infinity method in the same model/condition/metric"
+  },
+  "caveat": "Raw gamma_star and s_rob retain coordinate, cost, model-scale, and calibration-protocol dependence. Do not pool them as commensurate without a declared reporting normalization or grouped analysis.",
+  "counts": {
+    "final_controller_configurations": 224,
+    "final_calibration_selections": 12,
+    "final_report_points": 34
+  },
+  "final_figure_benchmarks": [
+    "harmful",
+    "mgsm",
+    "truthfulness"
+  ],
+  "warnings": [],
+  "outputs": {
+    "final_controller_grid": "plots/final_controller_grid.csv",
+    "final_selected_calibrations": "plots/final_selected_calibrations.csv",
+    "final_report_points": "plots/final_report_points.csv",
+    "srob_ood_reliability_pdf": "plots/srob_ood_reliability.pdf",
+    "srob_ood_reliability_png": "plots/srob_ood_reliability.png"
+  }
+}

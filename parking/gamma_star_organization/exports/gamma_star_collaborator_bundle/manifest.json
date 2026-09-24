@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "exclusions": [
+    "toxicity",
+    "lciteeval_spanish",
+    "lciteeval_small",
+    "superseded_calibrations",
+    "unreported_models"
+  ],
+  "allowed_models": {
+    "truthfulness": [
+      "gpt2_xl",
+      "llama31_8b",
+      "olmo2_32b",
+      "qwen25_14b"
+    ],
+    "harmful": [
+      "llama31_8b",
+      "llama32_1b",
+      "llama32_3b"
+    ],
+    "mgsm": [
+      "granite33_2b",
+      "phi4_mini",
+      "qwen3_4b"
+    ],
+    "lciteeval": [
+      "llama32_1b",
+      "qwen25_3b"
+    ]
+  },
+  "counts": {
+    "performance_rows": 850,
+    "hinf_analysis_rows": 49,
+    "selected_calibrations": 12,
+    "controller_configurations": 224
+  },
+  "files": {
+    "README.md": {
+      "bytes": 1481,
+      "sha256": "1f06aa1edb40e4fd2a62f95a20faa7669bf229195f881076825f5f1d124aafb4"
+    },
+    "derive_srob.py": {
+      "bytes": 939,
+      "sha256": "f398f36207c3acc42f4ae79c7e45e0c45dbfb1f3c9d9da292b2450eb07c8d6ab"
+    },
+    "final_controller_grid.csv": {
+      "bytes": 181167,
+      "sha256": "411c7620bbd152c35f922ecff23ea2ebbf138b30b75c7433f8d8c6844f77abd5"
+    },
+    "final_hinf_srob_analysis.csv": {
+      "bytes": 16415,
+      "sha256": "0c7fd48085695d4214d079a073557b96addac52a4f5d92f7e2892da9a726831d"
+    },
+    "final_performance_id_ood.csv": {
+      "bytes": 129298,
+      "sha256": "5fd8274f5e8c5a3fac29aea7624698725caaff5d80171391b4029b184cc38306"
+    },
+    "final_selected_calibrations.csv": {
+      "bytes": 13543,
+      "sha256": "dee126c416412672faab74e56b3719e504759e0e20577e931e8391ae43401adf"
+    }
+  }
+}

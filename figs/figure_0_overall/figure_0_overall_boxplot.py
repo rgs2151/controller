@@ -4,6 +4,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Patch
 
@@ -13,8 +14,8 @@ import figure_0_overall as base
 UNIT = Path(__file__).resolve().parent
 PLOTS = UNIT / "plots"
 
-BOX_LINEWIDTH = 1.725
-MEDIAN_LINEWIDTH = 1.875
+BOX_LINEWIDTH = 1.35
+MEDIAN_LINEWIDTH = 1.65
 DATA_LOGO_DARKEN = 0.80
 
 
@@ -25,13 +26,26 @@ def darken(color: str, factor: float = DATA_LOGO_DARKEN) -> str:
     return "#" + "".join(f"{round(channel * factor * 255):02X}" for channel in rgb)
 
 
-def recolor_logo(image: np.ndarray, color: str) -> np.ndarray:
-    """Recolor one transparent logo without changing its silhouette."""
+def tinted_logo(image: np.ndarray, color: str) -> np.ndarray:
+    """Tint a logo using its transparency and luminance as the silhouette mask.
 
-    result = np.empty_like(image)
-    result[..., :3] = np.asarray(to_rgba(color)[:3]) * 255
-    result[..., 3] = image[..., 3]
-    return result.astype(np.uint8)
+    The older alpha-only transformation turned light and multicolour assets into
+    solid blocks. This is the same mask construction used by the MGSM figure,
+    including for the four-pane Microsoft mark.
+    """
+
+    source = image.astype(np.float32) / 255.0
+    alpha = source[..., 3]
+    luminance = (
+        0.2126 * source[..., 0]
+        + 0.7152 * source[..., 1]
+        + 0.0722 * source[..., 2]
+    )
+    mask = alpha * np.clip(1.25 - luminance, 0.28, 1.0)
+    output = np.empty_like(source)
+    output[..., :3] = np.asarray(to_rgba(color)[:3])
+    output[..., 3] = mask
+    return np.round(output * 255).astype(np.uint8)
 
 
 def draw_box_panel(
@@ -42,26 +56,28 @@ def draw_box_panel(
     ymax: float,
     logo_images: dict[str, np.ndarray],
     condition_labels: list[str],
+    distribution_labels: list[str],
+    *,
     group_gap: float | None = None,
     ymin: float = 0.0,
 ) -> None:
     if group_gap is None:
-        group_gap = 3.15 if len(conditions) <= 2 else 2.70
-    width = 0.72
+        group_gap = 2.42 if len(conditions) <= 2 else 2.08
+    width = 0.54
     centers = np.arange(len(conditions), dtype=float) * group_gap
     series_logo_images = {
         "baseline": {
-            family: recolor_logo(image, darken(base.GRAY))
+            family: tinted_logo(image, darken(base.GRAY))
             for family, image in logo_images.items()
         },
         "ours": {
-            family: recolor_logo(image, darken(base.TEAL))
+            family: tinted_logo(image, darken(base.TEAL))
             for family, image in logo_images.items()
         },
     }
 
     for center, (_, values) in zip(centers, conditions.items(), strict=True):
-        positions = [center - 0.60, center + 0.60]
+        positions = [center - 0.43, center + 0.43]
         for position, key, color in zip(
             positions,
             ["baseline", "ours"],
@@ -90,7 +106,7 @@ def draw_box_panel(
             )
 
             offsets = (
-                np.linspace(-0.27, 0.27, len(points))
+                np.linspace(-0.18, 0.18, len(points))
                 if len(points) > 1
                 else [0.0]
             )
@@ -104,69 +120,146 @@ def draw_box_panel(
                     base.logo_zoom(float(point["size_b"])),
                 )
 
-    ax.set_xlim(centers[0] - 1.0, centers[-1] + 1.0)
     displayed_range = ymax - ymin
-    lower_limit = ymin - 0.05 * displayed_range
-    ax.set_ylim(lower_limit, ymax)
-    ax.set_yticks(
-        np.linspace(0, ymax, 6)
-        if ymin == 0
-        else np.arange(ymin, ymax + 0.1, 10)
-    )
-    ax.set_ylabel(ylabel, fontsize=11)
-    ax.set_xticks(centers)
-    ax.set_xticklabels(condition_labels, fontsize=9.5)
-    ax.set_title(title, fontsize=14, fontweight="semibold", pad=20)
-    ax.tick_params(axis="y", labelsize=8)
-    ax.tick_params(axis="x", length=0, pad=8)
-    ax.spines["left"].set_bounds(ymin, ymax)
-    ax.spines["left"].set_position(("outward", 4))
-    ax.spines["bottom"].set_position(("outward", 4))
+    ax.set_xlim(centers[0] - 0.86, centers[-1] + 0.86)
+    ax.set_ylim(ymin - 0.055 * displayed_range, ymax)
     if ymin == 0:
-        ax.axhline(0, color=base.INK, linewidth=0.8, zorder=3)
-    ax.yaxis.grid(True, color="#E5E7E9", linewidth=0.6, zorder=0)
+        ax.set_yticks(np.linspace(0, ymax, 6))
+    else:
+        ax.set_yticks(np.arange(ymin, ymax + 0.1, 10))
+    ax.set_ylabel(ylabel, fontsize=16, labelpad=2)
+    ax.set_xticks(centers)
+    ax.set_xticklabels(condition_labels, fontsize=15.5)
+    ax.set_title(title, fontsize=16.5, fontweight="bold", pad=44)
+    ax.tick_params(axis="y", labelsize=15, colors="black", width=0.9, length=4.5)
+    ax.tick_params(
+        axis="x",
+        labelsize=15.5,
+        length=5,
+        width=0.9,
+        pad=9,
+        colors="black",
+        direction="out",
+    )
+    ax.yaxis.grid(True, color="#E2E5E8", linewidth=0.7, zorder=0)
+    ax.set_axisbelow(True)
+    sns.despine(ax=ax, trim=True, offset=6)
+
+    for center, label in zip(centers, distribution_labels, strict=True):
+        ax.text(
+            center,
+            1.035,
+            label,
+            transform=ax.get_xaxis_transform(),
+            ha="center",
+            va="bottom",
+            fontsize=16.5,
+            fontweight="bold",
+            color="#8B1E1E" if label == "OOD" else "black",
+            clip_on=False,
+        )
+
+
+def draw_model_legend(ax: plt.Axes, logo_images: dict[str, np.ndarray]) -> None:
+    ax.set_axis_off()
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.text(
+        0.5,
+        1.02,
+        "Model family",
+        ha="center",
+        va="bottom",
+        fontsize=14.5,
+        fontweight="bold",
+        color="black",
+    )
+    families = ["GPT", "LLaMA", "Qwen", "Phi", "Granite", "OLMo"]
+    y_positions = np.linspace(0.84, 0.32, len(families))
+    for family, y in zip(families, y_positions, strict=True):
+        base.add_logo(ax, logo_images, family, 0.22, float(y), 0.084)
+        ax.text(
+            0.40,
+            y,
+            family,
+            ha="left",
+            va="center",
+            fontsize=13.5,
+            color="black",
+        )
+
+
+def hierarchy_heading(
+    fig: plt.Figure,
+    axes: list[plt.Axes],
+    indices: tuple[int, ...],
+    label: str,
+) -> None:
+    left = min(axes[index].get_position().x0 for index in indices)
+    right = max(axes[index].get_position().x1 for index in indices)
+    fig.text(
+        (left + right) / 2,
+        0.965,
+        label,
+        ha="center",
+        va="top",
+        fontsize=21.5,
+        fontweight="bold",
+        color="black",
+    )
 
 
 def main() -> None:
     base.setup_style()
+    plt.rcParams.update(
+        {
+            "font.size": 11.5,
+            "axes.labelcolor": "black",
+            "xtick.color": "black",
+            "ytick.color": "black",
+            "text.color": "black",
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
+        }
+    )
     PLOTS.mkdir(exist_ok=True)
     results = base.build_results()
     logo_images = {
         family: base.square_logo(path) for family, path in base.LOGO_FILES.items()
     }
 
-    # Reduce the canvas in lockstep with the dedicated spacer so the other
-    # panels retain their established physical sizes.
-    fig = plt.figure(figsize=(18.02, 5.53))
+    fig = plt.figure(figsize=(16.2, 5.85))
     grid = fig.add_gridspec(
         1,
-        6,
-        width_ratios=[1.35, 1.35, 0.29, 3.84, 1.35, 0.82],
-        left=0.045,
+        9,
+        width_ratios=[1.48, 0.68, 1.48, 0.68, 3.65, 0.68, 1.48, 0.68, 0.92],
+        left=0.055,
         right=0.985,
-        bottom=0.19,
-        top=0.84,
-        wspace=0.44,
+        bottom=0.225,
+        top=0.735,
+        wspace=0.0,
     )
-    axes = [fig.add_subplot(grid[0, index]) for index in [0, 1, 3, 4, 5]]
+    axes = [fig.add_subplot(grid[0, index]) for index in [0, 2, 4, 6, 8]]
 
     draw_box_panel(
         axes[0],
         "Truthfulness shift",
         results["Truthfulness shift"],
-        "Truthful responses (%)",
+        "Weighted truthful responses (%)",
         100,
         logo_images,
         ["English", "Spanish"],
+        ["ID", "OOD"],
     )
     draw_box_panel(
         axes[1],
         "Adversarial shift",
         results["Adversarial shift"],
-        "Safe responses (%)",
+        "Weighted safe responses (%)",
         100,
         logo_images,
         ["Direct", "Adversaries"],
+        ["ID", "OOD"],
         ymin=70,
     )
     draw_box_panel(
@@ -177,7 +270,22 @@ def main() -> None:
         60,
         logo_images,
         ["Chinese", "French", "Japanese", "Swahili", "Telugu"],
-        group_gap=3.10,
+        ["OOD"] * 5,
+        group_gap=2.25,
+    )
+    # Replace repeated language labels with one centered distribution heading.
+    for text in list(axes[2].texts):
+        text.remove()
+    axes[2].text(
+        0.5,
+        1.035,
+        "OOD",
+        transform=axes[2].transAxes,
+        ha="center",
+        va="bottom",
+        fontsize=16.5,
+        fontweight="bold",
+        color="#8B1E1E",
     )
     draw_box_panel(
         axes[3],
@@ -187,8 +295,12 @@ def main() -> None:
         10,
         logo_images,
         ["8K", "16K"],
+        ["ID", "OOD"],
     )
-    base.draw_model_legend(axes[4], logo_images)
+    draw_model_legend(axes[4], logo_images)
+
+    hierarchy_heading(fig, axes, (0, 1), "Parallel Steering")
+    hierarchy_heading(fig, axes, (2, 3), "Orthogonal Steering")
 
     fig.legend(
         handles=[
@@ -202,23 +314,24 @@ def main() -> None:
                 facecolor="none",
                 edgecolor=base.TEAL,
                 linewidth=BOX_LINEWIDTH,
-                label=r"H$\infty$ (ours)",
+                label=r"$H_\infty$ (ours)",
             ),
         ],
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.995),
+        loc="lower center",
+        bbox_to_anchor=(0.49, 0.02),
         ncol=2,
-        fontsize=13,
-        handlelength=1.8,
-        handleheight=0.9,
-        columnspacing=2.2,
-        labelspacing=0.0,
+        fontsize=15,
+        handlelength=1.9,
+        handleheight=0.95,
+        columnspacing=2.4,
+        handletextpad=0.65,
     )
 
     for suffix in ["pdf", "png"]:
         fig.savefig(
             PLOTS / f"figure_0_overall_boxplot.{suffix}",
             bbox_inches="tight",
+            pad_inches=0.05,
             facecolor="white",
             transparent=False,
         )

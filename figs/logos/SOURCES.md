@@ -14,6 +14,9 @@
   <https://github.com/allenai>.
 - `gemma_official.png`: official Gemma mark from Google AI for Developers,
   <https://ai.google.dev/gemma/images/gemma_sq.png>.
+- `google_official.png`: official full-color Google G downloaded from Google's
+  Partner Marketing Hub brand guidance,
+  <https://partnermarketinghub.withgoogle.com/brands/google/branding-guidelines/how-to-show-googles-brand/>.
 - `qwen.png`, `qwen.svg`, and `qwen_square.png`: Qwen model mark retained from
   the original benchmark-figure asset bundle.
 - `gemma.svg` and `llama.svg`: vector marks from the MIT-licensed Lobe Icons

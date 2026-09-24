@@ -20,21 +20,22 @@
 - Outputs: `plots/figure_0_overall.pdf`, `plots/figure_0_overall.png`, and `plots/figure_0_overall_values.csv`.
 - Alternative display: `figure_0_overall_boxplot.py` writes
   `plots/figure_0_overall_boxplot.pdf` and `.png` using the identical data,
-  layout, logos, colors, and axes. It replaces each aggregate bar with a
-  30%-opacity box spanning the model-score quartiles, a median line, and
-  min/max whiskers; model logos retain their exact individual scores. The
-  paired boxes are narrower and slightly farther apart than the bar centers,
-  with tighter within-box logo jitter for clearer series membership.
+  logos, colors, and axes. It replaces each aggregate bar with an unfilled box
+  spanning the model-score quartiles, a median line, and min/max whiskers;
+  model logos retain their exact individual scores. Paired boxes are separated
+  with compact within-box logo jitter so that series membership stays legible.
   Logos on H∞ boxes use a 20%-darker version of `#007C7C`, while logos on
   best-competitor boxes use a 20%-darker version of `#737B80`; native company
-  colors remain in the model-family legend. Boxes have no fill. Their borders,
-  medians, whiskers, and caps use the exact opaque series colors at half the
-  preceding revision's line weight. Slightly wider within-box logo jitter keeps
-  nearby model identities separable without changing box width.
+  colors remain in the model-family legend. Recoloring uses the source logo's
+  alpha and luminance mask rather than alpha alone, preserving light and
+  multicolor silhouettes such as the Microsoft four-pane mark. Box borders,
+  medians, whiskers, and caps use the exact opaque series colors.
   In this alternative display, the adversarial panel is cropped to 70--100%
-  to resolve the tightly clustered safe-response results. Its bottom spine
-  retains the same proportional 5% clearance below the lowest labeled tick
-  used throughout the figure.
+  to resolve the tightly clustered safe-response results. Arial typography,
+  trimmed outward-offset spines, and larger labels follow the shared figure
+  style. Nested headings organize panels as Parallel Steering versus
+  Orthogonal Steering, then by shift, distribution (ID/OOD), and concrete
+  evaluation condition. OOD headings use the project red `#8B1E1E`.
 
 ## Statistics
 
@@ -53,8 +54,8 @@
 - Grouping: each x-axis label names the concrete evaluation condition rather than using ID/OOD shorthand.
 - Ordering/sorting: shifts follow truthfulness, adversarial, language, and context; languages follow Chinese, French, Japanese, Swahili, and Telugu.
 - Lines/markers/labels: unboxed logos mark individual model scores; logo size increases with model parameters; the model-family legend uses a common display size.
-- Panels: the first pair contains truthfulness and adversarial shifts; additional horizontal space separates it from the language and context pair. The language panel is widened so all five labels remain on one line while retaining the common rendered bar width.
-- Legend placement: the bar-series legend is centered above the full figure; the compact model-family legend remains at right.
+- Panels: the first pair contains truthfulness and adversarial shifts under `Parallel Steering`; the language and context pair appears under `Orthogonal Steering`. Each shift has a nested ID/OOD heading, with language shift labeled OOD once across all five languages. Explicit equal-width spacer columns separate all four benchmark axes while preserving the compact 16.2-inch canvas and the established physical width of the language panel.
+- Legend placement: the box-series legend is centered below the full figure; the compact native-color model-family legend remains at right.
 
 ## Interpretation
 

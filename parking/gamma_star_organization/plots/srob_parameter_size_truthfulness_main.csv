@@ -1,0 +1,6 @@
+model_key,model_label,paper_status,calibration_id,parameter_billions,gamma_star,s_rob_value,selection_path
+gpt2_xl,GPT-2 XL,final_reported,txi95_fluency05_n200_r1,1.5576112,30.839061737060547,0.03242640805761803,benchmarks/truthfulness/cache/gpt2_xl/calibrations/h_infinity/txi95_fluency05_n200_r1/selection.json
+gemma2_2b,gemma-2-2b,exploratory_exception,fixed_q0p1_qf0p31622777_r1,2.614341888,39.205193519592285,0.02550682473994837,benchmarks/truthfulness/cache/gemma2b/calibrations/h_infinity/fixed_q0p1_qf0p31622777_r1/selection.json
+llama31_8b,Llama-3-8B,final_reported,txi_fluency_95_05,8.030261248,4.852664470672607,0.20607235592808135,benchmarks/truthfulness/cache/llama8b/calibrations/h_infinity/txi_fluency_95_05/selection.json
+qwen25_14b,Qwen-2.5-14B,final_reported,selected,14.770033664,71.69063687324524,0.01394882293720001,benchmarks/truthfulness/cache/qwen14b/calibrations/h_infinity/selected/selection.json
+olmo2_32b,OLMo-2-0325-32B-Instruct,final_reported,txi95_fluency05_n200_r1,32.234279936,2.571195363998413,0.38892416111272093,benchmarks/truthfulness/cache/olmo2_32b_instruct/calibrations/h_infinity/txi95_fluency05_n200_r1/selection.json
