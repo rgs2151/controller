@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import math
 from collections import defaultdict
 from pathlib import Path
@@ -31,6 +32,7 @@ REPO = UNIT.parents[1]
 SOURCE = REPO / "figs/benchmark_figures/cache/harmbench_refusal_results.csv"
 PLOTS = UNIT / "plots"
 LLAMA_LOGO = REPO / "figs/logos/llama_transparent.png"
+FALSE_REJECT_CACHE = UNIT / "cache/false_reject_full/parsed_judgments.jsonl"
 
 TEAL = "#398197"  # preserved only for the original figure variant
 PROJECT_TEAL = "#007C7C"
@@ -104,6 +106,53 @@ def read_rows() -> list[dict[str, str | float]]:
             {key: float(value) if key in numeric else value.strip() for key, value in row.items()}
             for row in csv.DictReader(handle)
         ]
+
+
+def read_false_reject_composition() -> dict[str, dict[str, tuple[float, ...]]]:
+    """Return regime-balanced FalseReject class percentages by model and method."""
+
+    parsed = [
+        json.loads(line)
+        for line in FALSE_REJECT_CACHE.read_text().splitlines()
+        if line.strip()
+    ]
+    model_keys = {
+        "llama32_1b_instruct": "Llama-3.2-1B-Instruct",
+        "llama32_3b_instruct": "Llama-3.2-3B-Instruct",
+        "llama31_8b_instruct": "Llama-3.1-8B-Instruct",
+    }
+    method_keys = {"alqr": "A-LQR", "h_infinity": "H-infinity"}
+    labels = ("Direct Refusal", "Safe Partial Compliance", "Full Compliance")
+    result: dict[str, dict[str, tuple[float, ...]]] = {}
+    for model_key, model in model_keys.items():
+        result[model] = {}
+        for method_key, method in method_keys.items():
+            regime_values = []
+            for regime in ("direct", "adversarial"):
+                subset = [
+                    row
+                    for row in parsed
+                    if row["model"] == model_key
+                    and row["method"] == method_key
+                    and row["regime"] == regime
+                ]
+                if not subset:
+                    raise ValueError(
+                        f"Missing FalseReject rows for {model_key}/{method_key}/{regime}"
+                    )
+                regime_values.append(
+                    tuple(
+                        100.0
+                        * sum(row["label"] == label for row in subset)
+                        / len(subset)
+                        for label in labels
+                    )
+                )
+            result[model][method] = tuple(
+                0.5 * (regime_values[0][index] + regime_values[1][index])
+                for index in range(3)
+            )
+    return result
 
 
 def marker_size(model: str, base: float = 62.0) -> float:
@@ -545,6 +594,54 @@ def add_logo_method_legend(
             text.set_fontweight("bold")
 
 
+def draw_refusal_composition_panel(
+    ax: plt.Axes,
+    composition: dict[str, dict[str, tuple[float, ...]]],
+    *,
+    font_scale: float = 1.0,
+) -> None:
+    categories = ("Direct\nrefusal", "Safe partial\ncompliance", "Full\ncompliance")
+    methods = ("A-LQR", "H-infinity")
+    x = np.arange(len(categories), dtype=float)
+    width = 0.34
+    offsets = {"A-LQR": -width / 2, "H-infinity": width / 2}
+    models = tuple(MODEL_LABELS)
+    for method in methods:
+        model_values = np.asarray(
+            [composition[model][method] for model in models], dtype=float
+        )
+        means = model_values.mean(axis=0)
+        positions = x + offsets[method]
+        ax.bar(
+            positions,
+            means,
+            width=width * 0.88,
+            facecolor=mpl.colors.to_rgba(LOGO_METHOD_COLORS[method], 0.20),
+            edgecolor=LOGO_METHOD_COLORS[method],
+            linewidth=2.0 if method == "H-infinity" else 1.5,
+            zorder=2,
+        )
+        for category_index, position in enumerate(positions):
+            ax.text(
+                position,
+                means[category_index] + 3.0,
+                f"{means[category_index]:.1f}",
+                ha="center",
+                va="bottom",
+                fontsize=9.0 * font_scale,
+                fontweight="bold" if method == "H-infinity" else "normal",
+                color=LOGO_METHOD_COLORS[method],
+            )
+    ax.set_xticks(x, categories, fontsize=10.5 * font_scale)
+    ax.set_ylabel("Response proportion (%)", fontsize=11.0 * font_scale)
+    ax.set_ylim(0, 104)
+    ax.set_yticks((0, 25, 50, 75, 100))
+    ax.tick_params(axis="y", labelsize=9.5 * font_scale)
+    ax.grid(axis="y", color=GRID, linewidth=0.8, alpha=0.75, zorder=0)
+    ax.set_axisbelow(True)
+    sns.despine(ax=ax, trim=True, offset=5)
+
+
 def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
     summary = aggregates(rows)
     logo_images = {
@@ -588,8 +685,11 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
         colors=LOGO_METHOD_COLORS,
         font_scale=font_scale,
     )
-    reserved = fig.add_subplot(outer[2])
-    reserved.set_axis_off()
+    draw_refusal_composition_panel(
+        fig.add_subplot(outer[2]),
+        read_false_reject_composition(),
+        font_scale=1.05,
+    )
     draw_logo_size_legend(
         fig,
         bounds=(0.08, 0.885, 0.60, 0.09),
@@ -598,6 +698,44 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
     )
     add_logo_method_legend(fig, x=0.37, y=-0.01, fontsize=11.0)
     fig.subplots_adjust(left=0.065, right=0.985, top=0.82, bottom=0.27)
+    return fig
+
+
+def create_refusal_composition_figure(
+    rows: list[dict[str, str | float]],
+) -> plt.Figure:
+    del rows
+    fig, ax = plt.subplots(figsize=(4.8, 5.35))
+    draw_refusal_composition_panel(
+        ax,
+        read_false_reject_composition(),
+        font_scale=1.12,
+    )
+    handles = [
+        Line2D(
+            [],
+            [],
+            linestyle="none",
+            marker="o",
+            markersize=8.5 if method == "H-infinity" else 7.5,
+            markerfacecolor=LOGO_METHOD_COLORS[method],
+            markeredgecolor="none",
+            label=METHOD_LABELS[method],
+        )
+        for method in ("A-LQR", "H-infinity")
+    ]
+    legend = fig.legend(
+        handles=handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.005),
+        ncol=2,
+        fontsize=11.0,
+        handlelength=0.8,
+        handletextpad=0.35,
+        columnspacing=1.6,
+    )
+    legend.get_texts()[-1].set_fontweight("bold")
+    fig.subplots_adjust(left=0.18, right=0.98, top=0.95, bottom=0.20)
     return fig
 
 
@@ -648,6 +786,7 @@ def render_logo_variant() -> None:
     for stem, creator in [
         ("figure_harm_main", create_logo_main_figure),
         ("figure_harm_rejection", create_logo_rejection_figure),
+        ("figure_harm_refusal_composition", create_refusal_composition_figure),
     ]:
         figure = creator(read_rows())
         figure.savefig(
