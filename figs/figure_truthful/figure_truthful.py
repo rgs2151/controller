@@ -973,15 +973,23 @@ def render_figure_composite(
             pad=20,
         )
 
+    frontier_bounds = frontier_header.get_position()
     frontier_legend = fig.legend(
         handles=method_handles(),
-        loc="lower center",
-        bbox_to_anchor=(0.31, -0.005),
+        loc="lower left",
+        bbox_to_anchor=(
+            frontier_bounds.x0,
+            -0.005,
+            frontier_bounds.width,
+            0.06,
+        ),
         ncol=len(METHOD_ORDER),
         fontsize=9.0,
         handlelength=0.7,
         handletextpad=0.25,
-        columnspacing=0.42,
+        columnspacing=0.8,
+        mode="expand",
+        borderaxespad=0,
         labelcolor="black",
     )
     emphasize_ours(frontier_legend)
