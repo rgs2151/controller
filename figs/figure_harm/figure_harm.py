@@ -683,6 +683,9 @@ def draw_refusal_composition_panel(
     ax.grid(axis="y", color=GRID, linewidth=0.8, alpha=0.75, zorder=0)
     ax.set_axisbelow(True)
     sns.despine(ax=ax, trim=True, offset=5)
+    # despine(trim=True) rebuilds these ticks; enforce the category size after
+    # that operation so it is not reset to the global 16.5 pt default.
+    ax.tick_params(axis="x", labelsize=9.5 * font_scale)
 
 
 def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
