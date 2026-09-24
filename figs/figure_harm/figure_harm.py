@@ -599,7 +599,6 @@ def draw_refusal_composition_panel(
     composition: dict[str, dict[str, tuple[float, ...]]],
     *,
     font_scale: float = 1.0,
-    category_label_scale: float = 0.76,
 ) -> None:
     categories = (
         "Direct\nrefusal",
@@ -670,11 +669,12 @@ def draw_refusal_composition_panel(
                     linestyle="none",
                     zorder=4,
                 )
-    # Match the template-label typography in the finalized first panel.
+    # Match the final rendered tick size applied by style_main_axis() in the
+    # finalized first panel, rather than its earlier provisional label size.
     ax.set_xticks(
         x,
         categories,
-        fontsize=7.7 * font_scale * category_label_scale,
+        fontsize=9.5 * font_scale,
     )
     ax.set_ylabel("Response proportion (%)", fontsize=10.5 * font_scale)
     ax.set_ylim(0, 104)
@@ -753,7 +753,6 @@ def create_refusal_composition_figure(
         ax,
         read_false_reject_composition(),
         font_scale=1.12,
-        category_label_scale=1.0,
     )
     handles = [
         Line2D(
