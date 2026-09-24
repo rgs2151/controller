@@ -179,8 +179,9 @@
 - The completed `--scope full` run used the same script, rubric, parser, and
   cache schema for all 10,800 available outputs. The 600-call pilot remains a
   separate diagnostic cache and is not substituted into the final statistics.
-- The complete 54-row Markdown, TeX, and one-page portrait PDF table is under
-  `figs/bench_table/harmful/harmbench_false_reject.*`.
+- The condition-level and summary Markdown, TeX, and one-page portrait PDF
+  tables are under `figs/bench_table/harmful/harmbench_false_reject_full.*`
+  and `figs/bench_table/harmful/harmbench_false_reject_summary.*`.
 - All 10,800 full-analysis judgments produced exactly one parseable
   FalseReject label; the cache retains the requested and returned judge model,
   termination metadata, token usage, and verbatim response.
