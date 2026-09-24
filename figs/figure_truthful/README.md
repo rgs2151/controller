@@ -64,6 +64,11 @@
 - `plots/figure_truthful_c_gpt2_xl.pdf` and `.png`: separately preserved
   showcase variant with the same True-only encoding, fixed to **GPT-2 XL**;
   it does not replace or alter the data-selected Qwen variant.
+- `plots/figure_truthful_composite.pdf` and `.png`: final publication-scale
+  composition of the two English/Spanish True–Informative panels and the two
+  GPT-2 XL True-only category radars. It is rendered directly from the source
+  data rather than assembled from raster panels; all labels, ticks, titles,
+  and legends use coordinated readable sizing and solid black text.
 - `cache/truthfulqa_category_txi.csv`: auditable category-level source values,
   including the exact scorer artifact paths.
 
