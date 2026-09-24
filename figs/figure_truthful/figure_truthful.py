@@ -642,6 +642,53 @@ def emphasize_ours(legend: plt.Legend) -> None:
             text.set_fontweight("bold")
 
 
+def force_black_axis_text(ax: plt.Axes) -> None:
+    """Keep all composite labels legible after the panels are reduced."""
+    ax.xaxis.label.set_color("black")
+    ax.yaxis.label.set_color("black")
+    ax.title.set_color("black")
+    ax.tick_params(axis="both", colors="black")
+    for text in ax.texts:
+        text.set_color("black")
+    for label in [*ax.get_xticklabels(), *ax.get_yticklabels()]:
+        label.set_color("black")
+    for spine in ax.spines.values():
+        spine.set_color("black")
+
+
+def draw_composite_model_header(
+    ax: plt.Axes,
+    images: dict[str, np.ndarray],
+    models: list[str],
+) -> None:
+    ax.set_axis_off()
+    groups = []
+    for model in models:
+        family = MODEL_FAMILIES[model]
+        logo = OffsetImage(
+            images[family],
+            zoom=0.075 * LOGO_SCALE[family],
+            resample=True,
+        )
+        text = TextArea(
+            model,
+            textprops={"fontsize": 10.5, "fontfamily": "Arial", "color": "black"},
+        )
+        groups.append(HPacker(children=[logo, text], align="center", pad=0, sep=3))
+    packed = HPacker(children=groups, align="center", pad=0, sep=18)
+    ax.add_artist(
+        AnchoredOffsetbox(
+            loc="center",
+            child=packed,
+            pad=0,
+            frameon=False,
+            bbox_to_anchor=(0.5, 0.5),
+            bbox_transform=ax.transAxes,
+            borderpad=0,
+        )
+    )
+
+
 def load_inputs() -> tuple[list[Result], dict[str, np.ndarray]]:
     records = read_table(
         REPO / "figs/bench_table/truthfulness/truthfulqa.md", "ID"
@@ -831,6 +878,115 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
     return model, mean_margins
 
 
+def render_figure_composite(
+    records: list[Result], images: dict[str, np.ndarray]
+) -> None:
+    """Render the final four-panel truthfulness composition at publication size."""
+    fig = plt.figure(figsize=(15.8, 5.25))
+    outer = fig.add_gridspec(
+        2,
+        5,
+        height_ratios=[0.14, 0.86],
+        width_ratios=[1.25, 1.25, 0.10, 1.0, 1.0],
+        left=0.045,
+        right=0.985,
+        bottom=0.19,
+        top=0.97,
+        wspace=0.34,
+        hspace=0.10,
+    )
+
+    frontier_header = fig.add_subplot(outer[0, 0:2])
+    draw_composite_model_header(frontier_header, images, list(MODEL_SIZES))
+    radar_header = fig.add_subplot(outer[0, 3:5])
+    draw_composite_model_header(radar_header, images, ["GPT-2 XL"])
+
+    frontier_axes: list[tuple[plt.Axes, plt.Axes, plt.Axes]] = []
+    for column in [0, 1]:
+        nested = outer[1, column].subgridspec(
+            2,
+            2,
+            width_ratios=[8.0, 1.15],
+            height_ratios=[1.10, 7.0],
+            hspace=0.04,
+            wspace=0.04,
+        )
+        top_ax = fig.add_subplot(nested[0, 0])
+        main_ax = fig.add_subplot(nested[1, 0])
+        right_ax = fig.add_subplot(nested[1, 1])
+        frontier_axes.append((main_ax, top_ax, right_ax))
+
+    for (main_ax, top_ax, right_ax), split, title in zip(
+        frontier_axes,
+        ["ID", "OOD"],
+        ["English (ID)", "Spanish (OOD)"],
+        strict=True,
+    ):
+        draw_frontier(main_ax, top_ax, right_ax, records, split, images)
+        top_ax.set_title(title, fontsize=12.0, fontweight="bold", color="black", pad=7)
+        main_ax.set_xlabel("Informative (%)", fontsize=10.5, color="black")
+        main_ax.set_ylabel("True (%)", fontsize=10.5, color="black")
+        main_ax.tick_params(labelsize=9.5, colors="black")
+        for contour_label in main_ax.texts:
+            contour_label.set_fontsize(8.0)
+        force_black_axis_text(main_ax)
+        force_black_axis_text(top_ax)
+        force_black_axis_text(right_ax)
+
+    radar_grid = outer[1, 3:5].subgridspec(1, 2, wspace=0.88)
+    radar_id_ax = fig.add_subplot(radar_grid[0], projection="polar")
+    radar_ood_ax = fig.add_subplot(radar_grid[1], projection="polar")
+    for ax, split, title, radial_labels in zip(
+        [radar_id_ax, radar_ood_ax],
+        ["ID", "OOD"],
+        ["English (ID)", "Spanish (OOD)"],
+        [True, False],
+        strict=True,
+    ):
+        draw_radar(
+            ax,
+            split,
+            model="GPT-2 XL",
+            metric="true_pct",
+            include_original=True,
+            label_fontsize=9.5,
+            label_fontweight="bold",
+            label_pad=12,
+            extend_label_spokes=True,
+            show_radial_labels=radial_labels,
+        )
+        ax.set_title(title, fontsize=12.0, fontweight="bold", color="black", pad=20)
+        for radial_label in ax.get_yticklabels():
+            radial_label.set_fontsize(8.8)
+        force_black_axis_text(ax)
+
+    frontier_legend = fig.legend(
+        handles=method_handles(),
+        loc="lower center",
+        bbox_to_anchor=(0.31, -0.005),
+        ncol=5,
+        fontsize=10.0,
+        handlelength=0.7,
+        handletextpad=0.25,
+        columnspacing=0.62,
+        labelcolor="black",
+    )
+    emphasize_ours(frontier_legend)
+    radar_legend = fig.legend(
+        handles=radar_handles(include_original=True),
+        loc="lower center",
+        bbox_to_anchor=(0.79, 0.015),
+        ncol=3,
+        fontsize=10.0,
+        handlelength=0.8,
+        handletextpad=0.3,
+        columnspacing=1.25,
+        labelcolor="black",
+    )
+    emphasize_ours(radar_legend)
+    save_figure(fig, "figure_truthful_composite")
+
+
 def main() -> None:
     setup_style()
     PLOTS.mkdir(parents=True, exist_ok=True)
@@ -840,6 +996,7 @@ def main() -> None:
     render_figure_c()
     render_figure_c_best_model()
     render_figure_c_model("GPT-2 XL", "figure_truthful_c_gpt2_xl")
+    render_figure_composite(records, images)
 
 
 if __name__ == "__main__":
