@@ -4,7 +4,10 @@
 
 - Load the frozen HarmBench template-level results for Llama 3.2 1B, Llama 3.2 3B, and Llama 3.1 8B.
 - Summarize each model–method pair across the direct request and five jailbreak templates.
-- Plot mean versus worst-case attack rejection, template-level attack success profiles, and the aggregate safety frontier in one 1×3 figure.
+- Plot mean versus worst-case attack rejection, template-level attack success profiles, and the aggregate safety frontier.
+- Reserve the third slot of the active main layout for a separately judged
+  response-disposition panel; its literature-grounded design is documented in
+  `refusal_panel_design.md`.
 - Write a vector PDF and matching PNG to `plots/`.
 
 ## Variables
@@ -65,7 +68,10 @@
   below the two-line template labels. The compact near-equal panel footprints
   leave room for neighboring manuscript panels; explicit endpoint padding and
   nonuniform categorical spacing keep Direct, the long central labels, and
-  Jailbreak Bot clear of the axis boundaries without stretching the panel.
+  Jailbreak Bot clear of the axis boundaries without stretching the panel. The
+  first two panels now occupy only the left portion of a three-column canvas;
+  the native-color Llama scale legend and method legend remain centered over
+  those two panels, not over the reserved response-disposition slot.
 
 ## References
 
