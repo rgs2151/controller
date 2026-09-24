@@ -548,6 +548,7 @@ HARMFUL_JACKKNIFE_PATH = UNIT / "harmful/harmbench_jackknife.json"
 FALSE_REJECT_ROWS_PATH = (
     REPO / "figs/figure_harm/cache/false_reject_full/parsed_judgments.jsonl"
 )
+FALSE_REJECT_HIGHER_IS_BETTER = (True, True, False, True)
 
 
 HARMFUL_DOCUMENTATION = r"""## Method
@@ -2183,23 +2184,43 @@ def render_false_reject_markdown(rows: list[dict]) -> str:
     lines = [
         "# HarmBench refusal-type analysis",
         "",
-        "| Model | Method | Direct refusal (%) | Safe partial compliance (%) | Full compliance (%) | USR (%) ↑ |",
+        "| Model | Method | Direct refusal (%) ↑ | Safe partial compliance (%) ↑ | Full compliance (%) ↓ | USR (%) ↑ |",
         "|---|---|---:|---:|---:|---:|",
     ]
-    for row in rows:
-        values = " | ".join(
-            f"{value:.2f} ± {standard_error:.2f}"
-            for value, standard_error in zip(
-                row["values"], row["standard_errors"], strict=True
+    for model_key, _ in HARMFUL_MODELS:
+        model_rows = [row for row in rows if row["model_key"] == model_key]
+        best_values = tuple(
+            (max if higher else min)(row["values"][index] for row in model_rows)
+            for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
+        )
+        best_baselines = tuple(
+            (max if higher else min)(
+                row["values"][index]
+                for row in model_rows
+                if row["method_key"] != "h_infinity"
             )
+            for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
         )
-        lines.append(
-            f"| {row['model']} | {row['method_markdown']} | {values} |"
-        )
+        for row in model_rows:
+            formatted = []
+            for index, (value, standard_error) in enumerate(
+                zip(row["values"], row["standard_errors"], strict=True)
+            ):
+                number = f"{value:.2f} ± {standard_error:.2f}"
+                if row["method_key"] == "h_infinity" and value == best_values[index]:
+                    number = f"**{number}**"
+                elif row["method_key"] != "h_infinity" and value == best_baselines[index]:
+                    number = f"<u>{number}</u>"
+                formatted.append(number)
+            lines.append(
+                f"| {row['model']} | {row['method_markdown']} | "
+                + " | ".join(formatted)
+                + " |"
+            )
     lines.extend(
         [
             "",
-            "USR is FalseReject's toxic-prompt Useful Safety Rate: Direct Refusal + Safe Partial Compliance. Each cell is the equal-weight mean of the Direct and Adversarial regimes; thus the five jailbreak templates do not outweigh Direct prompts. Per method, the 1B/3B rows contain 240 Direct and 1,200 Adversarial outputs, while the compact 8B row contains 120 Direct and 600 Adversarial outputs. Values are full-sample percentages ± ten-group behavior-clustered jackknife standard errors. The judge uses the verbatim FalseReject Appendix G three-class rubric with pinned `gpt-4o-mini-2024-07-18` at temperature zero.",
+            "USR is FalseReject's toxic-prompt Useful Safety Rate: Direct Refusal + Safe Partial Compliance. Higher Safe Partial Compliance means more constructive safe engagement, although it can trade off against Direct Refusal; USR is the primary joint summary. Bold marks H∞ when it is best, and underline marks the best competitor. Each cell is the equal-weight mean of the Direct and Adversarial regimes; thus the five jailbreak templates do not outweigh Direct prompts. Per method, the 1B/3B rows contain 240 Direct and 1,200 Adversarial outputs, while the compact 8B row contains 120 Direct and 600 Adversarial outputs. Values are full-sample percentages ± ten-group behavior-clustered jackknife standard errors. The judge uses the verbatim FalseReject Appendix G three-class rubric with pinned `gpt-4o-mini-2024-07-18` at temperature zero.",
             "",
         ]
     )
@@ -2212,25 +2233,31 @@ def render_false_reject_tex(rows: list[dict]) -> str:
         r"\begin{table*}[!htbp]",
         r"\centering",
         r"\definecolor{projectdarkred}{RGB}{128,0,0}",
-        r"\caption{HarmBench refusal-type analysis using the three-class FalseReject rubric. USR is toxic-prompt Useful Safety Rate: Direct Refusal plus Safe Partial Compliance. Direct and Adversarial regimes receive equal weight, so the five jailbreak templates do not outweigh Direct prompts. Per method, the 1B/3B rows contain 240 Direct and 1,200 Adversarial outputs; the compact 8B row contains 120 Direct and 600 Adversarial outputs. Values are full-sample percentages $\pm$ ten-group behavior-clustered jackknife standard errors.}",
+        r"\caption{HarmBench refusal-type analysis using the three-class FalseReject rubric. USR is toxic-prompt Useful Safety Rate: Direct Refusal plus Safe Partial Compliance. Higher Safe Partial Compliance denotes more constructive safe engagement, although it can trade off against Direct Refusal; USR is the primary joint summary. Bold marks a best H$\infty$ result and underline marks the best competitor. Direct and Adversarial regimes receive equal weight, so the five jailbreak templates do not outweigh Direct prompts. Per method, the 1B/3B rows contain 240 Direct and 1,200 Adversarial outputs; the compact 8B row contains 120 Direct and 600 Adversarial outputs. Values are full-sample percentages $\pm$ ten-group behavior-clustered jackknife standard errors.}",
         r"\label{tab:harmbench-false-reject}",
         r"\small",
         r"\renewcommand{\arraystretch}{1.10}",
         r"\setlength{\tabcolsep}{7pt}",
         r"\resizebox{\textwidth}{!}{%",
         r"\begin{tabular}{rlcccc}",
-        r"Model & Method & \shortstack{Direct refusal\\(\%)} & \shortstack{Safe partial\\compliance (\%)} & \shortstack{Full compliance\\(\%)} & \cellcolor{projectdarkred!10}USR (\%) $\uparrow$ \\",
+        r"Model & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \shortstack{Safe partial\\compliance (\%) $\uparrow$} & \shortstack{Full compliance\\(\%) $\downarrow$} & \cellcolor{projectdarkred!10}USR (\%) $\uparrow$ \\",
         r"\midrule",
     ]
     for model_index, (model_key, model_label) in enumerate(HARMFUL_MODELS):
         model_rows = [row for row in rows if row["model_key"] == model_key]
         if not model_rows:
             continue
-        best_usr = max(row["values"][3] for row in model_rows)
-        best_baseline_usr = max(
-            row["values"][3]
-            for row in model_rows
-            if row["method_key"] != "h_infinity"
+        best_values = tuple(
+            (max if higher else min)(row["values"][index] for row in model_rows)
+            for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
+        )
+        best_baselines = tuple(
+            (max if higher else min)(
+                row["values"][index]
+                for row in model_rows
+                if row["method_key"] != "h_infinity"
+            )
+            for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
         )
         for method_index, row in enumerate(model_rows):
             model = (
@@ -2243,11 +2270,11 @@ def render_false_reject_tex(rows: list[dict]) -> str:
                 zip(row["values"], row["standard_errors"], strict=True)
             ):
                 number = f"{value:.2f}\\,\\pm\\,{standard_error:.2f}"
+                if row["method_key"] == "h_infinity" and value == best_values[index]:
+                    number = f"\\mathbf{{{number}}}"
+                elif row["method_key"] != "h_infinity" and value == best_baselines[index]:
+                    number = f"\\underline{{{number}}}"
                 if index == 3:
-                    if value == best_usr:
-                        number = f"\\mathbf{{{number}}}"
-                    elif value == best_baseline_usr:
-                        number = f"\\underline{{{number}}}"
                     number = r"\cellcolor{projectdarkred!10}$" + number + "$"
                 else:
                     number = "$" + number + "$"
