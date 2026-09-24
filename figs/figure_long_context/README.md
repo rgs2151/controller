@@ -32,7 +32,7 @@
 - Color/value: method identity; H∞ uses the exact project teal `#007C7C`.
 - Grouping: one line per method.
 - Ordering/sorting: 8K precedes 16K.
-- Lines/markers/labels: each method has a stable color, line style, and marker; the official Qwen logo identifies the model.
+- Lines/markers/labels: each method has a stable color, line style, and data marker; the bottom legend uses clean color dots only, with a larger dot and bold label for H∞. The official Qwen logo identifies the model.
 - Panels: answer recall and citation F1.
 
 ## Interpretation
@@ -84,7 +84,7 @@
 - Color/value: method identity; H∞ uses the exact project teal `#007C7C`.
 - Grouping: one line per method.
 - Ordering/sorting: 8K precedes 16K.
-- Lines/markers/labels: each method has a stable color, line style, and marker; the official Meta/Llama logo identifies the model.
+- Lines/markers/labels: each method has a stable color, line style, and data marker; the bottom legend uses clean color dots only, with a larger dot and bold label for H∞. The official Meta/Llama logo identifies the model.
 - Panels: answer recall and citation F1.
 
 ## Interpretation
@@ -133,7 +133,7 @@
 
 - X axis: 8K matched and 16K long-context.
 - Y axis: answer recall (%) or citation F1 (%).
-- Color/value: method identity; H∞ uses saturated teal.
+- Color/value: method identity; H∞ uses the exact project teal `#007C7C`.
 - Grouping: one trajectory per method.
 - Ordering/sorting: 8K precedes 16K.
 - Lines/markers/labels: tinted Qwen logos replace geometric markers.
@@ -182,7 +182,7 @@
 
 - X axis: 8K matched and 16K long-context.
 - Y axis: answer recall (%) or citation F1 (%).
-- Color/value: method identity; H∞ uses saturated teal.
+- Color/value: method identity; H∞ uses the exact project teal `#007C7C`.
 - Grouping: one trajectory per method.
 - Ordering/sorting: 8K precedes 16K.
 - Lines/markers/labels: tinted Meta/Llama logos replace geometric markers.
