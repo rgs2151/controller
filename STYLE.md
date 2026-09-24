@@ -73,6 +73,11 @@ ax.set_xticks([0, xmax])
 
 - Arial body text; math wrapped in `$...$` renders in matching sans-serif math
   (e.g. `r"Scale $s$"`). Use `DejaVu Sans` only as a fallback when Arial is unavailable.
+- Render all figure text in solid black, including titles, axis labels, tick labels,
+  annotations, and legend labels. Do not use gray text for visual hierarchy; reserve
+  gray for non-text graphical elements such as grids, spines, reference regions, or
+  competitor marks. Text may use a semantic series color only when the color itself
+  is an explicit data encoding.
 - Titles are short and specific (include the key parameter, e.g. `f"{name}: L{value}"`).
 - Axis labels name the quantity, not the column (`"Rate"`, not `"judge_rate"`).
 - When rotating tick labels, always set `ha="right"` so labels anchor cleanly to their ticks.
@@ -82,6 +87,10 @@ ax.set_xticks([0, xmax])
 The exact project teal is **`#007C7C`**. Use it consistently for every H∞ series and
 every visual element labeled **ours**, including lines, markers, logos, bars, fills, and
 highlighted table/figure accents. Do not substitute a nearby teal.
+
+The exact OOD emphasis red is **`#8B1E1E`**. When ID and OOD panels are explicitly
+contrasted, use it for the OOD split title or heading only; keep ID headings and all
+ordinary figure text black. Do not use this red as a competing method color.
 
 Competing methods use distinct muted-but-chromatic colors: sufficiently saturated to
 remain legible, but quieter than the project teal so H∞ remains the clear focal series.

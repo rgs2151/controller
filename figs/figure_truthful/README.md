@@ -37,6 +37,7 @@
 ## Encodings
 
 - Teal `#007C7C`: H∞ (ours), following the repository-wide figure standard.
+- OOD red `#8B1E1E`: Spanish (OOD) composite-panel headings only.
 - Gray `#A7ADB2`: strongest competitor.
 - Frontier logo color: controller method; no enclosing marker is used.
 - Frontier logo: GPT, LLaMA, Qwen, or OLMo model family; logo size increases
@@ -68,7 +69,9 @@
   composition of the two English/Spanish True–Informative panels and the two
   GPT-2 XL True-only category radars. It is rendered directly from the source
   data rather than assembled from raster panels; all labels, ticks, titles,
-  and legends use coordinated readable sizing and solid black text.
+  and legends use coordinated readable sizing and solid black text. Its
+  controller legend is a single row; Spanish OOD headings use the exact
+  repository OOD red `#8B1E1E`.
 - `cache/truthfulqa_category_txi.csv`: auditable category-level source values,
   including the exact scorer artifact paths.
 
