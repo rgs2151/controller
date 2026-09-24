@@ -29,7 +29,7 @@ PLOTS = UNIT / "plots"
 LOGOS = REPO / "figs/logos"
 CATEGORY_CACHE = UNIT / "cache/truthfulqa_category_txi.csv"
 
-TEAL = "#398197"
+TEAL = "#007C7C"
 GRAY = "#A7ADB2"
 INK = "#202124"
 GRID = "#E3E6E8"
@@ -741,11 +741,7 @@ def render_figure_c() -> None:
     save_figure(fig, "figure_truthful_c")
 
 
-def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
-    model, mean_margins = best_radar_model(
-        "true_pct",
-        exclude_original_from_competitor=True,
-    )
+def render_figure_c_model(model: str, stem: str) -> None:
     fig = plt.figure(figsize=(8.6, 4.8))
     outer = fig.add_gridspec(
         1,
@@ -810,7 +806,15 @@ def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
         handlelength=1.8,
         columnspacing=1.6,
     )
-    save_figure(fig, "figure_truthful_c_best_model")
+    save_figure(fig, stem)
+
+
+def render_figure_c_best_model() -> tuple[str, dict[str, float]]:
+    model, mean_margins = best_radar_model(
+        "true_pct",
+        exclude_original_from_competitor=True,
+    )
+    render_figure_c_model(model, "figure_truthful_c_best_model")
     return model, mean_margins
 
 
@@ -822,6 +826,7 @@ def main() -> None:
     render_figure_b(records, images)
     render_figure_c()
     render_figure_c_best_model()
+    render_figure_c_model("GPT-2 XL", "figure_truthful_c_gpt2_xl")
 
 
 if __name__ == "__main__":

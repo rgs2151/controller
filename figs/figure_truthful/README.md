@@ -36,7 +36,7 @@
 
 ## Encodings
 
-- Teal `#398197`: H∞ (ours).
+- Teal `#007C7C`: H∞ (ours), following the repository-wide figure standard.
 - Gray `#A7ADB2`: strongest competitor.
 - Frontier logo color: controller method; no enclosing marker is used.
 - Frontier logo: GPT, LLaMA, Qwen, or OLMo model family; logo size increases
@@ -58,6 +58,9 @@
   splits, then plots Original, that strongest non-Original competitor, and
   H∞. The current finalized data select **Qwen-2.5-14B** (mean margin: 6.107
   percentage points).
+- `plots/figure_truthful_c_gpt2_xl.pdf` and `.png`: separately preserved
+  showcase variant with the same True-only encoding, fixed to **GPT-2 XL**;
+  it does not replace or alter the data-selected Qwen variant.
 - `cache/truthfulqa_category_txi.csv`: auditable category-level source values,
   including the exact scorer artifact paths.
 
