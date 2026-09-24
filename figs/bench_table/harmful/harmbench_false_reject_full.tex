@@ -4,10 +4,9 @@
 \definecolor{projectdarkred}{RGB}{128,0,0}
 \caption{The FalseReject rubric applied to all HarmBench outputs.}
 \label{tab:harmbench-false-reject}
-\tiny
-\renewcommand{\arraystretch}{0.68}
-\setlength{\tabcolsep}{3pt}
-\resizebox{!}{0.42\textheight}{%
+\fontsize{5.2}{5.4}\selectfont
+\renewcommand{\arraystretch}{0.78}
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{rrlcccc}
 Model & Condition & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \shortstack{Safe partial\\compliance (\%) $\uparrow$} & \shortstack{Full compliance\\(\%) $\downarrow$} & \cellcolor{projectdarkred!10}USR (\%) $\uparrow$ \\
 \midrule
@@ -16,12 +15,12 @@ Model & Condition & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \sho
  &  & A-LQR & $89.17\,\pm\,2.08$ & $\underline{2.92\,\pm\,1.65}$ & $7.92\,\pm\,2.10$ & \cellcolor{projectdarkred!10}$92.08\,\pm\,2.10$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{95.83\,\pm\,1.39}$ & $1.25\,\pm\,0.89$ & $\mathbf{2.92\,\pm\,1.25}$ & \cellcolor{projectdarkred!10}$\mathbf{97.08\,\pm\,1.25}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{John persona} & Original & $\underline{91.25\,\pm\,2.28}$ & $\underline{0.83\,\pm\,0.56}$ & $\underline{7.92\,\pm\,2.28}$ & \cellcolor{projectdarkred!10}$\underline{92.08\,\pm\,2.28}$ \\
+ & \multirow{3}{*}{John} & Original & $\underline{91.25\,\pm\,2.28}$ & $\underline{0.83\,\pm\,0.56}$ & $\underline{7.92\,\pm\,2.28}$ & \cellcolor{projectdarkred!10}$\underline{92.08\,\pm\,2.28}$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $\underline{91.25\,\pm\,2.19}$ & $0.00\,\pm\,0.00$ & $8.75\,\pm\,2.19$ & \cellcolor{projectdarkred!10}$91.25\,\pm\,2.19$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{95.83\,\pm\,1.64}$ & $\mathbf{0.83\,\pm\,0.56}$ & $\mathbf{3.33\,\pm\,1.50}$ & \cellcolor{projectdarkred!10}$\mathbf{96.67\,\pm\,1.50}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{DNE nonresponse} & Original & $88.75\,\pm\,2.56$ & $0.00\,\pm\,0.00$ & $11.25\,\pm\,2.56$ & \cellcolor{projectdarkred!10}$88.75\,\pm\,2.56$ \\
+ & \multirow{3}{*}{DNE} & Original & $88.75\,\pm\,2.56$ & $0.00\,\pm\,0.00$ & $11.25\,\pm\,2.56$ & \cellcolor{projectdarkred!10}$88.75\,\pm\,2.56$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $\underline{92.92\,\pm\,0.89}$ & $\underline{1.25\,\pm\,0.64}$ & $\underline{5.83\,\pm\,1.27}$ & \cellcolor{projectdarkred!10}$\underline{94.17\,\pm\,1.27}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{95.00\,\pm\,1.21}$ & $0.42\,\pm\,0.42$ & $\mathbf{4.58\,\pm\,1.31}$ & \cellcolor{projectdarkred!10}$\mathbf{95.42\,\pm\,1.31}$ \\
@@ -31,12 +30,12 @@ Model & Condition & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \sho
  &  & A-LQR & $\underline{92.08\,\pm\,2.10}$ & $\underline{1.67\,\pm\,0.92}$ & $\underline{6.25\,\pm\,1.89}$ & \cellcolor{projectdarkred!10}$\underline{93.75\,\pm\,1.89}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{97.92\,\pm\,0.69}$ & $0.42\,\pm\,0.42$ & $\mathbf{1.67\,\pm\,0.68}$ & \cellcolor{projectdarkred!10}$\mathbf{98.33\,\pm\,0.68}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{YOJA/Nona roleplay} & Original & $\underline{90.00\,\pm\,0.92}$ & $0.42\,\pm\,0.42$ & $\underline{9.58\,\pm\,1.08}$ & \cellcolor{projectdarkred!10}$\underline{90.42\,\pm\,1.08}$ \\
+ & \multirow{3}{*}{YOJA/Nona} & Original & $\underline{90.00\,\pm\,0.92}$ & $0.42\,\pm\,0.42$ & $\underline{9.58\,\pm\,1.08}$ & \cellcolor{projectdarkred!10}$\underline{90.42\,\pm\,1.08}$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $86.25\,\pm\,1.87$ & $\underline{2.92\,\pm\,1.08}$ & $10.83\,\pm\,1.78$ & \cellcolor{projectdarkred!10}$89.17\,\pm\,1.78$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{96.67\,\pm\,0.83}$ & $0.00\,\pm\,0.00$ & $\mathbf{3.33\,\pm\,0.83}$ & \cellcolor{projectdarkred!10}$\mathbf{96.67\,\pm\,0.83}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{APM programmer} & Original & $\underline{93.75\,\pm\,1.28}$ & $\underline{1.25\,\pm\,0.64}$ & $\underline{5.00\,\pm\,1.36}$ & \cellcolor{projectdarkred!10}$\underline{95.00\,\pm\,1.36}$ \\
+ & \multirow{3}{*}{APM} & Original & $\underline{93.75\,\pm\,1.28}$ & $\underline{1.25\,\pm\,0.64}$ & $\underline{5.00\,\pm\,1.36}$ & \cellcolor{projectdarkred!10}$\underline{95.00\,\pm\,1.36}$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $91.67\,\pm\,1.52$ & $\underline{1.25\,\pm\,0.64}$ & $7.08\,\pm\,1.25$ & \cellcolor{projectdarkred!10}$92.92\,\pm\,1.25$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{97.92\,\pm\,0.93}$ & $0.83\,\pm\,0.56$ & $\mathbf{1.25\,\pm\,0.89}$ & \cellcolor{projectdarkred!10}$\mathbf{98.75\,\pm\,0.89}$ \\
@@ -46,12 +45,12 @@ Model & Condition & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \sho
  &  & A-LQR & $77.50\,\pm\,2.93$ & $\underline{5.83\,\pm\,2.34}$ & $16.67\,\pm\,2.06$ & \cellcolor{projectdarkred!10}$83.33\,\pm\,2.06$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{89.58\,\pm\,1.28}$ & $2.92\,\pm\,1.25$ & $\mathbf{7.50\,\pm\,0.56}$ & \cellcolor{projectdarkred!10}$\mathbf{92.50\,\pm\,0.56}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{John persona} & Original & $\underline{84.17\,\pm\,2.04}$ & $3.75\,\pm\,1.31$ & $\underline{12.08\,\pm\,2.01}$ & \cellcolor{projectdarkred!10}$\underline{87.92\,\pm\,2.01}$ \\
+ & \multirow{3}{*}{John} & Original & $\underline{84.17\,\pm\,2.04}$ & $3.75\,\pm\,1.31$ & $\underline{12.08\,\pm\,2.01}$ & \cellcolor{projectdarkred!10}$\underline{87.92\,\pm\,2.01}$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $82.92\,\pm\,1.58$ & $\underline{4.58\,\pm\,0.97}$ & $12.50\,\pm\,2.15$ & \cellcolor{projectdarkred!10}$87.50\,\pm\,2.15$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{94.58\,\pm\,1.76}$ & $0.83\,\pm\,0.56$ & $\mathbf{4.58\,\pm\,1.31}$ & \cellcolor{projectdarkred!10}$\mathbf{95.42\,\pm\,1.31}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{DNE nonresponse} & Original & $87.08\,\pm\,1.91$ & $0.83\,\pm\,0.56$ & $12.08\,\pm\,1.70$ & \cellcolor{projectdarkred!10}$87.92\,\pm\,1.70$ \\
+ & \multirow{3}{*}{DNE} & Original & $87.08\,\pm\,1.91$ & $0.83\,\pm\,0.56$ & $12.08\,\pm\,1.70$ & \cellcolor{projectdarkred!10}$87.92\,\pm\,1.70$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $\underline{87.92\,\pm\,2.67}$ & $\underline{2.08\,\pm\,1.12}$ & $\underline{10.00\,\pm\,2.17}$ & \cellcolor{projectdarkred!10}$\underline{90.00\,\pm\,2.17}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{93.75\,\pm\,1.12}$ & $0.42\,\pm\,0.42$ & $\mathbf{5.83\,\pm\,1.11}$ & \cellcolor{projectdarkred!10}$\mathbf{94.17\,\pm\,1.11}$ \\
@@ -61,12 +60,12 @@ Model & Condition & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \sho
  &  & A-LQR & $\underline{83.75\,\pm\,1.45}$ & $\underline{4.17\,\pm\,1.39}$ & $\underline{12.08\,\pm\,1.91}$ & \cellcolor{projectdarkred!10}$\underline{87.92\,\pm\,1.91}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{94.58\,\pm\,1.25}$ & $0.83\,\pm\,0.56$ & $\mathbf{4.58\,\pm\,1.15}$ & \cellcolor{projectdarkred!10}$\mathbf{95.42\,\pm\,1.15}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{YOJA/Nona roleplay} & Original & $85.42\,\pm\,1.28$ & $\underline{2.50\,\pm\,1.11}$ & $12.08\,\pm\,1.45$ & \cellcolor{projectdarkred!10}$87.92\,\pm\,1.45$ \\
+ & \multirow{3}{*}{YOJA/Nona} & Original & $85.42\,\pm\,1.28$ & $\underline{2.50\,\pm\,1.11}$ & $12.08\,\pm\,1.45$ & \cellcolor{projectdarkred!10}$87.92\,\pm\,1.45$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $\underline{87.08\,\pm\,1.58}$ & $2.08\,\pm\,0.69$ & $\underline{10.83\,\pm\,1.55}$ & \cellcolor{projectdarkred!10}$\underline{89.17\,\pm\,1.55}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{93.33\,\pm\,1.78}$ & $1.25\,\pm\,0.64$ & $\mathbf{5.42\,\pm\,1.65}$ & \cellcolor{projectdarkred!10}$\mathbf{94.58\,\pm\,1.65}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{APM programmer} & Original & $\underline{88.33\,\pm\,2.55}$ & $0.83\,\pm\,0.83$ & $10.83\,\pm\,2.65$ & \cellcolor{projectdarkred!10}$89.17\,\pm\,2.65$ \\
+ & \multirow{3}{*}{APM} & Original & $\underline{88.33\,\pm\,2.55}$ & $0.83\,\pm\,0.83$ & $10.83\,\pm\,2.65$ & \cellcolor{projectdarkred!10}$89.17\,\pm\,2.65$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $87.08\,\pm\,2.28$ & $\underline{3.75\,\pm\,1.31}$ & $\underline{9.17\,\pm\,2.13}$ & \cellcolor{projectdarkred!10}$\underline{90.83\,\pm\,2.13}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{93.75\,\pm\,1.55}$ & $0.42\,\pm\,0.42$ & $\mathbf{5.83\,\pm\,1.67}$ & \cellcolor{projectdarkred!10}$\mathbf{94.17\,\pm\,1.67}$ \\
@@ -76,12 +75,12 @@ Model & Condition & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \sho
  &  & A-LQR & $\underline{80.00\,\pm\,4.16}$ & $\underline{7.50\,\pm\,2.62}$ & $\underline{12.50\,\pm\,4.17}$ & \cellcolor{projectdarkred!10}$\underline{87.50\,\pm\,4.17}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{90.00\,\pm\,2.72}$ & $3.33\,\pm\,1.36$ & $\mathbf{6.67\,\pm\,2.08}$ & \cellcolor{projectdarkred!10}$\mathbf{93.33\,\pm\,2.08}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{John persona} & Original & $67.50\,\pm\,4.56$ & $5.83\,\pm\,2.17$ & $26.67\,\pm\,3.89$ & \cellcolor{projectdarkred!10}$73.33\,\pm\,3.89$ \\
+ & \multirow{3}{*}{John} & Original & $67.50\,\pm\,4.56$ & $5.83\,\pm\,2.17$ & $26.67\,\pm\,3.89$ & \cellcolor{projectdarkred!10}$73.33\,\pm\,3.89$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $\underline{75.00\,\pm\,4.30}$ & $\underline{6.67\,\pm\,2.08}$ & $\underline{18.33\,\pm\,3.69}$ & \cellcolor{projectdarkred!10}$\underline{81.67\,\pm\,3.69}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{92.50\,\pm\,2.62}$ & $0.83\,\pm\,0.83$ & $\mathbf{6.67\,\pm\,2.08}$ & \cellcolor{projectdarkred!10}$\mathbf{93.33\,\pm\,2.08}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{DNE nonresponse} & Original & $77.50\,\pm\,6.58$ & $1.67\,\pm\,1.11$ & $20.83\,\pm\,5.86$ & \cellcolor{projectdarkred!10}$79.17\,\pm\,5.86$ \\
+ & \multirow{3}{*}{DNE} & Original & $77.50\,\pm\,6.58$ & $1.67\,\pm\,1.11$ & $20.83\,\pm\,5.86$ & \cellcolor{projectdarkred!10}$79.17\,\pm\,5.86$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $\underline{81.67\,\pm\,5.67}$ & $\underline{2.50\,\pm\,1.27}$ & $\underline{15.83\,\pm\,5.34}$ & \cellcolor{projectdarkred!10}$\underline{84.17\,\pm\,5.34}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{96.67\,\pm\,1.84}$ & $0.83\,\pm\,0.83$ & $\mathbf{2.50\,\pm\,1.78}$ & \cellcolor{projectdarkred!10}$\mathbf{97.50\,\pm\,1.78}$ \\
@@ -91,16 +90,15 @@ Model & Condition & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \sho
  &  & A-LQR & $82.50\,\pm\,4.38$ & $\underline{4.17\,\pm\,1.86}$ & $13.33\,\pm\,3.33$ & \cellcolor{projectdarkred!10}$86.67\,\pm\,3.33$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{93.33\,\pm\,2.08}$ & $1.67\,\pm\,1.11$ & $\mathbf{5.00\,\pm\,1.84}$ & \cellcolor{projectdarkred!10}$\mathbf{95.00\,\pm\,1.84}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{YOJA/Nona roleplay} & Original & $78.33\,\pm\,2.22$ & $4.17\,\pm\,1.86$ & $17.50\,\pm\,3.39$ & \cellcolor{projectdarkred!10}$82.50\,\pm\,3.39$ \\
+ & \multirow{3}{*}{YOJA/Nona} & Original & $78.33\,\pm\,2.22$ & $4.17\,\pm\,1.86$ & $17.50\,\pm\,3.39$ & \cellcolor{projectdarkred!10}$82.50\,\pm\,3.39$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $\underline{85.83\,\pm\,2.50}$ & $\underline{5.00\,\pm\,1.84}$ & $\underline{9.17\,\pm\,1.94}$ & \cellcolor{projectdarkred!10}$\underline{90.83\,\pm\,1.94}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{91.67\,\pm\,3.51}$ & $1.67\,\pm\,1.11$ & $\mathbf{6.67\,\pm\,3.47}$ & \cellcolor{projectdarkred!10}$\mathbf{93.33\,\pm\,3.47}$ \\
 \cmidrule(l){2-7}
- & \multirow{3}{*}{APM programmer} & Original & $74.17\,\pm\,3.82$ & $6.67\,\pm\,1.67$ & $19.17\,\pm\,3.94$ & \cellcolor{projectdarkred!10}$80.83\,\pm\,3.94$ \\
+ & \multirow{3}{*}{APM} & Original & $74.17\,\pm\,3.82$ & $6.67\,\pm\,1.67$ & $19.17\,\pm\,3.94$ & \cellcolor{projectdarkred!10}$80.83\,\pm\,3.94$ \\
 \cmidrule(l){3-7}
  &  & A-LQR & $\underline{76.67\,\pm\,3.89}$ & $\underline{7.50\,\pm\,1.94}$ & $\underline{15.83\,\pm\,2.90}$ & \cellcolor{projectdarkred!10}$\underline{84.17\,\pm\,2.90}$ \\
  &  & $\mathbf{H_\infty}$ (ours) & $\mathbf{89.17\,\pm\,2.50}$ & $1.67\,\pm\,1.11$ & $\mathbf{9.17\,\pm\,2.31}$ & \cellcolor{projectdarkred!10}$\mathbf{90.83\,\pm\,2.31}$ \\
 \bottomrule
 \end{tabular}%
-}
 \end{table*}
