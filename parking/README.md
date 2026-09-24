@@ -22,6 +22,7 @@ Use descriptive snake_case folder names. Do not use figure numbers here.
 - `erfan_ood_steering_benchmark/`: 50-prompt Jigsaw, ToxicChat, and MMLU concept-shift comparison.
 - `erfan_benchmark_summary/`: derived cross-benchmark summary figure.
 - `toxicity_calibration_sweep/`: descriptive toxicity, perplexity, and `gamma_star` heatmaps for the completed Gemma-2-2B H∞ calibration grid.
+- `gamma_star_organization/`: compact, provenance-preserving H∞ gamma-star, robust-steerability, residual-diagnostic, and held-out performance tables for ESRob/SRob analysis.
 - `lciteeval_explore/`: four-panel behavioral heatmap of the completed Qwen2.5-3B-Instruct L-CiteEval H∞ calibration grid.
 - `truthfulqa_spanish/`: frozen 817-question Spanish TruthfulQA translation, its reproducible construction pipeline, and translation-fidelity audit.
 - `kv_cache_investigation/`: matched 100-prompt Spanish TruthfulQA comparison of generation with and without the transformer KV cache for Original, A-LQR, and H∞.

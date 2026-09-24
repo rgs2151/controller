@@ -1,0 +1,10 @@
+{
+  "n": 5,
+  "fit": "ordinary least squares on log10-transformed parameter_billions and s_rob_value",
+  "slope": 0.6037152515504769,
+  "intercept": -1.71298962953649,
+  "r_value": 0.5206775649104645,
+  "r_squared": 0.27110512660109093,
+  "two_sided_slope_p_value": 0.36836201131058216,
+  "slope_standard_error": 0.5715248296645087
+}
