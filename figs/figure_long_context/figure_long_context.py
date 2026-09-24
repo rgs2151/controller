@@ -55,13 +55,13 @@ METHOD_LABELS = {
     "H-infinity": r"$H_\infty$ (ours)",
 }
 METHOD_COLORS = {
-    "Original": "#737B80",
-    "S-PID": "#BF7558",
-    "A-LQR": "#756FA6",
+    "Original": "#59636D",
+    "S-PID": "#B4775D",
+    "A-LQR": "#687DA3",
     "H-infinity": TEAL,
 }
 LOGO_METHOD_COLORS = {
-    "Original": "#737B80",
+    "Original": "#697680",
     "S-PID": "#BF7558",
     "A-LQR": "#756FA6",
     "H-infinity": TEAL,
@@ -299,40 +299,39 @@ def render_model(model: str, results: list[Result]) -> None:
                 marker=METHOD_MARKERS[method],
                 markersize=8.0 if ours else 6.5,
                 markerfacecolor=METHOD_COLORS[method],
-                markeredgecolor="white",
-                markeredgewidth=1.0 if ours else 0.8,
+                markeredgecolor="#D08A00" if ours else "white",
+                markeredgewidth=1.35 if ours else 0.8,
                 solid_capstyle="round",
                 zorder=5 if ours else 3,
             )
 
     handles = [
         Line2D(
-            [],
-            [],
-            linestyle="None",
-            marker="o",
-            markersize=9.5 if method == "H-infinity" else 7.2,
+            [0],
+            [0],
+            color=METHOD_COLORS[method],
+            linestyle=METHOD_STYLES[method],
+            linewidth=3.0 if method == "H-infinity" else 2.0,
+            marker=METHOD_MARKERS[method],
+            markersize=7.0,
             markerfacecolor=METHOD_COLORS[method],
-            markeredgecolor=METHOD_COLORS[method],
-            alpha=1.0 if method == "H-infinity" else 0.78,
+            markeredgecolor="#D08A00" if method == "H-infinity" else "white",
+            markeredgewidth=1.1 if method == "H-infinity" else 0.7,
             label=METHOD_LABELS[method],
         )
         for method in methods
     ]
-    legend = fig.legend(
+    fig.legend(
         handles=handles,
         loc="lower center",
         bbox_to_anchor=(0.5, 0.005),
         ncol=len(methods),
         frameon=False,
-        handlelength=0.8,
+        handlelength=2.3,
         columnspacing=1.35,
-        handletextpad=0.35,
+        handletextpad=0.55,
         fontsize=10.3,
     )
-    for text, method in zip(legend.get_texts(), methods, strict=True):
-        if method == "H-infinity":
-            text.set_fontweight("bold")
     add_model_heading(fig, spec)
     fig.subplots_adjust(left=0.085, right=0.985, bottom=0.25, top=0.79)
 
