@@ -555,11 +555,11 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
     outer = fig.add_gridspec(
         1,
         3,
-        # The first two axes occupy roughly 60% of the canvas used by the
-        # previous two-panel figure.  The final slot is intentionally reserved
+        # The first two axes occupy roughly 70% of the canvas.  The final slot
+        # is intentionally reserved
         # for the response-disposition analysis; it stays blank until those
         # labels have been judged from the underlying generations.
-        width_ratios=(1.18, 1.0, 1.35),
+        width_ratios=(1.18, 1.0, 0.90),
         wspace=0.30,
     )
     profile_grid = outer[0].subgridspec(
@@ -592,11 +592,11 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
     reserved.set_axis_off()
     draw_logo_size_legend(
         fig,
-        bounds=(0.06, 0.885, 0.53, 0.09),
+        bounds=(0.08, 0.885, 0.60, 0.09),
         fontsize=12.0,
         separation=12.0,
     )
-    add_logo_method_legend(fig, x=0.325, y=-0.01, fontsize=11.0)
+    add_logo_method_legend(fig, x=0.37, y=-0.01, fontsize=11.0)
     fig.subplots_adjust(left=0.065, right=0.985, top=0.82, bottom=0.27)
     return fig
 
