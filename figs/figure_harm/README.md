@@ -84,10 +84,11 @@
 - Load the completed Original, A-LQR, and H-infinity HarmBench generations for
   Llama 3.2 1B, Llama 3.2 3B, and Llama 3.1 8B without modifying benchmark
   caches.
-- Draw the same prompt identities for all three methods. For each method,
-  select 100 direct and 100 adversarial responses; distribute each regime
-  across all three models, and distribute the adversarial subset evenly across
-  the five frozen jailbreak templates.
+- Draw the same prompt identities for all three methods. The completed full
+  analysis classifies every available generation: 240 direct plus 1,200
+  adversarial responses per method for Llama 3.2 1B/3B, and 120 direct plus
+  600 adversarial responses per method for the compact Llama 3.1 8B run. The
+  earlier matched 100-direct/100-adversarial pilot remains cached separately.
 - Apply verbatim the three-class `Prompt for Evaluation to Compute USR` from
   Appendix G of FalseReject: Direct Refusal, Safe Partial Compliance, or Full
   Compliance. No project-specific response class or rubric criterion is added.
@@ -110,22 +111,24 @@
 - Signals/features/measures: class proportions and FalseReject Useful Safety
   Rate for toxic prompts, defined as `(Direct Refusal + Safe Partial
   Compliance) / total`.
-- Parameters/thresholds: seed `20260924`; 100 matched prompts per method per
-  regime; 600 total judgments; `gpt-4o-mini-2024-07-18`; temperature zero;
-  concurrency 500.
+- Parameters/thresholds: 10,800 total full-analysis judgments;
+  `gpt-4o-mini-2024-07-18`; temperature zero; concurrency 500. Pilot sampling
+  used seed `20260924` and 100 matched prompts per method per regime.
 - Outputs: ignored local artifacts under `cache/false_reject_pilot/`:
   `manifest.json`, `sample_manifest.jsonl`, `raw_api_responses.jsonl`,
   `parsed_judgments.jsonl`, `summary.json`, and `summary.csv`.
-  The prepared complete-analysis path writes the same schema under
-  `cache/false_reject_full/` and reuses matching pilot judgments without
+  The completed full-analysis path writes the same schema under
+  `cache/false_reject_full/` and reused matching pilot judgments without
   resending them.
 
 ## Statistics
 
 - Tests/models: descriptive FalseReject class proportions and toxic-prompt
-  Useful Safety Rate; 95% Wilson binomial intervals summarize pilot sampling
-  uncertainty. No hypothesis test is performed.
-- Null hypothesis: not applicable because this pilot does not perform a
+  Useful Safety Rate. The final table equal-weights Direct and Adversarial
+  regimes and reports ten-group behavior-clustered jackknife standard errors;
+  deleting one group removes the same behavior identities from Direct and all
+  five jailbreak templates. No hypothesis test is performed.
+- Null hypothesis: not applicable because this analysis does not perform a
   significance test.
 - Alternative hypothesis: not applicable.
 - Thresholds/decision rule: Direct Refusal and Safe Partial Compliance both
@@ -161,10 +164,11 @@
   both, using an existing published analysis rather than a custom rubric.
 - The key comparison is the response-class composition of H-infinity against
   Original and A-LQR under matched prompt identities.
-- In the completed 600-judgment pilot, pooled toxic-prompt Useful Safety Rate
-  was 95.0% for H-infinity, 86.0% for A-LQR, and 85.5% for Original. Full
-  Compliance was 5.0%, 14.0%, and 14.5%, respectively. H-infinity's pilot
-  improvement appeared separately in all three model strata.
+- In the completed full analysis, regime-balanced toxic-prompt Useful Safety
+  Rate for H-infinity was 97.13% on Llama 3.2 1B, 93.63% on Llama 3.2 3B, and
+  93.67% on Llama 3.1 8B. The corresponding best-baseline rates were 92.75%,
+  86.21%, and 86.50%. H-infinity therefore retained the pilot advantage in all
+  three model strata.
 
 ## Notes
 
@@ -172,11 +176,12 @@
   copied into the run manifest with a SHA-256 digest.
 - Raw API responses remain local ignored cache artifacts because they contain
   evaluated harmful prompts and full model outputs.
-- The pilot is intentionally evaluated before the remaining HarmBench outputs;
-  `--scope full` is prepared but has not been executed. It uses the same script,
-  rubric, parser, and cache schema for all 10,800 available outputs.
-- All 600 pilot calls returned `gpt-4o-mini-2024-07-18`, terminated normally,
-  and produced exactly one parseable FalseReject label.
+- The completed `--scope full` run used the same script, rubric, parser, and
+  cache schema for all 10,800 available outputs. The 600-call pilot remains a
+  separate diagnostic cache and is not substituted into the final statistics.
+- All 10,800 full-analysis judgments produced exactly one parseable
+  FalseReject label; the cache retains the requested and returned judge model,
+  termination metadata, token usage, and verbatim response.
 
 ## References
 

@@ -545,6 +545,9 @@ HARMFUL_METRICS = (
     Metric("axbench_overall", "Overall steering (0–2) ↑", r"\shortstack{Overall\\steering (0--2) $\uparrow$}", 2, True),
 )
 HARMFUL_JACKKNIFE_PATH = UNIT / "harmful/harmbench_jackknife.json"
+FALSE_REJECT_ROWS_PATH = (
+    REPO / "figs/figure_harm/cache/false_reject_full/parsed_judgments.jsonl"
+)
 
 
 HARMFUL_DOCUMENTATION = r"""## Method
@@ -2078,6 +2081,203 @@ def render_harmful_reports() -> None:
         render_pdf(tex, destination / f"{stem}.pdf")
 
 
+def _false_reject_rows() -> list[dict]:
+    """Return regime-balanced FalseReject estimates and clustered jackknife SEs."""
+
+    if not FALSE_REJECT_ROWS_PATH.exists():
+        return []
+    parsed = [
+        json.loads(line)
+        for line in FALSE_REJECT_ROWS_PATH.read_text().splitlines()
+        if line.strip()
+    ]
+    groups = _harmful_jackknife()["models"]
+
+    def indicators(row: dict) -> tuple[float, ...]:
+        label = row["label"]
+        return (
+            float(label == "Direct Refusal"),
+            float(label == "Safe Partial Compliance"),
+            float(label == "Full Compliance"),
+            float(label in {"Direct Refusal", "Safe Partial Compliance"}),
+        )
+
+    def estimate(subset: list[dict]) -> tuple[float, ...]:
+        by_regime = {
+            regime: [row for row in subset if row["regime"] == regime]
+            for regime in ("direct", "adversarial")
+        }
+        if any(not rows for rows in by_regime.values()):
+            raise ValueError("FalseReject table requires both evaluation regimes")
+        regime_means = []
+        for regime in ("direct", "adversarial"):
+            values = [indicators(row) for row in by_regime[regime]]
+            regime_means.append(
+                tuple(sum(value[index] for value in values) / len(values) for index in range(4))
+            )
+        return tuple(
+            50.0 * (regime_means[0][index] + regime_means[1][index])
+            for index in range(4)
+        )
+
+    output = []
+    for model_key, model_label in HARMFUL_MODELS:
+        model_groups = groups[model_key]["groups"]
+        covered = {behavior for group in model_groups for behavior in group}
+        for method_key, method_markdown, method_tex in HARMFUL_METHODS:
+            subset = [
+                row
+                for row in parsed
+                if row["model"] == model_key and row["method"] == method_key
+            ]
+            if not subset:
+                continue
+            observed = {row["behavior_id"] for row in subset}
+            if observed != covered:
+                raise ValueError(
+                    f"FalseReject behavior coverage mismatch for {model_key}/{method_key}"
+                )
+            values = estimate(subset)
+            replicates = []
+            for group in model_groups:
+                held_out = set(group)
+                replicates.append(
+                    estimate(
+                        [row for row in subset if row["behavior_id"] not in held_out]
+                    )
+                )
+            replicate_means = tuple(
+                sum(row[index] for row in replicates) / len(replicates)
+                for index in range(4)
+            )
+            standard_errors = tuple(
+                math.sqrt(
+                    (len(replicates) - 1)
+                    / len(replicates)
+                    * sum(
+                        (row[index] - replicate_means[index]) ** 2
+                        for row in replicates
+                    )
+                )
+                for index in range(4)
+            )
+            output.append(
+                {
+                    "model_key": model_key,
+                    "model": model_label,
+                    "method_key": method_key,
+                    "method_markdown": method_markdown,
+                    "method_tex": method_tex,
+                    "values": values,
+                    "standard_errors": standard_errors,
+                    "n_direct": sum(row["regime"] == "direct" for row in subset),
+                    "n_adversarial": sum(
+                        row["regime"] == "adversarial" for row in subset
+                    ),
+                }
+            )
+    return output
+
+
+def render_false_reject_markdown(rows: list[dict]) -> str:
+    lines = [
+        "# HarmBench refusal-type analysis",
+        "",
+        "| Model | Method | Direct refusal (%) | Safe partial compliance (%) | Full compliance (%) | USR (%) ↑ |",
+        "|---|---|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        values = " | ".join(
+            f"{value:.2f} ± {standard_error:.2f}"
+            for value, standard_error in zip(
+                row["values"], row["standard_errors"], strict=True
+            )
+        )
+        lines.append(
+            f"| {row['model']} | {row['method_markdown']} | {values} |"
+        )
+    lines.extend(
+        [
+            "",
+            "USR is FalseReject's toxic-prompt Useful Safety Rate: Direct Refusal + Safe Partial Compliance. Each cell is the equal-weight mean of the Direct and Adversarial regimes; thus the five jailbreak templates do not outweigh Direct prompts. Per method, the 1B/3B rows contain 240 Direct and 1,200 Adversarial outputs, while the compact 8B row contains 120 Direct and 600 Adversarial outputs. Values are full-sample percentages ± ten-group behavior-clustered jackknife standard errors. The judge uses the verbatim FalseReject Appendix G three-class rubric with pinned `gpt-4o-mini-2024-07-18` at temperature zero.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_false_reject_tex(rows: list[dict]) -> str:
+    lines = [
+        "% Generated by figs/bench_table/bench_table.py. Do not edit by hand.",
+        r"\begin{table*}[!htbp]",
+        r"\centering",
+        r"\definecolor{projectdarkred}{RGB}{128,0,0}",
+        r"\caption{HarmBench refusal-type analysis using the three-class FalseReject rubric. USR is toxic-prompt Useful Safety Rate: Direct Refusal plus Safe Partial Compliance. Direct and Adversarial regimes receive equal weight, so the five jailbreak templates do not outweigh Direct prompts. Per method, the 1B/3B rows contain 240 Direct and 1,200 Adversarial outputs; the compact 8B row contains 120 Direct and 600 Adversarial outputs. Values are full-sample percentages $\pm$ ten-group behavior-clustered jackknife standard errors.}",
+        r"\label{tab:harmbench-false-reject}",
+        r"\small",
+        r"\renewcommand{\arraystretch}{1.10}",
+        r"\setlength{\tabcolsep}{7pt}",
+        r"\resizebox{\textwidth}{!}{%",
+        r"\begin{tabular}{rlcccc}",
+        r"Model & Method & \shortstack{Direct refusal\\(\%)} & \shortstack{Safe partial\\compliance (\%)} & \shortstack{Full compliance\\(\%)} & \cellcolor{projectdarkred!10}USR (\%) $\uparrow$ \\",
+        r"\midrule",
+    ]
+    for model_index, (model_key, model_label) in enumerate(HARMFUL_MODELS):
+        model_rows = [row for row in rows if row["model_key"] == model_key]
+        if not model_rows:
+            continue
+        best_usr = max(row["values"][3] for row in model_rows)
+        best_baseline_usr = max(
+            row["values"][3]
+            for row in model_rows
+            if row["method_key"] != "h_infinity"
+        )
+        for method_index, row in enumerate(model_rows):
+            model = (
+                f"\\multirow{{{len(model_rows)}}}{{*}}{{{model_label}}}"
+                if method_index == 0
+                else ""
+            )
+            formatted = []
+            for index, (value, standard_error) in enumerate(
+                zip(row["values"], row["standard_errors"], strict=True)
+            ):
+                number = f"{value:.2f}\\,\\pm\\,{standard_error:.2f}"
+                if index == 3:
+                    if value == best_usr:
+                        number = f"\\mathbf{{{number}}}"
+                    elif value == best_baseline_usr:
+                        number = f"\\underline{{{number}}}"
+                    number = r"\cellcolor{projectdarkred!10}$" + number + "$"
+                else:
+                    number = "$" + number + "$"
+                formatted.append(number)
+            lines.append(
+                f"{model} & {row['method_tex']} & "
+                + " & ".join(formatted)
+                + r" \\"
+            )
+            if method_index == 0:
+                lines.append(r"\cmidrule(l){2-6}")
+        if model_index != len(HARMFUL_MODELS) - 1:
+            lines.append(r"\midrule")
+    lines.extend([r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""])
+    return "\n".join(lines)
+
+
+def render_false_reject_report() -> None:
+    rows = _false_reject_rows()
+    if not rows:
+        return
+    destination = UNIT / "harmful"
+    destination.mkdir(parents=True, exist_ok=True)
+    stem = "harmbench_false_reject"
+    (destination / f"{stem}.md").write_text(render_false_reject_markdown(rows))
+    tex = render_false_reject_tex(rows)
+    (destination / f"{stem}.tex").write_text(tex)
+    render_pdf(tex, destination / f"{stem}.pdf")
+
+
 def main() -> None:
     for page in PAGES:
         destination = UNIT / page.folder
@@ -2091,6 +2291,7 @@ def main() -> None:
     render_lcite_reports()
     render_lcite_spanish_reports()
     render_harmful_reports()
+    render_false_reject_report()
 
 
 if __name__ == "__main__":
