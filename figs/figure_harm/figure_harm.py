@@ -603,37 +603,70 @@ def draw_refusal_composition_panel(
     categories = ("Direct\nrefusal", "Safe partial\ncompliance", "Full\ncompliance")
     methods = ("A-LQR", "H-infinity")
     x = np.arange(len(categories), dtype=float)
-    width = 0.34
-    offsets = {"A-LQR": -width / 2, "H-infinity": width / 2}
+    offsets = {"A-LQR": -0.18, "H-infinity": 0.18}
     models = tuple(MODEL_LABELS)
-    for method in methods:
-        model_values = np.asarray(
+    values_by_method = {
+        method: np.asarray(
             [composition[model][method] for model in models], dtype=float
         )
-        means = model_values.mean(axis=0)
+        for method in methods
+    }
+    for method in methods:
+        model_values = values_by_method[method]
         positions = x + offsets[method]
-        ax.bar(
-            positions,
-            means,
-            width=width * 0.88,
-            facecolor=mpl.colors.to_rgba(LOGO_METHOD_COLORS[method], 0.20),
-            edgecolor=LOGO_METHOD_COLORS[method],
-            linewidth=2.0 if method == "H-infinity" else 1.5,
-            zorder=2,
+        box = ax.boxplot(
+            [model_values[:, index] for index in range(len(categories))],
+            positions=positions,
+            widths=0.27,
+            patch_artist=True,
+            showfliers=False,
+            whis=(0, 100),
+            manage_ticks=False,
         )
-        for category_index, position in enumerate(positions):
-            ax.text(
-                position,
-                means[category_index] + 3.0,
-                f"{means[category_index]:.1f}",
-                ha="center",
-                va="bottom",
-                fontsize=9.0 * font_scale,
-                fontweight="bold" if method == "H-infinity" else "normal",
-                color=LOGO_METHOD_COLORS[method],
+        linewidth = 2.1 if method == "H-infinity" else 1.7
+        for artist in box["boxes"]:
+            artist.set(
+                facecolor="none",
+                edgecolor=LOGO_METHOD_COLORS[method],
+                linewidth=linewidth,
             )
-    ax.set_xticks(x, categories, fontsize=10.5 * font_scale)
-    ax.set_ylabel("Response proportion (%)", fontsize=11.0 * font_scale)
+        for key in ("whiskers", "caps", "medians"):
+            for artist in box[key]:
+                artist.set(
+                    color=LOGO_METHOD_COLORS[method],
+                    linewidth=linewidth,
+                )
+    for category_index, center in enumerate(x):
+        for model_index, _ in enumerate(models):
+            pair_x = [center + offsets[method] for method in methods]
+            pair_y = [
+                values_by_method[method][model_index, category_index]
+                for method in methods
+            ]
+            ax.plot(
+                pair_x,
+                pair_y,
+                color="#92999E",
+                linewidth=1.05,
+                alpha=0.72,
+                zorder=3,
+            )
+            for method, point_x, point_y in zip(
+                methods, pair_x, pair_y, strict=True
+            ):
+                ax.plot(
+                    point_x,
+                    point_y,
+                    marker="o",
+                    markersize=4.8 if method == "H-infinity" else 4.2,
+                    markerfacecolor=LOGO_METHOD_COLORS[method],
+                    markeredgecolor="white",
+                    markeredgewidth=0.55,
+                    linestyle="none",
+                    zorder=4,
+                )
+    ax.set_xticks(x, categories, fontsize=8.2 * font_scale)
+    ax.set_ylabel("Response proportion (%)", fontsize=10.5 * font_scale)
     ax.set_ylim(0, 104)
     ax.set_yticks((0, 25, 50, 75, 100))
     ax.tick_params(axis="y", labelsize=9.5 * font_scale)
@@ -688,7 +721,7 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
     draw_refusal_composition_panel(
         fig.add_subplot(outer[2]),
         read_false_reject_composition(),
-        font_scale=1.05,
+        font_scale=font_scale,
     )
     draw_logo_size_legend(
         fig,

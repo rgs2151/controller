@@ -146,13 +146,14 @@
 - X axis: Direct Refusal, Safe Partial Compliance, and Full Compliance.
 - Y axis: regime-balanced response proportion from 0% to 100%.
 - Color/value: muted purple is A-LQR; project teal `#007C7C` is H-infinity.
-- Grouping: each bar is the equal-weight mean of the three model-level summary
-  values; Direct and Adversarial regimes are first weighted equally within
-  each model.
+- Grouping: each unfilled box summarizes the three model-level values; Direct
+  and Adversarial regimes are first weighted equally within each model.
 - Ordering/sorting: Direct Refusal, Safe Partial Compliance, then Full
-  Compliance; paired bars use A-LQR followed by H-infinity.
-- Lines/markers/labels: numeric labels report the cross-model bar means; no new
-  response taxonomy is introduced.
+  Compliance; paired boxes use A-LQR followed by H-infinity.
+- Lines/markers: each gray segment connects the same model under A-LQR and
+  H-infinity. Points sit at the exact method positions with no jitter. Box
+  borders, medians, whiskers, and points use the established method colors;
+  the boxes have no fill.
 - Panels: this compact comparison fills the third slot in `figure_harm_main`
   and is also exported independently as `figure_harm_refusal_composition`.
 
