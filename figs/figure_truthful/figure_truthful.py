@@ -30,6 +30,7 @@ LOGOS = REPO / "figs/logos"
 CATEGORY_CACHE = UNIT / "cache/truthfulqa_category_txi.csv"
 
 TEAL = "#007C7C"
+OOD_RED = "#8B1E1E"
 GRAY = "#A7ADB2"
 INK = "#202124"
 GRID = "#E3E6E8"
@@ -887,12 +888,12 @@ def render_figure_composite(
         2,
         5,
         height_ratios=[0.14, 0.86],
-        width_ratios=[1.25, 1.25, 0.10, 1.0, 1.0],
+        width_ratios=[1.25, 1.25, 0.015, 1.0, 1.0],
         left=0.045,
         right=0.985,
         bottom=0.19,
         top=0.97,
-        wspace=0.34,
+        wspace=0.20,
         hspace=0.10,
     )
 
@@ -923,7 +924,6 @@ def render_figure_composite(
         strict=True,
     ):
         draw_frontier(main_ax, top_ax, right_ax, records, split, images)
-        top_ax.set_title(title, fontsize=12.0, fontweight="bold", color="black", pad=7)
         main_ax.set_xlabel("Informative (%)", fontsize=10.5, color="black")
         main_ax.set_ylabel("True (%)", fontsize=10.5, color="black")
         main_ax.tick_params(labelsize=9.5, colors="black")
@@ -932,6 +932,13 @@ def render_figure_composite(
         force_black_axis_text(main_ax)
         force_black_axis_text(top_ax)
         force_black_axis_text(right_ax)
+        top_ax.set_title(
+            title,
+            fontsize=12.0,
+            fontweight="bold",
+            color=OOD_RED if split == "OOD" else "black",
+            pad=7,
+        )
 
     radar_grid = outer[1, 3:5].subgridspec(1, 2, wspace=0.88)
     radar_id_ax = fig.add_subplot(radar_grid[0], projection="polar")
@@ -955,20 +962,26 @@ def render_figure_composite(
             extend_label_spokes=True,
             show_radial_labels=radial_labels,
         )
-        ax.set_title(title, fontsize=12.0, fontweight="bold", color="black", pad=20)
         for radial_label in ax.get_yticklabels():
             radial_label.set_fontsize(8.8)
         force_black_axis_text(ax)
+        ax.set_title(
+            title,
+            fontsize=12.0,
+            fontweight="bold",
+            color=OOD_RED if split == "OOD" else "black",
+            pad=20,
+        )
 
     frontier_legend = fig.legend(
         handles=method_handles(),
         loc="lower center",
         bbox_to_anchor=(0.31, -0.005),
-        ncol=5,
-        fontsize=10.0,
+        ncol=len(METHOD_ORDER),
+        fontsize=9.0,
         handlelength=0.7,
         handletextpad=0.25,
-        columnspacing=0.62,
+        columnspacing=0.42,
         labelcolor="black",
     )
     emphasize_ours(frontier_legend)
