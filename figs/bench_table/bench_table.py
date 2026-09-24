@@ -2180,47 +2180,162 @@ def _false_reject_rows() -> list[dict]:
     return output
 
 
+def _false_reject_full_rows() -> list[dict]:
+    """Return per-template FalseReject estimates and clustered jackknife SEs."""
+
+    if not FALSE_REJECT_ROWS_PATH.exists():
+        return []
+    parsed = [
+        json.loads(line)
+        for line in FALSE_REJECT_ROWS_PATH.read_text().splitlines()
+        if line.strip()
+    ]
+    groups = _harmful_jackknife()["models"]
+
+    def condition_key(row: dict) -> str | int:
+        if row["regime"] == "direct":
+            return "direct"
+        prompt_id = str(row["prompt_id"])
+        for index in range(5):
+            if prompt_id.endswith(f"-human-{index}"):
+                return index
+        raise ValueError(f"Unknown HarmBench adversarial prompt: {prompt_id}")
+
+    def estimate(subset: list[dict]) -> tuple[float, ...]:
+        if not subset:
+            raise ValueError("Cannot estimate an empty FalseReject condition")
+        counts = {
+            label: sum(row["label"] == label for row in subset)
+            for label in (
+                "Direct Refusal",
+                "Safe Partial Compliance",
+                "Full Compliance",
+            )
+        }
+        total = len(subset)
+        direct = 100.0 * counts["Direct Refusal"] / total
+        partial = 100.0 * counts["Safe Partial Compliance"] / total
+        full = 100.0 * counts["Full Compliance"] / total
+        return direct, partial, full, direct + partial
+
+    output = []
+    for model_key, model_label in HARMFUL_MODELS:
+        model_groups = groups[model_key]["groups"]
+        covered = {behavior for group in model_groups for behavior in group}
+        for raw_condition, condition_label, condition_short in HARMFUL_CONDITIONS:
+            for method_key, method_markdown, method_tex in HARMFUL_METHODS:
+                subset = [
+                    row
+                    for row in parsed
+                    if row["model"] == model_key
+                    and row["method"] == method_key
+                    and condition_key(row) == raw_condition
+                ]
+                observed = {row["behavior_id"] for row in subset}
+                if observed != covered:
+                    raise ValueError(
+                        "FalseReject condition coverage mismatch for "
+                        f"{model_key}/{condition_label}/{method_key}"
+                    )
+                values = estimate(subset)
+                replicates = []
+                for group in model_groups:
+                    held_out = set(group)
+                    replicates.append(
+                        estimate(
+                            [
+                                row
+                                for row in subset
+                                if row["behavior_id"] not in held_out
+                            ]
+                        )
+                    )
+                replicate_means = tuple(
+                    sum(row[index] for row in replicates) / len(replicates)
+                    for index in range(4)
+                )
+                standard_errors = tuple(
+                    math.sqrt(
+                        (len(replicates) - 1)
+                        / len(replicates)
+                        * sum(
+                            (row[index] - replicate_means[index]) ** 2
+                            for row in replicates
+                        )
+                    )
+                    for index in range(4)
+                )
+                output.append(
+                    {
+                        "model_key": model_key,
+                        "model": model_label,
+                        "condition_key": raw_condition,
+                        "condition": condition_label,
+                        "condition_short": condition_short,
+                        "method_key": method_key,
+                        "method_markdown": method_markdown,
+                        "method_tex": method_tex,
+                        "values": values,
+                        "standard_errors": standard_errors,
+                        "n": len(subset),
+                    }
+                )
+    return output
+
+
 def render_false_reject_markdown(rows: list[dict]) -> str:
     lines = [
-        "# HarmBench refusal-type analysis",
+        "# HarmBench refusal-type analysis — full condition breakdown",
         "",
-        "| Model | Method | Direct refusal (%) ↑ | Safe partial compliance (%) ↑ | Full compliance (%) ↓ | USR (%) ↑ |",
-        "|---|---|---:|---:|---:|---:|",
+        "| Model | Condition | Method | Direct refusal (%) ↑ | Safe partial compliance (%) ↑ | Full compliance (%) ↓ | USR (%) ↑ |",
+        "|---|---|---|---:|---:|---:|---:|",
     ]
     for model_key, _ in HARMFUL_MODELS:
         model_rows = [row for row in rows if row["model_key"] == model_key]
-        best_values = tuple(
-            (max if higher else min)(row["values"][index] for row in model_rows)
-            for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
-        )
-        best_baselines = tuple(
-            (max if higher else min)(
-                row["values"][index]
-                for row in model_rows
-                if row["method_key"] != "h_infinity"
+        for condition_key, _, _ in HARMFUL_CONDITIONS:
+            condition_rows = [
+                row for row in model_rows if row["condition_key"] == condition_key
+            ]
+            best_values = tuple(
+                (max if higher else min)(
+                    row["values"][index] for row in condition_rows
+                )
+                for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
             )
-            for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
-        )
-        for row in model_rows:
-            formatted = []
-            for index, (value, standard_error) in enumerate(
-                zip(row["values"], row["standard_errors"], strict=True)
-            ):
-                number = f"{value:.2f} ± {standard_error:.2f}"
-                if row["method_key"] == "h_infinity" and value == best_values[index]:
-                    number = f"**{number}**"
-                elif row["method_key"] != "h_infinity" and value == best_baselines[index]:
-                    number = f"<u>{number}</u>"
-                formatted.append(number)
-            lines.append(
-                f"| {row['model']} | {row['method_markdown']} | "
-                + " | ".join(formatted)
-                + " |"
+            best_baselines = tuple(
+                (max if higher else min)(
+                    row["values"][index]
+                    for row in condition_rows
+                    if row["method_key"] != "h_infinity"
+                )
+                for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
             )
+            for row in condition_rows:
+                formatted = []
+                for index, (value, standard_error) in enumerate(
+                    zip(row["values"], row["standard_errors"], strict=True)
+                ):
+                    number = f"{value:.2f} ± {standard_error:.2f}"
+                    if (
+                        row["method_key"] == "h_infinity"
+                        and value == best_values[index]
+                    ):
+                        number = f"**{number}**"
+                    elif (
+                        row["method_key"] != "h_infinity"
+                        and value == best_baselines[index]
+                    ):
+                        number = f"<u>{number}</u>"
+                    formatted.append(number)
+                lines.append(
+                    f"| {row['model']} | {row['condition']} | {row['method_markdown']} | "
+                    + " | ".join(formatted)
+                    + " |"
+                )
     lines.extend(
         [
             "",
-            "USR is FalseReject's toxic-prompt Useful Safety Rate: Direct Refusal + Safe Partial Compliance. Higher Safe Partial Compliance means more constructive safe engagement, although it can trade off against Direct Refusal; USR is the primary joint summary. Bold marks H∞ when it is best, and underline marks the best competitor. Each cell is the equal-weight mean of the Direct and Adversarial regimes; thus the five jailbreak templates do not outweigh Direct prompts. Per method, the 1B/3B rows contain 240 Direct and 1,200 Adversarial outputs, while the compact 8B row contains 120 Direct and 600 Adversarial outputs. Values are full-sample percentages ± ten-group behavior-clustered jackknife standard errors. The judge uses the verbatim FalseReject Appendix G three-class rubric with pinned `gpt-4o-mini-2024-07-18` at temperature zero.",
+            "USR is FalseReject's toxic-prompt Useful Safety Rate: Direct Refusal + Safe Partial Compliance. Higher Safe Partial Compliance means more constructive safe engagement, although it can trade off against Direct Refusal; USR is the primary joint summary. Bold marks H∞ when it is best within a model and condition, and underline marks the best competitor. Every condition is reported separately. The 1B/3B rows contain 240 matched behaviors per condition; compact 8B rows contain 120. Values are full-sample percentages ± ten-group behavior-clustered jackknife standard errors. The judge uses the verbatim FalseReject Appendix G three-class rubric with pinned `gpt-4o-mini-2024-07-18` at temperature zero.",
             "",
         ]
     )
@@ -2233,67 +2348,96 @@ def render_false_reject_tex(rows: list[dict]) -> str:
         r"\begin{table*}[!htbp]",
         r"\centering",
         r"\definecolor{projectdarkred}{RGB}{128,0,0}",
-        r"\caption{HarmBench refusal-type analysis using the three-class FalseReject rubric. USR is toxic-prompt Useful Safety Rate: Direct Refusal plus Safe Partial Compliance. Higher Safe Partial Compliance denotes more constructive safe engagement, although it can trade off against Direct Refusal; USR is the primary joint summary. Bold marks a best H$\infty$ result and underline marks the best competitor. Direct and Adversarial regimes receive equal weight, so the five jailbreak templates do not outweigh Direct prompts. Per method, the 1B/3B rows contain 240 Direct and 1,200 Adversarial outputs; the compact 8B row contains 120 Direct and 600 Adversarial outputs. Values are full-sample percentages $\pm$ ten-group behavior-clustered jackknife standard errors.}",
+        r"\caption{The FalseReject rubric applied to all HarmBench outputs.}",
         r"\label{tab:harmbench-false-reject}",
-        r"\small",
-        r"\renewcommand{\arraystretch}{1.10}",
-        r"\setlength{\tabcolsep}{7pt}",
-        r"\resizebox{\textwidth}{!}{%",
-        r"\begin{tabular}{rlcccc}",
-        r"Model & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \shortstack{Safe partial\\compliance (\%) $\uparrow$} & \shortstack{Full compliance\\(\%) $\downarrow$} & \cellcolor{projectdarkred!10}USR (\%) $\uparrow$ \\",
+        r"\tiny",
+        r"\renewcommand{\arraystretch}{0.68}",
+        r"\setlength{\tabcolsep}{3pt}",
+        r"\resizebox{!}{0.42\textheight}{%",
+        r"\begin{tabular}{rrlcccc}",
+        r"Model & Condition & Method & \shortstack{Direct refusal\\(\%) $\uparrow$} & \shortstack{Safe partial\\compliance (\%) $\uparrow$} & \shortstack{Full compliance\\(\%) $\downarrow$} & \cellcolor{projectdarkred!10}USR (\%) $\uparrow$ \\",
         r"\midrule",
     ]
     for model_index, (model_key, model_label) in enumerate(HARMFUL_MODELS):
         model_rows = [row for row in rows if row["model_key"] == model_key]
         if not model_rows:
             continue
-        best_values = tuple(
-            (max if higher else min)(row["values"][index] for row in model_rows)
-            for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
-        )
-        best_baselines = tuple(
-            (max if higher else min)(
-                row["values"][index]
-                for row in model_rows
-                if row["method_key"] != "h_infinity"
+        for condition_index, (condition_key, condition_label, _) in enumerate(
+            HARMFUL_CONDITIONS
+        ):
+            condition_rows = [
+                row for row in model_rows if row["condition_key"] == condition_key
+            ]
+            best_values = tuple(
+                (max if higher else min)(
+                    row["values"][index] for row in condition_rows
+                )
+                for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
             )
-            for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
-        )
-        for method_index, row in enumerate(model_rows):
-            model = (
-                f"\\multirow{{{len(model_rows)}}}{{*}}{{{model_label}}}"
-                if method_index == 0
-                else ""
+            best_baselines = tuple(
+                (max if higher else min)(
+                    row["values"][index]
+                    for row in condition_rows
+                    if row["method_key"] != "h_infinity"
+                )
+                for index, higher in enumerate(FALSE_REJECT_HIGHER_IS_BETTER)
             )
-            formatted = []
-            for index, (value, standard_error) in enumerate(
-                zip(row["values"], row["standard_errors"], strict=True)
-            ):
-                number = f"{value:.2f}\\,\\pm\\,{standard_error:.2f}"
-                if row["method_key"] == "h_infinity" and value == best_values[index]:
-                    number = f"\\mathbf{{{number}}}"
-                elif row["method_key"] != "h_infinity" and value == best_baselines[index]:
-                    number = f"\\underline{{{number}}}"
-                if index == 3:
-                    number = r"\cellcolor{projectdarkred!10}$" + number + "$"
-                else:
-                    number = "$" + number + "$"
-                formatted.append(number)
-            lines.append(
-                f"{model} & {row['method_tex']} & "
-                + " & ".join(formatted)
-                + r" \\"
-            )
-            if method_index == 0:
-                lines.append(r"\cmidrule(l){2-6}")
-        if model_index != len(HARMFUL_MODELS) - 1:
+            for method_index, row in enumerate(condition_rows):
+                model = (
+                    f"\\multirow{{{len(model_rows)}}}{{*}}{{\\rotatebox[origin=c]{{90}}{{{model_label}}}}}"
+                    if condition_index == 0 and method_index == 0
+                    else ""
+                )
+                condition = (
+                    f"\\multirow{{{len(condition_rows)}}}{{*}}{{{condition_label}}}"
+                    if method_index == 0
+                    else ""
+                )
+                formatted = []
+                for index, (value, standard_error) in enumerate(
+                    zip(row["values"], row["standard_errors"], strict=True)
+                ):
+                    number = f"{value:.2f}\\,\\pm\\,{standard_error:.2f}"
+                    if (
+                        row["method_key"] == "h_infinity"
+                        and value == best_values[index]
+                    ):
+                        number = f"\\mathbf{{{number}}}"
+                    elif (
+                        row["method_key"] != "h_infinity"
+                        and value == best_baselines[index]
+                    ):
+                        number = f"\\underline{{{number}}}"
+                    if index == 3:
+                        number = r"\cellcolor{projectdarkred!10}$" + number + "$"
+                    else:
+                        number = "$" + number + "$"
+                    formatted.append(number)
+                lines.append(
+                    f"{model} & {condition} & {row['method_tex']} & "
+                    + " & ".join(formatted)
+                    + r" \\"
+                )
+                if method_index == 0:
+                    lines.append(r"\cmidrule(l){3-7}")
+            if condition_index != len(HARMFUL_CONDITIONS) - 1:
+                lines.append(r"\cmidrule(l){2-7}")
+        if model_index < len(HARMFUL_MODELS) - 1:
             lines.append(r"\midrule")
-    lines.extend([r"\bottomrule", r"\end{tabular}%", r"}", r"\end{table*}", ""])
+    lines.extend(
+        [
+            r"\bottomrule",
+            r"\end{tabular}%",
+            r"}",
+            r"\end{table*}",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
 def render_false_reject_report() -> None:
-    rows = _false_reject_rows()
+    rows = _false_reject_full_rows()
     if not rows:
         return
     destination = UNIT / "harmful"
