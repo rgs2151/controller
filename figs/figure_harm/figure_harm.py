@@ -287,7 +287,7 @@ def draw_profile_panel(
         fontsize=7.7 * font_scale * template_font_scale,
     )
     ax.set_xlim(x[0] - 0.38, x[-1] + 0.38)
-    ax.set_ylabel("Attack success rate (%)", fontsize=10.5 * font_scale)
+    ax.set_ylabel("Attack success rate (%) ↓", fontsize=10.5 * font_scale)
     ax.set_xlabel(
         "Jailbreak template",
         fontsize=10.5 * font_scale,
@@ -354,8 +354,8 @@ def draw_frontier_panel(
 
     ax.set_xlim(*x_limits)
     ax.set_ylim(*y_limits)
-    ax.set_xlabel("Mean attack success rate (%)", fontsize=10.5 * font_scale)
-    ax.set_ylabel("Mean safe-concept relevance (0–2)", fontsize=10.5 * font_scale)
+    ax.set_xlabel("Mean attack success rate (%) ↓", fontsize=10.5 * font_scale)
+    ax.set_ylabel("Safe-concept relevance (0–2) ↑", fontsize=10.5 * font_scale)
     style_main_axis(ax, font_scale=font_scale)
     for marginal in (top, right):
         marginal.set_xticks([])
@@ -526,12 +526,13 @@ def add_logo_method_legend(
     fig: plt.Figure,
     *,
     y: float,
+    x: float = 0.5,
     fontsize: float = 12.0,
 ) -> None:
     legend = fig.legend(
         handles=logo_method_handles(),
         loc="lower center",
-        bbox_to_anchor=(0.5, y),
+        bbox_to_anchor=(x, y),
         ncol=len(METHODS),
         fontsize=fontsize,
         handlelength=0.8,
@@ -550,11 +551,15 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
         method: tinted_logo(LOGO_METHOD_COLORS[method]) for method in METHODS
     }
     font_scale = 1.28
-    fig = plt.figure(figsize=(11.2, 5.35))
+    fig = plt.figure(figsize=(15.4, 5.35))
     outer = fig.add_gridspec(
         1,
-        2,
-        width_ratios=(1.18, 1.0),
+        3,
+        # The first two axes occupy roughly 60% of the canvas used by the
+        # previous two-panel figure.  The final slot is intentionally reserved
+        # for the response-disposition analysis; it stays blank until those
+        # labels have been judged from the underlying generations.
+        width_ratios=(1.18, 1.0, 1.35),
         wspace=0.30,
     )
     profile_grid = outer[0].subgridspec(
@@ -583,14 +588,16 @@ def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
         colors=LOGO_METHOD_COLORS,
         font_scale=font_scale,
     )
+    reserved = fig.add_subplot(outer[2])
+    reserved.set_axis_off()
     draw_logo_size_legend(
         fig,
-        bounds=(0.17, 0.885, 0.66, 0.09),
-        fontsize=14.0,
-        separation=24.0,
+        bounds=(0.06, 0.885, 0.53, 0.09),
+        fontsize=12.0,
+        separation=12.0,
     )
-    add_logo_method_legend(fig, y=-0.01)
-    fig.subplots_adjust(left=0.075, right=0.985, top=0.82, bottom=0.27)
+    add_logo_method_legend(fig, x=0.325, y=-0.01, fontsize=11.0)
+    fig.subplots_adjust(left=0.065, right=0.985, top=0.82, bottom=0.27)
     return fig
 
 
