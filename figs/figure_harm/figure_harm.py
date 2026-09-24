@@ -56,7 +56,7 @@ METHODS = ("Original", "A-LQR", "H-infinity")
 METHOD_COLORS = {"Original": "#BCC1C5", "A-LQR": "#777F86", "H-infinity": TEAL}
 LOGO_METHOD_COLORS = {
     "Original": "#737B80",
-    "A-LQR": "#756FA6",
+    "A-LQR": "#6558A6",
     "H-infinity": PROJECT_TEAL,
 }
 METHOD_LABELS = {"Original": "Original", "A-LQR": "A-LQR", "H-infinity": r"$H_\infty$ (ours)"}
@@ -195,7 +195,9 @@ def add_model_mark(
         zoom=logo_zoom(model, scale=1.10 if is_ours else 1.0),
         resample=True,
     )
-    image.set_alpha(1.0 if is_ours else 0.82)
+    image.set_alpha(
+        1.0 if is_ours else (0.95 if method == "A-LQR" else 0.72)
+    )
     ax.add_artist(
         AnnotationBbox(
             image,
@@ -261,6 +263,7 @@ def draw_profile_panel(
     logo_images: dict[str, np.ndarray] | None = None,
     colors: dict[str, str] = METHOD_COLORS,
     font_scale: float = 1.0,
+    bottom_spine_at_zero: bool = True,
 ) -> None:
     indexed = {(str(row["model"]), str(row["template"]), str(row["method"])): float(row["asr"]) for row in rows}
     x = np.arange(len(TEMPLATES))
@@ -278,12 +281,18 @@ def draw_profile_panel(
     ax.set_xticks(x)
     ax.set_xticklabels([TEMPLATE_LABELS[t] for t in TEMPLATES], fontsize=7.7 * font_scale)
     ax.set_ylabel("Attack success rate (%)", fontsize=10.5 * font_scale)
-    ax.set_xlabel("Jailbreak template", fontsize=10.5 * font_scale)
+    ax.set_xlabel(
+        "Jailbreak template",
+        fontsize=10.5 * font_scale,
+        labelpad=14,
+    )
     # Keep the visible baseline at zero while reserving enough internal room for
     # markers centered exactly on zero to render without clipping.
-    ax.set_ylim(-0.75, 1.10 * max(displayed_values))
+    ax.set_ylim(-2.0, 1.10 * max(displayed_values))
     style_main_axis(ax, grid_axis="y", font_scale=font_scale)
-    ax.spines["bottom"].set_position(("data", 0))
+    ax.tick_params(axis="x", pad=8)
+    if bottom_spine_at_zero:
+        ax.spines["bottom"].set_position(("data", 0))
 
 
 def draw_frontier_panel(
@@ -383,8 +392,14 @@ def create_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
     return fig
 
 
-def draw_logo_size_legend(fig: plt.Figure) -> None:
-    ax = fig.add_axes([0.285, 0.885, 0.43, 0.09])
+def draw_logo_size_legend(
+    fig: plt.Figure,
+    *,
+    bounds: tuple[float, float, float, float] = (0.285, 0.885, 0.43, 0.09),
+    fontsize: float = 14.0,
+    separation: float = 24.0,
+) -> None:
+    ax = fig.add_axes(bounds)
     ax.set_axis_off()
     native = np.asarray(Image.open(LLAMA_LOGO).convert("RGBA"))
     groups = []
@@ -397,10 +412,10 @@ def draw_logo_size_legend(fig: plt.Figure) -> None:
         logo = OffsetImage(native, zoom=legend_zoom[model], resample=True)
         text = TextArea(
             MODEL_LABELS[model],
-            textprops={"fontsize": 14.0, "fontfamily": "Arial", "color": "black"},
+            textprops={"fontsize": fontsize, "fontfamily": "Arial", "color": "black"},
         )
         groups.append(HPacker(children=[logo, text], align="center", pad=0, sep=4))
-    packed = HPacker(children=groups, align="center", pad=0, sep=24)
+    packed = HPacker(children=groups, align="center", pad=0, sep=separation)
     ax.add_artist(
         AnchoredOffsetbox(
             loc="center",
@@ -483,6 +498,122 @@ def create_logo_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
     return fig
 
 
+def logo_method_handles() -> list[Line2D]:
+    return [
+        Line2D(
+            [],
+            [],
+            linestyle="none",
+            marker="o",
+            markersize=10.0 if method == "H-infinity" else 8.0,
+            markerfacecolor=LOGO_METHOD_COLORS[method],
+            markeredgecolor="none",
+            alpha=1.0 if method != "Original" else 0.78,
+            label=METHOD_LABELS[method],
+        )
+        for method in METHODS
+    ]
+
+
+def add_logo_method_legend(
+    fig: plt.Figure,
+    *,
+    y: float,
+    fontsize: float = 12.0,
+) -> None:
+    legend = fig.legend(
+        handles=logo_method_handles(),
+        loc="lower center",
+        bbox_to_anchor=(0.5, y),
+        ncol=len(METHODS),
+        fontsize=fontsize,
+        handlelength=0.8,
+        handletextpad=0.35,
+        columnspacing=2.0,
+        labelcolor="black",
+    )
+    for text in legend.get_texts():
+        if "ours" in text.get_text():
+            text.set_fontweight("bold")
+
+
+def create_logo_main_figure(rows: list[dict[str, str | float]]) -> plt.Figure:
+    summary = aggregates(rows)
+    logo_images = {
+        method: tinted_logo(LOGO_METHOD_COLORS[method]) for method in METHODS
+    }
+    font_scale = 1.28
+    fig = plt.figure(figsize=(12.6, 5.35))
+    outer = fig.add_gridspec(
+        1,
+        2,
+        width_ratios=(1.48, 1.0),
+        wspace=0.27,
+    )
+    profile_grid = outer[0].subgridspec(
+        2,
+        1,
+        height_ratios=(0.18, 1.0),
+        hspace=0.05,
+    )
+    spacer = fig.add_subplot(profile_grid[0])
+    spacer.set_axis_off()
+    profile_ax = fig.add_subplot(profile_grid[1])
+    draw_profile_panel(
+        profile_ax,
+        rows,
+        logo_images=logo_images,
+        colors=LOGO_METHOD_COLORS,
+        font_scale=font_scale,
+        bottom_spine_at_zero=False,
+    )
+    draw_frontier_panel(
+        fig,
+        outer[1],
+        summary,
+        logo_images=logo_images,
+        colors=LOGO_METHOD_COLORS,
+        font_scale=font_scale,
+    )
+    draw_logo_size_legend(
+        fig,
+        bounds=(0.25, 0.885, 0.50, 0.09),
+        fontsize=14.0,
+        separation=24.0,
+    )
+    add_logo_method_legend(fig, y=-0.01)
+    fig.subplots_adjust(left=0.075, right=0.985, top=0.82, bottom=0.27)
+    return fig
+
+
+def create_logo_rejection_figure(
+    rows: list[dict[str, str | float]],
+) -> plt.Figure:
+    summary = aggregates(rows)
+    logo_images = {
+        method: tinted_logo(LOGO_METHOD_COLORS[method]) for method in METHODS
+    }
+    fig = plt.figure(figsize=(6.2, 5.35))
+    outer = fig.add_gridspec(1, 1)
+    draw_rejection_panel(
+        fig,
+        outer[0],
+        summary,
+        logo_images=logo_images,
+        colors=LOGO_METHOD_COLORS,
+        font_scale=1.22,
+    )
+    draw_logo_size_legend(
+        fig,
+        bounds=(0.06, 0.885, 0.88, 0.09),
+        fontsize=10.5,
+        separation=10.0,
+    )
+    add_logo_method_legend(fig, y=-0.01, fontsize=10.5)
+    fig.subplots_adjust(left=0.15, right=0.96, top=0.82, bottom=0.25)
+    return fig
+
+
 def render_logo_variant() -> None:
     setup_style()
     PLOTS.mkdir(parents=True, exist_ok=True)
@@ -499,6 +630,23 @@ def render_logo_variant() -> None:
         pad_inches=0.04,
     )
     plt.close(figure)
+    for stem, creator in [
+        ("figure_harm_main", create_logo_main_figure),
+        ("figure_harm_rejection", create_logo_rejection_figure),
+    ]:
+        figure = creator(read_rows())
+        figure.savefig(
+            PLOTS / f"{stem}.pdf",
+            bbox_inches="tight",
+            pad_inches=0.04,
+        )
+        figure.savefig(
+            PLOTS / f"{stem}.png",
+            dpi=300,
+            bbox_inches="tight",
+            pad_inches=0.04,
+        )
+        plt.close(figure)
 
 
 def main() -> None:
