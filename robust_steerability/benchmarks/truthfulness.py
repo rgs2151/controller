@@ -119,6 +119,7 @@ def calibration_stage(
     api_batch_size: int,
     selection_metric: str,
     h_infinity_parameters: dict[str, float] | None,
+    h_infinity_lambda_sweep: bool,
 ) -> None:
     if "alqr" in methods:
         _write_alqr_selection(model_key, calibration_id)
@@ -133,6 +134,7 @@ def calibration_stage(
             api_batch_size=api_batch_size,
             selection_metric=selection_metric,
             fixed_parameters=h_infinity_parameters,
+            lambda_sweep=h_infinity_lambda_sweep,
         )
     runtime._configure_runtime(model_key, calibration_id)
     runtime.prepare("truthfulness", "id")
@@ -442,6 +444,14 @@ def main() -> None:
     parser.add_argument("--h-infinity-q-final-over-r", type=float)
     parser.add_argument("--h-infinity-r", type=float)
     parser.add_argument(
+        "--h-infinity-lambda-sweep",
+        action="store_true",
+        help=(
+            "Run the configured H-infinity setpoint multiplier sweep before "
+            "the Q/R and Qf/R calibration grid"
+        ),
+    )
+    parser.add_argument(
         "--api-concurrency", type=int, default=openai_scoring.DEFAULT_CONCURRENCY
     )
     parser.add_argument(
@@ -534,6 +544,7 @@ def main() -> None:
             "api_batch_size": arguments.api_batch_size,
             "selection_metric": arguments.selection_metric,
             "h_infinity_fixed_parameters": h_infinity_parameters,
+            "h_infinity_lambda_sweep": arguments.h_infinity_lambda_sweep,
         },
     ) as log_root:
         if arguments.stage == "artifacts":
@@ -550,6 +561,7 @@ def main() -> None:
                 arguments.api_batch_size,
                 arguments.selection_metric,
                 h_infinity_parameters,
+                arguments.h_infinity_lambda_sweep,
             )
         elif arguments.stage == "evaluate":
             evaluation_stage(

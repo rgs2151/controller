@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import shutil
 import sys
 import tomllib
 from dataclasses import asdict, replace
@@ -61,6 +62,7 @@ CALIBRATION_CONFIG = tomllib.loads(
 )["calibration"]
 AVAILABLE_SELECTION_METRICS = COMPOSITION.calibration.available_selection_metrics
 DEFAULT_SELECTION_METRIC = COMPOSITION.calibration.selection_metric
+LAMBDA_SWEEP = COMPOSITION.calibration.h_infinity_lambda_sweep
 CALIBRATION_SAMPLES = int(CALIBRATION_CONFIG["h_infinity_tuning_samples"])
 CALIBRATION_REPETITIONS = int(
     CALIBRATION_CONFIG["h_infinity_tuning_repetitions"]
@@ -114,11 +116,11 @@ def _root(model_key: str, calibration_id: str) -> Path:
     )
 
 
-def _grid() -> list[dict[str, float | str]]:
+def _grid(multiplier: float | None = None) -> list[dict[str, float | str | None]]:
     return [
         {
             "grid_id": f"q_{q_index:02d}_qf_{qf_index:02d}",
-            "lambda": None,
+            "lambda": multiplier,
             "q": float(q_ratio * FIXED_R),
             "r": FIXED_R,
             "q_final": float(qf_ratio * FIXED_R),
@@ -186,10 +188,12 @@ def _settings(
     q: float = 0.1,
     r: float = FIXED_R,
     q_final: float = 0.1,
+    multiplier: float | None = None,
 ) -> dict[str, object]:
     model = MODELS[model_key]
     counts = ALQR_CALIBRATION_COUNTS["truthfulness"]
     alqr = paper_alqr_setting("truthfulness", model.model_id)
+    selected_multiplier = alqr.multiplier if multiplier is None else float(multiplier)
     # The shared H-infinity artifact schema records PID gains, but H-infinity
     # fitting does not use them.  Small-model truthfulness runs intentionally
     # omit S-PID, so they do not have (and must not require) an S-PID source
@@ -206,9 +210,9 @@ def _settings(
         "jacobian_max_length": counts.jacobian_max_length,
         "jacobian_vjp_chunk_size": model.jacobian_vjp_chunk_size,
         "state_rank": 8, "numerical_floor": 1e-4,
-        "alqr_setpoint_multiplier": alqr.multiplier,
+        "alqr_setpoint_multiplier": selected_multiplier,
         "spid_setpoint_multiplier": 1.0,
-        "hinf_setpoint_multiplier": alqr.multiplier,
+        "hinf_setpoint_multiplier": selected_multiplier,
         "q": float(q), "r": float(r), "q_final": float(q_final),
         "alqr_q": alqr.q, "alqr_r": alqr.r, "alqr_q_final": alqr.q_final,
         "kp": 0.0 if pid is None else pid.kp,
@@ -231,6 +235,8 @@ def fit_base(
     q: float = 0.1,
     r: float = FIXED_R,
     q_final: float = 0.1,
+    multiplier: float | None = None,
+    destination_root: Path | None = None,
 ) -> dict:
     model_spec = MODELS[model_key]
     data = prepare(model_key, calibration_id)
@@ -248,15 +254,177 @@ def fit_base(
         "alqr", "truthfulness", model_spec.model_id, model_spec.revision,
         device, load_access_token(REPO),
     )
+    root = destination_root or _root(model_key, calibration_id)
     _artifact, metadata = calibrate_controller(
         model, tokenizer, model_label=model_spec.label, model_id=model_spec.model_id,
-        cache_path=_root(model_key, calibration_id) / "base/controller.pt",
+        cache_path=root / "base/controller.pt",
         nominal_dynamics_path=artifact_root("truthfulness", model_key) / "dynamics.pt",
         calibration_data=calibration_data,
-        settings=_settings(model_key, q=q, r=r, q_final=q_final),
+        settings=_settings(
+            model_key,
+            q=q,
+            r=r,
+            q_final=q_final,
+            multiplier=multiplier,
+        ),
         controller_device=device,
     )
     return metadata
+
+
+def lambda_candidates() -> list[dict[str, float | str]]:
+    """Return the configured first-phase setpoint multiplier sweep."""
+
+    return [
+        {
+            "configuration_id": f"lambda_{index:02d}",
+            "lambda": float(multiplier),
+            "q": float(LAMBDA_SWEEP.fixed_q_over_r * LAMBDA_SWEEP.fixed_r),
+            "r": float(LAMBDA_SWEEP.fixed_r),
+            "q_final": float(
+                LAMBDA_SWEEP.fixed_q_final_over_r * LAMBDA_SWEEP.fixed_r
+            ),
+            "q_over_r": float(LAMBDA_SWEEP.fixed_q_over_r),
+            "q_final_over_r": float(LAMBDA_SWEEP.fixed_q_final_over_r),
+        }
+        for index, multiplier in enumerate(LAMBDA_SWEEP.values)
+    ]
+
+
+def _lambda_candidate_root(
+    model_key: str, calibration_id: str, configuration_id: str
+) -> Path:
+    return (
+        _root(model_key, calibration_id)
+        / "lambda_sweep"
+        / "candidates"
+        / configuration_id
+    )
+
+
+def _lambda_selection_path(model_key: str, calibration_id: str) -> Path:
+    return _root(model_key, calibration_id) / "lambda_sweep" / "selection.json"
+
+
+def _lambda_generation_path(
+    model_key: str, calibration_id: str, configuration_id: str
+) -> Path:
+    return (
+        _root(model_key, calibration_id)
+        / "lambda_sweep"
+        / "generations"
+        / f"{configuration_id}.json"
+    )
+
+
+def selected_multiplier(model_key: str, calibration_id: str) -> float:
+    """Use a frozen lambda selection when present, otherwise the paper default."""
+
+    selection = _lambda_selection_path(model_key, calibration_id)
+    if selection.exists():
+        payload = json.loads(selection.read_text())
+        return float(payload["selected"]["lambda"])
+    return float(
+        paper_alqr_setting("truthfulness", MODELS[model_key].model_id).multiplier
+    )
+
+
+def generate_lambda_candidate(
+    model_key: str,
+    device: str,
+    candidate_index: int,
+    calibration_id: str,
+    generation_batch_size: int | None,
+) -> None:
+    """Fit and evaluate one genuine H-infinity setpoint candidate."""
+
+    configuration = lambda_candidates()[candidate_index]
+    configuration_id = str(configuration["configuration_id"])
+    candidate_root = _lambda_candidate_root(
+        model_key, calibration_id, configuration_id
+    )
+    destination = _lambda_generation_path(
+        model_key, calibration_id, configuration_id
+    )
+    data = prepare(model_key, calibration_id)
+    tuning_prompt_ids = [str(row["prompt_id"]) for row in data["tuning"]]
+    if destination.exists():
+        saved = json.loads(destination.read_text())
+        if (
+            saved.get("status") == "complete"
+            and saved.get("identity", {}).get("tuning_prompt_ids")
+            == tuning_prompt_ids
+        ):
+            return
+    fit_base(
+        model_key,
+        device,
+        calibration_id,
+        q=float(configuration["q"]),
+        r=float(configuration["r"]),
+        q_final=float(configuration["q_final"]),
+        multiplier=float(configuration["lambda"]),
+        destination_root=candidate_root,
+    )
+    release_cuda_memory(device)
+    model_spec = MODELS[model_key]
+    model, tokenizer = load_source_model(
+        "alqr",
+        "truthfulness",
+        model_spec.model_id,
+        model_spec.revision,
+        device,
+        load_access_token(REPO),
+    )
+    base_payload = torch.load(
+        candidate_root / "base/controller.pt",
+        map_location="cpu",
+        weights_only=True,
+        mmap=True,
+    )
+    artifact = ControllerArtifact(**base_payload["artifact"])
+    policy = build_policy("hinf", artifact, kp=0.0, ki=0.0, kd=0.0)
+    batch_size = generation_batch_size or model_spec.activation_batch_size
+    prompts = [str(row["text"]) for row in data["tuning"]]
+    completions = generate_batched(
+        model,
+        tokenizer,
+        prompts,
+        behavior="truthfulness",
+        batch_size=batch_size,
+        seed=SOURCE_RANDOM_SEED,
+        use_cache=False,
+        register_hooks=lambda: register_generation_policy_hooks(model, policy),
+    )
+    rows = [
+        {
+            "grid_id": configuration_id,
+            "repetition": 0,
+            "prompt_id": row["prompt_id"],
+            "question": row["question"],
+            "text": row["text"],
+            "completion": completion,
+        }
+        for row, completion in zip(data["tuning"], completions, strict=True)
+    ]
+    _write_json(
+        destination,
+        {
+            "identity": {
+                "model": [model_spec.model_id, model_spec.revision],
+                "configuration": configuration,
+                "calibration_id": calibration_id,
+                "evaluated_model_kv_cache": False,
+                "generation_batch_size": batch_size,
+                "tuning_prompt_ids": tuning_prompt_ids,
+            },
+            "status": "complete",
+            "repetitions": [{"repetition": 0, "rows": rows}],
+            "runtime": runtime_provenance(device),
+        },
+    )
+    del model, tokenizer
+    release_cuda_memory(device)
 
 
 def _controller_from_base(
@@ -374,9 +542,8 @@ def synthesize_grid(model_key: str, device: str, calibration_id: str) -> None:
     options = HInfinityOptions(**bundle["options"])
     source_settings = bundle["calibration"]["settings"]
     model = MODELS[model_key]
-    multiplier = paper_alqr_setting("truthfulness", model.model_id).multiplier
-    for configuration in _grid():
-        configuration["lambda"] = multiplier
+    multiplier = selected_multiplier(model_key, calibration_id)
+    for configuration in _grid(multiplier):
         destination = root / "grid/controllers" / f"{configuration['grid_id']}.pt"
         controller_identity = {
             "model": [model.model_id, model.revision],
@@ -439,13 +606,12 @@ def generate_worker(
         root / "base/controller.pt", map_location="cpu", weights_only=True, mmap=True
     )
     base = ControllerArtifact(**base_payload["artifact"])
-    configurations = _grid()[shard_index::shard_count]
-    multiplier = paper_alqr_setting("truthfulness", model_spec.model_id).multiplier
+    multiplier = selected_multiplier(model_key, calibration_id)
+    configurations = _grid(multiplier)[shard_index::shard_count]
     batch_size = generation_batch_size or model_spec.activation_batch_size
     if batch_size < 1:
         raise ValueError("generation_batch_size must be positive")
     for configuration in configurations:
-        configuration["lambda"] = multiplier
         grid_id = str(configuration["grid_id"])
         destination = root / "grid/generations" / f"{grid_id}.json"
         controller_path = root / "grid/controllers" / f"{grid_id}.pt"
@@ -503,19 +669,20 @@ def generate_worker(
         _write_json(destination, payload)
 
 
-def _score_truthfulqa_grid(
+def _score_truthfulqa_generations(
     model_key: str,
     device: str,
     calibration_id: str,
     scorer_key: str,
+    stage_root: Path,
+    expected_generations: int,
 ) -> None:
-    root = _root(model_key, calibration_id)
     if scorer_key not in {"truthfulqa_true", "truthfulqa_informative"}:
         raise ValueError(f"Unsupported TruthfulQA calibration scorer {scorer_key!r}")
     specification = scorer_spec(scorer_key)
-    destination = root / "grid/scores" / f"{scorer_key}.json"
-    generation_paths = sorted((root / "grid/generations").glob("*.json"))
-    if len(generation_paths) != len(_grid()):
+    destination = stage_root / "scores" / f"{scorer_key}.json"
+    generation_paths = sorted((stage_root / "generations").glob("*.json"))
+    if len(generation_paths) != expected_generations:
         raise ValueError("Truthfulness H-infinity grid generations are incomplete")
     identity = {
         "model": [specification.model_id, specification.revision],
@@ -569,6 +736,134 @@ def _score_truthfulqa_grid(
     release_cuda_memory(device)
     saved["status"] = "complete"
     _write_json(destination, saved)
+
+
+def _score_truthfulqa_grid(
+    model_key: str,
+    device: str,
+    calibration_id: str,
+    scorer_key: str,
+) -> None:
+    _score_truthfulqa_generations(
+        model_key,
+        device,
+        calibration_id,
+        scorer_key,
+        _root(model_key, calibration_id) / "grid",
+        len(_grid()),
+    )
+
+
+def score_lambda_sweep(
+    model_key: str,
+    device: str,
+    calibration_id: str,
+) -> None:
+    """Score lambda candidates with TruthfulQA True and Informative only."""
+
+    sweep_root = _root(model_key, calibration_id) / "lambda_sweep"
+    for scorer_key in ("truthfulqa_true", "truthfulqa_informative"):
+        _score_truthfulqa_generations(
+            model_key,
+            device,
+            calibration_id,
+            scorer_key,
+            sweep_root,
+            len(lambda_candidates()),
+        )
+
+
+def select_lambda(model_key: str, calibration_id: str) -> dict:
+    """Select lambda by aggregate T x I and promote its fitted base artifact."""
+
+    root = _root(model_key, calibration_id)
+    sweep_root = root / "lambda_sweep"
+    score_maps = {}
+    for scorer_key in ("truthfulqa_true", "truthfulqa_informative"):
+        payload = json.loads(
+            (sweep_root / "scores" / f"{scorer_key}.json").read_text()
+        )
+        if payload.get("status") != "complete":
+            raise ValueError(f"Incomplete lambda-sweep score: {scorer_key}")
+        score_maps[scorer_key] = {
+            (str(row["grid_id"]), int(row["repetition"]), str(row["prompt_id"])):
+            float(row["score"])
+            for row in payload["rows"]
+        }
+    summaries = []
+    for configuration in lambda_candidates():
+        configuration_id = str(configuration["configuration_id"])
+        generation = json.loads(
+            _lambda_generation_path(
+                model_key, calibration_id, configuration_id
+            ).read_text()
+        )
+        flattened = [
+            (int(repetition["repetition"]), row)
+            for repetition in generation["repetitions"]
+            for row in repetition["rows"]
+        ]
+        truth = float(np.mean([
+            score_maps["truthfulqa_true"][(
+                configuration_id, repetition, str(row["prompt_id"])
+            )]
+            for repetition, row in flattened
+        ]))
+        informative = float(np.mean([
+            score_maps["truthfulqa_informative"][(
+                configuration_id, repetition, str(row["prompt_id"])
+            )]
+            for repetition, row in flattened
+        ]))
+        summaries.append({
+            **configuration,
+            "truth": 100.0 * truth,
+            "info": 100.0 * informative,
+            "txi": 100.0 * truth * informative,
+        })
+    require_nonzero_selection_metric(
+        summaries,
+        "txi",
+        context="Truthfulness H-infinity lambda calibration",
+    )
+    selected = sorted(
+        summaries,
+        key=lambda row: (
+            -row["txi"], -row["truth"], -row["info"], row["lambda"]
+        ),
+    )[0]
+    selected_root = _lambda_candidate_root(
+        model_key, calibration_id, str(selected["configuration_id"])
+    )
+    canonical_base = root / "base"
+    canonical_base.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(selected_root / "base/controller.pt", canonical_base / "controller.pt")
+    source_diagnostics = diagnostic_root(selected_root / "base/controller.pt")
+    destination_diagnostics = diagnostic_root(canonical_base / "controller.pt")
+    if destination_diagnostics.exists():
+        shutil.rmtree(destination_diagnostics)
+    shutil.copytree(source_diagnostics, destination_diagnostics)
+    payload = {
+        "schema_version": 1,
+        "model": [MODELS[model_key].model_id, MODELS[model_key].revision],
+        "benchmark": "truthfulness",
+        "calibration_id": calibration_id,
+        "protocol": {
+            "enabled": True,
+            "selection_metric": "truthfulqa_txi",
+            "values": list(LAMBDA_SWEEP.values),
+            "fixed_q_over_r": LAMBDA_SWEEP.fixed_q_over_r,
+            "fixed_q_final_over_r": LAMBDA_SWEEP.fixed_q_final_over_r,
+            "fixed_r": LAMBDA_SWEEP.fixed_r,
+            "tuning_samples": CALIBRATION_SAMPLES,
+            "tuning_repetitions": 1,
+            "evaluated_model_kv_cache": False,
+        },
+        "selected": selected,
+        "candidates": summaries,
+    }
+    _write_json(_lambda_selection_path(model_key, calibration_id), payload)
+    return payload
 
 
 def _required_api_scorers(selection_metric: str) -> tuple[str, ...]:
@@ -770,7 +1065,8 @@ def _calibration_profile(
     if normalizer <= 0:
         raise ValueError("AXBench calibration score normalizer must be positive")
     summaries = []
-    for configuration in _grid():
+    multiplier = selected_multiplier(model_key, calibration_id)
+    for configuration in _grid(multiplier):
         grid_id = str(configuration["grid_id"])
         generation_path = (
             root / "grid/generations" / f"{grid_id}.json"
@@ -894,9 +1190,6 @@ def _calibration_profile(
                         + quality_weights[1] * normalized_fluency_mean
                     ),
                 })
-        configuration["lambda"] = paper_alqr_setting(
-            "truthfulness", MODELS[model_key].model_id
-        ).multiplier
         summaries.append({**configuration, **summary})
     if selection_metric == "truthfulqa_true_mean_percentage":
         metric_key = "truth"
@@ -1005,6 +1298,7 @@ def _calibration_profile(
 
 def select(model_key: str, calibration_id: str, selection_metric: str) -> dict:
     root = _root(model_key, calibration_id)
+    lambda_selection = _lambda_selection_path(model_key, calibration_id)
     previous_selection = (
         json.loads((root / "selection.json").read_text())
         if (root / "selection.json").exists()
@@ -1039,6 +1333,12 @@ def select(model_key: str, calibration_id: str, selection_metric: str) -> dict:
             "q_over_r": list(Q_OVER_R), "q_final_over_r": list(Q_FINAL_OVER_R),
             "fixed_r": FIXED_R,
             "fixed_setpoint_multiplier": parameters["lambda"],
+            "lambda_sweep_enabled": lambda_selection.exists(),
+            "lambda_selection": (
+                str(lambda_selection.relative_to(root))
+                if lambda_selection.exists()
+                else None
+            ),
         },
         "selected": {
             **selected,
@@ -1089,9 +1389,14 @@ def calibrate(
     api_batch_size: int = openai_scoring.DEFAULT_BATCH_SIZE,
     selection_metric: str = DEFAULT_SELECTION_METRIC,
     fixed_parameters: dict[str, float] | None = None,
+    lambda_sweep: bool = False,
 ) -> None:
     if selection_metric not in AVAILABLE_SELECTION_METRICS:
         raise ValueError(f"Unknown truthfulness calibration metric {selection_metric!r}")
+    if fixed_parameters is not None and lambda_sweep:
+        raise ValueError("A fixed H-infinity configuration cannot use a lambda sweep")
+    if lambda_sweep and not LAMBDA_SWEEP.values:
+        raise ValueError("Truthfulness lambda sweep has no configured values")
     evaluation._configure_runtime(model_key, calibration_id)
     selection = _root(model_key, calibration_id) / "selection.json"
     if fixed_parameters is not None:
@@ -1137,11 +1442,92 @@ def calibrate(
             protocol.get("selection_metric") == selection_metric
             and protocol.get("metric_configuration")
             == CALIBRATION_CONFIG.get(selection_metric)
+            and bool(protocol.get("lambda_sweep_enabled", False)) == lambda_sweep
         ):
             return
     prepare(model_key, calibration_id)
-    fit_base(model_key, devices[0], calibration_id)
-    release_cuda_memory(devices[0])
+    if lambda_sweep:
+        lambda_selection = _lambda_selection_path(model_key, calibration_id)
+        if lambda_selection.exists():
+            saved_lambda = json.loads(lambda_selection.read_text())
+            expected_protocol = {
+                "selection_metric": "truthfulqa_txi",
+                "values": list(LAMBDA_SWEEP.values),
+                "fixed_q_over_r": LAMBDA_SWEEP.fixed_q_over_r,
+                "fixed_q_final_over_r": LAMBDA_SWEEP.fixed_q_final_over_r,
+                "fixed_r": LAMBDA_SWEEP.fixed_r,
+            }
+            actual_protocol = saved_lambda.get("protocol", {})
+            actual = {key: actual_protocol.get(key) for key in expected_protocol}
+            if actual != expected_protocol:
+                raise ValueError(
+                    f"Calibration ID {calibration_id!r} already contains a different "
+                    "lambda sweep; use a new calibration ID"
+                )
+            if not (_root(model_key, calibration_id) / "base/controller.pt").exists():
+                select_lambda(model_key, calibration_id)
+        else:
+            lambda_jobs = [
+                (
+                    f"hinf-lambda-{index:02d}",
+                    [
+                        sys.executable,
+                        "-m",
+                        "robust_steerability.benchmarks.truthfulness_calibration",
+                        "--stage",
+                        "lambda-worker",
+                        "--model",
+                        model_key,
+                        "--device",
+                        "{device}",
+                        "--candidate-index",
+                        str(index),
+                        "--calibration-id",
+                        calibration_id,
+                        *(
+                            ["--generation-batch-size", str(generation_batch_size)]
+                            if generation_batch_size is not None
+                            else []
+                        ),
+                    ],
+                )
+                for index in range(len(lambda_candidates()))
+            ]
+            run_jobs(
+                lambda_jobs,
+                devices,
+                log_root / "hinf-lambda-generation",
+            )
+            lambda_score_jobs = [
+                (
+                    f"hinf-lambda-score-{scorer_key}",
+                    [
+                        sys.executable,
+                        "-m",
+                        "robust_steerability.benchmarks.truthfulness_calibration",
+                        "--stage",
+                        "score-lambda-scorer",
+                        "--model",
+                        model_key,
+                        "--device",
+                        "{device}",
+                        "--scorer",
+                        scorer_key,
+                        "--calibration-id",
+                        calibration_id,
+                    ],
+                )
+                for scorer_key in ("truthfulqa_true", "truthfulqa_informative")
+            ]
+            run_jobs(
+                lambda_score_jobs,
+                devices,
+                log_root / "hinf-lambda-scoring",
+            )
+            select_lambda(model_key, calibration_id)
+    else:
+        fit_base(model_key, devices[0], calibration_id)
+        release_cuda_memory(devices[0])
     synthesize_grid(model_key, devices[0], calibration_id)
     generation_jobs = [
         (
@@ -1163,6 +1549,33 @@ def calibrate(
         for index, _device in enumerate(devices)
     ]
     run_jobs(generation_jobs, devices, log_root / "hinf-grid-generation")
+    if selection_metric == "truthfulqa_txi":
+        grid_score_jobs = [
+            (
+                f"hinf-grid-score-{scorer_key}",
+                [
+                    sys.executable,
+                    "-m",
+                    "robust_steerability.benchmarks.truthfulness_calibration",
+                    "--stage",
+                    "score-grid-scorer",
+                    "--model",
+                    model_key,
+                    "--device",
+                    "{device}",
+                    "--scorer",
+                    scorer_key,
+                    "--calibration-id",
+                    calibration_id,
+                ],
+            )
+            for scorer_key in ("truthfulqa_true", "truthfulqa_informative")
+        ]
+        run_jobs(
+            grid_score_jobs,
+            devices,
+            log_root / "hinf-grid-scoring",
+        )
     score_grid(
         model_key,
         devices[0],
@@ -1179,8 +1592,10 @@ def main() -> None:
     parser.add_argument(
         "--stage",
         choices=(
-            "prepare", "base", "synthesize", "generate-worker", "score-grid",
-            "select", "select-fixed",
+            "prepare", "base", "lambda-worker", "score-lambda",
+            "score-lambda-scorer", "select-lambda", "synthesize",
+            "generate-worker", "score-grid", "score-grid-scorer", "select",
+            "select-fixed",
         ),
         required=True,
     )
@@ -1188,6 +1603,11 @@ def main() -> None:
     parser.add_argument("--device")
     parser.add_argument("--shard-index", type=int)
     parser.add_argument("--shard-count", type=int)
+    parser.add_argument("--candidate-index", type=int)
+    parser.add_argument(
+        "--scorer",
+        choices=("truthfulqa_true", "truthfulqa_informative"),
+    )
     parser.add_argument("--calibration-id", default="selected")
     parser.add_argument(
         "--selection-metric",
@@ -1209,6 +1629,37 @@ def main() -> None:
         prepare(arguments.model, arguments.calibration_id)
     elif arguments.stage == "base":
         fit_base(arguments.model, arguments.device, arguments.calibration_id)
+    elif arguments.stage == "lambda-worker":
+        if arguments.candidate_index is None or arguments.device is None:
+            raise ValueError("lambda-worker requires --candidate-index and --device")
+        generate_lambda_candidate(
+            arguments.model,
+            arguments.device,
+            arguments.candidate_index,
+            arguments.calibration_id,
+            arguments.generation_batch_size,
+        )
+    elif arguments.stage == "score-lambda":
+        if arguments.device is None:
+            raise ValueError("score-lambda requires --device")
+        score_lambda_sweep(
+            arguments.model,
+            arguments.device,
+            arguments.calibration_id,
+        )
+    elif arguments.stage == "score-lambda-scorer":
+        if arguments.device is None or arguments.scorer is None:
+            raise ValueError("score-lambda-scorer requires --device and --scorer")
+        _score_truthfulqa_generations(
+            arguments.model,
+            arguments.device,
+            arguments.calibration_id,
+            arguments.scorer,
+            _root(arguments.model, arguments.calibration_id) / "lambda_sweep",
+            len(lambda_candidates()),
+        )
+    elif arguments.stage == "select-lambda":
+        select_lambda(arguments.model, arguments.calibration_id)
     elif arguments.stage == "synthesize":
         synthesize_grid(arguments.model, arguments.device, arguments.calibration_id)
     elif arguments.stage == "generate-worker":
@@ -1230,6 +1681,15 @@ def main() -> None:
             selection_metric=arguments.selection_metric,
             api_concurrency=arguments.api_concurrency,
             api_batch_size=arguments.api_batch_size,
+        )
+    elif arguments.stage == "score-grid-scorer":
+        if arguments.device is None or arguments.scorer is None:
+            raise ValueError("score-grid-scorer requires --device and --scorer")
+        _score_truthfulqa_grid(
+            arguments.model,
+            arguments.device,
+            arguments.calibration_id,
+            arguments.scorer,
         )
     elif arguments.stage == "select":
         print(json.dumps(
