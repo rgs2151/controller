@@ -1,0 +1,42 @@
+{
+  "feature": "log10(s_rob)",
+  "cluster_method": "global minimum-SSE one-dimensional k-means",
+  "n": 15,
+  "task_group_sizes": {
+    "truthfulness": 9,
+    "harmful": 3,
+    "mgsm": 3
+  },
+  "silhouette_by_k": {
+    "2": 0.562052750457347,
+    "3": 0.5728151705548897,
+    "4": 0.600836510390618,
+    "5": 0.556553527130473,
+    "6": 0.5914052894509642
+  },
+  "selected_k_by_maximum_silhouette": 4,
+  "observed_task_label_silhouette": 0.043895779365974844,
+  "permutation_null": "exact enumeration of all labeled 9/3/3 assignments",
+  "permutation_count": 100100,
+  "exact_upper_tail_p_value": 0.03822177822177822,
+  "new_truthfulness_model_filter": {
+    "criterion": "evaluated H-infinity mean T\u00d7I > evaluated Original mean T\u00d7I",
+    "applies_only_to": [
+      "pythia_14m",
+      "pythia_31m",
+      "distilgpt2",
+      "gpt2_small",
+      "smollm2_135m",
+      "pythia_160m",
+      "gpt2_medium",
+      "qwen25_05b",
+      "gpt2_large"
+    ],
+    "included": [
+      "gpt2_large",
+      "pythia_31m",
+      "qwen25_05b",
+      "smollm2_135m"
+    ]
+  }
+}

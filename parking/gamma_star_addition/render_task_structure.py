@@ -70,6 +70,18 @@ TRUTHFULNESS_EXTRA_CALIBRATIONS = {
     "qwen25_32b": "selected",
 }
 
+TRUTHFULNESS_NEW_MODEL_KEYS = (
+    "pythia_14m",
+    "pythia_31m",
+    "distilgpt2",
+    "gpt2_small",
+    "smollm2_135m",
+    "pythia_160m",
+    "gpt2_medium",
+    "qwen25_05b",
+    "gpt2_large",
+)
+
 LOGOS = {
     "pythia_14m": "eleutherai_transparent.png",
     "pythia_31m": "eleutherai_transparent.png",
@@ -780,12 +792,53 @@ def optimal_1d_kmeans_labels(values: np.ndarray, cluster_count: int) -> np.ndarr
     return best_labels
 
 
-def render_overall_summary(rows: list[dict[str, object]]) -> None:
+def truthfulness_txi_improvement_filter() -> tuple[set[str], list[dict[str, object]]]:
+    """Return new model keys whose H-infinity T×I exceeds Original T×I."""
+    sys.path.insert(0, str(UNIT))
+    from build_truthfulness_comparison import MODELS, metric, result_path
+
+    bases = {model: base for model, base in MODELS}
+    included = set()
+    records = []
+    for model_key in TRUTHFULNESS_NEW_MODEL_KEYS:
+        model = SHORT_MODEL[model_key]
+        base = bases[model]
+        original = json.loads(result_path(model, base, "original").read_text())
+        h_infinity = json.loads(result_path(model, base, "h_infinity").read_text())
+        original_txi = float(metric(original, "txi")[0])
+        h_infinity_txi = float(metric(h_infinity, "txi")[0])
+        improvement = h_infinity_txi - original_txi
+        passes = improvement > 0.0
+        if passes:
+            included.add(model_key)
+        records.append({
+            "model_key": model_key,
+            "model": model,
+            "original_txi": original_txi,
+            "h_infinity_txi": h_infinity_txi,
+            "h_infinity_minus_original_txi": improvement,
+            "included": passes,
+        })
+    return included, records
+
+
+def render_overall_summary(
+    rows: list[dict[str, object]],
+    *,
+    output_name: str = "srob_overall",
+    included_new_model_keys: set[str] | None = None,
+) -> None:
     """Render the task distribution, separation diagnostics, and Truthfulness scaling."""
     truthfulness = [
         row for row in truthfulness_extended_rows(rows)
         if row["model_key"] != "qwen25_32b"
     ]
+    if included_new_model_keys is not None:
+        truthfulness = [
+            row for row in truthfulness
+            if row["model_key"] not in TRUTHFULNESS_NEW_MODEL_KEYS
+            or row["model_key"] in included_new_model_keys
+        ]
     combined = [
         dict(row, paper_status="final_reported")
         for row in rows if row["benchmark"] != "truthfulness"
@@ -948,12 +1001,12 @@ def render_overall_summary(rows: list[dict[str, object]]) -> None:
     ax_scale.text(label_x, label_y, rf"$R^2$ = {fit.rvalue ** 2:.2f}", ha="center", va="top",
                   fontsize=7.2, color="black", rotation=line_angle, rotation_mode="anchor")
 
-    prefix = PLOTS / "srob_overall"
+    prefix = PLOTS / output_name
     fig.savefig(prefix.with_suffix(".pdf"), bbox_inches="tight")
     fig.savefig(prefix.with_suffix(".png"), dpi=600, bbox_inches="tight")
     plt.close(fig)
 
-    with (PLOTS / "srob_overall_points.csv").open("w", newline="") as handle:
+    with (PLOTS / f"{output_name}_points.csv").open("w", newline="") as handle:
         fields = ["benchmark", "model_key", "short_model", "parameter_billions",
                   "gamma_star", "s_rob_value", "paper_status"]
         writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
@@ -977,7 +1030,13 @@ def render_overall_summary(rows: list[dict[str, object]]) -> None:
         "permutation_count": len(null_silhouettes),
         "exact_upper_tail_p_value": exact_p_value,
     }
-    with (PLOTS / "srob_overall_statistics.json").open("w") as handle:
+    if included_new_model_keys is not None:
+        statistics["new_truthfulness_model_filter"] = {
+                "criterion": "evaluated H-infinity mean T×I > evaluated Original mean T×I",
+                "applies_only_to": list(TRUTHFULNESS_NEW_MODEL_KEYS),
+                "included": sorted(included_new_model_keys),
+        }
+    with (PLOTS / f"{output_name}_statistics.json").open("w") as handle:
         json.dump(statistics, handle, indent=2)
         handle.write("\n")
 
@@ -986,6 +1045,15 @@ def main() -> None:
     configure()
     rows = load_rows()
     render_overall_summary(rows)
+    included, records = truthfulness_txi_improvement_filter()
+    with (PLOTS / "truthfulness_txi_improvement_filter.json").open("w") as handle:
+        json.dump(records, handle, indent=2)
+        handle.write("\n")
+    render_overall_summary(
+        rows,
+        output_name="srob_overall_txi_improved",
+        included_new_model_keys=included,
+    )
 
 
 if __name__ == "__main__":
