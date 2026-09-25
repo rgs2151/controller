@@ -8,7 +8,7 @@ set -euo pipefail
 calibration_id="lambda_txi_n200_r1"
 devices="${TRUTHFULNESS_DEVICES:-0,1,2,3}"
 batch_size="${TRUTHFULNESS_BATCH_SIZE:-64}"
-models=(
+default_models=(
   pythia_14m
   pythia_31m
   distilgpt2
@@ -19,6 +19,10 @@ models=(
   qwen25_05b
   gpt2_large
 )
+models=("${default_models[@]}")
+if (( $# > 0 )); then
+  models=("$@")
+fi
 
 for model in "${models[@]}"; do
   python -m robust_steerability.benchmarks.truthfulness calibrate \
@@ -52,4 +56,3 @@ for model in "${models[@]}"; do
     --calibration-id "$calibration_id" \
     --evaluation-repetitions 1
 done
-
