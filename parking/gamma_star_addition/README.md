@@ -26,12 +26,18 @@ SmolLM2-135M, Pythia-160M, GPT-2 Medium, Qwen-2.5-0.5B, and GPT-2 Large.
 - Frozen original figure references: `ref/srob_overall_original.*`
 - Reproducible outputs: `plots/srob_overall.pdf`, `plots/srob_overall.png`,
   `plots/srob_overall_points.csv`, and `plots/srob_overall_statistics.json`
+- Analysis-only steering comparison: `truthfulness_original_vs_hinf.md`, with
+  exact source provenance in `truthfulness_result_sources.json`. This table is
+  deliberately not connected to `figs/bench_table/`.
 
 Run from the Code repository root:
 
 ```bash
 /home/dev/miniconda3/bin/python3.13 \
   parking/gamma_star_addition/render_task_structure.py
+
+/home/dev/miniconda3/bin/python3.13 \
+  parking/gamma_star_addition/build_truthfulness_comparison.py
 ```
 
 ## Logo provenance
