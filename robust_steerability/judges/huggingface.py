@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gc
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,7 +17,9 @@ from robust_steerability.modeling.huggingface import cuda_device_index
 from robust_steerability.source_methods.id_benchmark import runtime_provenance
 
 
-BATCH_SIZE = 16
+BATCH_SIZE = int(os.environ.get("ROBUST_STEERING_JUDGE_BATCH_SIZE", "16"))
+if BATCH_SIZE < 1:
+    raise ValueError("ROBUST_STEERING_JUDGE_BATCH_SIZE must be positive")
 MAX_NEW_TOKENS = 20
 INPUT_MAX_LENGTH = 1024
 
