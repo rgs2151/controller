@@ -419,8 +419,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("stage", choices=("artifacts", "calibrate", "evaluate", "score"))
     parser.add_argument("--model", choices=COMPOSITION.models, required=True)
-    parser.add_argument("--methods", default=",".join(DEFAULT_METHODS))
-    parser.add_argument("--datasets", default=",".join(DATASETS))
+    parser.add_argument(
+        "--run-profile",
+        choices=("default", *(profile.name for profile in COMPOSITION.run_profiles)),
+        default="default",
+    )
+    parser.add_argument("--methods")
+    parser.add_argument("--datasets")
     parser.add_argument("--scorers", default="default")
     parser.add_argument("--kv-cache", choices=("off", "on"), default="off")
     parser.add_argument("--devices", default="auto")
@@ -444,8 +449,25 @@ def main() -> None:
     )
     parser.add_argument("--run-id")
     arguments = parser.parse_args()
-    methods = _names(arguments.methods, METHODS)
-    datasets = _names(arguments.datasets, DATASETS)
+    profile = (
+        None
+        if arguments.run_profile == "default"
+        else COMPOSITION.run_profile(arguments.run_profile)
+    )
+    if profile is not None and arguments.model not in profile.models:
+        raise ValueError(
+            f"Run profile {profile.name!r} does not include model {arguments.model!r}"
+        )
+    methods_value = arguments.methods or ",".join(
+        profile.methods if profile is not None else DEFAULT_METHODS
+    )
+    datasets_value = arguments.datasets or ",".join(
+        profile.datasets if profile is not None else DATASETS
+    )
+    if arguments.evaluation_repetitions is None and profile is not None:
+        arguments.evaluation_repetitions = profile.evaluation_repetitions
+    methods = _names(methods_value, METHODS)
+    datasets = _names(datasets_value, DATASETS)
     scorers = (
         None
         if arguments.scorers in {"default", "all"}
@@ -503,6 +525,7 @@ def main() -> None:
         use_cache=use_cache,
         calibration_id=arguments.calibration_id,
         parameters={
+            "run_profile": arguments.run_profile,
             "generation_batch_size": arguments.generation_batch_size,
             "evaluation_samples": arguments.evaluation_samples,
             "evaluation_repetitions": arguments.evaluation_repetitions,

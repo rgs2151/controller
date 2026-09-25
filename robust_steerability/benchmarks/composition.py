@@ -47,6 +47,17 @@ class CalibrationComposition:
 
 
 @dataclass(frozen=True)
+class BenchmarkRunProfile:
+    """A named, explicitly scoped benchmark invocation."""
+
+    name: str
+    models: tuple[str, ...]
+    methods: tuple[str, ...]
+    datasets: tuple[str, ...]
+    evaluation_repetitions: int | None = None
+
+
+@dataclass(frozen=True)
 class BenchmarkComposition:
     benchmark: str
     base_dataset: str
@@ -56,11 +67,18 @@ class BenchmarkComposition:
     default_datasets: tuple[str, ...]
     datasets: tuple[EvaluationDataset, ...]
     calibration: CalibrationComposition
+    run_profiles: tuple[BenchmarkRunProfile, ...]
 
     def dataset(self, key: str) -> EvaluationDataset:
         matches = [dataset for dataset in self.datasets if dataset.key == key]
         if len(matches) != 1:
             raise ValueError(f"Unknown {self.benchmark} evaluation dataset {key!r}")
+        return matches[0]
+
+    def run_profile(self, name: str) -> BenchmarkRunProfile:
+        matches = [profile for profile in self.run_profiles if profile.name == name]
+        if len(matches) != 1:
+            raise ValueError(f"Unknown {self.benchmark} run profile {name!r}")
         return matches[0]
 
     @property
@@ -158,6 +176,34 @@ def load_composition(benchmark: str) -> BenchmarkComposition:
         raise ValueError(f"{path} contains duplicate H-infinity lambda values")
     if min(lambda_q_over_r, lambda_q_final_over_r, lambda_r) <= 0:
         raise ValueError(f"{path} requires positive fixed lambda-sweep Q, Qf, and R")
+    run_profiles = tuple(
+        BenchmarkRunProfile(
+            name=str(name),
+            models=tuple(str(value) for value in profile["models"]),
+            methods=tuple(str(value) for value in profile["methods"]),
+            datasets=tuple(str(value) for value in profile["datasets"]),
+            evaluation_repetitions=(
+                int(profile["evaluation_repetitions"])
+                if "evaluation_repetitions" in profile
+                else None
+            ),
+        )
+        for name, profile in payload.get("run_profiles", {}).items()
+    )
+    for profile in run_profiles:
+        if not profile.models or set(profile.models) - set(models):
+            raise ValueError(f"{path} run profile {profile.name!r} has invalid models")
+        if not profile.methods or set(profile.methods) - set(available_methods):
+            raise ValueError(f"{path} run profile {profile.name!r} has invalid methods")
+        if not profile.datasets or set(profile.datasets) - set(keys):
+            raise ValueError(f"{path} run profile {profile.name!r} has invalid datasets")
+        if (
+            profile.evaluation_repetitions is not None
+            and profile.evaluation_repetitions < 1
+        ):
+            raise ValueError(
+                f"{path} run profile {profile.name!r} requires positive repetitions"
+            )
     return BenchmarkComposition(
         benchmark=benchmark,
         base_dataset=str(payload["base_dataset"]),
@@ -178,6 +224,7 @@ def load_composition(benchmark: str) -> BenchmarkComposition:
                 selection_metric=lambda_metric,
             ),
         ),
+        run_profiles=run_profiles,
     )
 
 
