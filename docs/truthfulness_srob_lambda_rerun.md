@@ -28,7 +28,7 @@ place because the rerun depends on them.
 From the repository root:
 
 ```bash
-TRUTHFULNESS_DEVICES=0,1,2,3 \
+TRUTHFULNESS_DEVICES=cuda:0,cuda:1,cuda:2,cuda:3 \
 TRUTHFULNESS_BATCH_SIZE=64 \
 bash benchmarks/truthfulness/run_srob_lambda_rerun.sh
 ```
