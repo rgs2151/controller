@@ -64,11 +64,14 @@ def _attention_output_projection(
 
     if model.config.model_type == "gpt2":
         return layer.attn.c_proj
+    if hasattr(layer, "attention") and hasattr(layer.attention, "dense"):
+        return layer.attention.dense
     if hasattr(layer, "self_attn") and hasattr(layer.self_attn, "o_proj"):
         return layer.self_attn.o_proj
     raise ValueError(
         "Unsupported CausalLM architecture: could not locate the attention "
-        "output projection (expected attn.c_proj or self_attn.o_proj)."
+        "output projection (expected attn.c_proj, attention.dense, or "
+        "self_attn.o_proj)."
     )
 
 
