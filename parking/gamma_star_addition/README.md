@@ -26,6 +26,12 @@ SmolLM2-135M, Pythia-160M, GPT-2 Medium, Qwen-2.5-0.5B, and GPT-2 Large.
 - Frozen original figure references: `ref/srob_overall_original.*`
 - Reproducible outputs: `plots/srob_overall.pdf`, `plots/srob_overall.png`,
   `plots/srob_overall_points.csv`, and `plots/srob_overall_statistics.json`
+- T×I-filtered variant: `plots/srob_overall_txi_improved.{pdf,png}`. It retains
+  all five pre-existing Truthfulness models and filters only the nine new model
+  additions, keeping a new model exactly when evaluated H∞ mean T×I is greater
+  than evaluated Original mean T×I. The decision record is stored in
+  `plots/truthfulness_txi_improvement_filter.json`; matching point and statistic
+  files use the `srob_overall_txi_improved_` prefix.
 - Analysis-only steering comparison: `truthfulness_original_vs_hinf.md`, with
   exact source provenance in `truthfulness_result_sources.json`. This table is
   deliberately not connected to `figs/bench_table/`.

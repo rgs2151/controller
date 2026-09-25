@@ -1,0 +1,74 @@
+[
+  {
+    "model_key": "pythia_14m",
+    "model": "Pythia-14M",
+    "original_txi": 8.213468686375357,
+    "h_infinity_txi": 6.4720167673175135,
+    "h_infinity_minus_original_txi": -1.7414519190578437,
+    "included": false
+  },
+  {
+    "model_key": "pythia_31m",
+    "model": "Pythia-31M",
+    "original_txi": 8.357291281204635,
+    "h_infinity_txi": 8.96089673387876,
+    "h_infinity_minus_original_txi": 0.6036054526741257,
+    "included": true
+  },
+  {
+    "model_key": "distilgpt2",
+    "model": "DistilGPT-2",
+    "original_txi": 26.917297513517074,
+    "h_infinity_txi": 22.411755100084047,
+    "h_infinity_minus_original_txi": -4.505542413433027,
+    "included": false
+  },
+  {
+    "model_key": "gpt2_small",
+    "model": "GPT-2 Small",
+    "original_txi": 27.506071261099432,
+    "h_infinity_txi": 27.425620497116807,
+    "h_infinity_minus_original_txi": -0.08045076398262552,
+    "included": false
+  },
+  {
+    "model_key": "smollm2_135m",
+    "model": "SmolLM2-135M",
+    "original_txi": 36.4005998600726,
+    "h_infinity_txi": 48.95061941095659,
+    "h_infinity_minus_original_txi": 12.550019550883988,
+    "included": true
+  },
+  {
+    "model_key": "pythia_160m",
+    "model": "Pythia-160M",
+    "original_txi": 26.175712258928606,
+    "h_infinity_txi": 21.156453514589753,
+    "h_infinity_minus_original_txi": -5.0192587443388526,
+    "included": false
+  },
+  {
+    "model_key": "gpt2_medium",
+    "model": "GPT-2 Medium",
+    "original_txi": 28.080462749198865,
+    "h_infinity_txi": 27.181871161921766,
+    "h_infinity_minus_original_txi": -0.8985915872770995,
+    "included": false
+  },
+  {
+    "model_key": "qwen25_05b",
+    "model": "Qwen-2.5-0.5B",
+    "original_txi": 46.866989568367416,
+    "h_infinity_txi": 57.3380235479536,
+    "h_infinity_minus_original_txi": 10.471033979586181,
+    "included": true
+  },
+  {
+    "model_key": "gpt2_large",
+    "model": "GPT-2 Large",
+    "original_txi": 26.356988654494682,
+    "h_infinity_txi": 37.810960180617215,
+    "h_infinity_minus_original_txi": 11.453971526122533,
+    "included": true
+  }
+]
