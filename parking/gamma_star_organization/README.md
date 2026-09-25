@@ -66,6 +66,15 @@ Render the controller-level structural figures with:
 - `plots/srob_parameter_size_truthfulness_axis_diagnostic_1x4.{pdf,png}` is the retained exploratory coordinate-system diagnostic. It shows log-log, log-linear, linear-log, and linear-linear views of the same five models, with coordinate-specific fits plus Kendall/Mann–Kendall trend statistics. Its four fit records are stored in the matching `_fit.json` file.
 - `plots/srob_parameter_size.{pdf,png}` is the cross-benchmark parameter plot colored by task. Both axes are logarithmic; light dashed links identify the same model evaluated in two tasks.
 - `plots/srob_task_hierarchical.{pdf,png}` is the clustering heat map, using Ward clustering on one-dimensional `log10(S_rob)` and an ordered pairwise-distance matrix.
+- `plots/srob_overall.{pdf,png}` is the compact three-panel summary. Panel A shows taskwise boxplots and model logos for Truthfulness, HarmBench, and MGSM. Panel B selects a one-dimensional `log10(S_rob)` cluster count by maximum silhouette and compares the observed task-label silhouette with its exact permutation null. Panel C repeats the five-model Truthfulness log-log scaling analysis.
+- `plots/srob_overall_points.csv` records the 11 controllers used by the summary. The 10 final reported task/model rows are supplemented only by the previously approved exploratory Gemma-2-2B Truthfulness row; Qwen-2.5-32B and all L-CiteEval rows remain excluded.
+- `plots/srob_overall_statistics.json` records every silhouette value, the selected cluster count, the observed task-label silhouette, the exact null size, and the upper-tail permutation p-value.
+
+## Overall-summary statistics
+
+The clustering feature is `log10(S_rob)` only. For each candidate `k` from 2 through 6, the renderer finds the global minimum-within-cluster-SSE contiguous one-dimensional k-means partition and reports its ordinary mean silhouette. The selection rule is the `k` with the largest silhouette; no elbow is inferred by eye.
+
+The task-separation test fixes the observed group sizes at 5 Truthfulness, 3 HarmBench, and 3 MGSM controllers. Its null hypothesis is that these task labels are exchangeable with respect to `log10(S_rob)`; its one-sided alternative is that the observed task labels have a larger silhouette than arbitrary labels with the same 5/3/3 sizes. The exact null enumerates all 9,240 labeled assignments. The plotted upper-tail p-value is the fraction whose silhouette is at least the observed value; `p < 0.05` is the descriptive significance threshold for this analysis.
 
 ## Final performance sources
 

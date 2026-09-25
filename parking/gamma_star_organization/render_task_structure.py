@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import itertools
 import json
 import sys
 from collections import defaultdict
@@ -77,10 +78,15 @@ LOGOS = {
     "qwen25_05b": "qwen_transparent.png",
     "gpt2_xl": "openai_transparent.png",
     "llama31_8b": "llama_transparent.png",
+    "llama32_1b": "llama_transparent.png",
+    "llama32_3b": "llama_transparent.png",
     "qwen25_14b": "qwen_transparent.png",
     "qwen25_32b": "qwen_transparent.png",
+    "qwen3_4b": "qwen_transparent.png",
     "olmo2_32b": "ai2_transparent.png",
     "gemma2_2b": "google_official.png",
+    "granite33_2b": "ibm_transparent.png",
+    "phi4_mini": "microsoft_transparent.png",
 }
 
 
@@ -687,6 +693,248 @@ def render_truthfulness_axis_diagnostic(rows: list[dict[str, object]]) -> None:
         handle.write("\n")
 
 
+def silhouette_score_1d(values: np.ndarray, labels: np.ndarray) -> float:
+    """Return the ordinary mean silhouette using absolute 1-D distance."""
+    scores = []
+    for index, value in enumerate(values):
+        own = labels == labels[index]
+        own[index] = False
+        if not own.any():
+            scores.append(0.0)
+            continue
+        a = float(np.abs(values[own] - value).mean())
+        b = min(
+            float(np.abs(values[labels == label] - value).mean())
+            for label in np.unique(labels) if label != labels[index]
+        )
+        scores.append((b - a) / max(a, b))
+    return float(np.mean(scores))
+
+
+def optimal_1d_kmeans_labels(values: np.ndarray, cluster_count: int) -> np.ndarray:
+    """Find the global minimum-SSE contiguous partition for one-dimensional k-means."""
+    order = np.argsort(values)
+    sorted_values = values[order]
+    best_sse = np.inf
+    best_labels = None
+    for cuts in itertools.combinations(range(1, len(values)), cluster_count - 1):
+        boundaries = (0, *cuts, len(values))
+        labels = np.empty(len(values), dtype=int)
+        sse = 0.0
+        for label, (start, stop) in enumerate(zip(boundaries[:-1], boundaries[1:])):
+            segment = sorted_values[start:stop]
+            sse += float(np.square(segment - segment.mean()).sum())
+            labels[order[start:stop]] = label
+        if sse < best_sse:
+            best_sse = sse
+            best_labels = labels
+    return best_labels
+
+
+def render_overall_summary(rows: list[dict[str, object]]) -> None:
+    """Render the task distribution, separation diagnostics, and Truthfulness scaling."""
+    truthfulness = [
+        row for row in truthfulness_extended_rows(rows)
+        if row["model_key"] != "qwen25_32b"
+    ]
+    combined = [
+        dict(row, paper_status="final_reported")
+        for row in rows if row["benchmark"] != "truthfulness"
+    ] + truthfulness
+    task_order = ["truthfulness", "harmful", "mgsm"]
+    task_names = {"truthfulness": "Truthful", "harmful": "Harmful", "mgsm": "MGSM"}
+    log_s_rob = np.asarray([float(row["log_s_rob"]) for row in combined])
+
+    cluster_counts = np.arange(2, 7)
+    cluster_silhouettes = []
+    for cluster_count in cluster_counts:
+        labels = optimal_1d_kmeans_labels(log_s_rob, int(cluster_count))
+        cluster_silhouettes.append(silhouette_score_1d(log_s_rob, labels))
+
+    task_labels = np.asarray([task_order.index(row["benchmark"]) for row in combined])
+    observed_silhouette = silhouette_score_1d(log_s_rob, task_labels)
+    null_silhouettes = []
+    indices = set(range(len(combined)))
+    for truth_indices in itertools.combinations(range(len(combined)), 5):
+        remainder = indices - set(truth_indices)
+        for harmful_indices in itertools.combinations(sorted(remainder), 3):
+            labels = np.full(len(combined), 2, dtype=int)
+            labels[list(truth_indices)] = 0
+            labels[list(harmful_indices)] = 1
+            null_silhouettes.append(silhouette_score_1d(log_s_rob, labels))
+    null_silhouettes = np.asarray(null_silhouettes)
+    exact_p_value = float(np.mean(null_silhouettes >= observed_silhouette))
+
+    fig = plt.figure(figsize=(9.1, 3.25))
+    grid = fig.add_gridspec(
+        1, 3, width_ratios=[0.68, 0.50, 1.18], wspace=0.50,
+        left=0.065, right=0.992, bottom=0.19, top=0.91,
+    )
+    ax_task = fig.add_subplot(grid[0, 0])
+    label_columns = {"truthfulness": 1.14, "harmful": 2.14, "mgsm": 3.14}
+    label_positions = {
+        ("truthfulness", "qwen25_14b"): 0.011,
+        ("truthfulness", "gemma2_2b"): 0.020,
+        ("truthfulness", "gpt2_xl"): 0.037,
+        ("truthfulness", "llama31_8b"): 0.205,
+        ("truthfulness", "olmo2_32b"): 0.445,
+        ("harmful", "llama32_3b"): 2.15,
+        ("harmful", "llama31_8b"): 3.55,
+        ("harmful", "llama32_1b"): 8.35,
+        ("mgsm", "qwen3_4b"): 0.074,
+        ("mgsm", "phi4_mini"): 0.205,
+        ("mgsm", "granite33_2b"): 1.10,
+    }
+    for position, task in enumerate(task_order, start=1):
+        selected = [row for row in combined if row["benchmark"] == task]
+        values = np.asarray([float(row["s_rob_value"]) for row in selected])
+        ax_task.boxplot(
+            [values], positions=[position], widths=0.25, patch_artist=True, showfliers=False,
+            boxprops={"facecolor": "#D5D8DA", "edgecolor": "black", "linewidth": 1.45},
+            medianprops={"color": "black", "linewidth": 2.0},
+            whiskerprops={"color": "black", "linewidth": 1.2},
+            capprops={"color": "black", "linewidth": 1.2},
+        )
+        for row in selected:
+            model_key = row["model_key"]
+            x = float(position)
+            y = float(row["s_rob_value"])
+            label_x = label_columns[task]
+            label_y = label_positions[(task, model_key)]
+            ax_task.plot(
+                [x + 0.025, label_x - 0.018], [y, label_y],
+                color="#777777", linewidth=0.5, zorder=2,
+            )
+            add_logo(ax_task, x, y, model_key, target_pixels=13)
+            ax_task.text(
+                label_x, label_y, row["short_model"], fontsize=6.7,
+                ha="left", va="center", color="black", zorder=5,
+            )
+    ax_task.set_yscale("log")
+    ax_task.set_ylim(0.0085, 12.5)
+    ax_task.set_xlim(0.72, 3.62)
+    ax_task.set_ylabel(r"Robustness $S_{\mathrm{rob}}$ (log scale)")
+    ax_task.set_xticks(range(1, 4), [task_names[task] for task in task_order])
+    ax_task.grid(axis="y", which="major", color="#DDE1E4", linewidth=0.7)
+    ax_task.spines[["top", "right"]].set_visible(False)
+
+    middle = grid[0, 1].subgridspec(2, 1, hspace=0.72)
+    ax_clusters = fig.add_subplot(middle[0, 0])
+    ax_clusters.bar(
+        cluster_counts, cluster_silhouettes, width=0.7,
+        color=["#007C7C" if value == 3 else "#AEB4B9" for value in cluster_counts],
+        edgecolor="white", linewidth=0.7,
+    )
+    ax_clusters.set_xlim(1.45, 6.55)
+    ax_clusters.set_xticks(cluster_counts)
+    ax_clusters.set_xlabel("Number of clusters, k")
+    ax_clusters.set_ylabel("Silhouette score")
+    ax_clusters.set_ylim(0, 0.68)
+    ax_clusters.grid(axis="y", color="#E2E5E8", linewidth=0.7)
+    ax_clusters.set_axisbelow(True)
+    ax_clusters.spines[["top", "right"]].set_visible(False)
+    ax_clusters.text(
+        3, cluster_silhouettes[1] + 0.02, f"{cluster_silhouettes[1]:.2f}",
+        ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#007C7C",
+    )
+
+    ax_null = fig.add_subplot(middle[1, 0])
+    ax_null.hist(
+        null_silhouettes, bins=28, density=True, color="#CFD3D6",
+        edgecolor="white", linewidth=0.5,
+    )
+    ax_null.axvline(observed_silhouette, color="#007C7C", linewidth=2.5)
+    ax_null.set_xlim(-0.31, 0.40)
+    ax_null.set_ylim(0, 8)
+    ax_null.set_xlabel("Silhouette score")
+    ax_null.set_ylabel("Density")
+    ax_null.spines[["top", "right"]].set_visible(False)
+    ax_null.text(
+        -0.29, 7.45, "Task-label shuffle\ndistribution",
+        ha="left", va="top", fontsize=7.3, color="black",
+    )
+    ax_null.text(
+        observed_silhouette + 0.018, 4.25,
+        f"Task-label\nobservation\np = {exact_p_value:.3f}",
+        ha="left", va="center", fontsize=7.5,
+        color="#007C7C", fontweight="bold",
+    )
+
+    ax_scale = fig.add_subplot(grid[0, 2])
+    parameters = np.asarray([float(row["parameter_billions"]) for row in truthfulness])
+    truth_s_rob = np.asarray([float(row["s_rob_value"]) for row in truthfulness])
+    fit = linregress(np.log10(parameters), np.log10(truth_s_rob))
+    fit_x = np.logspace(np.log10(1.15), np.log10(62), 200)
+    fit_y = 10 ** (fit.intercept + fit.slope * np.log10(fit_x))
+    ax_scale.plot(fit_x, fit_y, color="black", linewidth=1.35, alpha=0.82, zorder=1)
+    for row in truthfulness:
+        x = float(row["parameter_billions"])
+        y = float(row["s_rob_value"])
+        add_logo(ax_scale, x, y, row["model_key"])
+        ax_scale.annotate(
+            row["short_model"], (x, y), xytext=(9, 0), textcoords="offset points",
+            ha="left", va="center", fontsize=7.2, color="black",
+        )
+    ax_scale.set_xscale("log")
+    ax_scale.set_yscale("log")
+    ax_scale.set_xlim(1.15, 62)
+    ax_scale.set_ylim(0.0105, 0.55)
+    ax_scale.set_xlabel("Model parameter count (B; log scale)", fontsize=10.5)
+    ax_scale.set_ylabel(r"Robustness $S_{\mathrm{rob}}$ (log scale)", fontsize=10.5)
+    ax_scale.set_xticks([1.5, 2, 3, 4, 8, 14, 32], ["1.5", "2", "3", "4", "8", "14", "32"])
+    ax_scale.set_yticks([0.01, 0.03, 0.1, 0.3], ["0.01", "0.03", "0.1", "0.3"])
+    ax_scale.xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+    ax_scale.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+    ax_scale.grid(True, which="major", color="#D9DDE1", linewidth=0.65, alpha=0.75)
+    ax_scale.grid(False, which="minor")
+    ax_scale.spines[["top", "right"]].set_visible(False)
+    label_x = 12.0
+    label_y = 10 ** (fit.intercept + fit.slope * np.log10(label_x))
+    fig.canvas.draw()
+    angle_start = ax_scale.transData.transform(
+        (8.0, 10 ** (fit.intercept + fit.slope * np.log10(8.0)))
+    )
+    angle_stop = ax_scale.transData.transform(
+        (20.0, 10 ** (fit.intercept + fit.slope * np.log10(20.0)))
+    )
+    line_angle = float(np.degrees(np.arctan2(
+        angle_stop[1] - angle_start[1], angle_stop[0] - angle_start[0]
+    )))
+    ax_scale.text(label_x, label_y, f"slope = {fit.slope:.2f}", ha="center", va="bottom",
+                  fontsize=7.2, color="black", rotation=line_angle, rotation_mode="anchor")
+    ax_scale.text(label_x, label_y, rf"$R^2$ = {fit.rvalue ** 2:.2f}", ha="center", va="top",
+                  fontsize=7.2, color="black", rotation=line_angle, rotation_mode="anchor")
+
+    prefix = PLOTS / "srob_overall"
+    fig.savefig(prefix.with_suffix(".pdf"), bbox_inches="tight")
+    fig.savefig(prefix.with_suffix(".png"), dpi=600, bbox_inches="tight")
+    plt.close(fig)
+
+    with (PLOTS / "srob_overall_points.csv").open("w", newline="") as handle:
+        fields = ["benchmark", "model_key", "short_model", "parameter_billions",
+                  "gamma_star", "s_rob_value", "paper_status"]
+        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(sorted(combined, key=lambda row: (task_order.index(row["benchmark"]),
+                                                           row["s_rob_value"])))
+    statistics = {
+        "feature": "log10(s_rob)",
+        "cluster_method": "global minimum-SSE one-dimensional k-means",
+        "n": len(combined),
+        "task_group_sizes": {task: sum(row["benchmark"] == task for row in combined)
+                             for task in task_order},
+        "silhouette_by_k": {str(k): score for k, score in zip(cluster_counts, cluster_silhouettes)},
+        "selected_k_by_maximum_silhouette": int(cluster_counts[np.argmax(cluster_silhouettes)]),
+        "observed_task_label_silhouette": observed_silhouette,
+        "permutation_null": "exact enumeration of all labeled 5/3/3 assignments",
+        "permutation_count": len(null_silhouettes),
+        "exact_upper_tail_p_value": exact_p_value,
+    }
+    with (PLOTS / "srob_overall_statistics.json").open("w") as handle:
+        json.dump(statistics, handle, indent=2)
+        handle.write("\n")
+
+
 def main() -> None:
     configure()
     rows = load_rows()
@@ -694,6 +942,7 @@ def main() -> None:
     render_parameter_scaling(rows)
     render_truthfulness_main(rows)
     render_truthfulness_axis_diagnostic(rows)
+    render_overall_summary(rows)
 
 
 if __name__ == "__main__":

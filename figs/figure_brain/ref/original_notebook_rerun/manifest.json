@@ -1,0 +1,33 @@
+{
+  "status": "complete",
+  "updated_utc": "2026-09-24T19:34:49.008210+00:00",
+  "python": "3.11.16 | packaged by conda-forge | (main, Aug 21 2026, 22:44:51) [GCC 14.4.0]",
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "git_head": "92bbdaf4e8514b0542f1f5c694607d8496fff0c6",
+  "canonical_sources": {
+    "brain": "a8c866d (final_figure.ipynb)",
+    "gpt2": "44f6f93 + 9d1e1bb (final_figure_llm_fitted.ipynb)",
+    "prompt_banks": "8cd7a02f2057fe2af5c19aae958f9771d9c1a8ce"
+  },
+  "source_sha256": {
+    "final_figure_brain.ipynb": "93035d1f8e1b1dc4a9997ec856aebd54fee000062ad3425777a23b4d90a13077",
+    "final_figure_gpt2.ipynb": "dbf408b1b4ffb7fe2f72c049eb95e9ca6ffd59c7b0f334f68de5a69aea81d75d",
+    "network_size_residual_explore.py": "fab74be99286623d12acd8c246e0d8fe17078ab84d41dbc5418b9c42759ccb87"
+  },
+  "raw_data_sha256": {
+    "BIPOLFieldTripFormat_AlignedToImagePresent_P12_NoStim1.mat": "2c27dd81096d181977a0180d8f86ca7b5d2aae2bb7d86ad7637dcc49b030598a",
+    "BIPOLFieldTripFormat_AlignedToImagePresent_P12_NoStim2.mat": "1141a0ca678087deff8dd52f7566c590aecb19e5c331cf5ba7b19387891f9bb9",
+    "BIPOLFieldTripFormat_AlignedToImagePresent_P12_Stim1.mat": "d50afcac6faef803a6a0045c2198d1884f09e21ad7aa19b32297ff5094c8400f",
+    "Behavior_Stim_Subjects.mat": "cc6e326dee2ede722a2801cd2bf29112b340b2be213108cded1059746c4d8387"
+  },
+  "packages": {
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "scipy": "1.17.1",
+    "h5py": "3.16.0",
+    "torch": "2.9.1",
+    "transformers": "4.57.1",
+    "scikit-learn": "1.9.0",
+    "nbclient": "0.11.0"
+  }
+}
