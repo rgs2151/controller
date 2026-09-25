@@ -159,6 +159,14 @@ def model_key(text: str) -> str:
         ("gemma22b", "gemma2_2b"),
         ("gemma34b", "gemma3_4b"),
         ("gpt2xl", "gpt2_xl"),
+        ("gpt2large", "gpt2_large"),
+        ("gpt2medium", "gpt2_medium"),
+        ("distilgpt2", "distilgpt2"),
+        ("pythia160m", "pythia_160m"),
+        ("pythia31m", "pythia_31m"),
+        ("pythia14m", "pythia_14m"),
+        ("smollm2135m", "smollm2_135m"),
+        ("qwen2505b", "qwen25_05b"),
         ("qwen2532b", "qwen25_32b"),
         ("qwen2514b", "qwen25_14b"),
         ("qwen253b", "qwen25_3b"),
@@ -167,6 +175,8 @@ def model_key(text: str) -> str:
         ("olmo232b", "olmo2_32b"),
         ("phi4mini", "phi4_mini"),
         ("granite332b", "granite33_2b"),
+        ("openaicommunitygpt2", "gpt2_small"),
+        ("gpt2small", "gpt2_small"),
     ]
     for token, key in aliases:
         if token in normalized:

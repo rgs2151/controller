@@ -61,7 +61,15 @@ METHODS = (
 )
 
 MODEL_IDS = {
+    "pythia14m": "EleutherAI/pythia-14m",
+    "pythia31m": "EleutherAI/pythia-31m",
+    "distilgpt2": "distilbert/distilgpt2",
+    "gpt2small": "openai-community/gpt2",
+    "smollm135m": "HuggingFaceTB/SmolLM2-135M",
+    "pythia160m": "EleutherAI/pythia-160m",
+    "gpt2medium": "openai-community/gpt2-medium",
     "gpt2xl": "openai-community/gpt2-xl",
+    "gpt2large": "openai-community/gpt2-large",
     "qwen05b": "Qwen/Qwen2.5-0.5B",
     "llama1b": "meta-llama/Llama-3.2-1B",
     "gemma2b": "google/gemma-2-2b",
@@ -98,7 +106,15 @@ ALQR_PAPER_SELECTIONS = {
     "truthfulness": {
         # Frozen project settings for new model-family comparisons. These are
         # deliberately not tuned on TruthfulQA.
+        "pythia14m": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
+        "pythia31m": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
+        "distilgpt2": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
+        "gpt2small": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
+        "smollm135m": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
+        "pythia160m": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
+        "gpt2medium": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
         "gpt2xl": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
+        "gpt2large": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
         "qwen05b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
         "gemma2b": LQRSetting(multiplier=3.0, q=0.1, r=1.0, q_final=0.3),
         "llama8b": LQRSetting(multiplier=2.0, q=0.1, r=10.0, q_final=10.0),
@@ -353,7 +369,19 @@ def alqr_setting_source(behavior: str, model_id: str) -> str:
     """Describe whether one frozen setting came from upstream or this project."""
 
     key = model_key(model_id)
-    if behavior == "truthfulness" and key in {"gpt2xl", "qwen05b", "olmo32b"}:
+    if behavior == "truthfulness" and key in {
+        "pythia14m",
+        "pythia31m",
+        "distilgpt2",
+        "gpt2small",
+        "smollm135m",
+        "pythia160m",
+        "gpt2medium",
+        "gpt2large",
+        "gpt2xl",
+        "qwen05b",
+        "olmo32b",
+    }:
         return "frozen project configuration; not tuned on TruthfulQA"
     return "published A-LQR configuration"
 

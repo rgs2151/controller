@@ -32,6 +32,15 @@ STYLES = {
 }
 
 SHORT_MODEL = {
+    "pythia_14m": "Pythia-14M",
+    "pythia_31m": "Pythia-31M",
+    "distilgpt2": "DistilGPT-2",
+    "gpt2_small": "GPT-2 Small",
+    "smollm2_135m": "SmolLM2-135M",
+    "pythia_160m": "Pythia-160M",
+    "gpt2_medium": "GPT-2 Medium",
+    "qwen25_05b": "Qwen-2.5-0.5B",
+    "gpt2_large": "GPT-2 Large",
     "llama32_1b": "Llama-3.2-1B",
     "llama32_3b": "Llama-3.2-3B",
     "llama31_8b": "Llama-3.1-8B",
@@ -47,11 +56,25 @@ SHORT_MODEL = {
 }
 
 TRUTHFULNESS_EXTRA_CALIBRATIONS = {
+    "pythia_14m": "selected",
+    "pythia_31m": "selected",
+    "distilgpt2": "selected",
+    "gpt2_small": "selected",
+    "smollm2_135m": "selected",
+    "pythia_160m": "selected",
+    "gpt2_medium": "selected",
+    "qwen25_05b": "selected",
+    "gpt2_large": "selected",
     "gemma2_2b": "fixed_q0p1_qf0p31622777_r1",
     "qwen25_32b": "selected",
 }
 
 LOGOS = {
+    "distilgpt2": "openai_transparent.png",
+    "gpt2_small": "openai_transparent.png",
+    "gpt2_medium": "openai_transparent.png",
+    "gpt2_large": "openai_transparent.png",
+    "qwen25_05b": "qwen_transparent.png",
     "gpt2_xl": "openai_transparent.png",
     "llama31_8b": "llama_transparent.png",
     "qwen25_14b": "qwen_transparent.png",
@@ -290,13 +313,21 @@ def truthfulness_extended_rows(rows: list[dict[str, object]]) -> list[dict[str, 
             "task_label": "Truthfulness",
             "paper_status": "exploratory_exception",
         })
-    if len(selected) != 6:
-        raise RuntimeError(f"expected six Truthfulness controllers, found {len(selected)}")
+    expected = 6 + 9
+    if len(selected) != expected:
+        raise RuntimeError(
+            f"expected {expected} Truthfulness controllers, found {len(selected)}"
+        )
     return selected
 
 
 def add_logo(ax, x: float, y: float, model_key: str, target_pixels: float = 13) -> None:
-    path = ROOT / "figs/logos" / LOGOS[model_key]
+    logo = LOGOS.get(model_key)
+    if logo is None:
+        ax.scatter([x], [y], s=20, facecolor="white", edgecolor="black",
+                   linewidth=0.9, zorder=4)
+        return
+    path = ROOT / "figs/logos" / logo
     image = Image.open(path).convert("RGBA")
     bbox = image.getbbox()
     if bbox:
@@ -316,7 +347,7 @@ def render_truthfulness_main(rows: list[dict[str, object]]) -> None:
     log_parameters = np.log10([row["parameter_billions"] for row in selected])
     log_s_rob = np.log10([row["s_rob_value"] for row in selected])
     fit = linregress(log_parameters, log_s_rob)
-    x_limits = (1.15, 62)
+    x_limits = (0.01, 62)
     fit_x = np.logspace(np.log10(x_limits[0]), np.log10(x_limits[1]), 200)
     fit_y = 10 ** (fit.intercept + fit.slope * np.log10(fit_x))
     ax.plot(fit_x, fit_y, color="black", linewidth=1.35, alpha=0.82,
@@ -335,7 +366,10 @@ def render_truthfulness_main(rows: list[dict[str, object]]) -> None:
     ax.set_ylim(0.0105, 0.55)
     ax.set_xlabel("Model parameter count (B; log scale)", fontsize=10.5)
     ax.set_ylabel(r"Robustness $S_{\mathrm{rob}}$ (log scale)", fontsize=10.5)
-    ax.set_xticks([1.5, 2, 3, 4, 8, 14, 32], ["1.5", "2", "3", "4", "8", "14", "32"])
+    ax.set_xticks(
+        [0.01, 0.03, 0.1, 0.3, 1, 3, 8, 14, 32],
+        ["0.01", "0.03", "0.1", "0.3", "1", "3", "8", "14", "32"],
+    )
     ax.set_yticks([0.01, 0.03, 0.1, 0.3], ["0.01", "0.03", "0.1", "0.3"])
     ax.grid(True, which="major", color="#D9DDE1", linewidth=0.65, alpha=0.75)
     ax.grid(False, which="minor")

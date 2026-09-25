@@ -1,16 +1,48 @@
 schema_version = 4
 benchmark = "truthfulness"
 base_dataset = "truthfulqa"
-models = ["gemma2b", "llama8b", "qwen14b", "qwen32b", "gpt2_xl", "qwen25_05b", "olmo2_32b_instruct"]
+models = [
+  "pythia_14m",
+  "pythia_31m",
+  "distilgpt2",
+  "gpt2_small",
+  "smollm2_135m",
+  "pythia_160m",
+  "gpt2_medium",
+  "qwen25_05b",
+  "gpt2_large",
+  "gpt2_xl",
+  "gemma2b",
+  "llama8b",
+  "qwen14b",
+  "qwen32b",
+  "olmo2_32b_instruct",
+]
 available_methods = ["original", "iti", "actadd", "mean_act", "linear_act", "pid_act", "odesteer", "spid", "alqr", "h_infinity"]
 default_methods = ["original", "alqr", "h_infinity"]
-default_datasets = ["id", "spanish", "mmlu"]
+default_datasets = ["id", "spanish"]
 jacobian_prompts = 35
 evaluated_model_kv_cache = false
 available_evaluated_model_kv_cache = [false, true]
 api_scorer_model = "gpt-4o-mini"
 api_scorer_batch_size = 20
 api_scorer_concurrency = 500
+
+[run_profiles.srob_small_models]
+models = [
+  "pythia_14m",
+  "pythia_31m",
+  "distilgpt2",
+  "gpt2_small",
+  "smollm2_135m",
+  "pythia_160m",
+  "gpt2_medium",
+  "qwen25_05b",
+  "gpt2_large",
+]
+methods = ["original", "h_infinity"]
+datasets = ["id"]
+evaluation_repetitions = 1
 
 [[evaluation_datasets]]
 key = "id"
