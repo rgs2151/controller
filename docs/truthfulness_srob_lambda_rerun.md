@@ -36,3 +36,16 @@ bash benchmarks/truthfulness/run_srob_lambda_rerun.sh
 The launcher processes models sequentially while distributing each model's six
 lambda candidates and 32 Q/Qf candidates across all four GPUs. Every stage is
 resume-safe through the named calibration cache.
+
+For a Lightning node-local run, persistence is mandatory:
+
+```bash
+export TRUTHFULNESS_PERSIST_CACHE_ROOT="$HOME/robust-steering-cache/truthfulness"
+export TRUTHFULNESS_PERSIST_REPO_ROOT="$HOME/controller"
+```
+
+After each model finishes scoring, the launcher copies that model's complete
+calibration namespace, evaluation namespace, compact results, and logs into
+Teamspace. It compares both selection files and all four result JSONs byte for
+byte, writes `PERSISTED.json`, calls `sync`, and only then advances to the next
+model. An ephemeral `/tmp` launch without both persistence roots is rejected.
