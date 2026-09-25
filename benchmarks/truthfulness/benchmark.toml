@@ -107,6 +107,16 @@ axbench_fluency_weight = 0.25
 axbench_score_normalizer = 2.0
 zero_component_score = 0.0
 
+[calibration.h_infinity_lambda_sweep]
+# Kept opt-in so established Truthfulness runs retain their historical protocol.
+# Enable explicitly with --h-infinity-lambda-sweep for the S-rob small-model rerun.
+enabled = false
+values = [0.1, 0.25, 0.5, 0.75, 1.0, 1.5]
+fixed_q_over_r = 0.1
+fixed_q_final_over_r = 0.1
+fixed_r = 1.0
+selection_metric = "truthfulqa_txi"
+
 [storage]
 remote_cache_backend = "lightning_teamspace_drive"
 remote_cache_scope = "all_cache_stages"

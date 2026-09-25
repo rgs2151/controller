@@ -363,6 +363,7 @@ def _load_selected_hinf(
                 "TruthfulQA True-times-Informative/fluency "
                 "weighted-sum calibration argmax"
             ),
+            "aggregate TruthfulQA True-times-Informative calibration-grid argmax",
         }
     ):
         raise ValueError("Frozen H-infinity calibration metadata is invalid")
