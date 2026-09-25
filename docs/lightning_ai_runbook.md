@@ -159,6 +159,11 @@ Before leaving the job unattended, verify:
 - shard files are advancing; and
 - logs contain no traceback or out-of-memory error.
 
+Long multi-model launchers must persist and verify each completed model before
+starting the next one. Do not defer every result copy to the end of the full
+queue: a Lightning compute replacement destroys node-local `/tmp` even when the
+detached job completed successfully.
+
 Do not interpret idle GPUs during a deliberately single-worker fit as failure.
 Do investigate idle GPUs during sharded generation.
 
@@ -180,4 +185,3 @@ different machine's completed result is not lost.
 Only after both cache synchronization and Git synchronization are verified may
 the Studio be moved back to CPU or shut down. The node-local environment,
 model download, execution checkout, and active cache can then be discarded.
-
