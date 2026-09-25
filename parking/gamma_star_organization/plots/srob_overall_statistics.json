@@ -1,0 +1,22 @@
+{
+  "feature": "log10(s_rob)",
+  "cluster_method": "global minimum-SSE one-dimensional k-means",
+  "n": 11,
+  "task_group_sizes": {
+    "truthfulness": 5,
+    "harmful": 3,
+    "mgsm": 3
+  },
+  "silhouette_by_k": {
+    "2": 0.5714451053502215,
+    "3": 0.5996295771007955,
+    "4": 0.5453610492849688,
+    "5": 0.4824914542297973,
+    "6": 0.39145102007243116
+  },
+  "selected_k_by_maximum_silhouette": 3,
+  "observed_task_label_silhouette": 0.17316778750727357,
+  "permutation_null": "exact enumeration of all labeled 5/3/3 assignments",
+  "permutation_count": 9240,
+  "exact_upper_tail_p_value": 0.01774891774891775
+}
