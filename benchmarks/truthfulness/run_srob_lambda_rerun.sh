@@ -6,7 +6,7 @@ set -euo pipefail
 # Run explicitly with: bash benchmarks/truthfulness/run_srob_lambda_rerun.sh
 
 calibration_id="lambda_txi_n200_r1"
-devices="${TRUTHFULNESS_DEVICES:-0,1,2,3}"
+devices="${TRUTHFULNESS_DEVICES:-cuda:0,cuda:1,cuda:2,cuda:3}"
 batch_size="${TRUTHFULNESS_BATCH_SIZE:-64}"
 default_models=(
   pythia_14m
