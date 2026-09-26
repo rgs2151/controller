@@ -456,7 +456,7 @@ def plot(results: pd.DataFrame, selections: list[dict]):
     for index, subject_number in enumerate(subjects):
         row, column = divmod(index, n_columns)
         cell = grid[row, column].subgridspec(
-            2, 1, height_ratios=[1.28, 0.50], hspace=0.42,
+            2, 1, height_ratios=[1.28, 0.60], hspace=0.42,
         )
         anatomy = cell[0, 0].subgridspec(1, 2, wspace=0.02)
         lateral_axis = fig.add_subplot(anatomy[0, 0])
@@ -478,7 +478,7 @@ def plot(results: pd.DataFrame, selections: list[dict]):
         axis.set_axisbelow(True)
         axis.spines[["top", "right"]].set_visible(False)
         axis.set_xlabel("Horizon (ms)", fontsize=11)
-        axis.set_ylabel("Linear residual RMS (z)", fontsize=11)
+        axis.set_ylabel("Res. RMS", fontsize=11)
         axis.tick_params(axis="y", labelsize=10)
         plot_electrodes(
             lateral_axis, selection_by_subject[subject_number], str(meta["lead"]), "l"
