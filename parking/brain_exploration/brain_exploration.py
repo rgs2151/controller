@@ -202,17 +202,16 @@ def plot_electrodes(axis, selection: dict, selected_lead: str, view: str):
             display.add_markers(
                 subset[["x", "y", "z"]].to_numpy(),
                 marker_color=AREA_COLORS[area],
-                marker_size=11,
+                marker_size=5.5,
             )
     highlighted = table[table["lead"] == selected_lead]
-    for area in AREA_ORDER:
-        subset = highlighted[highlighted["area"] == area]
-        if len(subset):
-            display.add_markers(
-                subset[["x", "y", "z"]].to_numpy(),
-                marker_color=AREA_COLORS[area],
-                marker_size=24,
-            )
+    if len(highlighted):
+        display.add_markers(
+            highlighted[["x", "y", "z"]].mean(axis=0).to_numpy()[None, :],
+            marker_color=OOD_COLOR,
+            marker_size=70,
+            marker="*",
+        )
 
 
 def discover_sessions() -> list[dict]:

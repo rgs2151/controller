@@ -29,7 +29,8 @@
   midpoint (`ParcellationValues` coordinates 4–6). Assign the original seven
   coarse anatomical regions and colors, show adjacent standardized lateral and
   frontal glass-brain projections, reflect both hemispheres only for the
-  lateral silhouette, and enlarge the lead selected by the residual screen.
+  lateral silhouette, and mark the centroid of the lead selected by the
+  residual screen with a red star.
 - Write the complete all-lead results, lead ranking, selected participant
   results, participant ranking, and a paired anatomy-plus-residual grid in PNG
   and PDF.
@@ -89,7 +90,9 @@
 - Ordering/sorting: participants are ordered numerically in a five-column grid;
   horizons increase from 20 to 700 ms.
 - Lines/markers/labels: each title reports only the participant and selected
-  lead (ROI), centered above the paired anatomy views.
+  lead (ROI), centered above the paired anatomy views. Small circles are clean
+  bipolar electrode coordinates; the red star identifies the centroid of the
+  selected lead plotted below.
 - Panels: each participant occupies a compact cell with lateral and frontal
   electrode projections above a short, wide horizon bar plot; participants
   form a four-column grid.
