@@ -52,7 +52,8 @@
   `results/all_subject_lead_ranking.csv`,
   `results/all_subject_conflict_linear_residual.csv`,
   `results/all_subject_conflict_ranking.csv`, and
-  `plots/all_subject_conflict_linear_residual.{png,pdf}`.
+  `plots/all_subject_conflict_linear_residual.{png,pdf}`; figures are exported
+  at 600 DPI (with vector geometry retained in the PDF).
 
 ## Statistics
 

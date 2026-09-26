@@ -496,7 +496,7 @@ def plot(results: pd.DataFrame, selections: list[dict]):
                ncol=2, frameon=False, fontsize=12)
     for extension in ("png", "pdf"):
         fig.savefig(PLOTS / f"all_subject_conflict_linear_residual.{extension}",
-                    dpi=180, bbox_inches="tight")
+                    dpi=600, bbox_inches="tight")
     plt.close(fig)
 
 
