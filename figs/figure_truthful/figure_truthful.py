@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import math
 import re
@@ -495,6 +496,7 @@ def draw_radar(
     label_pad: float = 10,
     extend_label_spokes: bool = False,
     show_radial_labels: bool = False,
+    tangential_category_labels: bool = False,
 ) -> None:
     categories, values = category_radar_values(
         model,
@@ -532,14 +534,39 @@ def draw_radar(
     ax.scatter(angles[:-1], best, s=14, color=GRAY, zorder=4)
     ax.scatter(angles[:-1], ours, s=18, color=TEAL, zorder=5)
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(
-        categories,
-        fontsize=label_fontsize,
-        fontweight=label_fontweight,
-    )
-    ax.tick_params(axis="x", pad=label_pad)
     ax.set_theta_offset(np.pi / 2.0)
     ax.set_theta_direction(-1)
+    if tangential_category_labels:
+        ax.set_xticklabels([])
+        label_radii = [112, 132, 116, 128, 116, 132, 116, 128, 116, 132]
+        for angle, category, radius in zip(
+            angles[:-1], categories, label_radii, strict=True
+        ):
+            rotation = -float(np.degrees(angle))
+            if rotation < -90:
+                rotation += 180
+            elif rotation > 90:
+                rotation -= 180
+            ax.text(
+                angle,
+                radius,
+                category,
+                ha="center",
+                va="center",
+                rotation=rotation,
+                rotation_mode="anchor",
+                fontsize=label_fontsize,
+                fontweight=label_fontweight,
+                color="black",
+                clip_on=False,
+            )
+    else:
+        ax.set_xticklabels(
+            categories,
+            fontsize=label_fontsize,
+            fontweight=label_fontweight,
+        )
+        ax.tick_params(axis="x", pad=label_pad)
     ax.set_ylim(0, 100)
     ax.set_yticks([20, 40, 60, 80, 100])
     if show_radial_labels:
@@ -551,10 +578,13 @@ def draw_radar(
     ax.grid(color="#C9CED3", linewidth=0.6, linestyle=":")
     ax.spines["polar"].set_color("#AEB4BC")
     if extend_label_spokes:
-        for angle in angles[:-1]:
+        for index, angle in enumerate(angles[:-1]):
+            spoke_end = (
+                label_radii[index] - 4 if tangential_category_labels else 111
+            )
             ax.plot(
                 [angle, angle],
-                [100, 111],
+                [100, spoke_end],
                 color="#C9CED3",
                 linewidth=0.8,
                 linestyle=":",
@@ -661,6 +691,10 @@ def draw_composite_model_header(
     ax: plt.Axes,
     images: dict[str, np.ndarray],
     models: list[str],
+    *,
+    fontsize: float = 10.5,
+    logo_zoom_scale: float = 1.0,
+    group_separation: float = 18,
 ) -> None:
     ax.set_axis_off()
     groups = []
@@ -668,15 +702,17 @@ def draw_composite_model_header(
         family = MODEL_FAMILIES[model]
         logo = OffsetImage(
             images[family],
-            zoom=0.075 * LOGO_SCALE[family],
+            zoom=0.075 * LOGO_SCALE[family] * logo_zoom_scale,
             resample=True,
         )
         text = TextArea(
             model,
-            textprops={"fontsize": 10.5, "fontfamily": "Arial", "color": "black"},
+            textprops={"fontsize": fontsize, "fontfamily": "Arial", "color": "black"},
         )
         groups.append(HPacker(children=[logo, text], align="center", pad=0, sep=3))
-    packed = HPacker(children=groups, align="center", pad=0, sep=18)
+    packed = HPacker(
+        children=groups, align="center", pad=0, sep=group_separation
+    )
     ax.add_artist(
         AnchoredOffsetbox(
             loc="center",
@@ -1008,16 +1044,162 @@ def render_figure_composite(
     save_figure(fig, "figure_truthful_composite")
 
 
+def render_figure_composite_bigger(
+    records: list[Result], images: dict[str, np.ndarray]
+) -> None:
+    """Render a large-type composite without modifying the canonical version."""
+    fig = plt.figure(figsize=(15.8, 8.0))
+    outer = fig.add_gridspec(
+        2,
+        5,
+        height_ratios=[0.17, 0.83],
+        width_ratios=[1.15, 1.15, 0.015, 1.20, 1.20],
+        left=0.055,
+        right=0.98,
+        bottom=0.335,
+        top=0.97,
+        wspace=0.24,
+        hspace=0.10,
+    )
+
+    frontier_header = fig.add_subplot(outer[0, 0:2])
+    draw_composite_model_header(
+        frontier_header,
+        images,
+        list(MODEL_SIZES),
+        fontsize=19.0,
+        logo_zoom_scale=1.65,
+        group_separation=22,
+    )
+    radar_header = fig.add_subplot(outer[0, 3:5])
+    draw_composite_model_header(
+        radar_header,
+        images,
+        ["GPT-2 XL"],
+        fontsize=19.0,
+        logo_zoom_scale=1.65,
+    )
+
+    frontier_axes: list[tuple[plt.Axes, plt.Axes, plt.Axes]] = []
+    for column in [0, 1]:
+        nested = outer[1, column].subgridspec(
+            2,
+            2,
+            width_ratios=[8.0, 1.15],
+            height_ratios=[1.10, 7.0],
+            hspace=0.04,
+            wspace=0.04,
+        )
+        top_ax = fig.add_subplot(nested[0, 0])
+        main_ax = fig.add_subplot(nested[1, 0])
+        right_ax = fig.add_subplot(nested[1, 1])
+        frontier_axes.append((main_ax, top_ax, right_ax))
+
+    for (main_ax, top_ax, right_ax), split, title in zip(
+        frontier_axes,
+        ["ID", "OOD"],
+        ["English (ID)", "Spanish (OOD)"],
+        strict=True,
+    ):
+        draw_frontier(main_ax, top_ax, right_ax, records, split, images)
+        main_ax.set_xlabel("Informative (%)", fontsize=20.0, color="black")
+        main_ax.set_ylabel("True (%)", fontsize=20.0, color="black")
+        main_ax.tick_params(labelsize=18.0, colors="black")
+        for contour_label in main_ax.texts:
+            contour_label.set_fontsize(15.0)
+        force_black_axis_text(main_ax)
+        force_black_axis_text(top_ax)
+        force_black_axis_text(right_ax)
+        top_ax.set_title(
+            title,
+            fontsize=22.0,
+            fontweight="bold",
+            color=OOD_RED if split == "OOD" else "black",
+            pad=10,
+        )
+
+    radar_grid = outer[1, 3:5].subgridspec(1, 2, wspace=0.82)
+    radar_id_ax = fig.add_subplot(radar_grid[0], projection="polar")
+    radar_ood_ax = fig.add_subplot(radar_grid[1], projection="polar")
+    for ax, split, title in zip(
+        [radar_id_ax, radar_ood_ax],
+        ["ID", "OOD"],
+        ["English (ID)", "Spanish (OOD)"],
+        strict=True,
+    ):
+        draw_radar(
+            ax,
+            split,
+            model="GPT-2 XL",
+            metric="true_pct",
+            include_original=True,
+            label_fontsize=13.5,
+            label_fontweight="bold",
+            extend_label_spokes=True,
+            show_radial_labels=False,
+            tangential_category_labels=True,
+        )
+        force_black_axis_text(ax)
+        ax.set_title(
+            title,
+            fontsize=22.0,
+            fontweight="bold",
+            color=OOD_RED if split == "OOD" else "black",
+            pad=43,
+        )
+
+    frontier_bounds = frontier_header.get_position()
+    frontier_legend = fig.legend(
+        handles=method_handles(),
+        loc="upper left",
+        bbox_to_anchor=(
+            frontier_bounds.x0,
+            0.16,
+            frontier_bounds.width,
+            0.09,
+        ),
+        ncol=5,
+        fontsize=15.0,
+        handlelength=0.7,
+        handletextpad=0.3,
+        columnspacing=0.9,
+        mode="expand",
+        borderaxespad=0,
+        labelcolor="black",
+    )
+    emphasize_ours(frontier_legend)
+    radar_legend = fig.legend(
+        handles=radar_handles(include_original=True),
+        loc="upper center",
+        bbox_to_anchor=(0.79, 0.16),
+        ncol=3,
+        fontsize=15.0,
+        handlelength=0.8,
+        handletextpad=0.35,
+        columnspacing=1.3,
+        labelcolor="black",
+    )
+    emphasize_ours(radar_legend)
+    save_figure(fig, "figure_truthful_composite_bigger")
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--composite-bigger-only", action="store_true")
+    args = parser.parse_args()
     setup_style()
     PLOTS.mkdir(parents=True, exist_ok=True)
     records, images = load_inputs()
+    if args.composite_bigger_only:
+        render_figure_composite_bigger(records, images)
+        return
     render_figure_a(records, images)
     render_figure_b(records, images)
     render_figure_c()
     render_figure_c_best_model()
     render_figure_c_model("GPT-2 XL", "figure_truthful_c_gpt2_xl")
     render_figure_composite(records, images)
+    render_figure_composite_bigger(records, images)
 
 
 if __name__ == "__main__":
