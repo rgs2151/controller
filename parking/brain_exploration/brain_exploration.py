@@ -450,18 +450,20 @@ def plot(results: pd.DataFrame, selections: list[dict]):
     fig = plt.figure(figsize=(13, 13))
     grid = fig.add_gridspec(
         n_rows, n_columns, left=0.065, right=0.99, bottom=0.055, top=0.95,
-        wspace=0.34, hspace=0.55,
+        wspace=0.34, hspace=0.275,
     )
     bar_axes = []
     for index, subject_number in enumerate(subjects):
         row, column = divmod(index, n_columns)
         cell = grid[row, column].subgridspec(
-            2, 1, height_ratios=[1.28, 0.60], hspace=0.42,
+            3, 1, height_ratios=[0.13, 1.15, 0.72], hspace=0.12,
         )
-        anatomy = cell[0, 0].subgridspec(1, 2, wspace=0.02)
+        title_axis = fig.add_subplot(cell[0, 0])
+        title_axis.set_axis_off()
+        anatomy = cell[1, 0].subgridspec(1, 2, wspace=0.02)
         lateral_axis = fig.add_subplot(anatomy[0, 0])
         frontal_axis = fig.add_subplot(anatomy[0, 1])
-        axis = fig.add_subplot(cell[1, 0])
+        axis = fig.add_subplot(cell[2, 0])
         bar_axes.append(axis)
         subset = results[results["subject_number"] == subject_number]
         pivot = subset.pivot(index="horizon_ms", columns="split",
@@ -470,8 +472,10 @@ def plot(results: pd.DataFrame, selections: list[dict]):
         axis.bar(x - width / 2, pivot["ID"], width, color=ID_COLOR)
         axis.bar(x + width / 2, pivot["OOD"], width, color=OOD_COLOR)
         meta = subset.iloc[0]
-        axis.set_title(f"P{subject_number} · {meta['lead']}", fontsize=13,
-                       weight="bold", pad=5)
+        title_axis.text(
+            0.5, 0.5, f"P{subject_number} · {meta['lead']}",
+            ha="center", va="center", fontsize=13, weight="bold",
+        )
         axis.set_xticks(x, [str(value) for value in pivot.index], fontsize=9)
         axis.set_ylim(0, subset["linear_residual_rms"].max() * 1.12)
         axis.grid(axis="y", color="#D9DDE1", linewidth=0.7, alpha=0.8)

@@ -87,7 +87,7 @@
 - Ordering/sorting: participants are ordered numerically in a five-column grid;
   horizons increase from 20 to 700 ms.
 - Lines/markers/labels: each title reports only the participant and selected
-  lead (ROI).
+  lead (ROI), centered above the paired anatomy views.
 - Panels: each participant occupies a compact cell with lateral and frontal
   electrode projections above a short, wide horizon bar plot; participants
   form a four-column grid.
