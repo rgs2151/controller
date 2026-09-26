@@ -492,7 +492,7 @@ def plot(results: pd.DataFrame, selections: list[dict]):
         )
     handles = [plt.Rectangle((0, 0), 1, 1, color=ID_COLOR, label="ID (low conflict)"),
                plt.Rectangle((0, 0), 1, 1, color=OOD_COLOR, label="OOD (high conflict)")]
-    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.99),
+    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.012),
                ncol=2, frameon=False, fontsize=12)
     for extension in ("png", "pdf"):
         fig.savefig(PLOTS / f"all_subject_conflict_linear_residual.{extension}",

@@ -83,6 +83,7 @@
   ventrolateral prefrontal, dark green premotor/dorsomedial frontal, light
   green sensorimotor, ochre temporal/peri-insular, red posterior temporal, and
   purple parieto-occipital.
+- Legend: the unchanged ID/OOD key is centered beneath the complete grid.
 - Grouping: paired ID and OOD bars at each horizon within each participant.
 - Ordering/sorting: participants are ordered numerically in a five-column grid;
   horizons increase from 20 to 700 ms.
