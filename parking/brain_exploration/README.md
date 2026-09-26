@@ -75,8 +75,8 @@
 ## Legends
 
 - X axis: future prediction horizon in milliseconds.
-- Y axis: median linear residual RMS in baseline z units; every participant
-  panel has an independent y range.
+- Y axis: `Res. RMS`, the median linear residual RMS in baseline-standardized
+  units; every participant panel has an independent y range.
 - Color/value: gray `#c9c9c9` is held-out low-conflict ID; red `#8B1E1E` is
   high-conflict OOD. Electrode colors reproduce Irfan's coordinate-derived
   anatomical palette: dark blue dorsolateral prefrontal, light blue
