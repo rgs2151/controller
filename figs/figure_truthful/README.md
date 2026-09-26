@@ -72,6 +72,12 @@
   and legends use coordinated readable sizing and solid black text. Its
   controller legend is a single row; Spanish OOD headings use the exact
   repository OOD red `#8B1E1E`.
+- `plots/figure_truthful_composite_bigger.pdf` and `.png`: an independently
+  replotted large-type variant of the same four panels. Typography is enlarged,
+  the controller legend occupies two rows, radar-value tick labels are omitted,
+  and category labels follow the radar circumference with alternating radial
+  offsets. Run `python figure_truthful.py --composite-bigger-only` to regenerate
+  only this variant without touching the canonical composite.
 - `cache/truthfulqa_category_txi.csv`: auditable category-level source values,
   including the exact scorer artifact paths.
 
