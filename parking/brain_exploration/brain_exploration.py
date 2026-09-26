@@ -15,6 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from nilearn import plotting as niplot
 from scipy.io import loadmat
 from scipy.signal import butter, hilbert, sosfiltfilt
 
@@ -30,8 +31,22 @@ TOKEN_STRIDE_MS = 20
 CAUSAL_WINDOW_MS = 40
 EPOCH_MS = (-500, 1500)
 RANDOM_SEED = 0
-ID_COLOR = "#8A8F94"
+ID_COLOR = "#c9c9c9"
 OOD_COLOR = "#8B1E1E"
+
+AREA_ORDER = (
+    "dorsolateral prefrontal",
+    "ventrolateral prefrontal",
+    "premotor / dorsomedial frontal",
+    "sensorimotor",
+    "temporal / peri-insular",
+    "posterior temporal",
+    "parieto-occipital",
+)
+AREA_COLORS = dict(zip(
+    AREA_ORDER,
+    ("#1f4ea1", "#5b8bd0", "#2e9c5c", "#8bc34a", "#e0a13c", "#c1272d", "#7b4fa6"),
+))
 
 plt.rcParams.update({
     "font.family": "sans-serif",
@@ -96,6 +111,107 @@ def metadata(path: Path) -> dict:
         n_trials = len(trials)
     return {"trials": trials.iloc[:n_trials].reset_index(drop=True),
             "names": names, "ictal": ictal, "n_trials": n_trials}
+
+
+def coarse_area(x: float, y: float, z: float) -> str:
+    """Irfan's coordinate-derived coarse anatomical grouping."""
+    if y <= -60:
+        return "parieto-occipital"
+    if y <= -35 and z < 25:
+        return "posterior temporal"
+    if z < 20:
+        return "temporal / peri-insular"
+    if z >= 40 and y >= 10:
+        return "dorsolateral prefrontal"
+    if y >= 10:
+        return "ventrolateral prefrontal"
+    if y <= -12:
+        return "sensorimotor"
+    return "premotor / dorsomedial frontal"
+
+
+def electrode_table(path: Path) -> pd.DataFrame:
+    """Load bipolar-pair MNI midpoints without reading neural trial arrays."""
+    if h5py.is_hdf5(path):
+        with h5py.File(path, "r") as handle:
+            names = (_char_matrix(handle["ChannelPairNamesBank1"])
+                     + _char_matrix(handle["ChannelPairNamesBank2"]))
+            ictal = set(_char_matrix(handle["ch_ictal"]))
+            parcellation = np.asarray(handle["ParcellationValues"], dtype=float)
+    else:
+        loaded = loadmat(
+            path,
+            variable_names=["ChannelPairNamesBank1", "ChannelPairNamesBank2",
+                            "ch_ictal", "ParcellationValues"],
+            squeeze_me=True,
+            struct_as_record=False,
+        )
+        names = [str(value).strip() for value in np.atleast_1d(loaded["ChannelPairNamesBank1"])]
+        names += [str(value).strip() for value in np.atleast_1d(loaded["ChannelPairNamesBank2"])
+                  if str(value).strip()]
+        ictal = {str(value).strip() for value in np.atleast_1d(loaded["ch_ictal"])
+                 if str(value).strip()}
+        parcellation = np.asarray(loaded["ParcellationValues"], dtype=float)
+
+    if parcellation.shape[0] == len(names):
+        coordinates = parcellation[:, 4:7]
+    elif parcellation.shape[1] == len(names):
+        coordinates = parcellation[4:7].T
+    else:
+        raise RuntimeError(
+            f"Parcellation/channel mismatch in {path.name}: "
+            f"{parcellation.shape} versus {len(names)} names"
+        )
+    table = pd.DataFrame(coordinates, columns=["x", "y", "z"])
+    table.insert(0, "pair_name", names)
+    table["ictal"] = table["pair_name"].isin(ictal)
+    table["lead"] = table["pair_name"].str.extract(r"^([A-Za-z]+)")
+    valid = np.isfinite(table[["x", "y", "z"]]).all(axis=1)
+    table.loc[valid, "area"] = [
+        coarse_area(row.x, row.y, row.z)
+        for row in table.loc[valid, ["x", "y", "z"]].itertuples(index=False)
+    ]
+    return table
+
+
+def plot_electrodes(axis, selection: dict, selected_lead: str):
+    """Project one participant's clean electrodes onto a common lateral view."""
+    table = electrode_table(selection["paths"][0])
+    table = table[
+        table["pair_name"].isin(selection["pair_names"])
+        & ~table["ictal"]
+        & table["area"].notna()
+    ].copy()
+    # A sagittal projection does not encode left-right depth. Reflect both
+    # hemispheres onto the same lateral silhouette so right-sided implants are
+    # not discarded by Nilearn's left-lateral display mode.
+    table["x"] = -np.abs(table["x"])
+    display = niplot.plot_glass_brain(
+        None,
+        display_mode="l",
+        figure=axis.figure,
+        axes=axis,
+        annotate=False,
+        black_bg=False,
+        alpha=0.38,
+    )
+    for area in AREA_ORDER:
+        subset = table[table["area"] == area]
+        if len(subset):
+            display.add_markers(
+                subset[["x", "y", "z"]].to_numpy(),
+                marker_color=AREA_COLORS[area],
+                marker_size=11,
+            )
+    highlighted = table[table["lead"] == selected_lead]
+    for area in AREA_ORDER:
+        subset = highlighted[highlighted["area"] == area]
+        if len(subset):
+            display.add_markers(
+                subset[["x", "y", "z"]].to_numpy(),
+                marker_color=AREA_COLORS[area],
+                marker_size=24,
+            )
 
 
 def discover_sessions() -> list[dict]:
@@ -325,13 +441,25 @@ def analyze(selection: dict, force: bool, horizons_ms=HORIZONS_MS) -> list[dict]
     return rows
 
 
-def plot(results: pd.DataFrame):
+def plot(results: pd.DataFrame, selections: list[dict]):
     subjects = sorted(results["subject_number"].unique())
+    selection_by_subject = {item["subject"]: item for item in selections}
     n_columns = 5
     n_rows = int(np.ceil(len(subjects) / n_columns))
-    fig, axes = plt.subplots(n_rows, n_columns, figsize=(18, 12.8), squeeze=False)
+    fig = plt.figure(figsize=(18, 24.0))
+    grid = fig.add_gridspec(
+        n_rows, n_columns, left=0.055, right=0.99, bottom=0.035, top=0.965,
+        wspace=0.32, hspace=0.42,
+    )
+    bar_axes = []
     for index, subject_number in enumerate(subjects):
-        axis = axes.flat[index]
+        row, column = divmod(index, n_columns)
+        cell = grid[row, column].subgridspec(
+            2, 1, height_ratios=[0.82, 1.18], hspace=0.04,
+        )
+        brain_axis = fig.add_subplot(cell[0, 0])
+        axis = fig.add_subplot(cell[1, 0])
+        bar_axes.append(axis)
         subset = results[results["subject_number"] == subject_number]
         pivot = subset.pivot(index="horizon_ms", columns="split",
                              values="linear_residual_rms").sort_index()
@@ -350,14 +478,11 @@ def plot(results: pd.DataFrame):
         axis.set_xlabel("Horizon (ms)", fontsize=11)
         axis.set_ylabel("Linear residual RMS (z)", fontsize=11)
         axis.tick_params(axis="y", labelsize=10)
-    for axis in axes.flat[len(subjects):]:
-        axis.set_visible(False)
+        plot_electrodes(brain_axis, selection_by_subject[subject_number], str(meta["lead"]))
     handles = [plt.Rectangle((0, 0), 1, 1, color=ID_COLOR, label="ID (low conflict)"),
                plt.Rectangle((0, 0), 1, 1, color=OOD_COLOR, label="OOD (high conflict)")]
-    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 1.04),
+    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.995),
                ncol=2, frameon=False, fontsize=12)
-    fig.subplots_adjust(left=0.055, right=0.99, bottom=0.06, top=0.93,
-                        wspace=0.34, hspace=0.58)
     for extension in ("png", "pdf"):
         fig.savefig(PLOTS / f"all_subject_conflict_linear_residual.{extension}",
                     dpi=180, bbox_inches="tight")
@@ -369,6 +494,7 @@ def main():
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     CACHE.mkdir(parents=True, exist_ok=True); RESULTS.mkdir(exist_ok=True); PLOTS.mkdir(exist_ok=True)
+    selections = discover_sessions()
     all_lead_path = RESULTS / "all_subject_all_leads_conflict_linear_residual.csv"
     if all_lead_path.exists() and not args.force:
         all_leads = pd.read_csv(all_lead_path)
@@ -376,7 +502,6 @@ def main():
         missing = tuple(value for value in HORIZONS_MS if value not in present)
         if missing:
             print(f"extend cached all-lead fit table with horizons: {missing}", flush=True)
-            selections = discover_sessions()
             new_rows = []
             for index, selection in enumerate(selections, start=1):
                 print(f"[{index}/{len(selections)}] P{selection['subject']} "
@@ -390,7 +515,6 @@ def main():
         else:
             print(f"reuse complete all-lead fit table: {all_lead_path}", flush=True)
     else:
-        selections = discover_sessions()
         all_rows = []
         for index, selection in enumerate(selections, start=1):
             print(f"[{index}/{len(selections)}] P{selection['subject']} "
@@ -420,7 +544,7 @@ def main():
                     mean_ood_over_id=("ood_over_id", "mean"))
                .sort_values(["mean_ood_over_id", "mean_ood_minus_id"], ascending=False))
     ranking.to_csv(RESULTS / "all_subject_conflict_ranking.csv", index=False)
-    plot(results)
+    plot(results, selections)
     print(ranking.to_string(index=False), flush=True)
     print(PLOTS / "all_subject_conflict_linear_residual.png", flush=True)
 

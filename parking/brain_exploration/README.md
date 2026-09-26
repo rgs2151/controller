@@ -25,8 +25,14 @@
 - Select one displayed lead per participant by the largest mean proportional
   OOD excess, `(OOD / ID) − 1`, across all horizons; break remaining ties by
   absolute OOD-minus-ID separation and then lead name.
+- Recreate Irfan's electrode-localization view from each bipolar pair's MNI
+  midpoint (`ParcellationValues` coordinates 4–6). Assign the original seven
+  coarse anatomical regions and colors, reflect both hemispheres onto a common
+  left-lateral glass-brain silhouette, and enlarge the lead selected by the
+  residual screen.
 - Write the complete all-lead results, lead ranking, selected participant
-  results, participant ranking, and the cross-participant grid in PNG and PDF.
+  results, participant ranking, and a paired anatomy-plus-residual grid in PNG
+  and PDF.
 
 ## Variables
 
@@ -36,8 +42,9 @@
   each participant with an eligible lead; P13 is absent because the available
   release contains only a stimulation session.
 - Labels/targets: ID is held-out low conflict; OOD is high conflict.
-- Signals/features/measures: 4–8 Hz Hilbert power, causal 40 ms windows,
-  20 ms stride, affine future-state prediction, and median linear residual RMS.
+- Signals/features/measures: bipolar-pair MNI midpoints; 4–8 Hz Hilbert power;
+  causal 40 ms windows; 20 ms stride; affine future-state prediction; and
+  median linear residual RMS.
 - Parameters/thresholds: at least five clean bipolar channels per lead;
   horizons `20, 40, 100, 200, 300, 400, 500, 700` ms; deterministic seed 0;
   60/20/20 low-conflict split.
@@ -70,15 +77,20 @@
 - X axis: future prediction horizon in milliseconds.
 - Y axis: median linear residual RMS in baseline z units; every participant
   panel has an independent y range.
-- Color/value: gray `#8A8F94` is held-out low-conflict ID; red `#8B1E1E` is
-  high-conflict OOD.
+- Color/value: gray `#c9c9c9` is held-out low-conflict ID; red `#8B1E1E` is
+  high-conflict OOD. Electrode colors reproduce Irfan's coordinate-derived
+  anatomical palette: dark blue dorsolateral prefrontal, light blue
+  ventrolateral prefrontal, dark green premotor/dorsomedial frontal, light
+  green sensorimotor, ochre temporal/peri-insular, red posterior temporal, and
+  purple parieto-occipital.
 - Grouping: paired ID and OOD bars at each horizon within each participant.
 - Ordering/sorting: participants are ordered numerically in a five-column grid;
   horizons increase from 20 to 700 ms.
 - Lines/markers/labels: each title reports participant, selected lead, channel
   count, and mean proportional OOD excess.
-- Panels: one panel per eligible participant; unused cells at the end of the
-  rectangular grid are blank.
+- Panels: each participant occupies a vertically paired cell with a common
+  lateral electrode projection above its horizon bar plot; participants form a
+  five-column grid.
 
 ## Interpretation
 
@@ -95,6 +107,8 @@
   can reuse the complete saved all-lead result table without refitting models.
 - The `cache/conflict_screen/` copy preserves the no-stimulation theta states
   used for the existing results and future extensions of this exploration.
+- The anatomy layer requires Nilearn and reads only channel names, ictal flags,
+  and `ParcellationValues`; it does not reload the neural trial matrices.
 - This parking unit is independent of the finalized `figs/figure_brain/` unit.
   Work here must not overwrite or regenerate Figure Brain outputs.
 
