@@ -174,21 +174,22 @@ def electrode_table(path: Path) -> pd.DataFrame:
     return table
 
 
-def plot_electrodes(axis, selection: dict, selected_lead: str):
-    """Project one participant's clean electrodes onto a common lateral view."""
+def plot_electrodes(axis, selection: dict, selected_lead: str, view: str):
+    """Project one participant's clean electrodes onto a lateral or frontal view."""
     table = electrode_table(selection["paths"][0])
     table = table[
         table["pair_name"].isin(selection["pair_names"])
         & ~table["ictal"]
         & table["area"].notna()
     ].copy()
-    # A sagittal projection does not encode left-right depth. Reflect both
-    # hemispheres onto the same lateral silhouette so right-sided implants are
-    # not discarded by Nilearn's left-lateral display mode.
-    table["x"] = -np.abs(table["x"])
+    if view == "l":
+        # A sagittal projection does not encode left-right depth. Reflect both
+        # hemispheres onto the same lateral silhouette so right-sided implants
+        # are not discarded by Nilearn's left-lateral display mode.
+        table["x"] = -np.abs(table["x"])
     display = niplot.plot_glass_brain(
         None,
-        display_mode="l",
+        display_mode=view,
         figure=axis.figure,
         axes=axis,
         annotate=False,
@@ -444,20 +445,22 @@ def analyze(selection: dict, force: bool, horizons_ms=HORIZONS_MS) -> list[dict]
 def plot(results: pd.DataFrame, selections: list[dict]):
     subjects = sorted(results["subject_number"].unique())
     selection_by_subject = {item["subject"]: item for item in selections}
-    n_columns = 5
+    n_columns = 4
     n_rows = int(np.ceil(len(subjects) / n_columns))
-    fig = plt.figure(figsize=(18, 24.0))
+    fig = plt.figure(figsize=(13, 13))
     grid = fig.add_gridspec(
-        n_rows, n_columns, left=0.055, right=0.99, bottom=0.035, top=0.965,
-        wspace=0.32, hspace=0.42,
+        n_rows, n_columns, left=0.065, right=0.99, bottom=0.055, top=0.95,
+        wspace=0.34, hspace=0.55,
     )
     bar_axes = []
     for index, subject_number in enumerate(subjects):
         row, column = divmod(index, n_columns)
         cell = grid[row, column].subgridspec(
-            2, 1, height_ratios=[0.82, 1.18], hspace=0.04,
+            2, 1, height_ratios=[1.28, 0.50], hspace=0.42,
         )
-        brain_axis = fig.add_subplot(cell[0, 0])
+        anatomy = cell[0, 0].subgridspec(1, 2, wspace=0.02)
+        lateral_axis = fig.add_subplot(anatomy[0, 0])
+        frontal_axis = fig.add_subplot(anatomy[0, 1])
         axis = fig.add_subplot(cell[1, 0])
         bar_axes.append(axis)
         subset = results[results["subject_number"] == subject_number]
@@ -467,9 +470,8 @@ def plot(results: pd.DataFrame, selections: list[dict]):
         axis.bar(x - width / 2, pivot["ID"], width, color=ID_COLOR)
         axis.bar(x + width / 2, pivot["OOD"], width, color=OOD_COLOR)
         meta = subset.iloc[0]
-        score = 100.0 * (subset.drop_duplicates("horizon_ms")["ood_over_id"].mean() - 1.0)
-        axis.set_title(f"P{subject_number} · {meta['lead']} ({meta['n_channels']} ch)\n"
-                       f"mean OOD excess = {score:+.1f}%", fontsize=13, weight="bold")
+        axis.set_title(f"P{subject_number} · {meta['lead']}", fontsize=13,
+                       weight="bold", pad=5)
         axis.set_xticks(x, [str(value) for value in pivot.index], fontsize=9)
         axis.set_ylim(0, subset["linear_residual_rms"].max() * 1.12)
         axis.grid(axis="y", color="#D9DDE1", linewidth=0.7, alpha=0.8)
@@ -478,10 +480,15 @@ def plot(results: pd.DataFrame, selections: list[dict]):
         axis.set_xlabel("Horizon (ms)", fontsize=11)
         axis.set_ylabel("Linear residual RMS (z)", fontsize=11)
         axis.tick_params(axis="y", labelsize=10)
-        plot_electrodes(brain_axis, selection_by_subject[subject_number], str(meta["lead"]))
+        plot_electrodes(
+            lateral_axis, selection_by_subject[subject_number], str(meta["lead"]), "l"
+        )
+        plot_electrodes(
+            frontal_axis, selection_by_subject[subject_number], str(meta["lead"]), "y"
+        )
     handles = [plt.Rectangle((0, 0), 1, 1, color=ID_COLOR, label="ID (low conflict)"),
                plt.Rectangle((0, 0), 1, 1, color=OOD_COLOR, label="OOD (high conflict)")]
-    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.995),
+    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 0.99),
                ncol=2, frameon=False, fontsize=12)
     for extension in ("png", "pdf"):
         fig.savefig(PLOTS / f"all_subject_conflict_linear_residual.{extension}",

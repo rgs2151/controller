@@ -27,9 +27,9 @@
   absolute OOD-minus-ID separation and then lead name.
 - Recreate Irfan's electrode-localization view from each bipolar pair's MNI
   midpoint (`ParcellationValues` coordinates 4–6). Assign the original seven
-  coarse anatomical regions and colors, reflect both hemispheres onto a common
-  left-lateral glass-brain silhouette, and enlarge the lead selected by the
-  residual screen.
+  coarse anatomical regions and colors, show adjacent standardized lateral and
+  frontal glass-brain projections, reflect both hemispheres only for the
+  lateral silhouette, and enlarge the lead selected by the residual screen.
 - Write the complete all-lead results, lead ranking, selected participant
   results, participant ranking, and a paired anatomy-plus-residual grid in PNG
   and PDF.
@@ -86,11 +86,11 @@
 - Grouping: paired ID and OOD bars at each horizon within each participant.
 - Ordering/sorting: participants are ordered numerically in a five-column grid;
   horizons increase from 20 to 700 ms.
-- Lines/markers/labels: each title reports participant, selected lead, channel
-  count, and mean proportional OOD excess.
-- Panels: each participant occupies a vertically paired cell with a common
-  lateral electrode projection above its horizon bar plot; participants form a
-  five-column grid.
+- Lines/markers/labels: each title reports only the participant and selected
+  lead (ROI).
+- Panels: each participant occupies a compact cell with lateral and frontal
+  electrode projections above a short, wide horizon bar plot; participants
+  form a four-column grid.
 
 ## Interpretation
 
