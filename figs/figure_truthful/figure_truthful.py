@@ -542,23 +542,13 @@ def draw_radar(
         for angle, category, radius in zip(
             angles[:-1], categories, label_radii, strict=True
         ):
-            rotation = -float(np.degrees(angle))
-            if rotation < -90:
-                rotation += 180
-            elif rotation > 90:
-                rotation -= 180
-            ax.text(
+            draw_curved_polar_text(
+                ax,
                 angle,
                 radius,
                 category,
-                ha="center",
-                va="center",
-                rotation=rotation,
-                rotation_mode="anchor",
                 fontsize=label_fontsize,
                 fontweight=label_fontweight,
-                color="black",
-                clip_on=False,
             )
     else:
         ax.set_xticklabels(
@@ -591,6 +581,43 @@ def draw_radar(
                 clip_on=False,
                 zorder=0,
             )
+
+
+def draw_curved_polar_text(
+    ax: plt.Axes,
+    center_angle: float,
+    radius: float,
+    label: str,
+    *,
+    fontsize: float,
+    fontweight: str,
+) -> None:
+    """Place individual glyphs along a readable tangent arc in polar space."""
+    step = np.deg2rad(3.40 * (fontsize / 13.5) * (116.0 / radius))
+    offsets = (np.arange(len(label), dtype=float) - (len(label) - 1) / 2.0) * step
+    # On the lower half, reverse angular progression so glyph order remains
+    # left-to-right after the tangent is flipped upright.
+    direction = -1.0 if np.cos(center_angle) < 0 else 1.0
+    for character, offset in zip(label, offsets, strict=True):
+        angle = center_angle + direction * offset
+        rotation = -float(np.degrees(angle))
+        if rotation < -90:
+            rotation += 180
+        elif rotation > 90:
+            rotation -= 180
+        ax.text(
+            angle,
+            radius,
+            character,
+            ha="center",
+            va="center",
+            rotation=rotation,
+            rotation_mode="anchor",
+            fontsize=fontsize,
+            fontweight=fontweight,
+            color="black",
+            clip_on=False,
+        )
 
 
 def draw_model_legend(ax: plt.Axes, images: dict[str, np.ndarray]) -> None:
@@ -1048,17 +1075,17 @@ def render_figure_composite_bigger(
     records: list[Result], images: dict[str, np.ndarray]
 ) -> None:
     """Render a large-type composite without modifying the canonical version."""
-    fig = plt.figure(figsize=(15.8, 8.0))
+    fig = plt.figure(figsize=(15.8, 5.25))
     outer = fig.add_gridspec(
         2,
         5,
-        height_ratios=[0.17, 0.83],
-        width_ratios=[1.15, 1.15, 0.015, 1.20, 1.20],
-        left=0.055,
-        right=0.98,
-        bottom=0.335,
+        height_ratios=[0.14, 0.86],
+        width_ratios=[1.25, 1.25, 0.14, 1.0, 1.0],
+        left=0.045,
+        right=0.985,
+        bottom=0.19,
         top=0.97,
-        wspace=0.24,
+        wspace=0.20,
         hspace=0.10,
     )
 
@@ -1118,7 +1145,7 @@ def render_figure_composite_bigger(
             pad=10,
         )
 
-    radar_grid = outer[1, 3:5].subgridspec(1, 2, wspace=0.82)
+    radar_grid = outer[1, 3:5].subgridspec(1, 2, wspace=0.94)
     radar_id_ax = fig.add_subplot(radar_grid[0], projection="polar")
     radar_ood_ax = fig.add_subplot(radar_grid[1], projection="polar")
     for ax, split, title in zip(
@@ -1133,7 +1160,7 @@ def render_figure_composite_bigger(
             model="GPT-2 XL",
             metric="true_pct",
             include_original=True,
-            label_fontsize=13.5,
+            label_fontsize=12.5,
             label_fontweight="bold",
             extend_label_spokes=True,
             show_radial_labels=False,
@@ -1145,7 +1172,7 @@ def render_figure_composite_bigger(
             fontsize=22.0,
             fontweight="bold",
             color=OOD_RED if split == "OOD" else "black",
-            pad=43,
+            pad=31,
         )
 
     frontier_bounds = frontier_header.get_position()
@@ -1154,7 +1181,7 @@ def render_figure_composite_bigger(
         loc="upper left",
         bbox_to_anchor=(
             frontier_bounds.x0,
-            0.16,
+            -0.035,
             frontier_bounds.width,
             0.09,
         ),
@@ -1171,7 +1198,7 @@ def render_figure_composite_bigger(
     radar_legend = fig.legend(
         handles=radar_handles(include_original=True),
         loc="upper center",
-        bbox_to_anchor=(0.79, 0.16),
+        bbox_to_anchor=(0.79, -0.035),
         ncol=3,
         fontsize=15.0,
         handlelength=0.8,
