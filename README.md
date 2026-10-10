@@ -124,3 +124,15 @@ python -m robust_steerability.benchmarks.harmful --help
 The implementation lives in `robust_steerability/`. Benchmark specifications and results are in `benchmarks/`; supporting figures and analyses are maintained separately in `figs/` and `parking/`. Reference material remains in `ref/`.
 
 The Python package is independent of the supplementary analysis folders. Incorporated reference implementations retain their upstream attribution and applicable licenses.
+
+## Citation
+
+If you use Robust Steering in your research, please cite the accompanying manuscript:
+
+```bibtex
+@unpublished{fallah_robust_steerability,
+  title  = {Robust Steerability: Closed-Loop {$H_\infty$} Control of Language Model Representations Under Distribution Shift},
+  author = {Fallah, Kasra and Singha, Rudramani and Ghanei, Hannah and Sajda, Paul and Anderson, James and Zabeh, Erfan},
+  note   = {Manuscript}
+}
+```
