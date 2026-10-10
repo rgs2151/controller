@@ -6,7 +6,7 @@ Robust Steering is a Python package for steering language-model representations 
 
 The package brings together controller synthesis, activation interventions, and evaluation across truthfulness, safety, multilingual reasoning, and long-context tasks. It supports closed-loop steering without updating model weights, with LQR and activation-steering baselines for comparison.
 
-[Installation](#installation) · [Quick start](#quick-start) · [Benchmarks](#benchmarks) · [Documentation](#documentation)
+[Installation](#installation) · [Quick start](#quick-start) · [Benchmarks](#benchmarks) · [CLI](#command-line-interface) · [Documentation](#documentation)
 
 ## Features
 
@@ -77,6 +77,39 @@ The repository includes benchmarks for both steering the intended behavior and p
 | [RealToxicityPrompts](benchmarks/toxicity/README.md) | Reduced toxicity | Toxicity and response quality. |
 
 Each benchmark provides artifact preparation, calibration, evaluation, and scoring through `python -m robust_steerability.benchmarks.<benchmark>`. The linked guides contain supported models, commands, and evaluation protocols.
+
+## Command-line interface
+
+Run benchmark commands from the repository root. The following example evaluates Llama-3-8B on TruthfulQA, comparing the original model, A-LQR, and H∞ on English and Spanish-input questions:
+
+```bash
+# Prepare model and dataset artifacts.
+python -m robust_steerability.benchmarks.truthfulness artifacts \
+  --model llama8b --devices auto
+
+# Calibrate the steering methods.
+python -m robust_steerability.benchmarks.truthfulness calibrate \
+  --model llama8b --methods alqr,h_infinity --devices auto
+
+# Evaluate the selected methods and conditions.
+python -m robust_steerability.benchmarks.truthfulness evaluate \
+  --model llama8b --methods original,alqr,h_infinity \
+  --datasets id,spanish --devices auto
+
+# Score the generated responses.
+python -m robust_steerability.benchmarks.truthfulness score \
+  --model llama8b --methods original,alqr,h_infinity \
+  --datasets id,spanish --scorers default --devices auto
+```
+
+`--devices auto` uses the available CUDA GPUs; use `--devices cuda:0` to select a single GPU. API-based judges require `OPENAI_API_KEY`. Model access and scorer requirements are described in each benchmark guide.
+
+HarmBench, MGSM, L-CiteEval, and RealToxicityPrompts use the same stage interface through the `harmful`, `mgsm`, `lciteeval`, and `toxicity` modules, respectively. Consult each module's help for supported model keys and options:
+
+```bash
+python -m robust_steerability.benchmarks.truthfulness --help
+python -m robust_steerability.benchmarks.harmful --help
+```
 
 ## Documentation
 
