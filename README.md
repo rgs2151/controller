@@ -130,9 +130,10 @@ The Python package is independent of the supplementary analysis folders. Incorpo
 If you use Robust Steering in your research, please cite the accompanying manuscript:
 
 ```bibtex
-@unpublished{fallah_mind_control,
+@unpublished{fallah2026mindcontrol,
   title  = {Mind Control of {LLMs} via Closed-Loop Stimulation: Out-of-Distribution Robustness},
   author = {Fallah, Kasra and Singha, Rudramani and Ghanei, Hannah and Sajda, Paul and Anderson, James and Zabeh, Erfan},
+  year   = {2026},
   note   = {Manuscript}
 }
 ```
